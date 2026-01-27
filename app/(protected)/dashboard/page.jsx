@@ -150,7 +150,7 @@ export default function DashboardPage() {
     ];
 
     return (
-        <div className="ml-0 lg:ml-64 p-4 sm:p-6 space-y-6 sm:space-y-8">
+        <div className="space-y-6 sm:space-y-8">
             {/* Page Header */}
             <div>
                 <h1 className="text-xl font-semibold text-[var(--foreground)]">

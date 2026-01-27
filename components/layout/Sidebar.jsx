@@ -1,9 +1,9 @@
-// components/layout/Sidebar.jsx
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { useSelector } from "react-redux";
+import React, { useState, useEffect, useMemo } from "react";
+import { useSelector, useDispatch } from "react-redux";
 import { useRouter, usePathname } from "next/navigation";
+import Link from "next/link";
 import {
   ChevronLeft,
   ChevronRight,
@@ -13,7 +13,7 @@ import {
   Menu,
   X,
 } from "lucide-react";
-import Link from "next/link";
+
 import { useCompanyId } from "@/providers/CompanyProvider";
 import {
   getSuperadminMainMenu,
@@ -22,99 +22,113 @@ import {
   getFullCompanyMenuTemplate,
 } from "@/shared/config/menuConfig";
 import { filterMenuByPermissions } from "@/shared/utils/menuFilter";
+import { logout } from "@/features/auth/auth.slice.js";
 
 export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
   const [openDropdowns, setOpenDropdowns] = useState({});
   const [isMobile, setIsMobile] = useState(false);
 
-  const { user } = useSelector((state) => state.auth || {});
-  const router = useRouter();
+  const { user } = useSelector((state) => state.auth);
+  console.log("User in Sidebar:", user);
   const pathname = usePathname();
+  const router = useRouter();
+  const dispatch = useDispatch();
+
   const { companyId, hasCompanyContext } = useCompanyId();
 
+  /* ---------------- MOBILE DETECTION ---------------- */
+
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMounted(true);
+  }, []);
+  useEffect(() => {
+    const check = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+
   /* ---------------- MENU LOGIC ---------------- */
-  const getMenuItems = () => {
-    if (user?.role_id === 1 && !hasCompanyContext) {
+  const menuItems = useMemo(() => {
+    if (!user) return [];
+
+    if (user.role_id === 1 && !hasCompanyContext) {
       return getSuperadminMainMenu();
     }
 
-    if (user?.role_id === 1 && hasCompanyContext) {
+    if (user.role_id === 1 && hasCompanyContext) {
       return getSuperadminCompanyMenu(companyId);
     }
 
-    if (user?.role_id === 2 && hasCompanyContext) {
+    if (user.role_id === 2 && hasCompanyContext) {
       return getAdminMenu(companyId);
     }
 
-    if (hasCompanyContext && user?.role?.permissions) {
+    if (hasCompanyContext && user.role?.permissions) {
       const template = getFullCompanyMenuTemplate(companyId);
       return filterMenuByPermissions(template, user.role.permissions);
     }
 
     return [];
-  };
+  }, [user, hasCompanyContext, companyId]);
 
-  const menuItems = getMenuItems();
-
-  /* ---------------- HELPERS ---------------- */
-  const isRouteActive = (href) => {
-    if (!href) return false;
-    return pathname.startsWith(href);
-  };
-
-  /* ---------------- MOBILE ---------------- */
-  
-  useEffect(() => {
-    const checkMobile = () => {
-      const mobile = window.innerWidth < 1024;
-      setIsMobile(mobile);
-      if (mobile) setSidebarOpen(false);
-    };
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, [setSidebarOpen]);
-
-  /* ---------------- ACTIONS ---------------- */
-  const toggleSidebar = () => setSidebarOpen((v) => !v);
+  const isRouteActive = (href) =>
+    href ? pathname.startsWith(href) : false;
 
   const toggleDropdown = (key) => {
     setOpenDropdowns((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   const handleLogout = () => {
+    dispatch(logout());
     localStorage.clear();
-    sessionStorage.clear();
-    router.push("/login");
+    router.replace("/login");
   };
+  if (!mounted) {
+    // render a static placeholder to match server
+    return (
+      <aside className="fixed top-0 left-0 h-screen w-16 bg-[var(--sidebar-bg)]" />
+    );
+  }
 
-  /* ---------------- RENDER ---------------- */
+
   return (
     <>
       {/* Mobile Toggle */}
       {isMobile && (
         <button
-          onClick={toggleSidebar}
-          className="fixed top-3 left-4 z-[60] p-2 rounded-lg bg-indigo-600 text-white lg:hidden"
+          onClick={() => setSidebarOpen((v) => !v)}
+          className="fixed top-3 left-4 z-[60] p-2 rounded-lg
+            bg-[var(--sidebar-active)] text-white lg:hidden"
         >
           {sidebarOpen ? <X size={20} /> : <Menu size={18} />}
         </button>
       )}
 
+      {/* Sidebar */}
       <aside
         className={`
           fixed top-0 left-0 z-50 h-screen flex flex-col
-          bg-slate-900 text-gray-200 shadow-2xl
+          bg-[var(--sidebar-bg)]
+          text-[var(--sidebar-text)]
+          border-r border-[var(--sidebar-border)]
           transition-all duration-300
           ${sidebarOpen ? "w-64" : "w-16"}
           ${isMobile && !sidebarOpen ? "-translate-x-full" : "translate-x-0"}
         `}
       >
         {/* Header */}
-        <div className="flex items-center justify-between h-16 px-4 border-b border-slate-700">
-          {sidebarOpen && <h1 className="font-semibold">Dashboard</h1>}
+        <div className="flex items-center justify-between h-16 px-4 border-b border-[var(--sidebar-border)]">
+          {sidebarOpen && <h1 className="font-semibold truncate">Dashboard</h1>}
           {!isMobile && (
-            <button onClick={toggleSidebar}>
+            <button onClick={() => setSidebarOpen((v) => !v)}>
               {sidebarOpen ? <ChevronLeft /> : <ChevronRight />}
             </button>
           )}
@@ -128,14 +142,16 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
               const isActive = isRouteActive(item.href);
               const isOpen = openDropdowns[item.key];
 
-              // Dropdown
               if (item.hasDropdown) {
                 return (
                   <li key={item.key}>
                     <button
                       onClick={() => toggleDropdown(item.key)}
-                      className={`group flex items-center w-full px-3 py-2 rounded-md
-                        ${isActive ? "bg-indigo-600 text-white" : "hover:bg-slate-800"}
+                      className={`
+                        flex items-center w-full px-3 py-2 rounded-md
+                        ${isActive
+                          ? "bg-[var(--sidebar-active)] text-white"
+                          : "hover:bg-[var(--sidebar-hover)]"}
                       `}
                     >
                       <Icon size={20} />
@@ -147,13 +163,6 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
                           {isOpen ? <ChevronUp /> : <ChevronDown />}
                         </>
                       )}
-
-                      {/* Tooltip when collapsed */}
-                      {!sidebarOpen && (
-                        <span className="absolute left-16 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 whitespace-nowrap">
-                          {item.label}
-                        </span>
-                      )}
                     </button>
 
                     {sidebarOpen && isOpen && (
@@ -164,7 +173,7 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
                             <li key={child.href}>
                               <Link
                                 href={child.href}
-                                className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-slate-800"
+                                className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-[var(--sidebar-hover)]"
                               >
                                 <ChildIcon size={16} />
                                 <span className="ml-2">{child.label}</span>
@@ -178,24 +187,19 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
                 );
               }
 
-              // Normal link
               return (
                 <li key={item.href}>
                   <Link
                     href={item.href}
-                    className={`group flex items-center px-3 py-2 rounded-md
-                      ${isActive ? "bg-indigo-600 text-white" : "hover:bg-slate-800"}
+                    className={`
+                      flex items-center px-3 py-2 rounded-md
+                      ${isActive
+                        ? "bg-[var(--sidebar-active)] text-white"
+                        : "hover:bg-[var(--sidebar-hover)]"}
                     `}
                   >
                     <Icon size={20} />
                     {sidebarOpen && <span className="ml-3">{item.label}</span>}
-
-                    {/* Tooltip when collapsed */}
-                    {!sidebarOpen && (
-                      <span className="absolute left-16 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 whitespace-nowrap">
-                        {item.label}
-                      </span>
-                    )}
                   </Link>
                 </li>
               );
@@ -204,21 +208,25 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
         </nav>
 
         {/* Footer */}
-        <div className="border-t border-slate-700 p-3">
+        <div className="border-t border-[var(--sidebar-border)] p-3">
           <button
             onClick={handleLogout}
-            className="group flex items-center w-full px-3 py-2 rounded-md hover:bg-red-600"
+            className="flex items-center w-full px-3 py-2 rounded-md
+              hover:bg-red-600 hover:text-white"
           >
             <LogOut size={20} />
             {sidebarOpen && <span className="ml-3">Logout</span>}
-            {!sidebarOpen && (
-              <span className="absolute left-16 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100">
-                Logout
-              </span>
-            )}
           </button>
         </div>
       </aside>
+
+      {/* Mobile overlay */}
+      {sidebarOpen && isMobile && (
+        <div
+          className="fixed inset-0 bg-black/40 z-40"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
     </>
   );
 }

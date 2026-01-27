@@ -5,7 +5,7 @@ import ReduxProvider from "@/providers/ReduxProvider";
 import QueryProvider from "@/providers/QueryProvider";
 import { CompanyProvider } from "@/providers/CompanyProvider";
 import ThemeProvider from '@/providers/ThemeProvider'
-
+import StoreProvider from "@/store/StoreProvider.jsx";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,7 +26,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        <ReduxProvider>
+        <StoreProvider>
           <QueryProvider>
             <ThemeProvider>
               <CompanyProvider>
@@ -34,7 +34,7 @@ export default function RootLayout({ children }) {
               </CompanyProvider>
             </ThemeProvider>
           </QueryProvider>
-        </ReduxProvider>
+        </StoreProvider>
       </body>
     </html>
   );
