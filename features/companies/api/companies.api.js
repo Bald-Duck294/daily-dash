@@ -26,15 +26,29 @@ export const CompanyApi = {
   },
 
   // READ ONE (QUERY → MUST support cancellation)
-  getCompanyById: async ({ queryKey, signal }) => {
-    const [, id] = queryKey;
+  // getCompanyById: async ({ queryKey, signal }) => {
+  //   const [, id] = queryKey;
 
+  //   try {
+  //     const response = await axiosInstance.get(`/companies/${id}`, { signal });
+  //     return { success: true, data: response.data };
+  //   } catch (error) {
+  //     if (error.name === "CanceledError") return;
+
+  //     return {
+  //       success: false,
+  //       error: error.response?.data?.message || error.message,
+  //     };
+  //   }
+  // },
+
+  getCompanyById: async (id) => {
+    // console.log('get by id company ')
     try {
-      const response = await axiosInstance.get(`/companies/${id}`, { signal });
+      const response = await axiosInstance.get(`/companies/${id}`);
+      // console.log(response?.data, "data")
       return { success: true, data: response.data };
     } catch (error) {
-      if (error.name === "CanceledError") return;
-
       return {
         success: false,
         error: error.response?.data?.message || error.message,

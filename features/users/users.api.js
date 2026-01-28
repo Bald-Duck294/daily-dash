@@ -31,7 +31,7 @@ export const UsersApi = {
       if (!response.success) return response;
 
       const filteredUsers = (response.data || []).filter(
-        (user) => user.role_id === roleId
+        (user) => user.role_id === roleId,
       );
 
       return {
