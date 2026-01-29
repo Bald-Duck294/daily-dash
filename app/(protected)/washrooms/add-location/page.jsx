@@ -1,216 +1,255 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { fetchToiletFeaturesByName } from "@/features/configurations/configurations.api";
-import DynamicOptions from "./components/DynamicOptions";
-import LocationTypeSelect from "./components/LocationTypeSelect";
-import GoogleMapPicker from "./components/GoogleMapPicker";
-import LatLongInput from "./components/LatLongInput";
-import SearchableSelect from "./components/SearchableSelect";
 import { useRouter } from "next/navigation";
-
-import locationTypesApi from "@/features/locationTypes/locationTypes.api";
-import LocationsApi from "@/features/locations/locations.api";
-import { AssignmentsApi } from "@/features/assignments/assignments.api";
-import { UsersApi } from "@/features/users/users.api";
-
 import { useCompanyId } from "@/providers/CompanyProvider";
 import { usePermissions } from "@/shared/hooks/usePermission";
 import { useRequirePermission } from "@/shared/hooks/useRequirePermission";
 import { MODULES } from "@/shared/constants/permissions";
 import {
+  Building2,
+  MapPin,
+  Factory,
+  Camera,
+  ArrowLeft,
+  Users,
+  User,
+  User2,
+  VenusAndMars,
+  Baby,
+  CheckCircle2,
+  Wind,
+  Shield,
+  Package,
+  UserCheck,
+  Clock,
+  CreditCard,
   Upload,
   X,
   Image as ImageIcon,
   Plus,
-  MapPin,
-  Users,
-  UserCheck,
   Search,
   ChevronDown,
-  CheckCircle,
   Mail,
   Phone,
   Droplets,
   Armchair,
-  ArrowLeft,
+  Info,
 } from "lucide-react";
+import { FaPerson, FaPersonDress } from "react-icons/fa6";
+import { MdShower } from "react-icons/md";
+import { HiOutlineCloudUpload } from "react-icons/hi";
 import toast from "react-hot-toast";
-import { Country, State, City } from "country-state-city";
+import { State, City } from "country-state-city";
+
+// API Imports
+import { fetchToiletFeaturesByName } from "@/features/configurations/configurations.api";
+import locationTypesApi from "@/features/locationTypes/locationTypes.api";
+import LocationsApi from "@/features/locations/locations.api";
+import { AssignmentsApi } from "@/features/assignments/assignments.api";
+import { UsersApi } from "@/features/users/users.api";
 import FacilityCompanyApi from "@/features/facilityCompany/facilityCompany.api";
 
-// Pincode validation for India
+// Custom Components (Kept these as they likely contain specific logic like Google Maps loading)
+import LocationTypeSelect from "./components/LocationTypeSelect";
+import GoogleMapPicker from "./components/GoogleMapPicker";
+import SearchableSelect from "./components/SearchableSelect";
+
+// --- CONFIGURATION OBJECT (Based on your JSON) ---
+const FEATURE_CONFIG = [
+  {
+    key: "isPaid",
+    label: "Paid Entry Required",
+    category: "Access",
+    icon: <CreditCard size={14} />,
+  },
+  {
+    key: "isHandicapAccessible",
+    label: "Wheelchair Accessible",
+    category: "Accessibility",
+    icon: <Users size={14} />,
+  },
+  {
+    key: "isStrictlyForHandicap",
+    label: "Strictly for Disabled Users",
+    category: "Accessibility",
+    icon: <Shield size={14} />,
+  },
+  {
+    key: "hasBabyChangingStation",
+    label: "Baby Changing Station",
+    category: "Family Features",
+    icon: <Baby size={14} />,
+  },
+  {
+    key: "hasSanitaryProducts",
+    label: "Sanitary Products",
+    category: "Amenities",
+    icon: <Package size={14} />,
+  },
+  {
+    key: "hasAttendant",
+    label: "Attendant Present",
+    category: "Service",
+    icon: <UserCheck size={14} />,
+  },
+  {
+    key: "is24Hours",
+    label: "24/7 Availability",
+    category: "Access",
+    icon: <Clock size={14} />,
+  },
+  {
+    key: "hasHandDryer",
+    label: "Hand Dryer Available",
+    category: "Amenities",
+    icon: <Wind size={14} />,
+  },
+];
+
+const GENDER_OPTIONS = [
+  {
+    label: "Male",
+    value: "male",
+    category: "Access",
+    icon: <User size={14} />,
+  },
+  {
+    label: "Female",
+    value: "female",
+    category: "Access",
+    icon: <User2 size={14} />,
+  },
+  {
+    label: "Unisex / All Genders",
+    value: "unisex",
+    category: "Access",
+    icon: <VenusAndMars size={14} />,
+  },
+  {
+    label: "Family Room",
+    value: "family",
+    category: "Family Features",
+    icon: <Baby size={14} />,
+  },
+  {
+    label: "Children Only",
+    value: "children",
+    category: "Access",
+    icon: <Baby size={14} />,
+  },
+];
+
 const validatePincode = (pincode) => {
   if (!pincode) return true;
   const regex = /^[1-9][0-9]{5}$/;
   return regex.test(pincode);
 };
 
-export default function AddLocationPage() {
+export default function AddWashroomForm() {
+  // --- PERMISSIONS & HOOKS ---
   useRequirePermission(MODULES.LOCATIONS);
-
   const { canAdd } = usePermissions();
   const canAddLocation = canAdd(MODULES.LOCATIONS);
   const canAssignCleaner = canAdd(MODULES.ASSIGNMENTS);
+  const { companyId } = useCompanyId();
+  const router = useRouter();
 
+  // --- STATE MANAGEMENT ---
   const [features, setFeatures] = useState([]);
   const [locationTypes, setLocationTypes] = useState([]);
-  const [images, setImages] = useState([]);
-  const [submitting, setSubmitting] = useState(false);
-  const [previewImages, setPreviewImages] = useState([]);
-  const [pincodeError, setPincodeError] = useState("");
-  // Add these state variables near the top with other states
   const [facilityCompanies, setFacilityCompanies] = useState([]);
   const [selectedFacilityCompany, setSelectedFacilityCompany] = useState(null);
 
+  // Images
+  const [images, setImages] = useState([]);
+  const [previewImages, setPreviewImages] = useState([]);
   const fileInputRef = useRef(null);
-  const router = useRouter();
 
-  // ✅ Assignment Form State
+  // Cleaners
   const [allCleaners, setAllCleaners] = useState([]);
   const [selectedCleaners, setSelectedCleaners] = useState([]);
   const [cleanerSearchTerm, setCleanerSearchTerm] = useState("");
   const [isCleanerDropdownOpen, setIsCleanerDropdownOpen] = useState(false);
   const cleanerDropdownRef = useRef(null);
 
+  // Location Data
   const [availableStates, setAvailableStates] = useState([]);
   const [availableCities, setAvailableCities] = useState([]);
-  const [availableDistricts, setAvailableDistricts] = useState([]);
 
-  console.log("add location mounted");
-  const { companyId } = useCompanyId();
+  // Status
+  const [submitting, setSubmitting] = useState(false);
+  const [pincodeError, setPincodeError] = useState("");
 
+  // Form State
   const [form, setForm] = useState({
     name: "",
     parent_id: null,
     type_id: null,
-    latitude: null,
-    longitude: null,
+    facility_company_id: null,
+    latitude: 21.1458, // Default to Nagpur as per screenshot
+    longitude: 79.0882,
     address: "",
     pincode: "",
     state: "",
     city: "",
     dist: "",
     status: true,
-    options: {},
     no_of_photos: null,
+    options: {
+      genderAccess: [], // Multiselect array
+      // boolean keys will be added dynamically
+    },
     usage_category: {
-      men: {
-        wc: 0,
-        indian: 0,
-        urinals: 0,
-        shower: 0,
-        basin: 0,
-      },
-      women: {
-        wc: 0,
-        indian: 0,
-        urinals: 0,
-        shower: 0,
-        basin: 0,
-      },
+      men: { wc: 0, indian: 0, urinals: 0, shower: 0, basin: 0 },
+      women: { wc: 0, indian: 0, urinals: 0, shower: 0, basin: 0 },
     },
   });
 
-  // ✅ Load Indian states on mount
+  // --- INITIAL DATA LOADING ---
   useEffect(() => {
     const indiaStates = State.getStatesOfCountry("IN");
-    const stateNames = indiaStates.map((state) => state.name);
-    setAvailableStates(stateNames);
+    setAvailableStates(indiaStates.map((s) => s.name));
   }, []);
 
-  // ✅ Fetch initial data (features, types, cleaners)
   useEffect(() => {
     async function loadInitialData() {
-      console.log(companyId, "companyId from add location");
-
-      if (!companyId || companyId === "null" || companyId === null) {
-        console.log("Skipping - companyId not ready");
-        return;
-      }
+      if (!companyId) return;
 
       try {
-        let config = null;
-        let types = null;
-        let cleaners = null;
-        let facilities = null; // ✅ ADD THIS
+        // 1. Facility Companies
+        const facilities = await FacilityCompanyApi.getAll(companyId, false);
+        if (facilities.success) setFacilityCompanies(facilities.data || []);
 
-        try {
-          facilities = await FacilityCompanyApi.getAll(companyId, false); // Only active
-          console.log("Facility companies loaded:", facilities);
-
-          if (facilities.success) {
-            setFacilityCompanies(facilities.data || []);
-          } else {
-            setFacilityCompanies([]);
-          }
-        } catch (facilitiesError) {
-          console.error("Failed to load facility companies:", facilitiesError);
-          setFacilityCompanies([]);
-        }
-
-        try {
-          config = await fetchToiletFeaturesByName(
-            "Toilet_Features",
-            companyId,
-          );
-          console.log("Config loaded successfully:", config);
-        } catch (configError) {
-          console.error(
-            "Failed to load config (continuing anyway):",
-            configError,
-          );
-        }
-
-        try {
-          types = await locationTypesApi.getAll(companyId);
-          console.log("Types loaded successfully:", types);
-        } catch (typesError) {
-          console.error("Failed to load location types:", typesError);
-          types = [];
-        }
-
-        // ✅ Fetch cleaners (role_id = 5)
-        try {
-          cleaners = await UsersApi.getAllUsers(companyId, 5);
-          console.log("Cleaners loaded successfully:", cleaners);
-
-          if (cleaners.success) {
-            const cleanersOnly = (cleaners.data || []).filter((user) => {
-              const userRoleId = parseInt(user.role_id || user.role?.id || 0);
-              return userRoleId === 5;
-            });
-            setAllCleaners(cleanersOnly);
-          } else {
-            setAllCleaners([]);
-          }
-        } catch (cleanersError) {
-          console.error("Failed to load cleaners:", cleanersError);
-          setAllCleaners([]);
-        }
-
-        console.log(config, "config");
+        // 2. Config & Types
+        const config = await fetchToiletFeaturesByName(
+          "Toilet_Features",
+          companyId,
+        );
         setFeatures(config?.data[0]?.description || []);
+
+        const types = await locationTypesApi.getAll(companyId);
         setLocationTypes(Array.isArray(types) ? types : []);
 
-        console.log("Final state:", {
-          features: config?.description || [],
-          types: types || [],
-          cleaners: allCleaners.length,
-        });
+        // 3. Cleaners
+        const cleaners = await UsersApi.getAllUsers(companyId, 5);
+        if (cleaners.success) {
+          setAllCleaners(
+            (cleaners.data || []).filter(
+              (u) => parseInt(u.role_id || u.role?.id) === 5,
+            ),
+          );
+        }
       } catch (err) {
-        console.error("Unexpected error in loadInitialData", err);
-        setFeatures([]);
-        setLocationTypes([]);
-        setAllCleaners([]);
-        setFacilityCompanies([]); // ✅ ADD THIS
+        console.error("Error loading initial data", err);
       }
     }
-
     loadInitialData();
   }, [companyId]);
 
-  // ✅ Close dropdown on outside click
+  // --- HANDLERS ---
+
+  // Cleaners Dropdown Close
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
@@ -224,212 +263,51 @@ export default function AddLocationPage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // ✅ Handle image file selection
-  const handleFileSelect = (e) => {
-    const files = Array.from(e.target.files);
-
-    if (files.length === 0) return;
-
-    const validFiles = [];
-    const invalidFiles = [];
-
-    files.forEach((file) => {
-      if (file.type.startsWith("image/")) {
-        if (file.size <= 10 * 1024 * 1024) {
-          validFiles.push(file);
-        } else {
-          invalidFiles.push(file.name + " (too large)");
-        }
-      } else {
-        invalidFiles.push(file.name + " (not an image)");
-      }
-    });
-
-    if (invalidFiles.length > 0) {
-      toast.error(`Invalid files: ${invalidFiles.join(", ")}`);
-    }
-
-    if (validFiles.length > 0) {
-      setImages((prev) => [...prev, ...validFiles]);
-
-      const newPreviews = validFiles.map((file) => ({
-        file,
-        url: URL.createObjectURL(file),
-        name: file.name,
-      }));
-
-      setPreviewImages((prev) => [...prev, ...newPreviews]);
-    }
-
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
-
-  // ✅ Remove image from selection
-  const removeImage = (index) => {
-    URL.revokeObjectURL(previewImages[index].url);
-    setImages((prev) => prev.filter((_, i) => i !== index));
-    setPreviewImages((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const triggerFileInput = () => {
-    fileInputRef.current?.click();
-  };
-
   const handleChange = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
 
     if (key === "state") {
       const indiaStates = State.getStatesOfCountry("IN");
       const selectedState = indiaStates.find((s) => s.name === value);
-
       if (selectedState) {
         const cities = City.getCitiesOfState("IN", selectedState.isoCode);
-        const cityNames = cities.map((city) => city.name);
-        setAvailableCities(cityNames);
+        setAvailableCities(cities.map((c) => c.name));
       } else {
         setAvailableCities([]);
       }
-
       setForm((prev) => ({ ...prev, city: "" }));
     }
 
     if (key === "pincode") {
-      if (value && !validatePincode(value)) {
-        setPincodeError(
-          "Invalid pincode. Must be 6 digits and not start with 0",
-        );
-      } else {
-        setPincodeError("");
-      }
-    }
-  };
-
-  // ✅ Handle cleaner selection (multi-select)
-  const handleCleanerSelect = (cleaner) => {
-    setSelectedCleaners((prev) =>
-      prev.some((c) => c.id === cleaner.id)
-        ? prev.filter((c) => c.id !== cleaner.id)
-        : [...prev, cleaner],
-    );
-  };
-
-  // ✅ FIXED: Combined submit handler with proper await
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!form.name || !form.type_id) {
-      toast.error(
-        "Please fill in the required fields (Name and Location Type)",
+      setPincodeError(
+        value && !validatePincode(value) ? "Invalid pincode" : "",
       );
-      return;
-    }
-
-    if (form.pincode && !validatePincode(form.pincode)) {
-      toast.error("Please enter a valid pincode");
-      return;
-    }
-
-    console.log("Form Data:", form);
-    console.log("Images:", images);
-    console.log("Selected Cleaners:", selectedCleaners);
-    console.log("Facility Company ID:", form.facility_company_id); // ✅ ADD THIS LOG
-
-    setSubmitting(true);
-
-    try {
-      // ✅ Step 1: Create Location
-      console.log("📍 Creating location...");
-      const locationRes = await LocationsApi.postLocation(
-        form,
-        companyId,
-        images,
-      );
-      console.log("✅ Location response:", locationRes);
-
-      if (!locationRes?.success) {
-        toast.error(locationRes?.error || "Failed to create location");
-        setSubmitting(false);
-        return;
-      }
-
-      console.log("locatoinid getting", locationRes?.data?.data?.id);
-      const createdLocationId = locationRes?.data?.data?.id || "183";
-      console.log("✅ Location created with ID:", createdLocationId);
-
-      // ✅ Step 2: Create Assignments (if cleaners selected)
-      if (selectedCleaners.length > 0 && createdLocationId) {
-        console.log(
-          "👥 Creating assignments for",
-          selectedCleaners.length,
-          "cleaners...",
-        );
-
-        const assignmentData = {
-          location_id: createdLocationId,
-          cleaner_user_ids: selectedCleaners.map((cleaner) => cleaner.id),
-          status: "assigned", // ✅ Always "assigned" by default
-          company_id: companyId,
-          role_id: 5,
-        };
-
-        console.log("📤 Assignment data:", assignmentData);
-
-        // ✅ IMPORTANT: Wait for assignment creation to complete
-        const assignmentRes =
-          await AssignmentsApi.createAssignmentsForLocation(assignmentData);
-        console.log("✅ Assignment response:", assignmentRes);
-
-        if (assignmentRes?.success) {
-          toast.success(
-            `Location created and ${selectedCleaners.length} cleaner${selectedCleaners.length !== 1 ? "s" : ""} assigned successfully!`,
-          );
-        } else {
-          console.error("❌ Assignment failed:", assignmentRes?.error);
-          toast.error(
-            assignmentRes?.error ||
-              "Location created but failed to assign cleaners",
-          );
-        }
-      } else {
-        console.log("ℹ️ No cleaners selected, skipping assignments");
-        toast.success("Location created successfully!");
-      }
-
-      // ✅ Clean up preview URLs
-      previewImages.forEach((preview) => {
-        URL.revokeObjectURL(preview.url);
-      });
-
-      // ✅ Step 3: Navigate ONLY after both operations complete
-      console.log("✅ All operations complete, redirecting...");
-      // Step 3: Navigate after successful operations
-      console.log("All operations complete, redirecting...");
-      setTimeout(() => {
-        router.push(`/washrooms?companyId=${companyId}`);
-      }, 1500);
-    } catch (error) {
-      console.error("❌ Submission error:", error);
-      toast.error("Failed to create location. Please try again.");
-    } finally {
-      setSubmitting(false);
     }
   };
 
-  // ✅ Filter cleaners for search
-  const filteredCleaners = allCleaners.filter((cleaner) =>
-    cleaner.name?.toLowerCase().includes(cleanerSearchTerm.toLowerCase()),
-  );
+  // Special handler for the Options JSON object (Features & Access)
+  const handleOptionChange = (key, value) => {
+    setForm((prev) => ({
+      ...prev,
+      options: {
+        ...prev.options,
+        [key]: value,
+      },
+    }));
+  };
 
-  // ✅ Clean up preview URLs on unmount
-  useEffect(() => {
-    return () => {
-      previewImages.forEach((preview) => {
-        URL.revokeObjectURL(preview.url);
-      });
-    };
-  }, []);
+  const handleGenderAccessChange = (value) => {
+    setForm((prev) => {
+      const currentAccess = prev.options.genderAccess || [];
+      const newAccess = currentAccess.includes(value)
+        ? currentAccess.filter((item) => item !== value)
+        : [...currentAccess, value];
+      return {
+        ...prev,
+        options: { ...prev.options, genderAccess: newAccess },
+      };
+    });
+  };
 
   const updateUsageCategory = (gender, field, value) => {
     setForm((prev) => ({
@@ -443,432 +321,505 @@ export default function AddLocationPage() {
       },
     }));
   };
+
+  // Image Handlers
+  const handleFileSelect = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
+    const validFiles = files.filter(
+      (file) => file.type.startsWith("image/") && file.size <= 5 * 1024 * 1024,
+    );
+
+    if (validFiles.length > 0) {
+      setImages((prev) => [...prev, ...validFiles]);
+      const newPreviews = validFiles.map((file) => ({
+        file,
+        url: URL.createObjectURL(file),
+        name: file.name,
+      }));
+      setPreviewImages((prev) => [...prev, ...newPreviews]);
+    } else {
+      toast.error("Some files were invalid (Max 5MB, Images only)");
+    }
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const removeImage = (index) => {
+    URL.revokeObjectURL(previewImages[index].url);
+    setImages((prev) => prev.filter((_, i) => i !== index));
+    setPreviewImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // Submit Handler
+  const handleSubmit = async () => {
+    if (!form.name || !form.type_id) {
+      toast.error("Please fill in required fields (Name, Type)");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const locationRes = await LocationsApi.postLocation(
+        form,
+        companyId,
+        images,
+      );
+
+      if (locationRes?.success) {
+        const createdId = locationRes?.data?.data?.id;
+
+        // Assign Cleaners if selected
+        if (selectedCleaners.length > 0 && createdId) {
+          await AssignmentsApi.createAssignmentsForLocation({
+            location_id: createdId,
+            cleaner_user_ids: selectedCleaners.map((c) => c.id),
+            status: "assigned",
+            company_id: companyId,
+            role_id: 5,
+          });
+          toast.success(
+            `Washroom added & ${selectedCleaners.length} cleaners assigned`,
+          );
+        } else {
+          toast.success("Washroom added successfully");
+        }
+
+        setTimeout(
+          () => router.push(`/washrooms?companyId=${companyId}`),
+          1000,
+        );
+      } else {
+        toast.error(locationRes?.error || "Failed to create location");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Submission failed");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Filter Cleaners
+  const filteredCleaners = allCleaners.filter((c) =>
+    c.name?.toLowerCase().includes(cleanerSearchTerm.toLowerCase()),
+  );
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 p-4 md:p-6">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        {/* ✅ NEW: Navigation Bar */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 mb-4 px-6 py-3">
-          <button
-            type="button"
-            onClick={() => router.push(`/washrooms?companyId=${companyId}`)}
-            className="cursor-pointer flex items-center text-slate-600 hover:text-slate-900 transition-colors group"
-          >
-            <ArrowLeft className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform duration-200" />
-            <span className="font-medium">Back to Washrooms</span>
-          </button>
-        </div>
+    <div className="max-w-7xl mx-auto space-y-8 pb-10 p-6 bg-slate-50 dark:bg-slate-900 min-h-screen">
+      {/* --- HEADER --- */}
+      <div className="flex items-center gap-4">
+        <button
+          onClick={() => router.back()}
+          className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full text-slate-600 dark:text-slate-300 transition-colors"
+        >
+          <ArrowLeft size={20} strokeWidth={2.5} />
+        </button>
+      </div>
+      <div className="w-full">
+        <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+          Add New Washroom
+        </h1>
+      </div>
 
-        <div className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden mb-6">
-          <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-6">
-            <h1 className="text-2xl font-bold text-white mb-2">
-              Add New Washroom
-            </h1>
-            <p className="text-blue-100 text-sm">
-              Create a washroom and optionally assign cleaners
-            </p>
-          </div>
+      {/* --- MAIN GRID LAYOUT --- */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+        {/* === LEFT COLUMN === */}
+        <div className="space-y-8">
+          {/* 1. WASHROOM ARCHITECTURE CARD */}
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6">
+            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
+              <div className="h-10 w-10 rounded-xl bg-cyan-400/10 flex items-center justify-center border border-cyan-500/10 shadow-sm">
+                <Building2
+                  size={20}
+                  className="text-cyan-600 dark:text-cyan-400"
+                  strokeWidth={2.5}
+                />
+              </div>
+              <div>
+                <h2 className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-[0.15em] leading-none">
+                  Washroom Architecture
+                </h2>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1.5 opacity-80">
+                  Primary Facility Configuration
+                </p>
+              </div>
+            </div>
 
-          <form onSubmit={handleSubmit} className="p-6 space-y-8">
-            {/* ========== SECTION 1: LOCATION DETAILS ========== */}
-            <div className="space-y-6">
-              <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2 border-b border-slate-200 pb-2">
-                <MapPin className="h-5 w-5 text-blue-600" />
-                Washroom Information
-              </h2>
-
-              {/* Basic Information */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Washroom Name <span className="text-red-500">*</span>
-                  </label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+              {/* Name */}
+              <div className="space-y-2">
+                <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider block ml-1">
+                  Washroom Name <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative flex items-center h-11">
+                  <Building2
+                    className="absolute left-4 text-slate-400"
+                    size={16}
+                  />
                   <input
-                    type="text"
-                    placeholder="Enter location name"
                     value={form.name}
                     onChange={(e) => handleChange("name", e.target.value)}
-                    className="w-full p-3 border border-slate-300 rounded-xl bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                    required
+                    className="w-full h-full pl-11 pr-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/30 text-sm focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/5 transition-all outline-none"
+                    placeholder="Enter washroom name"
                   />
                 </div>
+              </div>
 
-                <div>
+              {/* Location Type (Replaces simple text input) */}
+              <div className="space-y-2">
+                <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider block ml-1">
+                  Facility Type <span className="text-rose-500">*</span>
+                </label>
+                <div className="h-11">
                   <LocationTypeSelect
                     types={locationTypes}
                     selectedType={form.type_id}
                     setSelectedType={(id) => handleChange("type_id", id)}
+                    className="w-full"
                   />
                 </div>
+              </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Facility Company (Optional)
-                  </label>
+              {/* Address/Location */}
+              <div className="space-y-2 col-span-1 md:col-span-2">
+                <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider block ml-1">
+                  Location (Address)
+                </label>
+                <div className="relative flex items-center h-11">
+                  <MapPin
+                    className="absolute left-4 text-slate-400"
+                    size={16}
+                  />
+                  <input
+                    value={form.address}
+                    onChange={(e) => handleChange("address", e.target.value)}
+                    className="w-full h-full pl-11 pr-4 rounded-xl border border-slate-200 bg-slate-50/30 text-sm focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/5 transition-all outline-none"
+                    placeholder="Enter full address"
+                  />
+                </div>
+              </div>
+
+              {/* Facility Company */}
+              <div className="space-y-2">
+                <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider block ml-1">
+                  Facility Company
+                </label>
+                <div className="relative flex items-center h-11">
+                  <Factory
+                    className="absolute left-4 text-slate-400"
+                    size={16}
+                  />
                   <select
                     value={form.facility_company_id || ""}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      handleChange(
-                        "facility_company_id",
-                        value ? parseInt(value) : null,
-                      );
-                      setSelectedFacilityCompany(
-                        facilityCompanies.find(
-                          (f) => f.id === parseInt(value),
-                        ) || null,
-                      );
-                    }}
-                    className="w-full p-3 border border-slate-300 rounded-xl bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    onChange={(e) =>
+                      handleChange("facility_company_id", e.target.value)
+                    }
+                    className="w-full h-full pl-11 pr-4 rounded-xl border border-slate-200 bg-slate-50/30 text-sm focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/5 transition-all outline-none appearance-none"
                   >
-                    <option value="">-- No Facility Company --</option>
-                    {facilityCompanies.map((facility) => (
-                      <option key={facility.id} value={facility.id}>
-                        {facility.name}
+                    <option value="">Select Provider</option>
+                    {facilityCompanies.map((fc) => (
+                      <option key={fc.id} value={fc.id}>
+                        {fc.name}
                       </option>
                     ))}
                   </select>
-                  {selectedFacilityCompany && (
-                    <p className="mt-2 text-sm text-slate-600 flex items-center gap-2">
-                      <CheckCircle className="w-4 h-4 text-green-600" />
-                      Selected: {selectedFacilityCompany.name}
-                    </p>
-                  )}
-                  {facilityCompanies.length === 0 && (
-                    <p className="mt-2 text-sm text-amber-600">
-                      No facility companies available. Add one from the Facility
-                      Companies section.
-                    </p>
-                  )}
                 </div>
+              </div>
 
-                {/* Number of Photos Field - ADD THIS */}
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Number of Photos
-                  </label>
+              {/* Image Count */}
+              <div className="space-y-2">
+                <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider block ml-1">
+                  Required Photo Count
+                </label>
+                <div className="relative flex items-center h-11">
+                  <Camera
+                    className="absolute left-4 text-slate-400"
+                    size={16}
+                  />
                   <input
                     type="number"
-                    min="0"
-                    placeholder="Enter number of photos"
                     value={form.no_of_photos || ""}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      handleChange(
-                        "no_of_photos",
-                        value ? parseInt(value) : null,
-                      );
-                    }}
-                    className="w-full p-3 border border-slate-300 rounded-xl bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    onChange={(e) =>
+                      handleChange("no_of_photos", e.target.value)
+                    }
+                    className="w-full h-full pl-11 pr-4 rounded-xl border border-slate-200 bg-slate-50/30 text-sm focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/5 transition-all outline-none"
+                    placeholder="0"
                   />
-                  {/* <p className="text-xs text-slate-500 mt-1">
-                    Optional: Specify how many photos should be taken at this location
-                  </p> */}
+                </div>
+              </div>
+            </div>
+
+            {/* Hidden Pincode/State/City logic can go here if needed visually, otherwise logic handles it via map/address */}
+          </div>
+
+          {/* 1.5 LOCATION INFORMATION CARD */}
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6">
+            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
+              <div className="h-10 w-10 rounded-xl bg-cyan-400/10 flex items-center justify-center border border-cyan-500/10 shadow-sm">
+                <MapPin
+                  size={20}
+                  className="text-cyan-600 dark:text-cyan-400"
+                  strokeWidth={2.5}
+                />
+              </div>
+              <div>
+                <h2 className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-[0.15em] leading-none">
+                  Location Information
+                </h2>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1.5 opacity-80">
+                  Geographic Placement Details
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+              {/* State */}
+              <div className="space-y-2">
+                <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider block ml-1">
+                  State
+                </label>
+                <div className="h-11">
+                  <SearchableSelect
+                    options={availableStates}
+                    value={form.state}
+                    onChange={(value) => handleChange("state", value)}
+                    placeholder="Select or type state"
+                    label="State"
+                    allowCustom={true}
+                    className="w-full h-full"
+                  />
                 </div>
               </div>
 
-              <div className="col-span-2">
-                <h3 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
-                  <Droplets className="h-5 w-5 text-blue-600" />
-                  Usage Category
-                </h3>
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Men Section */}
-                  <div className="p-5 border-2 border-blue-200 rounded-xl bg-gradient-to-br from-blue-50 via-white to-blue-50 shadow-sm">
-                    <div className="flex items-center gap-2 mb-4 pb-3 border-b border-blue-200">
-                      <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center shadow-sm">
-                        <Users className="w-4 h-4 text-white" />
-                      </div>
-                      <h4 className="text-base font-semibold text-blue-800">
-                        Men's Facilities
-                      </h4>
-                    </div>
-                    <div className="space-y-3">
-                      {/* WC */}
-                      <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-100/50 transition-colors">
-                        <span className="text-sm font-medium text-slate-700 w-20">
-                          WC
-                        </span>
-                        <input
-                          type="number"
-                          min="0"
-                          placeholder="0"
-                          value={form.usage_category.men.wc}
-                          onChange={(e) =>
-                            updateUsageCategory("men", "wc", e.target.value)
-                          }
-                          className="flex-1 p-2.5 text-sm border-2 border-slate-200 rounded-lg bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        />
-                      </div>
-
-                      {/* Indian */}
-                      <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-100/50 transition-colors">
-                        <span className="text-sm font-medium text-slate-700 w-20">
-                          Indian
-                        </span>
-                        <input
-                          type="number"
-                          min="0"
-                          placeholder="0"
-                          value={form.usage_category.men.indian}
-                          onChange={(e) =>
-                            updateUsageCategory("men", "indian", e.target.value)
-                          }
-                          className="flex-1 p-2.5 text-sm border-2 border-slate-200 rounded-lg bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        />
-                      </div>
-
-                      {/* Urinals */}
-                      <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-100/50 transition-colors">
-                        <span className="text-sm font-medium text-slate-700 w-20">
-                          Urinals
-                        </span>
-                        <input
-                          type="number"
-                          min="0"
-                          placeholder="0"
-                          value={form.usage_category.men.urinals}
-                          onChange={(e) =>
-                            updateUsageCategory(
-                              "men",
-                              "urinals",
-                              e.target.value,
-                            )
-                          }
-                          className="flex-1 p-2.5 text-sm border-2 border-slate-200 rounded-lg bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        />
-                      </div>
-
-                      {/* ✅ NEW: Shower */}
-                      <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-100/50 transition-colors">
-                        <span className="text-sm font-medium text-slate-700 w-20 flex items-center gap-1">
-                          <Droplets className="w-3.5 h-3.5 text-blue-600" />
-                          Shower
-                        </span>
-                        <input
-                          type="number"
-                          min="0"
-                          placeholder="0"
-                          value={form.usage_category.men.shower}
-                          onChange={(e) =>
-                            updateUsageCategory("men", "shower", e.target.value)
-                          }
-                          className="flex-1 p-2.5 text-sm border-2 border-slate-200 rounded-lg bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        />
-                      </div>
-
-                      {/* ✅ NEW: Basin */}
-                      <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-100/50 transition-colors">
-                        <span className="text-sm font-medium text-slate-700 w-20 flex items-center gap-1">
-                          <Armchair className="w-3.5 h-3.5 text-blue-600" />
-                          Basin
-                        </span>
-                        <input
-                          type="number"
-                          min="0"
-                          placeholder="0"
-                          value={form.usage_category.men.basin}
-                          onChange={(e) =>
-                            updateUsageCategory("men", "basin", e.target.value)
-                          }
-                          className="flex-1 p-2.5 text-sm border-2 border-slate-200 rounded-lg bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Women Section */}
-                  <div className="p-5 border-2 border-pink-200 rounded-xl bg-gradient-to-br from-pink-50 via-white to-pink-50 shadow-sm">
-                    <div className="flex items-center gap-2 mb-4 pb-3 border-b border-pink-200">
-                      <div className="w-8 h-8 rounded-full bg-pink-600 flex items-center justify-center shadow-sm">
-                        <Users className="w-4 h-4 text-white" />
-                      </div>
-                      <h4 className="text-base font-semibold text-pink-800">
-                        Women's Facilities
-                      </h4>
-                    </div>
-                    <div className="space-y-3">
-                      {/* WC */}
-                      <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-pink-100/50 transition-colors">
-                        <span className="text-sm font-medium text-slate-700 w-20">
-                          WC
-                        </span>
-                        <input
-                          type="number"
-                          min="0"
-                          placeholder="0"
-                          value={form.usage_category.women.wc}
-                          onChange={(e) =>
-                            updateUsageCategory("women", "wc", e.target.value)
-                          }
-                          className="flex-1 p-2.5 text-sm border-2 border-slate-200 rounded-lg bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
-                        />
-                      </div>
-
-                      {/* Indian */}
-                      <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-pink-100/50 transition-colors">
-                        <span className="text-sm font-medium text-slate-700 w-20">
-                          Indian
-                        </span>
-                        <input
-                          type="number"
-                          min="0"
-                          placeholder="0"
-                          value={form.usage_category.women.indian}
-                          onChange={(e) =>
-                            updateUsageCategory(
-                              "women",
-                              "indian",
-                              e.target.value,
-                            )
-                          }
-                          className="flex-1 p-2.5 text-sm border-2 border-slate-200 rounded-lg bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
-                        />
-                      </div>
-
-                      {/* Urinals */}
-                      <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-pink-100/50 transition-colors">
-                        <span className="text-sm font-medium text-slate-700 w-20">
-                          Urinals
-                        </span>
-                        <input
-                          type="number"
-                          min="0"
-                          placeholder="0"
-                          value={form.usage_category.women.urinals}
-                          onChange={(e) =>
-                            updateUsageCategory(
-                              "women",
-                              "urinals",
-                              e.target.value,
-                            )
-                          }
-                          className="flex-1 p-2.5 text-sm border-2 border-slate-200 rounded-lg bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
-                        />
-                      </div>
-
-                      {/* ✅ NEW: Shower */}
-                      <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-pink-100/50 transition-colors">
-                        <span className="text-sm font-medium text-slate-700 w-20 flex items-center gap-1">
-                          <Droplets className="w-3.5 h-3.5 text-pink-600" />
-                          Shower
-                        </span>
-                        <input
-                          type="number"
-                          min="0"
-                          placeholder="0"
-                          value={form.usage_category.women.shower}
-                          onChange={(e) =>
-                            updateUsageCategory(
-                              "women",
-                              "shower",
-                              e.target.value,
-                            )
-                          }
-                          className="flex-1 p-2.5 text-sm border-2 border-slate-200 rounded-lg bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
-                        />
-                      </div>
-
-                      {/* ✅ NEW: Basin */}
-                      <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-pink-100/50 transition-colors">
-                        <span className="text-sm font-medium text-slate-700 w-20 flex items-center gap-1">
-                          <Armchair className="w-3.5 h-3.5 text-pink-600" />
-                          Basin
-                        </span>
-                        <input
-                          type="number"
-                          min="0"
-                          placeholder="0"
-                          value={form.usage_category.women.basin}
-                          onChange={(e) =>
-                            updateUsageCategory(
-                              "women",
-                              "basin",
-                              e.target.value,
-                            )
-                          }
-                          className="flex-1 p-2.5 text-sm border-2 border-slate-200 rounded-lg bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
-                        />
-                      </div>
-                    </div>
-                  </div>
+              {/* District */}
+              <div className="space-y-2">
+                <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider block ml-1">
+                  District
+                </label>
+                <div className="relative flex items-center h-11">
+                  <input
+                    value={form.dist}
+                    onChange={(e) => handleChange("dist", e.target.value)}
+                    className="w-full h-full px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/30 text-sm focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/5 transition-all outline-none"
+                    placeholder="Enter district name"
+                  />
                 </div>
               </div>
 
-              {/* Address Details */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* State */}
-                <SearchableSelect
-                  options={availableStates}
-                  value={form.state}
-                  onChange={(value) => handleChange("state", value)}
-                  placeholder="Select or type state"
-                  label="State"
-                  allowCustom={true}
-                />
+              {/* City */}
+              <div className="space-y-2">
+                <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider block ml-1">
+                  City
+                </label>
+                <div className="h-11">
+                  <SearchableSelect
+                    options={availableCities}
+                    value={form.city}
+                    onChange={(value) => handleChange("city", value)}
+                    placeholder="Select or type city"
+                    label="City"
+                    allowCustom={true}
+                    className="w-full h-full"
+                  />
+                </div>
+              </div>
 
-                {/* City */}
-                <SearchableSelect
-                  options={availableCities}
-                  value={form.city}
-                  onChange={(value) => handleChange("city", value)}
-                  placeholder="Select or type city"
-                  label="City"
-                  allowCustom={true}
-                />
-
-                {/* District */}
-                <SearchableSelect
-                  options={[]}
-                  value={form.dist}
-                  onChange={(value) => handleChange("dist", value)}
-                  placeholder="enter district name"
-                  label="District"
-                  allowCustom={true}
-                />
-
-                {/* Pincode */}
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Pincode
-                  </label>
+              {/* Pincode */}
+              <div className="space-y-2">
+                <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider block ml-1">
+                  Pincode
+                </label>
+                <div className="relative flex items-center h-11">
                   <input
                     type="text"
-                    placeholder="Enter 6-digit pincode"
+                    maxLength={6}
                     value={form.pincode}
                     onChange={(e) => handleChange("pincode", e.target.value)}
-                    maxLength={6}
-                    className={`w-full p-3 border ${
-                      pincodeError ? "border-red-500" : "border-slate-300"
-                    } rounded-xl bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200`}
+                    className={`w-full h-full px-4 rounded-xl border ${
+                      pincodeError ? "border-rose-500" : "border-slate-200"
+                    } dark:border-slate-700 bg-slate-50/30 text-sm focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/5 transition-all outline-none`}
+                    placeholder="000000"
                   />
-                  {pincodeError && (
-                    <p className="text-red-500 text-sm mt-1">{pincodeError}</p>
-                  )}
                 </div>
+                {pincodeError && (
+                  <p className="text-[10px] font-bold text-rose-500 ml-1">
+                    {pincodeError}
+                  </p>
+                )}
               </div>
 
               {/* Full Address */}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
+              <div className="col-span-1 md:col-span-2 space-y-2">
+                <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider block ml-1">
                   Full Address
                 </label>
                 <textarea
-                  placeholder="Enter complete address"
                   value={form.address}
                   onChange={(e) => handleChange("address", e.target.value)}
                   rows={3}
-                  className="w-full p-3 border border-slate-300 rounded-xl bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none"
+                  className="w-full p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/30 text-sm focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/5 transition-all outline-none resize-none"
+                  placeholder="Enter complete street address, landmark, and building details"
                 />
               </div>
+            </div>
+          </div>
 
-              {/* Location Coordinates */}
-              <div className="space-y-4">
-                <h3 className="text-md font-semibold text-slate-800">
-                  Location Coordinates
-                </h3>
+          {/* 2. USAGE CATEGORY CARD */}
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="h-10 w-10 rounded-xl bg-cyan-400/10 flex items-center justify-center border border-cyan-500/10 shadow-sm">
+                <MdShower className="text-cyan-600 dark:text-cyan-400 text-xl" />
+              </div>
+              <div>
+                <h2 className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-[0.2em] leading-none">
+                  Usage Category
+                </h2>
+                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1.5 opacity-70">
+                  Facility Capacity Metrics
+                </p>
+              </div>
+            </div>
 
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+              {/* MEN'S SECTION */}
+              <div className="bg-slate-50/50 dark:bg-slate-800/20 border border-slate-100 dark:border-slate-800 rounded-2xl p-6 transition-all hover:shadow-md">
+                <div className="flex items-center gap-3 mb-6 border-b border-slate-100 pb-4">
+                  <div className="h-8 w-8 bg-white rounded-lg shadow-sm border border-slate-100 flex items-center justify-center">
+                    <FaPerson className="text-cyan-600 text-lg" />
+                  </div>
+                  <h3 className="text-xs font-black text-slate-700 uppercase tracking-widest">
+                    Men's Facilities
+                  </h3>
+                </div>
+                <div className="grid grid-cols-1 gap-4">
+                  {["wc", "indian", "urinals", "shower", "basin"].map(
+                    (field) => (
+                      <div key={field} className="mb-0">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 ml-1 block">
+                          {field}
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={form.usage_category.men[field]}
+                          onChange={(e) =>
+                            updateUsageCategory("men", field, e.target.value)
+                          }
+                          className="w-full pl-4 py-2 rounded-xl border border-slate-200 bg-white text-sm focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 outline-none transition-all"
+                          placeholder="0"
+                        />
+                      </div>
+                    ),
+                  )}
+                </div>
+              </div>
+
+              {/* WOMEN'S SECTION */}
+              <div className="bg-rose-50/30 dark:bg-rose-900/5 border border-rose-100/50 rounded-2xl p-6 transition-all hover:shadow-md">
+                <div className="flex items-center gap-3 mb-6 border-b border-rose-100/50 pb-4">
+                  <div className="h-8 w-8 bg-white rounded-lg shadow-sm border border-rose-100 flex items-center justify-center">
+                    <FaPersonDress className="text-rose-500 text-lg" />
+                  </div>
+                  <h3 className="text-xs font-black text-rose-700 uppercase tracking-widest">
+                    Women's Facilities
+                  </h3>
+                </div>
+                <div className="grid grid-cols-1 gap-4">
+                  {["wc", "indian", "urinals", "shower", "basin"].map(
+                    (field) => (
+                      <div key={field} className="mb-0">
+                        <label className="text-[10px] font-bold text-rose-300 uppercase tracking-wider mb-1.5 ml-1 block">
+                          {field}
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={form.usage_category.women[field]}
+                          onChange={(e) =>
+                            updateUsageCategory("women", field, e.target.value)
+                          }
+                          className="w-full pl-4 py-2 rounded-xl border border-rose-200 bg-white text-sm focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 outline-none transition-all"
+                          placeholder="0"
+                        />
+                      </div>
+                    ),
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 3. AVAILABLE FOR GENDER (From JSON Schema) */}
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6">
+            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
+              <div className="h-10 w-10 rounded-xl bg-cyan-400/5 flex items-center justify-center border border-cyan-500/10">
+                <Users className="text-cyan-500/70 text-xl" />
+              </div>
+              <div className="text-left">
+                <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-widest leading-none">
+                  Available for Gender*
+                </h2>
+                <p className="text-[10px] font-normal text-slate-400 uppercase tracking-widest mt-1.5">
+                  Operational Access Mapping
+                </p>
+              </div>
+            </div>
+            <div className="space-y-2">
+              {GENDER_OPTIONS.map((item) => (
+                <label
+                  key={item.value}
+                  className="flex items-center gap-4 group cursor-pointer p-2 rounded-xl hover:bg-slate-50/50 transition-colors"
+                >
+                  <div className="relative flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={form.options.genderAccess?.includes(item.value)}
+                      onChange={() => handleGenderAccessChange(item.value)}
+                      className="w-4 h-4 rounded border border-slate-200 text-cyan-500 focus:ring-0 cursor-pointer accent-cyan-500"
+                    />
+                  </div>
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-2">
+                      <span className="text-slate-400 group-hover:text-cyan-500/70 transition-colors">
+                        {item.icon}
+                      </span>
+                      <span className="text-sm font-medium text-slate-500 group-hover:text-slate-600 transition-colors tracking-tight">
+                        {item.label}
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-normal text-slate-400 lowercase tracking-tight mt-0.5">
+                      {item.category}
+                    </span>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* === RIGHT COLUMN === */}
+        <div className="space-y-8">
+          {/* 4. PIN LOCATION (Map) */}
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6">
+            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
+              <div className="h-10 w-10 rounded-xl bg-cyan-400/10 flex items-center justify-center border border-cyan-500/10 shadow-sm">
+                <MapPin className="text-cyan-600" size={20} strokeWidth={2.5} />
+              </div>
+              <div className="text-left">
+                <h2 className="text-sm font-black text-slate-800 uppercase tracking-[0.2em] leading-none">
+                  Pin Location
+                </h2>
+                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1.5 opacity-70">
+                  Spatial Geo-Point Capture
+                </p>
+              </div>
+            </div>
+
+            {/* Search Wrapper */}
+            <div className="mb-4">
+              <div className="relative">
+                {/* Note: Wrapping your existing GoogleMapPicker logic here */}
                 <GoogleMapPicker
                   lat={form.latitude}
                   lng={form.longitude}
@@ -877,363 +828,293 @@ export default function AddLocationPage() {
                     handleChange("longitude", lng);
                   }}
                 />
+              </div>
+            </div>
 
-                <LatLongInput
-                  lat={form.latitude}
-                  lng={form.longitude}
-                  onChange={(lat, lng) => {
-                    handleChange("latitude", lat);
-                    handleChange("longitude", lng);
-                  }}
-                />
+            {/* Coordinate Display */}
+            <div className="grid grid-cols-2 gap-4 mt-4">
+              <div>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">
+                  Latitude
+                </label>
+                <div className="px-4 py-3 bg-cyan-400/5 border border-cyan-500/10 rounded-xl text-sm font-mono font-bold text-cyan-700 shadow-sm">
+                  {Number(form.latitude).toFixed(6)}
+                </div>
+              </div>
+              <div>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">
+                  Longitude
+                </label>
+                <div className="px-4 py-3 bg-cyan-400/5 border border-cyan-500/10 rounded-xl text-sm font-mono font-bold text-cyan-700 shadow-sm">
+                  {Number(form.longitude).toFixed(6)}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 flex items-start gap-3 p-4 bg-slate-50/50 border border-slate-100 rounded-xl">
+              <Info size={14} className="text-cyan-500 shrink-0 mt-0.5" />
+              <p className="text-[10px] font-medium text-slate-500 italic leading-relaxed text-left">
+                Search an address above or drag the red marker to pin the exact
+                facility entrance.
+                <span className="font-black text-cyan-600 uppercase ml-1">
+                  Coordinates are automatically captured.
+                </span>
+              </p>
+            </div>
+          </div>
+
+          {/* 5. LOCATION IMAGES */}
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="h-10 w-10 rounded-xl bg-cyan-400/10 flex items-center justify-center border border-cyan-500/10 shadow-sm">
+                <HiOutlineCloudUpload className="text-cyan-600 text-xl" />
+              </div>
+              <div className="text-left">
+                <h2 className="text-sm font-black text-slate-800 uppercase tracking-[0.2em] leading-none">
+                  Location Images
+                </h2>
+                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1.5 opacity-70">
+                  Visual Verification Archive
+                </p>
+              </div>
+            </div>
+
+            <div className="group relative border-2 border-dashed border-slate-200 rounded-[24px] p-8 text-center bg-slate-50/50 hover:bg-cyan-400/5 hover:border-cyan-500/30 transition-all duration-300 mt-6">
+              <div className="flex flex-col items-center">
+                <div className="mb-5 p-5 rounded-full bg-white shadow-sm border border-slate-100 text-cyan-600 group-hover:scale-110 transition-transform duration-300">
+                  <ImageIcon size={32} strokeWidth={1.5} />
+                </div>
+                <p className="text-xs font-black text-slate-700 uppercase tracking-widest mb-1">
+                  Drag or Drop images here
+                </p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mb-6">
+                  Supports JPG, PNG (Max 5MB each)
+                </p>
+                <div className="bg-slate-900 text-white px-8 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest pointer-events-none">
+                  Choose Images
+                </div>
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                accept="image/*"
+                onChange={handleFileSelect}
+              />
+            </div>
+
+            {/* Image Previews */}
+            {previewImages.length > 0 && (
+              <div className="grid grid-cols-4 gap-2 mt-4">
+                {previewImages.map((preview, index) => (
+                  <div key={index} className="relative group">
+                    <img
+                      src={preview.url}
+                      alt="preview"
+                      className="w-full h-16 object-cover rounded-lg"
+                    />
+                    <button
+                      onClick={() => removeImage(index)}
+                      className="absolute -top-1 -right-1 bg-rose-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-all"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* 6. ASSIGN CLEANERS */}
+          {canAssignCleaner && (
+            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6">
+              <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
+                <div className="h-10 w-10 rounded-xl bg-cyan-400/10 flex items-center justify-center border border-cyan-500/10 shadow-sm">
+                  <Users className="text-cyan-600 text-xl" />
+                </div>
+                <div className="text-left">
+                  <h2 className="text-sm font-black text-slate-800 uppercase tracking-[0.2em] leading-none">
+                    Assign Cleaners{" "}
+                    <span className="text-[10px] opacity-50 ml-1">
+                      (Optional)
+                    </span>
+                  </h2>
+                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1.5 opacity-70">
+                    Personnel Mapping Architecture
+                  </p>
+                </div>
               </div>
 
-              {/* Image Upload Section */}
-              <div className="space-y-4">
-                <h3 className="text-md font-semibold text-slate-800 flex items-center gap-2">
-                  <ImageIcon className="h-5 w-5" />
-                  Location Images
-                </h3>
+              <div className="relative mb-6" ref={cleanerDropdownRef}>
+                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1 block">
+                  Staff Selection
+                </label>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setIsCleanerDropdownOpen(!isCleanerDropdownOpen)
+                  }
+                  className="w-full text-left pl-4 pr-10 py-3 rounded-xl border border-slate-200 bg-white text-sm focus:border-cyan-500 flex justify-between items-center"
+                >
+                  <span
+                    className={
+                      selectedCleaners.length
+                        ? "text-slate-700"
+                        : "text-slate-400"
+                    }
+                  >
+                    {selectedCleaners.length > 0
+                      ? `${selectedCleaners.length} Staff Selected`
+                      : "Select available cleaners"}
+                  </span>
+                  <ChevronDown size={16} className="text-slate-400" />
+                </button>
 
-                {/* Upload Area */}
-                <div className="border-2 border-dashed border-slate-300 rounded-xl p-6 text-center hover:border-blue-400 transition-colors duration-200">
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={handleFileSelect}
-                    className="hidden"
-                  />
-
-                  <div className="space-y-4">
-                    <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
-                      <Upload className="h-8 w-8 text-blue-600" />
+                {isCleanerDropdownOpen && (
+                  <div className="absolute z-10 w-full mt-2 bg-white border border-slate-100 rounded-xl shadow-xl max-h-60 overflow-y-auto p-2">
+                    <div className="sticky top-0 bg-white p-2 border-b border-slate-100 mb-2">
+                      <input
+                        className="w-full p-2 text-xs border border-slate-200 rounded-lg bg-slate-50"
+                        placeholder="Search staff..."
+                        value={cleanerSearchTerm}
+                        onChange={(e) => setCleanerSearchTerm(e.target.value)}
+                      />
                     </div>
-
-                    <div>
-                      <button
-                        type="button"
-                        onClick={triggerFileInput}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200"
-                      >
-                        <Plus className="h-4 w-4" />
-                        Choose Images
-                      </button>
-                      <p className="text-sm text-slate-500 mt-2">
-                        Select multiple images (max 2MB each)
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Image Previews */}
-                {previewImages.length > 0 && (
-                  <div className="space-y-3">
-                    <h4 className="font-medium text-slate-700">
-                      Selected Images ({previewImages.length})
-                    </h4>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                      {previewImages.map((preview, index) => (
-                        <div key={index} className="relative group">
-                          <img
-                            src={preview.url}
-                            alt={`Preview ${index + 1}`}
-                            className="w-full h-24 object-cover rounded-lg border border-slate-200"
+                    {filteredCleaners.length === 0 ? (
+                      <div className="p-3 text-center text-xs text-slate-400">
+                        No cleaners found
+                      </div>
+                    ) : (
+                      filteredCleaners.map((cleaner) => (
+                        <div
+                          key={cleaner.id}
+                          className="flex items-center gap-2 p-2 hover:bg-slate-50 rounded-lg cursor-pointer"
+                          onClick={() => {
+                            setSelectedCleaners((prev) =>
+                              prev.some((c) => c.id === cleaner.id)
+                                ? prev.filter((c) => c.id !== cleaner.id)
+                                : [...prev, cleaner],
+                            );
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedCleaners.some(
+                              (c) => c.id === cleaner.id,
+                            )}
+                            readOnly
+                            className="rounded text-cyan-500 focus:ring-0"
                           />
-                          <button
-                            type="button"
-                            onClick={() => removeImage(index)}
-                            className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
-                          <div className="absolute bottom-1 left-1 right-1">
-                            <p className="text-xs text-white bg-black bg-opacity-50 rounded px-1 py-0.5 truncate">
-                              {preview.name}
+                          <div>
+                            <p className="text-xs font-bold text-slate-700">
+                              {cleaner.name}
+                            </p>
+                            <p className="text-[10px] text-slate-400">
+                              {cleaner.email}
                             </p>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Dynamic Options */}
-              {features.length > 0 && (
-                <div className="space-y-4">
-                  <h3 className="text-md font-semibold text-slate-800">
-                    Additional Features
-                  </h3>
-                  <DynamicOptions
-                    config={features}
-                    options={form.options}
-                    setOptions={(opts) => handleChange("options", opts)}
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* ========== SECTION 2: ASSIGN CLEANERS ========== */}
-            {canAssignCleaner && (
-              <div className="space-y-6 border-t border-slate-200 pt-8 min-h-[500px]">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-semibold text-slate-800 flex items-center gap-3">
-                    <Users className="h-6 w-6 text-green-600" />
-                    Assign Cleaners (Optional)
-                  </h2>
-                  <div className="px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg">
-                    <p className="text-sm font-semibold text-blue-700">
-                      {allCleaners.length} cleaner
-                      {allCleaners.length !== 1 ? "s" : ""} available
-                    </p>
-                  </div>
-                </div>
-
-                {/* ✅ Info badge */}
-                {selectedCleaners.length > 0 && (
-                  <div className="p-4 bg-blue-50 border-l-4 border-blue-500 rounded-lg">
-                    <div className="flex items-start gap-3">
-                      <CheckCircle className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <p className="text-sm font-semibold text-blue-800 mb-1">
-                          Auto-Assignment Enabled
-                        </p>
-                        <p className="text-sm text-blue-700">
-                          Selected cleaners will be automatically assigned to
-                          this location upon creation
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {allCleaners.length > 0 ? (
-                  <>
-                    {/* Multi-Select Cleaners Dropdown */}
-                    <div ref={cleanerDropdownRef} className="relative">
-                      <label className="block text-sm font-semibold text-slate-700 mb-3">
-                        Select Cleaners ({selectedCleaners.length} selected)
-                      </label>
-
-                      {/* Dropdown Button */}
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setIsCleanerDropdownOpen(!isCleanerDropdownOpen)
-                        }
-                        className="w-full flex justify-between items-center text-left px-5 py-4 text-slate-800 bg-slate-50 border-2 border-slate-300 rounded-xl hover:bg-slate-100 hover:border-blue-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        <span className="flex items-center gap-3">
-                          <Users className="w-5 h-5 text-slate-400" />
-                          <span className="font-medium">
-                            {selectedCleaners.length > 0
-                              ? `${selectedCleaners.length} cleaner${selectedCleaners.length !== 1 ? "s" : ""} selected`
-                              : "Click to select cleaners..."}
-                          </span>
-                        </span>
-                        <ChevronDown
-                          className={`w-5 h-5 text-slate-400 transition-transform duration-200 ${
-                            isCleanerDropdownOpen ? "rotate-180" : ""
-                          }`}
-                        />
-                      </button>
-
-                      {/* ✅ IMPROVED: Larger, more spacious dropdown */}
-                      {isCleanerDropdownOpen && (
-                        <div className="absolute z-50 w-full mt-3 bg-white border-2 border-slate-300 rounded-xl shadow-2xl overflow-hidden max-h-[480px] flex flex-col">
-                          {/* Search Header */}
-                          <div className="p-4 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-gray-50">
-                            <div className="relative">
-                              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                              <input
-                                type="text"
-                                placeholder="Search for a cleaner..."
-                                value={cleanerSearchTerm}
-                                onChange={(e) =>
-                                  setCleanerSearchTerm(e.target.value)
-                                }
-                                className="w-full pl-12 pr-4 py-3 text-sm border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                                autoFocus
-                              />
-                            </div>
-                          </div>
-
-                          {/* Cleaners List */}
-                          <div className="overflow-y-auto flex-1 p-3">
-                            {filteredCleaners.length === 0 ? (
-                              <div className="p-12 text-center">
-                                <UserCheck className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-                                <p className="font-semibold text-slate-600 text-base mb-1">
-                                  No cleaners found
-                                </p>
-                                <p className="text-sm text-slate-500">
-                                  {cleanerSearchTerm
-                                    ? "Try a different search term"
-                                    : "No cleaners available"}
-                                </p>
-                              </div>
-                            ) : (
-                              <div className="space-y-2">
-                                {filteredCleaners.map((cleaner) => (
-                                  <label
-                                    key={cleaner.id}
-                                    className="flex items-start p-4 rounded-lg hover:bg-blue-50 cursor-pointer transition-all duration-150 border-2 border-transparent hover:border-blue-200 group"
-                                  >
-                                    <input
-                                      type="checkbox"
-                                      checked={selectedCleaners.some(
-                                        (c) => c.id === cleaner.id,
-                                      )}
-                                      onChange={() =>
-                                        handleCleanerSelect(cleaner)
-                                      }
-                                      className="mt-1 h-5 w-5 rounded border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                                    />
-                                    <div className="ml-4 flex-1">
-                                      <div className="flex items-center gap-2 mb-1">
-                                        <UserCheck className="w-4 h-4 text-blue-600 group-hover:scale-110 transition-transform" />
-                                        <span className="font-semibold text-slate-800 group-hover:text-blue-700 transition-colors">
-                                          {cleaner.name}
-                                        </span>
-                                      </div>
-                                      {cleaner.email && (
-                                        <div className="text-sm text-slate-600 mb-0.5 flex items-center gap-1">
-                                          <Mail className="w-3 h-3 text-slate-400" />
-                                          {cleaner.email}
-                                        </div>
-                                      )}
-                                      {cleaner.phone && (
-                                        <div className="text-xs text-slate-500 flex items-center gap-1">
-                                          <Phone className="w-3 h-3 text-slate-400" />
-                                          {cleaner.phone}
-                                        </div>
-                                      )}
-                                    </div>
-                                  </label>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Footer with selection count */}
-                          {filteredCleaners.length > 0 && (
-                            <div className="p-3 border-t border-slate-200 bg-slate-50">
-                              <div className="flex items-center justify-between text-xs">
-                                <span className="text-slate-600">
-                                  {selectedCleaners.length} of{" "}
-                                  {filteredCleaners.length} selected
-                                </span>
-                                {selectedCleaners.length > 0 && (
-                                  <button
-                                    type="button"
-                                    onClick={() => setSelectedCleaners([])}
-                                    className="text-red-600 hover:text-red-700 font-medium flex items-center gap-1"
-                                  >
-                                    <X className="w-3 h-3" />
-                                    Clear all
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Selected Cleaners Preview */}
-                    {selectedCleaners.length > 0 && (
-                      <div className="p-5 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl">
-                        <div className="flex items-center justify-between mb-3">
-                          <h4 className="font-semibold text-green-800 flex items-center gap-2">
-                            <CheckCircle className="w-5 h-5" />
-                            Selected Cleaners
-                          </h4>
-                          <span className="text-sm text-green-700 font-medium">
-                            {selectedCleaners.length} cleaner
-                            {selectedCleaners.length !== 1 ? "s" : ""}
-                          </span>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          {selectedCleaners.map((cleaner) => (
-                            <span
-                              key={cleaner.id}
-                              className="inline-flex items-center gap-2 px-4 py-2 bg-white border-2 border-green-300 text-green-800 text-sm font-medium rounded-lg hover:bg-green-50 transition-all shadow-sm"
-                            >
-                              <UserCheck className="w-4 h-4" />
-                              {cleaner.name}
-                              <button
-                                type="button"
-                                onClick={() => handleCleanerSelect(cleaner)}
-                                className="hover:text-green-900 hover:bg-green-100 rounded-full p-0.5 transition-all"
-                                title="Remove"
-                              >
-                                <X className="w-4 h-4" />
-                              </button>
-                            </span>
-                          ))}
-                        </div>
-                      </div>
+                      ))
                     )}
-                  </>
-                ) : (
-                  <div className="p-8 bg-slate-50 rounded-xl text-center border-2 border-dashed border-slate-300">
-                    <UserCheck className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-                    <h3 className="font-semibold text-slate-700 mb-2 text-lg">
-                      No Cleaners Available
-                    </h3>
-                    <p className="text-sm text-slate-500 max-w-md mx-auto">
-                      Add cleaners to your company to assign them to locations.
-                      You can add cleaners from the Users section.
+                  </div>
+                )}
+              </div>
+
+              {/* Staff Visualization */}
+              <div className="grid grid-cols-2 gap-4">
+                {selectedCleaners.slice(0, 2).map((cleaner, i) => (
+                  <div
+                    key={cleaner.id}
+                    className="h-24 bg-cyan-50/30 border border-cyan-100 rounded-2xl flex flex-col items-center justify-center"
+                  >
+                    <UserCheck className="h-5 w-5 text-cyan-600 mb-2" />
+                    <p className="text-[10px] font-black text-cyan-700 uppercase tracking-widest text-center px-2 truncate w-full">
+                      {cleaner.name}
+                    </p>
+                    <p className="text-[9px] text-cyan-500">Slot 0{i + 1}</p>
+                  </div>
+                ))}
+                {selectedCleaners.length < 2 && (
+                  <div className="h-24 bg-slate-50/50 border-2 border-dashed border-slate-100 rounded-2xl flex flex-col items-center justify-center">
+                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">
+                      Empty Slot
                     </p>
                   </div>
                 )}
               </div>
-            )}
-
-            {/* ========== SUBMIT BUTTON ========== */}
-            <div className="flex items-center justify-end gap-4 pt-6 border-t border-slate-200">
-              <button
-                type="button"
-                onClick={() => router.back()}
-                disabled={submitting}
-                className="px-6 py-3 text-slate-600 hover:bg-slate-100 rounded-xl font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={
-                  submitting ||
-                  !form.name ||
-                  !form.type_id ||
-                  !form.latitude ||
-                  !form.longitude ||
-                  pincodeError ||
-                  !canAddLocation
-                }
-                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors duration-200 flex items-center gap-2 disabled:bg-blue-400 disabled:cursor-not-allowed min-w-48"
-              >
-                {submitting ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    {selectedCleaners.length > 0
-                      ? "Creating & Assigning..."
-                      : "Creating Location..."}
-                  </>
-                ) : (
-                  <>
-                    <Plus className="h-4 w-4" />
-                    {selectedCleaners.length > 0
-                      ? `Create & Assign to ${selectedCleaners.length} Cleaner${selectedCleaners.length !== 1 ? "s" : ""}`
-                      : "Create Location"}
-                  </>
-                )}
-              </button>
             </div>
-          </form>
+          )}
+
+          {/* 7. ADDITIONAL FEATURES (From JSON Schema) */}
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6">
+            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
+              <div className="h-10 w-10 rounded-xl bg-cyan-400/5 flex items-center justify-center border border-cyan-500/10">
+                <CheckCircle2 className="text-cyan-500/70 text-xl" />
+              </div>
+              <div className="text-left">
+                <h2 className="text-sm font-black text-slate-800 uppercase tracking-[0.2em] leading-none">
+                  Additional Features
+                </h2>
+                <p className="text-[10px] font-normal text-slate-400 uppercase tracking-widest mt-1.5">
+                  Operational Feature Mapping
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
+              {FEATURE_CONFIG.map((item) => (
+                <label
+                  key={item.key}
+                  className="flex items-start gap-4 group cursor-pointer p-2 rounded-xl hover:bg-slate-50/50 transition-colors"
+                >
+                  <div className="relative flex items-center mt-0.5">
+                    <input
+                      type="checkbox"
+                      checked={!!form.options[item.key]}
+                      onChange={(e) =>
+                        handleOptionChange(item.key, e.target.checked)
+                      }
+                      className="w-4 h-4 rounded border border-slate-200 text-cyan-500 focus:ring-0 cursor-pointer accent-cyan-500"
+                    />
+                  </div>
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-2">
+                      <span className="text-slate-400 group-hover:text-cyan-500/70 transition-colors">
+                        {item.icon}
+                      </span>
+                      <span className="text-sm font-medium text-slate-500 group-hover:text-slate-600 transition-colors tracking-tight">
+                        {item.label}
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-normal text-slate-400 lowercase tracking-tight mt-0.5">
+                      {item.category}
+                    </span>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </div>
         </div>
+      </div>
+
+      {/* --- FOOTER ACTIONS --- */}
+      <div className="flex flex-wrap justify-end items-center gap-4 pt-6 border-t border-slate-200">
+        <button
+          type="button"
+          onClick={() => router.back()}
+          className="flex items-center gap-2 px-8 py-3 rounded-xl border border-slate-200 bg-white text-slate-500 text-xs font-black uppercase tracking-widest hover:bg-slate-50 transition-all active:scale-95 shadow-sm"
+        >
+          Cancel
+        </button>
+
+        <button
+          onClick={handleSubmit}
+          disabled={submitting || !canAddLocation}
+          className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white px-10 py-3 rounded-xl text-sm font-bold shadow-lg hover:brightness-110 active:scale-95 transition-all uppercase tracking-wider disabled:opacity-70 disabled:cursor-not-allowed"
+        >
+          {submitting ? "Saving..." : "Add Washroom"}
+        </button>
       </div>
     </div>
   );
