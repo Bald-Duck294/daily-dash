@@ -85,8 +85,8 @@ function WashroomsPage() {
   const canToggleStatus = hasPermission(MODULES.LOCATIONS, "toggle_status");
   const canAssignCleaner = canAdd(MODULES.ASSIGNMENTS);
 
-  console.log(facilityCompanyId, "facility company id selected");
-  console.log(typeof facilityCompanyId, "fac type");
+  // console.log(facilityCompanyId, "facility company id selected");
+  // console.log(typeof facilityCompanyId, "fac type");
   // --- Helpers & Logic ---
 
   const handleSort = (column) => {
@@ -364,7 +364,7 @@ function WashroomsPage() {
   const handleAddToilet = () =>
     router.push(`/washrooms/add-location?companyId=${companyId}`);
   const handleAssignWashroom = () =>
-    router.push(`/cleaner-assignments/add?companyId=${companyId}`);
+    router.push(`/userMapping/add?companyId=${companyId}`);
 
   const confirmStatusToggle = async () => {
     if (!statusModal.location) return;

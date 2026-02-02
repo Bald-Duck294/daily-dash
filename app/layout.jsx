@@ -4,9 +4,9 @@ import "./globals.css";
 import ReduxProvider from "@/providers/ReduxProvider";
 import QueryProvider from "@/providers/QueryProvider";
 import { CompanyProvider } from "@/providers/CompanyProvider";
-import ThemeProvider from '@/providers/ThemeProvider'
+import ThemeProvider from "@/providers/ThemeProvider";
 import StoreProvider from "@/store/StoreProvider.jsx";
-
+import LayoutWrapper from "@/components/layout/LayoutWrapper";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -29,9 +29,9 @@ export default function RootLayout({ children }) {
         <StoreProvider>
           <QueryProvider>
             <ThemeProvider>
-              <CompanyProvider>
-                {children}
-              </CompanyProvider>
+              {/* <LayoutWrapper> */}
+              <CompanyProvider>{children}</CompanyProvider>
+              {/* </LayoutWrapper> */}
             </ThemeProvider>
           </QueryProvider>
         </StoreProvider>

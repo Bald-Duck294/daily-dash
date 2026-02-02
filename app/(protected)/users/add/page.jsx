@@ -107,7 +107,7 @@ export default function AddUserPage() {
       <div className="p-4 sm:p-6 md:p-8 bg-slate-50 min-h-screen">
         <div className="max-w-3xl mx-auto">
           <button
-            onClick={() => window.history.back()}
+            onClick={() => router.back()}
             className="cursor-pointer flex items-center gap-2 mb-6 text-sm font-semibold text-slate-600 hover:text-slate-800 transition-colors"
           >
             <ArrowLeft size={20} />

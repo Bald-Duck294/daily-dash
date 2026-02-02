@@ -42,7 +42,7 @@ export default function CompaniesPage() {
     return companies.filter(
       (c) =>
         c.name?.toLowerCase().includes(q) ||
-        c.contact_email?.toLowerCase().includes(q)
+        c.contact_email?.toLowerCase().includes(q),
     );
   }, [companies, search]);
 
@@ -62,6 +62,7 @@ export default function CompaniesPage() {
     toggleStatus.mutate({ id, status: !status });
 
   const handleViewCompany = (id) => {
+    console.log("ROW CLICKED, ID:", id); // 👈 ADD THIS
     setCompanyId(String(id));
     router.push(`/clientDashboard/${id}`);
   };

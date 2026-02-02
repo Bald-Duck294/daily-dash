@@ -5,191 +5,216 @@ import { useRouter } from "next/navigation";
 import { CompanyApi } from "@/features/companies/api/companies.api";
 import { UsersApi } from "@/features/users/users.api";
 import {
-    Building,
-    Shield,
-    UserCog,
-    Users,
-    UserCheck,
+  Building,
+  Shield,
+  UserCog,
+  Users,
+  UserCheck,
+  TrendingUp,
 } from "lucide-react";
 
 function StatCard({ label, value, href, loading, accent, icon: Icon }) {
-    const router = useRouter();
+  const router = useRouter();
 
-    return (
-        <button
-            disabled={loading || !href}
-            onClick={() => href && router.push(href)}
-            className={`
-        group relative w-full overflow-hidden rounded-2xl
-        border border-[var(--sidebar-border)]
-        bg-[var(--background)]
-        p-5 text-left
-        transition-all duration-300
-        hover:-translate-y-1 hover:shadow-xl
+  return (
+    <button
+      disabled={loading || !href}
+      onClick={() => href && router.push(href)}
+      className="
+        group w-full text-left
         disabled:opacity-60 disabled:cursor-not-allowed
-      `}
-        >
-            {/* Accent gradient strip */}
-            <div
-                className={`absolute inset-x-0 top-0 h-1 ${accent}`}
-            />
+      "
+    >
+      <div
+        className="
+          relative rounded-2xl p-6
+          border transition-all duration-300
+          transform hover:scale-105
+        "
+        style={{
+          background: accent, // uses --accent-* tokens
+          borderColor: "var(--card-border)",
+          boxShadow: "var(--card-shadow)",
+        }}
+      >
+        {/* Top row */}
+        <div className="flex items-start justify-between mb-4">
+          {/* Icon */}
+          <div
+            className="
+              p-3 rounded-xl shadow-sm
+              transition-transform duration-300
+              group-hover:scale-110
+            "
+            style={{
+              backgroundColor: "var(--card-icon-bg)",
+              color: "var(--card-icon-fg)",
+            }}
+          >
+            <Icon size={24} />
+          </div>
+        </div>
 
-            {/* Soft glow on hover */}
-            <div
-                className={`pointer-events-none absolute inset-0 opacity-0
-        group-hover:opacity-100 transition duration-300
-        ${accent} blur-2xl`}
-            />
+        {/* Content */}
+        {loading ? (
+          <div className="space-y-2 animate-pulse">
+            <div className="h-4 w-24 rounded bg-black/10 dark:bg-white/10" />
+            <div className="h-8 w-16 rounded bg-black/10 dark:bg-white/10" />
+            <div className="h-3 w-28 rounded bg-black/10 dark:bg-white/10" />
+          </div>
+        ) : (
+          <>
+            <p
+              className="text-sm font-medium mb-1"
+              style={{ color: "var(--card-label)" }}
+            >
+              {label}
+            </p>
 
-            {loading ? (
-                <div className="space-y-3 animate-pulse">
-                    <div className="h-8 w-8 rounded-lg bg-gray-300/40" />
-                    <div className="h-7 w-12 rounded bg-gray-300/40" />
-                    <div className="h-4 w-24 rounded bg-gray-300/40" />
-                </div>
-            ) : (
-                <div className="relative z-10 flex items-start gap-4">
-                    {/* Icon */}
-                    <div
-                        className={`
-              flex h-10 w-10 items-center justify-center rounded-xl
-              ${accent} text-white
-            `}
-                    >
-                        <Icon size={20} />
-                    </div>
+            <div className="flex items-baseline gap-2">
+              <p
+                className="text-3xl font-bold"
+                style={{ color: "var(--card-value)" }}
+              >
+                {value}
+              </p>
+              <TrendingUp size={16} style={{ color: "var(--trend-up)" }} />
+            </div>
 
-                    {/* Content */}
-                    <div className="flex flex-col">
-                        <span className="text-3xl font-semibold text-[var(--foreground)] leading-none">
-                            {value}
-                        </span>
-                        <span className="mt-1 text-sm font-medium text-[var(--sidebar-muted)]">
-                            {label}
-                        </span>
-                    </div>
-                </div>
-            )}
-        </button>
-    );
+            <p
+              className="text-xs mt-1"
+              style={{ color: "var(--muted-foreground)" }}
+            >
+              Updated just now
+            </p>
+          </>
+        )}
+      </div>
+    </button>
+  );
 }
 
 export default function DashboardPage() {
-    const [loading, setLoading] = useState(true);
-    const [counts, setCounts] = useState({
-        companies: 0,
-        superadmin: 0,
-        admin: 0,
-        supervisor: 0,
-        cleaner: 0,
-    });
+  const [loading, setLoading] = useState(true);
+  const [counts, setCounts] = useState({
+    companies: 0,
+    superadmin: 0,
+    admin: 0,
+    supervisor: 0,
+    cleaner: 0,
+  });
 
-    useEffect(() => {
-        async function load() {
-            try {
-                const [companiesRes, usersRes] = await Promise.all([
-                    CompanyApi.getAllCompanies(),
-                    UsersApi.getAllUsers(),
-                ]);
+  useEffect(() => {
+    async function load() {
+      try {
+        const [companiesRes, usersRes] = await Promise.all([
+          CompanyApi.getAllCompanies(),
+          UsersApi.getAllUsers(),
+        ]);
 
-                const users = usersRes?.data || [];
+        const users = usersRes?.data || [];
 
-                setCounts({
-                    companies: companiesRes?.data?.length || 0,
-                    superadmin: users.filter(u => u.role_id === 1).length,
-                    admin: users.filter(u => u.role_id === 2).length,
-                    supervisor: users.filter(u => u.role_id === 3).length,
-                    cleaner: users.filter(u => u.role_id === 5).length,
-                });
-            } catch (err) {
-                console.error("Dashboard load failed", err);
-            } finally {
-                setLoading(false);
-            }
-        }
+        setCounts({
+          companies: companiesRes?.length || 0,
+          superadmin: users.filter((u) => u.role_id === 1).length,
+          admin: users.filter((u) => u.role_id === 2).length,
+          supervisor: users.filter((u) => u.role_id === 3).length,
+          cleaner: users.filter((u) => u.role_id === 5).length,
+        });
+      } catch (err) {
+        console.error("Dashboard load failed", err);
+      } finally {
+        setLoading(false);
+      }
+    }
 
-        load();
-    }, []);
+    load();
+  }, []);
 
-    const cards = [
-        {
-            label: "Organizations",
-            value: counts.companies,
-            href: "/companies",
-            accent: "bg-gradient-to-r from-blue-500 to-blue-400",
-            icon: Building,
-        },
-        {
-            label: "Super Admins",
-            value: counts.superadmin,
-            href: "/roles/superadmin",
-            accent: "bg-gradient-to-r from-purple-500 to-fuchsia-500",
-            icon: Shield,
-        },
-        {
-            label: "Admins",
-            value: counts.admin,
-            href: "/roles/admin",
-            accent: "bg-gradient-to-r from-green-500 to-emerald-400",
-            icon: UserCog,
-        },
-        {
-            label: "Supervisors",
-            value: counts.supervisor,
-            href: "/roles/supervisor",
-            accent: "bg-gradient-to-r from-yellow-500 to-amber-400",
-            icon: UserCheck,
-        },
-        {
-            label: "Cleaners",
-            value: counts.cleaner,
-            href: "/roles/cleaner",
-            accent: "bg-gradient-to-r from-pink-500 to-rose-400",
-            icon: Users,
-        },
-    ];
+  const cards = [
+    {
+      label: "Organizations",
+      value: counts.companies,
+      href: "/companies",
+      accent: "var(--accent-blue)",
+      icon: Building,
+    },
+    {
+      label: "Super Admins",
+      value: counts.superadmin,
+      href: "/roles/superadmin",
+      accent: "var(--accent-purple)",
+      icon: Shield,
+    },
+    {
+      label: "Admins",
+      value: counts.admin,
+      href: "/roles/admin",
+      accent: "var(--accent-green)",
+      icon: UserCog,
+    },
+    {
+      label: "Supervisors",
+      value: counts.supervisor,
+      href: "/roles/supervisor",
+      accent: "var(--accent-yellow)",
+      icon: UserCheck,
+    },
+    {
+      label: "Cleaners",
+      value: counts.cleaner,
+      href: "/roles/cleaner",
+      accent: "var(--accent-pink)",
+      icon: Users,
+    },
+  ];
 
-    return (
-        <div className="space-y-6 sm:space-y-8">
-            {/* Page Header */}
-            <div>
-                <h1 className="text-xl font-semibold text-[var(--foreground)]">
-                    Dashboard Overview
-                </h1>
-                <p className="mt-1 text-sm text-[var(--sidebar-muted)]">
-                    High-level snapshot of system activity
-                </p>
-            </div>
+  return (
+    <div
+      className="
+    space-y-6 sm:space-y-8
+    rounded-3xl
+    p-4 sm:p-6 lg:p-8
+    bg-[var(--background)]
+    relative
+  "
+    >
+      {/* Page Header */}
+      <div>
+        <h1 className="text-xl font-semibold text-[var(--foreground)]">
+          Dashboard Overview
+        </h1>
+        <p className="mt-1 text-sm text-[var(--sidebar-muted)]">
+          High-level snapshot of system activity
+        </p>
+      </div>
 
-            {/* Stats Grid */}
-            <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+      {/* Stats Grid */}
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+        {cards.map((card) => (
+          <StatCard key={card.label} {...card} loading={loading} />
+        ))}
+      </div>
 
-                {cards.map(card => (
-                    <StatCard
-                        key={card.label}
-                        {...card}
-                        loading={loading}
-                    />
-                ))}
-            </div>
-
-            {/* Company Statistics */}
-            <section className="
+      {/* Company Statistics */}
+      <section
+        className="
   rounded-xl border border-[var(--sidebar-border)]
   bg-[var(--background)]
   p-4 sm:p-6
-">
-                <h2 className="text-lg font-semibold text-[var(--foreground)]">
-                    Company Statistics
-                </h2>
-                <p className="mt-1 text-sm text-[var(--sidebar-muted)]">
-                    Detailed analytics and trends will appear here.
-                </p>
+"
+      >
+        <h2 className="text-lg font-semibold text-[var(--foreground)]">
+          Company Statistics
+        </h2>
+        <p className="mt-1 text-sm text-[var(--sidebar-muted)]">
+          Detailed analytics and trends will appear here.
+        </p>
 
-                <div className="mt-4 h-32 flex items-center justify-center rounded-lg border border-dashed border-[var(--sidebar-border)] text-sm text-[var(--sidebar-muted)]">
-                    Coming soon
-                </div>
-            </section>
+        <div className="mt-4 h-32 flex items-center justify-center rounded-lg border border-dashed border-[var(--sidebar-border)] text-sm text-[var(--sidebar-muted)]">
+          Coming soon
         </div>
-    );
+      </section>
+    </div>
+  );
 }
