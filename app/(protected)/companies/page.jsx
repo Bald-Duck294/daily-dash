@@ -62,7 +62,7 @@ export default function CompaniesPage() {
     toggleStatus.mutate({ id, status: !status });
 
   const handleViewCompany = (id) => {
-    console.log("ROW CLICKED, ID:", id); // 👈 ADD THIS
+    console.log("ROW CLICKED, ID:", id);
     setCompanyId(String(id));
     router.push(`/clientDashboard/${id}`);
   };
@@ -90,7 +90,7 @@ export default function CompaniesPage() {
       <Toaster position="top-center" />
 
       <div className="min-h-screen p-4 sm:p-6 bg-[var(--background)]">
-        <div className="max-w-7xl mx-auto space-y-6">
+        <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
           <CompaniesHeader />
 
           <CompaniesToolbar
@@ -99,8 +99,8 @@ export default function CompaniesPage() {
             companies={filteredCompanies}
           />
 
-          {/* Desktop */}
-          <div className="hidden md:block">
+          {/* Desktop Table - Hidden on mobile */}
+          <div className="hidden lg:block">
             <CompaniesTable
               companies={paginatedCompanies}
               onDelete={handleDelete}
@@ -109,8 +109,8 @@ export default function CompaniesPage() {
             />
           </div>
 
-          {/* Mobile */}
-          <div className="md:hidden">
+          {/* Mobile Cards - Hidden on desktop */}
+          <div className="lg:hidden">
             <CompaniesCards
               companies={paginatedCompanies}
               onDelete={handleDelete}
@@ -121,8 +121,8 @@ export default function CompaniesPage() {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between pt-4 text-sm text-[var(--sidebar-muted)]">
-              <span>
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-0 pt-4 text-sm text-[var(--sidebar-muted)]">
+              <span className="text-center sm:text-left">
                 Page {page} of {totalPages}
               </span>
 
@@ -132,9 +132,12 @@ export default function CompaniesPage() {
                   onClick={() => setPage((p) => p - 1)}
                   className="
                     rounded-md border border-[var(--sidebar-border)]
-                    px-3 py-1
+                    px-3 py-2 sm:py-1
                     disabled:opacity-50
                     hover:bg-[var(--sidebar-hover)]
+                    active:bg-[var(--sidebar-hover)]
+                    transition-colors
+                    min-w-[80px] sm:min-w-0
                   "
                 >
                   Previous
@@ -145,9 +148,12 @@ export default function CompaniesPage() {
                   onClick={() => setPage((p) => p + 1)}
                   className="
                     rounded-md border border-[var(--sidebar-border)]
-                    px-3 py-1
+                    px-3 py-2 sm:py-1
                     disabled:opacity-50
                     hover:bg-[var(--sidebar-hover)]
+                    active:bg-[var(--sidebar-hover)]
+                    transition-colors
+                    min-w-[80px] sm:min-w-0
                   "
                 >
                   Next
