@@ -240,7 +240,7 @@ export default function AssignmentListPage() {
             </div>
             <div>
               <h1 className="text-xl font-black text-slate-800 uppercase tracking-wide">
-                Cleaner Assignments
+                User Mapping
               </h1>
               <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-1">
                 System Personnel Mapping Registry
@@ -254,7 +254,7 @@ export default function AssignmentListPage() {
               className="flex items-center gap-2 px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-xl shadow-lg shadow-orange-200/50 transition-all active:scale-95 font-bold text-sm uppercase tracking-wider"
             >
               <Plus className="w-4 h-4" />
-              Add Cleaner
+              Add Mapping
             </Link>
           )}
         </div>

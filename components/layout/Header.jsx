@@ -1,4 +1,3 @@
-
 // "use client";
 
 // import React, { useState, useEffect } from "react";
@@ -220,8 +219,8 @@
 //         {/* Logout Button */}
 //         <button
 //           onClick={handleLogout}
-//           className="px-2 py-1.5 sm:px-3 sm:py-2 md:px-4 md:py-2 text-xs sm:text-sm font-medium text-white bg-slate-800 
-//           rounded-lg hover:bg-slate-900 
+//           className="px-2 py-1.5 sm:px-3 sm:py-2 md:px-4 md:py-2 text-xs sm:text-sm font-medium text-white bg-slate-800
+//           rounded-lg hover:bg-slate-900
 //           transition-colors flex items-center justify-center gap-1 sm:gap-2 whitespace-nowrap"
 //         >
 //           <LogOut className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
@@ -233,7 +232,6 @@
 // };
 
 // export default Header;
-
 
 "use client";
 
@@ -272,6 +270,7 @@ const Header = ({ pageTitle }) => {
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme") || "dark";
     // eslint-disable-next-line react-hooks/set-state-in-effect
+    console.log(savedTheme, "saved theme");
     setTheme(savedTheme);
     document.documentElement.setAttribute("data-theme", savedTheme);
   }, []);
@@ -427,10 +426,7 @@ const Header = ({ pageTitle }) => {
         return (
           <>
             <Building className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 text-blue-600" />
-            <span
-              className="truncate block min-w-0"
-              title={company.name}
-            >
+            <span className="truncate block min-w-0" title={company.name}>
               {company.name}
             </span>
           </>
@@ -463,13 +459,10 @@ const Header = ({ pageTitle }) => {
         >
           {getHeaderTitle()}
         </h2>
-
       </div>
-
 
       {/* User Info, Notification Bell, and Logout Section - Right aligned */}
       <div className="flex items-center gap-2 sm:gap-3 md:gap-4 flex-shrink-0">
-
         {/* User Name and Role */}
         <div className="text-right hidden md:block">
           <span className="font-semibold text-xs md:text-sm text-[var(--foreground)] block  truncate max-w-[120px] lg:max-w-[180px]">

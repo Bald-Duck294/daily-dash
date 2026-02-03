@@ -236,17 +236,17 @@ export function getSuperadminCompanyMenu(companyId) {
       icon: UserCog,
       label: "User Mapping",
       hasDropdown: true,
-      key: "cleaner-assignments",
+      key: "userMapping",
       children: [
         {
           icon: List,
           label: "Mapped List",
-          href: `/cleaner-assignments?companyId=${companyId}`,
+          href: `/userMapping?companyId=${companyId}`,
         },
         {
           icon: ListChecks,
           label: "Add Mapping",
-          href: `/cleaner-assignments/add?companyId=${companyId}`,
+          href: `/userMapping/add?companyId=${companyId}`,
         },
       ],
     },
@@ -556,19 +556,19 @@ export const getFullCompanyMenuTemplate = (companyId) => [
     label: "User Mapping",
     simpleLabel: "User Mapping",
     requiredPermission: "assignments.view",
-    key: "cleaner-assignments",
+    key: "userMapping",
     children: [
       {
         icon: List,
         label: "Mapped List",
         requiredPermission: "assignments.view",
-        href: `/cleaner-assignments?companyId=${companyId}`,
+        href: `/userMapping?companyId=${companyId}`,
       },
       {
         icon: PlusCircle,
         label: "Add Mapping",
         requiredPermission: "assignments.add",
-        href: `/cleaner-assignments/add?companyId=${companyId}`,
+        href: `/userMapping/add?companyId=${companyId}`,
       },
     ],
   },
