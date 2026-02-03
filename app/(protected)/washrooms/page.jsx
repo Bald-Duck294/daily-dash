@@ -19,6 +19,8 @@ import {
   CheckCircle2,
   XCircle,
   EllipsisVertical,
+  Grid3x3,
+  List,
 } from "lucide-react";
 import LocationsApi from "@/features/locations/locations.api";
 import { useRouter } from "next/navigation";
@@ -46,6 +48,7 @@ function WashroomsPage() {
   const [currentScoreSortOrder, setCurrentScoreSortOrder] = useState(null);
   const [avgScoreSortOrder, setAvgScoreSortOrder] = useState(null);
   const [statusSortOrder, setStatusSortOrder] = useState(null);
+  const [viewMode, setViewMode] = useState("table"); // "grid" | "table"
 
   const [deleteModal, setDeleteModal] = useState({
     open: false,
@@ -628,560 +631,762 @@ function WashroomsPage() {
                   </button>
                 )}
               </div>
+
+              <span className="text-sm font-medium text-slate-600 px-3 py-2 bg-slate-100 rounded-xl">
+                {filteredList.length} of {list.length}
+              </span>
+              <div className="flex bg-slate-100 rounded-xl p-1">
+                <button
+                  onClick={() => setViewMode("grid")}
+                  className={`cursor-pointer p-2 rounded-lg transition-all ${
+                    viewMode === "grid"
+                      ? "bg-gradient-to-r from-[#FFAB2D] to-[#FF8C42] text-white shadow-md"
+                      : "text-slate-600 hover:bg-white"
+                  }`}
+                  title="Grid View"
+                >
+                  <Grid3x3 className="h-5 w-5" />
+                </button>
+                <button
+                  onClick={() => setViewMode("table")}
+                  className={`cursor-pointer p-2 rounded-lg transition-all ${
+                    viewMode === "table"
+                      ? "bg-gradient-to-r from-[#FFAB2D] to-[#FF8C42] text-white shadow-md"
+                      : "text-slate-600 hover:bg-white"
+                  }`}
+                  title="Table View"
+                >
+                  <List className="h-5 w-5" />
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* Table Container */}
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hidden lg:block">
-            {/* Grid Header - FIXED WIDTHS to prevent scroll */}
-            <div className="grid grid-cols-[60px_2fr_1.2fr_100px_100px_1.5fr_1fr_120px_90px] gap-2 px-6 py-4 bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-widest items-center">
-              <div className="text-center text-blue-500">#</div>
-
-              <button
-                onClick={() => handleSort("name")}
-                className="text-left flex items-center gap-1 hover:text-blue-600 group"
-              >
-                WASHROOM NAME {renderSortIcon(nameSortOrder)}
-              </button>
-
-              <div className="flex items-center gap-1">
-                <MapPin size={12} /> ZONE
+          {/* NEW CONTENT LOGIC: Toggle between Grid/Table + Mobile */}
+          {filteredList.length === 0 ? (
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-16 text-center lg:col-span-2">
+              <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-[#FFAB2D]/20 to-[#FF8C42]/20 flex items-center justify-center">
+                <MapPin className="h-12 w-12 text-[#FF8C42]" />
               </div>
-
-              <button
-                onClick={() => handleSort("currentScore")}
-                className="text-center flex items-center justify-center gap-1 hover:text-blue-600 group"
-              >
-                CURRENT SCORE {renderSortIcon(currentScoreSortOrder)}
-              </button>
-
-              <button
-                onClick={() => handleSort("avgScore")}
-                className="text-center flex items-center justify-center gap-1 hover:text-blue-600 group"
-              >
-                AVERAGE RATING {renderSortIcon(avgScoreSortOrder)}
-              </button>
-
-              <div className="flex items-center gap-1">
-                <Users size={12} /> CLEANER
-              </div>
-
-              <div className="flex items-center gap-1">FACILITY</div>
-
-              <button
-                onClick={() => handleSort("status")}
-                className="text-center flex items-center justify-center gap-1 hover:text-blue-600 group"
-              >
-                STATUS {renderSortIcon(statusSortOrder)}
-              </button>
-
-              <div className="text-right">ACTION</div>
+              <h3 className="text-2xl font-bold text-slate-900 mb-2">
+                No Washrooms Found
+              </h3>
+              <p className="text-slate-500 mb-6">
+                Try adjusting your search or filter criteria
+              </p>
             </div>
-
-            {/* Grid Body */}
-            <div className="divide-y divide-slate-100">
-              {filteredList.length === 0 ? (
-                <div className="p-12 text-center">
-                  <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <MapPin className="h-8 w-8 text-slate-300" />
-                  </div>
-                  <h3 className="text-lg font-bold text-slate-700">
-                    No washrooms found
-                  </h3>
-                  <p className="text-sm text-slate-400 mt-1">
-                    Try adjusting your filters
-                  </p>
-                </div>
-              ) : (
-                filteredList.map((item, index) => (
-                  <div
-                    key={item.id}
-                    onClick={() => handleView(item.id)}
-                    className="grid grid-cols-[60px_2fr_1.2fr_100px_100px_1.5fr_1fr_120px_90px] gap-2 px-6 py-4 items-center hover:bg-blue-50/30 transition-colors cursor-pointer group border-l-4 border-l-transparent hover:border-l-blue-500"
-                  >
-                    {/* Rank */}
-                    <div className="flex justify-center">
-                      <span className="w-8 h-8 flex items-center justify-center bg-slate-100 text-blue-600 text-xs font-bold rounded-lg group-hover:bg-white group-hover:shadow-sm">
-                        {String(index + 1).padStart(2, "0")}
-                      </span>
-                    </div>
-
-                    {/* Name */}
-                    <div className="min-w-0 pr-2">
-                      <p className="font-bold text-slate-700 text-sm truncate">
-                        {item.name}
-                      </p>
-                      <p className="text-[10px] text-slate-400 mt-0.5 truncate">
-                        ID: {item.id} •{" "}
-                        {new Date(item.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
-
-                    {/* Zone */}
-                    <div className="min-w-0">
-                      <span className="inline-block bg-slate-100 text-slate-600 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wide truncate max-w-full">
-                        {item.location_types?.name || "N/A"}
-                      </span>
-                    </div>
-
-                    {/* Current Score */}
-                    <div className="flex justify-center">
-                      <span className="px-4 py-1.5 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 text-sm font-bold">
-                        {item.currentScore
-                          ? Math.round(item.currentScore * 10) / 10
-                          : "-"}
-                      </span>
-                    </div>
-
-                    {/* Rating */}
-                    <div className="flex justify-center items-center gap-1.5">
-                      <Star
-                        size={14}
-                        className="text-orange-400 fill-orange-400"
-                      />
-                      <span className="text-sm font-bold text-slate-700">
-                        {item.averageRating || "0.0"}
-                      </span>
-                    </div>
-
-                    {/* Cleaner */}
-                    <div className="min-w-0">
-                      {renderCleanerBadge(item.name, item.cleaner_assignments)}
-                    </div>
-
-                    {/* Facility */}
-                    <div className="min-w-0">
-                      <span className="text-xs font-medium text-slate-500 truncate block">
-                        {item.facility_companies?.name || "N/A"}
-                      </span>
-                    </div>
-
-                    {/* Status */}
-                    <div
-                      className="flex justify-center"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {canToggleStatus && (
-                        <button
-                          onClick={() =>
-                            setStatusModal({ open: true, location: item })
-                          }
-                          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border transition-all ${
-                            item.status === true || item.status === null
-                              ? "bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100"
-                              : "bg-red-50 text-red-600 border-red-100 hover:bg-red-100"
-                          }`}
-                        >
-                          {item.status === true || item.status === null ? (
-                            <>
-                              <div className="relative flex h-2 w-2">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                              </div>
-                              Active
-                            </>
-                          ) : (
-                            <>
-                              <div className="h-2 w-2 rounded-full bg-red-500"></div>
-                              Inactive
-                            </>
-                          )}
-                        </button>
-                      )}
-                    </div>
-
-                    {/* Action */}
-                    <div
-                      className="flex justify-end gap-1"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <button
-                        onClick={() =>
-                          handleViewLocation(item.latitude, item.longitude)
-                        }
-                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition-colors"
-                      >
-                        <Navigation size={16} />
-                      </button>
+          ) : (
+            <div>
+              <div className="hidden lg:block">
+                {viewMode === "grid" ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredList.map((item, index) => (
                       <div
-                        className="relative"
-                        ref={
-                          actionsMenuOpen === item.id ? actionsMenuRef : null
-                        }
+                        key={item.id}
+                        onClick={() => handleView(item.id)}
+                        className="group bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer relative overflow-hidden"
                       >
-                        <button
-                          onClick={() =>
-                            setActionsMenuOpen(
-                              actionsMenuOpen === item.id ? null : item.id,
-                            )
-                          }
-                          className="p-2 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors"
-                        >
-                          <MoreVertical size={16} />
-                        </button>
-                        {actionsMenuOpen === item.id && (
-                          <LocationActionsMenu
-                            item={item}
-                            location_id={item.id}
-                            onClose={() => setActionsMenuOpen(null)}
-                            onDelete={(location) =>
-                              setDeleteModal({ open: true, location })
-                            }
-                            canDeleteLocation={canDeleteLocation}
-                            canEditLocation={canEditLocation}
-                          />
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-            {/* Footer */}
-            <div className="bg-slate-50 px-6 py-3 border-t border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
-              Showing {filteredList.length} washroom records
-            </div>
-          </div>
+                        {/* Subtle top accent bar */}
+                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-400 to-orange-300 transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-300" />
 
-          {/* Mobile Card View (Keep for responsiveness) */}
-          <div className="lg:hidden">
-            {filteredList.length === 0 ? (
-              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center">
-                <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <MapPin className="h-8 w-8 text-slate-400" />
-                </div>
-                <h3 className="text-lg font-semibold text-slate-600 mb-2">
-                  No washrooms found
-                </h3>
-                <p className="text-sm text-slate-500">
-                  Try adjusting your search filters
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {filteredList.map((item, index) => (
-                  <div
-                    key={item.id}
-                    className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-all cursor-pointer"
-                    onClick={() => handleView(item.id)}
-                  >
-                    <div className="bg-slate-50 px-4 py-3 border-b border-slate-200 flex items-center justify-between">
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <div className="w-8 h-8 bg-slate-700 text-white rounded flex items-center justify-center text-sm font-bold flex-shrink-0">
-                          {index + 1}
+                        {/* Header */}
+                        <div className="flex justify-between items-start mb-6">
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center font-bold text-lg">
+                              {item.name?.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <h3 className="font-bold text-slate-800 text-lg leading-tight group-hover:text-orange-600 transition-colors">
+                                {item.name}
+                              </h3>
+                              <p className="text-xs text-slate-400 mt-1 font-medium tracking-wide">
+                                ID: #{String(index + 1).padStart(2, "0")} •{" "}
+                                {item.location_types?.name}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Menu Trigger */}
+                          <div
+                            className="relative"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <button
+                              onClick={() =>
+                                setActionsMenuOpen(
+                                  actionsMenuOpen === item.id ? null : item.id,
+                                )
+                              }
+                              className="p-2 hover:bg-slate-50 rounded-full text-slate-400 transition-colors"
+                            >
+                              <MoreVertical size={18} />
+                            </button>
+                            {/* ... Menu Dropdown logic ... */}
+                            {actionsMenuOpen === item.id && (
+                              <LocationActionsMenu
+                                item={item}
+                                location_id={item.id}
+                                onClose={() => setActionsMenuOpen(null)}
+                                onDelete={(loc) =>
+                                  setDeleteModal({ open: true, location: loc })
+                                }
+                                canDeleteLocation={canDeleteLocation}
+                                canEditLocation={canEditLocation}
+                              />
+                            )}
+                          </div>
                         </div>
-                        <div className="min-w-0 flex-1">
-                          <h3 className="font-semibold text-slate-800 text-sm truncate">
-                            {item.name}
+
+                        {/* Metrics Row */}
+                        <div className="grid grid-cols-2 gap-4 mb-6">
+                          <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                              Current Score
+                            </p>
+                            <div className="flex items-baseline gap-1">
+                              <span className="text-2xl font-bold text-slate-800">
+                                {Math.round(item.currentScore * 10) / 10 || "-"}
+                              </span>
+                              <span className="text-xs text-slate-400 font-medium">
+                                / 10
+                              </span>
+                            </div>
+                          </div>
+                          <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                              Avg Rating
+                            </p>
+                            <div className="flex items-center gap-1.5">
+                              <Star className="w-4 h-4 text-orange-400 fill-orange-400" />
+                              <span className="text-lg font-bold text-slate-800">
+                                {item.averageRating || "0.0"}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Footer Meta */}
+                        <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+                          <div className="flex items-center gap-2">
+                            <div
+                              className={`w-2 h-2 rounded-full ${item.status ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]" : "bg-rose-500"}`}
+                            />
+                            <span
+                              className={`text-xs font-bold uppercase tracking-wider ${item.status ? "text-emerald-600" : "text-rose-600"}`}
+                            >
+                              {item.status ? "Active" : "Inactive"}
+                            </span>
+                          </div>
+
+                          <div className="flex -space-x-2">
+                            {/* Cleaner Avatars or Count */}
+                            {item.cleaner_assignments?.length > 0 ? (
+                              <div className="pl-3 text-xs font-medium text-slate-500">
+                                <span className="text-slate-800 font-bold">
+                                  {item.cleaner_assignments.length}
+                                </span>{" "}
+                                Cleaner
+                                {item.cleaner_assignments.length > 1 ? "s" : ""}
+                              </div>
+                            ) : (
+                              <span className="text-xs text-slate-400 italic">
+                                Unassigned
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hidden lg:block">
+                    {/* Grid Header - FIXED WIDTHS to prevent scroll */}
+                    <div className="grid grid-cols-[60px_2fr_1.2fr_100px_100px_1.5fr_1fr_120px_90px] gap-2 px-6 py-4 bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-widest items-center">
+                      <div className="text-center text-blue-500">#</div>
+
+                      <button
+                        onClick={() => handleSort("name")}
+                        className="text-left flex items-center gap-1 hover:text-blue-600 group"
+                      >
+                        WASHROOM NAME {renderSortIcon(nameSortOrder)}
+                      </button>
+
+                      <div className="flex items-center gap-1">
+                        <MapPin size={12} /> ZONE
+                      </div>
+
+                      <button
+                        onClick={() => handleSort("currentScore")}
+                        className="text-center flex items-center justify-center gap-1 hover:text-blue-600 group"
+                      >
+                        CURRENT SCORE {renderSortIcon(currentScoreSortOrder)}
+                      </button>
+
+                      <button
+                        onClick={() => handleSort("avgScore")}
+                        className="text-center flex items-center justify-center gap-1 hover:text-blue-600 group"
+                      >
+                        AVERAGE RATING {renderSortIcon(avgScoreSortOrder)}
+                      </button>
+
+                      <div className="flex items-center gap-1">
+                        <Users size={12} /> CLEANER
+                      </div>
+
+                      <div className="flex items-center gap-1">FACILITY</div>
+
+                      <button
+                        onClick={() => handleSort("status")}
+                        className="text-center flex items-center justify-center gap-1 hover:text-blue-600 group"
+                      >
+                        STATUS {renderSortIcon(statusSortOrder)}
+                      </button>
+
+                      <div className="text-right">ACTION</div>
+                    </div>
+
+                    {/* Grid Body */}
+                    <div className="divide-y divide-slate-100">
+                      {filteredList.length === 0 ? (
+                        <div className="p-12 text-center">
+                          <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <MapPin className="h-8 w-8 text-slate-300" />
+                          </div>
+                          <h3 className="text-lg font-bold text-slate-700">
+                            No washrooms found
                           </h3>
-                          <p className="text-xs text-slate-500">
-                            {new Date(item.created_at).toLocaleDateString()}
+                          <p className="text-sm text-slate-400 mt-1">
+                            Try adjusting your filters
                           </p>
                         </div>
-                      </div>
-                      <div
-                        className="flex items-center gap-1 flex-shrink-0"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <button
-                          onClick={() =>
-                            setStatusModal({ open: true, location: item })
-                          }
-                          className={`p-1.5 rounded transition-all ${
-                            item.status === true || item.status === null
-                              ? "bg-emerald-100 text-emerald-700"
-                              : "bg-red-100 text-red-700"
-                          }`}
-                        >
-                          {item.status === true || item.status === null ? (
-                            <Power className="w-4 h-4" />
-                          ) : (
-                            <PowerOff className="w-4 h-4" />
-                          )}
-                        </button>
-                        <button
-                          onClick={() =>
-                            handleViewLocation(item.latitude, item.longitude)
-                          }
-                          className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                        >
-                          <Navigation className="h-4 w-4" />
-                        </button>
-                        <div
-                          className="relative"
-                          ref={
-                            actionsMenuOpen === item.id ? actionsMenuRef : null
-                          }
-                        >
-                          <button
-                            onClick={() =>
-                              setActionsMenuOpen(
-                                actionsMenuOpen === item.id ? null : item.id,
-                              )
-                            }
-                            className="p-1.5 text-slate-600 hover:bg-slate-100 rounded transition-colors"
+                      ) : (
+                        filteredList.map((item, index) => (
+                          <div
+                            key={item.id}
+                            onClick={() => handleView(item.id)}
+                            className="grid grid-cols-[60px_2fr_1.2fr_100px_100px_1.5fr_1fr_120px_90px] gap-2 px-6 py-4 items-center hover:bg-blue-50/30 transition-colors cursor-pointer group border-l-4 border-l-transparent hover:border-l-blue-500"
                           >
-                            <EllipsisVertical className="h-4 w-4" />
-                          </button>
-                          {actionsMenuOpen === item.id && (
-                            <LocationActionsMenu
-                              item={item}
-                              onClose={() => setActionsMenuOpen(null)}
-                              onDelete={(location) =>
-                                setDeleteModal({ open: true, location })
-                              }
-                              onEdit={(locationId) =>
-                                router.push(`/locations/${locationId}/edit`)
-                              }
-                            />
-                          )}
-                        </div>
-                      </div>
+                            {/* Rank */}
+                            <div className="flex justify-center">
+                              <span className="w-8 h-8 flex items-center justify-center bg-slate-100 text-blue-600 text-xs font-bold rounded-lg group-hover:bg-white group-hover:shadow-sm">
+                                {String(index + 1).padStart(2, "0")}
+                              </span>
+                            </div>
+
+                            {/* Name */}
+                            <div className="min-w-0 pr-2">
+                              <p className="font-bold text-slate-700 text-sm truncate">
+                                {item.name}
+                              </p>
+                              <p className="text-[10px] text-slate-400 mt-0.5 truncate">
+                                ID: {item.id} •{" "}
+                                {new Date(item.created_at).toLocaleDateString()}
+                              </p>
+                            </div>
+
+                            {/* Zone */}
+                            <div className="min-w-0">
+                              <span className="inline-block bg-slate-100 text-slate-600 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wide truncate max-w-full">
+                                {item.location_types?.name || "N/A"}
+                              </span>
+                            </div>
+
+                            {/* Current Score */}
+                            <div className="flex justify-center">
+                              <span className="px-4 py-1.5 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 text-sm font-bold">
+                                {item.currentScore
+                                  ? Math.round(item.currentScore * 10) / 10
+                                  : "-"}
+                              </span>
+                            </div>
+
+                            {/* Rating */}
+                            <div className="flex justify-center items-center gap-1.5">
+                              <Star
+                                size={14}
+                                className="text-orange-400 fill-orange-400"
+                              />
+                              <span className="text-sm font-bold text-slate-700">
+                                {item.averageRating || "0.0"}
+                              </span>
+                            </div>
+
+                            {/* Cleaner */}
+                            <div className="min-w-0">
+                              {renderCleanerBadge(
+                                item.name,
+                                item.cleaner_assignments,
+                              )}
+                            </div>
+
+                            {/* Facility */}
+                            <div className="min-w-0">
+                              <span className="text-xs font-medium text-slate-500 truncate block">
+                                {item.facility_companies?.name || "N/A"}
+                              </span>
+                            </div>
+
+                            {/* Status */}
+                            <div
+                              className="flex justify-center"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {canToggleStatus && (
+                                <button
+                                  onClick={() =>
+                                    setStatusModal({
+                                      open: true,
+                                      location: item,
+                                    })
+                                  }
+                                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border transition-all ${
+                                    item.status === true || item.status === null
+                                      ? "bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100"
+                                      : "bg-red-50 text-red-600 border-red-100 hover:bg-red-100"
+                                  }`}
+                                >
+                                  {item.status === true ||
+                                  item.status === null ? (
+                                    <>
+                                      <div className="relative flex h-2 w-2">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                      </div>
+                                      Active
+                                    </>
+                                  ) : (
+                                    <>
+                                      <div className="h-2 w-2 rounded-full bg-red-500"></div>
+                                      Inactive
+                                    </>
+                                  )}
+                                </button>
+                              )}
+                            </div>
+
+                            {/* Action */}
+                            <div
+                              className="flex justify-end gap-1"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <button
+                                onClick={() =>
+                                  handleViewLocation(
+                                    item.latitude,
+                                    item.longitude,
+                                  )
+                                }
+                                className="p-2 text-slate-400 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition-colors"
+                              >
+                                <Navigation size={16} />
+                              </button>
+                              <div
+                                className="relative"
+                                ref={
+                                  actionsMenuOpen === item.id
+                                    ? actionsMenuRef
+                                    : null
+                                }
+                              >
+                                <button
+                                  onClick={() =>
+                                    setActionsMenuOpen(
+                                      actionsMenuOpen === item.id
+                                        ? null
+                                        : item.id,
+                                    )
+                                  }
+                                  className="p-2 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors"
+                                >
+                                  <MoreVertical size={16} />
+                                </button>
+                                {actionsMenuOpen === item.id && (
+                                  <LocationActionsMenu
+                                    item={item}
+                                    location_id={item.id}
+                                    onClose={() => setActionsMenuOpen(null)}
+                                    onDelete={(location) =>
+                                      setDeleteModal({ open: true, location })
+                                    }
+                                    canDeleteLocation={canDeleteLocation}
+                                    canEditLocation={canEditLocation}
+                                  />
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
                     </div>
-
-                    <div className="p-4 space-y-3">
-                      <div>
-                        <label className="text-xs font-medium text-slate-500 mb-1 block">
-                          Zone
-                        </label>
-                        {item?.location_types?.name ? (
-                          <span className="inline-flex items-center text-sm text-slate-700 bg-slate-100 px-3 py-1.5 rounded-md font-medium">
-                            {item.location_types.name}
-                          </span>
-                        ) : (
-                          <span className="text-sm text-slate-400">N/A</span>
-                        )}
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="text-xs font-medium text-slate-500 mb-1 block">
-                            Current Score
-                          </label>
-                          {renderRating(item.currentScore, 0)}
-                        </div>
-                        <div>
-                          <label className="text-xs font-medium text-slate-500 mb-1 block">
-                            Average Rating
-                          </label>
-                          {renderRating(item.averageRating, item.ratingCount)}
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="text-xs font-medium text-slate-500 mb-1 block">
-                          Cleaner
-                        </label>
-                        {renderCleanerBadge(
-                          item.name,
-                          item.cleaner_assignments,
-                        )}
-                      </div>
-
-                      <div>
-                        <label className="text-xs font-medium text-slate-500 mb-1 block">
-                          Facility Company
-                        </label>
-                        {item.facility_companies?.name ? (
-                          <span className="text-sm text-slate-700 font-medium">
-                            {item.facility_companies.name}
-                          </span>
-                        ) : (
-                          <span className="text-sm text-slate-400">N/A</span>
-                        )}
-                      </div>
+                    {/* Footer */}
+                    <div className="bg-slate-50 px-6 py-3 border-t border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                      Showing {filteredList.length} washroom records
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-          {/* --- MODALS (Re-styled but logic preserved) --- */}
+                )}
 
-          {cleanerModal.open && (
-            // console.log("cleaner modal", cleanerModal),
-            <div
-              className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-              onClick={() => setCleanerModal({ open: false, location: null })}
-            >
-              <div
-                className="bg-white rounded-xl max-w-md w-full max-h-[85vh] overflow-y-scroll p-6 shadow-xl"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-slate-800">
-                    {cleanerModal.location?.name} - Assigned Cleaners
-                  </h3>
-                  <button
+                {/* Mobile Card View (Keep for responsiveness) */}
+                <div className="lg:hidden">
+                  {filteredList.length === 0 ? (
+                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center">
+                      <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <MapPin className="h-8 w-8 text-slate-400" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-slate-600 mb-2">
+                        No washrooms found
+                      </h3>
+                      <p className="text-sm text-slate-500">
+                        Try adjusting your search filters
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {filteredList.map((item, index) => (
+                        <div
+                          key={item.id}
+                          className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-all cursor-pointer"
+                          onClick={() => handleView(item.id)}
+                        >
+                          <div className="bg-slate-50 px-4 py-3 border-b border-slate-200 flex items-center justify-between">
+                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                              <div className="w-8 h-8 bg-slate-700 text-white rounded flex items-center justify-center text-sm font-bold flex-shrink-0">
+                                {index + 1}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <h3 className="font-semibold text-slate-800 text-sm truncate">
+                                  {item.name}
+                                </h3>
+                                <p className="text-xs text-slate-500">
+                                  {new Date(
+                                    item.created_at,
+                                  ).toLocaleDateString()}
+                                </p>
+                              </div>
+                            </div>
+                            <div
+                              className="flex items-center gap-1 flex-shrink-0"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <button
+                                onClick={() =>
+                                  setStatusModal({ open: true, location: item })
+                                }
+                                className={`p-1.5 rounded transition-all ${
+                                  item.status === true || item.status === null
+                                    ? "bg-emerald-100 text-emerald-700"
+                                    : "bg-red-100 text-red-700"
+                                }`}
+                              >
+                                {item.status === true ||
+                                item.status === null ? (
+                                  <Power className="w-4 h-4" />
+                                ) : (
+                                  <PowerOff className="w-4 h-4" />
+                                )}
+                              </button>
+                              <button
+                                onClick={() =>
+                                  handleViewLocation(
+                                    item.latitude,
+                                    item.longitude,
+                                  )
+                                }
+                                className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                              >
+                                <Navigation className="h-4 w-4" />
+                              </button>
+                              <div
+                                className="relative"
+                                ref={
+                                  actionsMenuOpen === item.id
+                                    ? actionsMenuRef
+                                    : null
+                                }
+                              >
+                                <button
+                                  onClick={() =>
+                                    setActionsMenuOpen(
+                                      actionsMenuOpen === item.id
+                                        ? null
+                                        : item.id,
+                                    )
+                                  }
+                                  className="p-1.5 text-slate-600 hover:bg-slate-100 rounded transition-colors"
+                                >
+                                  <EllipsisVertical className="h-4 w-4" />
+                                </button>
+                                {actionsMenuOpen === item.id && (
+                                  <LocationActionsMenu
+                                    item={item}
+                                    onClose={() => setActionsMenuOpen(null)}
+                                    onDelete={(location) =>
+                                      setDeleteModal({ open: true, location })
+                                    }
+                                    onEdit={(locationId) =>
+                                      router.push(
+                                        `/locations/${locationId}/edit`,
+                                      )
+                                    }
+                                  />
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="p-4 space-y-3">
+                            <div>
+                              <label className="text-xs font-medium text-slate-500 mb-1 block">
+                                Zone
+                              </label>
+                              {item?.location_types?.name ? (
+                                <span className="inline-flex items-center text-sm text-slate-700 bg-slate-100 px-3 py-1.5 rounded-md font-medium">
+                                  {item.location_types.name}
+                                </span>
+                              ) : (
+                                <span className="text-sm text-slate-400">
+                                  N/A
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <label className="text-xs font-medium text-slate-500 mb-1 block">
+                                  Current Score
+                                </label>
+                                {renderRating(item.currentScore, 0)}
+                              </div>
+                              <div>
+                                <label className="text-xs font-medium text-slate-500 mb-1 block">
+                                  Average Rating
+                                </label>
+                                {renderRating(
+                                  item.averageRating,
+                                  item.ratingCount,
+                                )}
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="text-xs font-medium text-slate-500 mb-1 block">
+                                Cleaner
+                              </label>
+                              {renderCleanerBadge(
+                                item.name,
+                                item.cleaner_assignments,
+                              )}
+                            </div>
+
+                            <div>
+                              <label className="text-xs font-medium text-slate-500 mb-1 block">
+                                Facility Company
+                              </label>
+                              {item.facility_companies?.name ? (
+                                <span className="text-sm text-slate-700 font-medium">
+                                  {item.facility_companies.name}
+                                </span>
+                              ) : (
+                                <span className="text-sm text-slate-400">
+                                  N/A
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                {/* --- MODALS (Re-styled but logic preserved) --- */}
+
+                {cleanerModal.open && (
+                  // console.log("cleaner modal", cleanerModal),
+                  <div
+                    className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center p-4"
                     onClick={() =>
                       setCleanerModal({ open: false, location: null })
                     }
-                    className="text-slate-400 hover:text-slate-600"
                   >
-                    <X className="h-5 w-5" />
-                  </button>
-                </div>
-                <div className="space-y-3">
-                  {cleanerModal.location?.cleaners?.map((assignment) => (
                     <div
-                      key={assignment.id}
-                      className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200"
+                      className="bg-white rounded-xl max-w-md w-full max-h-[85vh] overflow-y-scroll p-6 shadow-xl"
+                      onClick={(e) => e.stopPropagation()}
                     >
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-slate-800 text-sm truncate">
-                          {assignment.cleaner_user?.name || "Unknown"}
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-semibold text-slate-800">
+                          {cleanerModal.location?.name} - Assigned Cleaners
+                        </h3>
+                        <button
+                          onClick={() =>
+                            setCleanerModal({ open: false, location: null })
+                          }
+                          className="text-slate-400 hover:text-slate-600"
+                        >
+                          <X className="h-5 w-5" />
+                        </button>
+                      </div>
+                      <div className="space-y-3">
+                        {cleanerModal.location?.cleaners?.map((assignment) => (
+                          <div
+                            key={assignment.id}
+                            className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200"
+                          >
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-slate-800 text-sm truncate">
+                                {assignment.cleaner_user?.name || "Unknown"}
+                              </p>
+                              {assignment.cleaner_user?.phone && (
+                                <p className="text-xs text-slate-500">
+                                  {assignment.cleaner_user.phone}
+                                </p>
+                              )}
+                            </div>
+                            <span
+                              className={`text-xs px-2 py-1 rounded ${assignment.status === "assigned" ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-600"}`}
+                            >
+                              {assignment.status || "N/A"}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {statusModal.open && (
+                  <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl">
+                      <div className="flex items-center gap-4 mb-4">
+                        <div
+                          className={`p-3 rounded-full ${statusModal.location?.status === true || statusModal.location?.status === null ? "bg-red-100" : "bg-green-100"}`}
+                        >
+                          {statusModal.location?.status === true ||
+                          statusModal.location?.status === null ? (
+                            <PowerOff className="h-6 w-6 text-red-600" />
+                          ) : (
+                            <Power className="h-6 w-6 text-green-600" />
+                          )}
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold text-slate-800">
+                            {statusModal.location?.status === true ||
+                            statusModal.location?.status === null
+                              ? "Disable"
+                              : "Enable"}{" "}
+                            Washroom
+                          </h3>
+                          <p className="text-slate-600 text-sm">
+                            Confirm status change
+                          </p>
+                        </div>
+                      </div>
+                      <div className="mb-6">
+                        <p className="text-sm text-slate-700">
+                          Are you sure you want to{" "}
+                          {statusModal.location?.status === true ||
+                          statusModal.location?.status === null
+                            ? "disable"
+                            : "enable"}
+                          <strong> "{statusModal.location?.name}"</strong>?
                         </p>
-                        {assignment.cleaner_user?.phone && (
-                          <p className="text-xs text-slate-500">
-                            {assignment.cleaner_user.phone}
+
+                        {(statusModal.location?.status === true ||
+                          statusModal.location?.status === null) && (
+                          <p className="text-sm text-red-600 mt-2 bg-red-50 p-3 rounded-md border border-red-200">
+                            ⚠️ Disabling this washroom will automatically{" "}
+                            <strong>unassign all cleaners</strong> currently
+                            assigned to it.
+                            <br />
+                            They will need to be{" "}
+                            <strong>manually re-assigned</strong> when the
+                            washroom is enabled again.
+                          </p>
+                        )}
+
+                        {statusModal.location?.status === false && (
+                          <p className="text-sm text-blue-700 mt-2 bg-blue-50 p-3 rounded-md border border-blue-200">
+                            ℹ️ Enabling this washroom will{" "}
+                            <strong>not automatically assign cleaners</strong>.
+                            <br />
+                            Please assign cleaners manually after activation.
                           </p>
                         )}
                       </div>
-                      <span
-                        className={`text-xs px-2 py-1 rounded ${assignment.status === "assigned" ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-600"}`}
-                      >
-                        {assignment.status || "N/A"}
-                      </span>
+
+                      <div className="flex gap-3 justify-end">
+                        <button
+                          onClick={() =>
+                            setStatusModal({ open: false, location: null })
+                          }
+                          className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={confirmStatusToggle}
+                          disabled={togglingStatus === statusModal.location?.id}
+                          className={`px-4 py-2 text-white rounded-lg transition-colors flex items-center gap-2 ${statusModal.location?.status === true || statusModal.location?.status === null ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"}`}
+                        >
+                          {togglingStatus === statusModal.location?.id && (
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          )}
+                          {togglingStatus === statusModal.location?.id
+                            ? "Processing..."
+                            : statusModal.location?.status === true ||
+                                statusModal.location?.status === null
+                              ? "Disable"
+                              : "Enable"}
+                        </button>
+                      </div>
                     </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {statusModal.open && (
-            <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-              <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl">
-                <div className="flex items-center gap-4 mb-4">
-                  <div
-                    className={`p-3 rounded-full ${statusModal.location?.status === true || statusModal.location?.status === null ? "bg-red-100" : "bg-green-100"}`}
-                  >
-                    {statusModal.location?.status === true ||
-                    statusModal.location?.status === null ? (
-                      <PowerOff className="h-6 w-6 text-red-600" />
-                    ) : (
-                      <Power className="h-6 w-6 text-green-600" />
-                    )}
                   </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-slate-800">
-                      {statusModal.location?.status === true ||
-                      statusModal.location?.status === null
-                        ? "Disable"
-                        : "Enable"}{" "}
-                      Washroom
-                    </h3>
-                    <p className="text-slate-600 text-sm">
-                      Confirm status change
-                    </p>
+                )}
+
+                {deleteModal.open && (
+                  <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl">
+                      <div className="flex items-center gap-4 mb-4">
+                        <div className="p-3 bg-red-100 rounded-full">
+                          <AlertTriangle className="h-6 w-6 text-red-600" />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold text-slate-800">
+                            Delete Washroom
+                          </h3>
+                          <p className="text-slate-600 text-sm">
+                            This action cannot be undone
+                          </p>
+                        </div>
+                      </div>
+                      <div className="mb-6">
+                        <p className="text-sm text-slate-700">
+                          Are you sure you want to delete "
+                          <strong>{deleteModal.location?.name}</strong>"?
+                        </p>
+                      </div>
+                      <div className="flex gap-3 justify-end">
+                        <button
+                          onClick={() =>
+                            setDeleteModal({ open: false, location: null })
+                          }
+                          className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                          disabled={deleting}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={confirmDelete}
+                          disabled={deleting}
+                          className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors flex items-center gap-2"
+                        >
+                          {deleting && (
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          )}
+                          {deleting ? "Deleting..." : "Delete"}
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div className="mb-6">
-                  <p className="text-sm text-slate-700">
-                    Are you sure you want to{" "}
-                    {statusModal.location?.status === true ||
-                    statusModal.location?.status === null
-                      ? "disable"
-                      : "enable"}
-                    <strong> "{statusModal.location?.name}"</strong>?
-                  </p>
-
-                  {(statusModal.location?.status === true ||
-                    statusModal.location?.status === null) && (
-                    <p className="text-sm text-red-600 mt-2 bg-red-50 p-3 rounded-md border border-red-200">
-                      ⚠️ Disabling this washroom will automatically{" "}
-                      <strong>unassign all cleaners</strong> currently assigned
-                      to it.
-                      <br />
-                      They will need to be <strong>
-                        manually re-assigned
-                      </strong>{" "}
-                      when the washroom is enabled again.
-                    </p>
-                  )}
-
-                  {statusModal.location?.status === false && (
-                    <p className="text-sm text-blue-700 mt-2 bg-blue-50 p-3 rounded-md border border-blue-200">
-                      ℹ️ Enabling this washroom will{" "}
-                      <strong>not automatically assign cleaners</strong>.
-                      <br />
-                      Please assign cleaners manually after activation.
-                    </p>
-                  )}
-                </div>
-
-                <div className="flex gap-3 justify-end">
-                  <button
-                    onClick={() =>
-                      setStatusModal({ open: false, location: null })
-                    }
-                    className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={confirmStatusToggle}
-                    disabled={togglingStatus === statusModal.location?.id}
-                    className={`px-4 py-2 text-white rounded-lg transition-colors flex items-center gap-2 ${statusModal.location?.status === true || statusModal.location?.status === null ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"}`}
-                  >
-                    {togglingStatus === statusModal.location?.id && (
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    )}
-                    {togglingStatus === statusModal.location?.id
-                      ? "Processing..."
-                      : statusModal.location?.status === true ||
-                          statusModal.location?.status === null
-                        ? "Disable"
-                        : "Enable"}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {deleteModal.open && (
-            <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-              <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl">
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="p-3 bg-red-100 rounded-full">
-                    <AlertTriangle className="h-6 w-6 text-red-600" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-slate-800">
-                      Delete Washroom
-                    </h3>
-                    <p className="text-slate-600 text-sm">
-                      This action cannot be undone
-                    </p>
-                  </div>
-                </div>
-                <div className="mb-6">
-                  <p className="text-sm text-slate-700">
-                    Are you sure you want to delete "
-                    <strong>{deleteModal.location?.name}</strong>"?
-                  </p>
-                </div>
-                <div className="flex gap-3 justify-end">
-                  <button
-                    onClick={() =>
-                      setDeleteModal({ open: false, location: null })
-                    }
-                    className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
-                    disabled={deleting}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={confirmDelete}
-                    disabled={deleting}
-                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors flex items-center gap-2"
-                  >
-                    {deleting && (
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    )}
-                    {deleting ? "Deleting..." : "Delete"}
-                  </button>
-                </div>
+                )}
               </div>
             </div>
           )}
