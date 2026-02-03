@@ -181,6 +181,10 @@ export default function AddWashroomForm() {
   const [submitting, setSubmitting] = useState(false);
   const [pincodeError, setPincodeError] = useState("");
 
+  const [manualCoords, setManualCoords] = useState({
+    latitude: "",
+    longitude: "",
+  });
   // Form State
   const [form, setForm] = useState({
     name: "",
@@ -212,6 +216,12 @@ export default function AddWashroomForm() {
     setAvailableStates(indiaStates.map((s) => s.name));
   }, []);
 
+  useEffect(() => {
+    setManualCoords({
+      latitude: form.latitude.toString(),
+      longitude: form.longitude.toString(),
+    });
+  }, []);
   useEffect(() => {
     async function loadInitialData() {
       if (!companyId) return;
@@ -262,6 +272,102 @@ export default function AddWashroomForm() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const handleCoordinateChange = (field, value) => {
+    setManualCoords((prev) => ({ ...prev, [field]: value }));
+  };
+  const handleApplyCoordinates = () => {
+    const lat = parseFloat(manualCoords.latitude);
+    const lng = parseFloat(manualCoords.longitude);
+
+    // Validate coordinates
+    if (isNaN(lat) || isNaN(lng)) {
+      toast.error("Invalid coordinates. Please enter valid numbers.");
+      return;
+    }
+
+    if (lat < -90 || lat > 90) {
+      toast.error("Latitude must be between -90 and 90");
+      return;
+    }
+
+    if (lng < -180 || lng > 180) {
+      toast.error("Longitude must be between -180 and 180");
+      return;
+    }
+
+    // Update form state (this will trigger map update)
+    handleChange("latitude", lat);
+    handleChange("longitude", lng);
+
+    toast.success("Map updated with new coordinates");
+  };
+
+  const reverseGeocode = async (lat, lng) => {
+    try {
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`,
+      );
+      const data = await response.json();
+
+      if (data.status === "OK" && data.results[0]) {
+        const result = data.results[0];
+        const addressComponents = result.address_components;
+
+        // Extract location details
+        let state = "";
+        let city = "";
+        let pincode = "";
+        let district = "";
+
+        addressComponents.forEach((component) => {
+          if (component.types.includes("administrative_area_level_1")) {
+            state = component.long_name;
+          }
+          if (component.types.includes("locality")) {
+            city = component.long_name;
+          }
+          if (component.types.includes("administrative_area_level_3")) {
+            district = component.long_name;
+          }
+          if (component.types.includes("postal_code")) {
+            pincode = component.long_name;
+          }
+        });
+
+        // Update form with geocoded data
+        handleChange("address", result.formatted_address);
+        if (state) handleChange("state", state);
+        if (city) handleChange("city", city);
+        if (district) handleChange("dist", district);
+        if (pincode) handleChange("pincode", pincode);
+
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error("Reverse geocoding error:", error);
+      return false;
+    }
+  };
+
+  const handleMapLocationSelect = async (lat, lng) => {
+    // Update coordinates
+    handleChange("latitude", lat);
+    handleChange("longitude", lng);
+
+    // Update manual input fields
+    setManualCoords({
+      latitude: lat.toString(),
+      longitude: lng.toString(),
+    });
+
+    // Reverse geocode to fill address fields
+    const geocoded = await reverseGeocode(lat, lng);
+    if (geocoded) {
+      toast.success("Location details auto-filled from map");
+    }
+  };
 
   const handleChange = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -802,12 +908,12 @@ export default function AddWashroomForm() {
         <div className="space-y-8">
           {/* 4. PIN LOCATION (Map) */}
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6">
-            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
+            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
               <div className="h-10 w-10 rounded-xl bg-cyan-400/10 flex items-center justify-center border border-cyan-500/10 shadow-sm">
                 <MapPin className="text-cyan-600" size={20} strokeWidth={2.5} />
               </div>
               <div className="text-left">
-                <h2 className="text-sm font-black text-slate-800 uppercase tracking-[0.2em] leading-none">
+                <h2 className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-[0.2em] leading-none">
                   Pin Location
                 </h2>
                 <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1.5 opacity-70">
@@ -816,50 +922,112 @@ export default function AddWashroomForm() {
               </div>
             </div>
 
-            {/* Search Wrapper */}
+            {/* Map Component */}
             <div className="mb-4">
-              <div className="relative">
-                {/* Note: Wrapping your existing GoogleMapPicker logic here */}
-                <GoogleMapPicker
-                  lat={form.latitude}
-                  lng={form.longitude}
-                  onSelect={(lat, lng) => {
-                    handleChange("latitude", lat);
-                    handleChange("longitude", lng);
-                  }}
-                />
-              </div>
+              <GoogleMapPicker
+                lat={form.latitude}
+                lng={form.longitude}
+                onSelect={handleMapLocationSelect}
+              />
             </div>
 
-            {/* Coordinate Display */}
-            <div className="grid grid-cols-2 gap-4 mt-4">
+            {/* Manual Coordinate Input Section - ENHANCED */}
+            <div className="space-y-4 mt-6">
+              <div className="flex items-center gap-2 mb-3">
+                <MapPin size={14} className="text-cyan-500" />
+                <p className="text-[11px] font-black text-slate-600 uppercase tracking-wider">
+                  Manual Coordinates
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 block">
+                    Latitude
+                  </label>
+                  <input
+                    type="number"
+                    step="0.000001"
+                    value={manualCoords.latitude}
+                    onChange={(e) =>
+                      handleCoordinateChange("latitude", e.target.value)
+                    }
+                    placeholder="21.145800"
+                    className="w-full px-3 py-2.5 bg-white border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-mono text-slate-700 dark:text-slate-300 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 transition-all outline-none"
+                  />
+                  <p className="text-[9px] text-slate-400 mt-1 ml-1">
+                    Range: -90 to 90
+                  </p>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 block">
+                    Longitude
+                  </label>
+                  <input
+                    type="number"
+                    step="0.000001"
+                    value={manualCoords.longitude}
+                    onChange={(e) =>
+                      handleCoordinateChange("longitude", e.target.value)
+                    }
+                    placeholder="79.088200"
+                    className="w-full px-3 py-2.5 bg-white border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-mono text-slate-700 dark:text-slate-300 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 transition-all outline-none"
+                  />
+                  <p className="text-[9px] text-slate-400 mt-1 ml-1">
+                    Range: -180 to 180
+                  </p>
+                </div>
+              </div>
+
+              {/* Apply Button */}
+              <button
+                type="button"
+                onClick={handleApplyCoordinates}
+                className="w-full mt-2 px-4 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:brightness-110 transition-all shadow-sm active:scale-[0.98] flex items-center justify-center gap-2"
+              >
+                <MapPin size={14} />
+                Update Map Location
+              </button>
+            </div>
+
+            {/* Current Coordinates Display */}
+            <div className="grid grid-cols-2 gap-4 mt-6 p-4 bg-gradient-to-r from-cyan-50/50 to-blue-50/50 dark:from-cyan-900/10 dark:to-blue-900/10 rounded-xl border border-cyan-100/50 dark:border-cyan-800/50">
               <div>
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">
-                  Latitude
+                <label className="text-[10px] font-bold text-cyan-600 dark:text-cyan-400 uppercase tracking-wider mb-1 block">
+                  Current Latitude
                 </label>
-                <div className="px-4 py-3 bg-cyan-400/5 border border-cyan-500/10 rounded-xl text-sm font-mono font-bold text-cyan-700 shadow-sm">
+                <div className="px-3 py-2 bg-white dark:bg-slate-800 border border-cyan-200/50 dark:border-cyan-700/50 rounded-lg text-sm font-mono font-bold text-cyan-700 dark:text-cyan-300 shadow-sm">
                   {Number(form.latitude).toFixed(6)}
                 </div>
               </div>
               <div>
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">
-                  Longitude
+                <label className="text-[10px] font-bold text-cyan-600 dark:text-cyan-400 uppercase tracking-wider mb-1 block">
+                  Current Longitude
                 </label>
-                <div className="px-4 py-3 bg-cyan-400/5 border border-cyan-500/10 rounded-xl text-sm font-mono font-bold text-cyan-700 shadow-sm">
+                <div className="px-3 py-2 bg-white dark:bg-slate-800 border border-cyan-200/50 dark:border-cyan-700/50 rounded-lg text-sm font-mono font-bold text-cyan-700 dark:text-cyan-300 shadow-sm">
                   {Number(form.longitude).toFixed(6)}
                 </div>
               </div>
             </div>
 
-            <div className="mt-6 flex items-start gap-3 p-4 bg-slate-50/50 border border-slate-100 rounded-xl">
+            {/* Info Box */}
+            <div className="mt-6 flex items-start gap-3 p-4 bg-slate-50/50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 rounded-xl">
               <Info size={14} className="text-cyan-500 shrink-0 mt-0.5" />
-              <p className="text-[10px] font-medium text-slate-500 italic leading-relaxed text-left">
-                Search an address above or drag the red marker to pin the exact
-                facility entrance.
-                <span className="font-black text-cyan-600 uppercase ml-1">
-                  Coordinates are automatically captured.
-                </span>
-              </p>
+              <div className="text-[10px] font-medium text-slate-500 dark:text-slate-400 leading-relaxed text-left space-y-1">
+                <p>
+                  <span className="font-black text-cyan-600">Option 1:</span>{" "}
+                  Drag the map marker to update coordinates automatically
+                </p>
+                <p>
+                  <span className="font-black text-cyan-600">Option 2:</span>{" "}
+                  Enter lat/long manually and click "Update Map Location"
+                </p>
+                <p className="text-amber-600 dark:text-amber-400 font-bold">
+                  Address fields will auto-fill when you pin a location on the
+                  map
+                </p>
+              </div>
             </div>
           </div>
 
