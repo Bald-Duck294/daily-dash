@@ -44,10 +44,7 @@ export default function LocationTypesPage() {
      TanStack Query
   ======================= */
 
-  const {
-    data: types = [],
-    isLoading: loading,
-  } = useLocationTypes(companyId);
+  const { data: types = [], isLoading: loading } = useLocationTypes(companyId);
 
   const deleteMutation = useDeleteLocationType(companyId);
   const updateMutation = useUpdateLocationType(companyId);
@@ -58,15 +55,11 @@ export default function LocationTypesPage() {
 
   const filteredTypes = !search.trim()
     ? types
-    : types.filter((t) =>
-        t.name.toLowerCase().includes(search.toLowerCase())
-      );
+    : types.filter((t) => t.name.toLowerCase().includes(search.toLowerCase()));
 
-  const hasChildren = (typeId) =>
-    types.some((t) => t.parent_id === typeId);
+  const hasChildren = (typeId) => types.some((t) => t.parent_id === typeId);
 
-  const parentName = (id) =>
-    types.find((t) => t.id === id)?.name || "—";
+  const parentName = (id) => types.find((t) => t.id === id)?.name || "—";
 
   /* =======================
      Delete logic (NO UI change)
@@ -75,6 +68,7 @@ export default function LocationTypesPage() {
   const handleDeleteClick = (type) => {
     setDeleteModal({ open: true, type });
   };
+  console.log(deleteModal, "delete model");
 
   const confirmDelete = async () => {
     if (!deleteModal.type) return;
@@ -83,7 +77,7 @@ export default function LocationTypesPage() {
 
     if (hasChildren(id)) {
       toast.error(
-        "Cannot delete location hierarchy with child hierarchy. Delete children first."
+        "Cannot delete location hierarchy with child hierarchy. Delete children first.",
       );
       setDeleteModal({ open: false, type: null });
       return;
@@ -117,7 +111,6 @@ export default function LocationTypesPage() {
 
       <div className="min-h-screen bg-background p-6">
         <div className="mx-auto max-w-7xl space-y-6">
-
           {/* Header Card */}
           <div className="rounded-2xl bg-background shadow-sm border border-border p-5 flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -166,7 +159,6 @@ export default function LocationTypesPage() {
 
           {/* Table Card */}
           <div className="rounded-2xl bg-background shadow-sm border border-border overflow-hidden">
-
             {!showTree ? (
               <table className="w-full">
                 <thead className="bg-muted/40">
@@ -216,7 +208,7 @@ export default function LocationTypesPage() {
                               type="button"
                               onClick={() =>
                                 router.push(
-                                  `/location-types/${type.id}${companyId ? `?companyId=${companyId}` : ""}`
+                                  `/location-types/${type.id}${companyId ? `?companyId=${companyId}` : ""}`,
                                 )
                               }
                               className="h-9 w-9 rounded-full border border-blue-200 flex items-center justify-center text-blue-600 hover:bg-blue-50"

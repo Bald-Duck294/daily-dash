@@ -1,0 +1,7 @@
+/* Charts Component Specific Styles */
+
+.chart-tooltip-marker {
+  left: var(--left-percent, 0%);
+  top: 50%;
+  transform: var(--transform-value, translate(-50%, -100%));
+}

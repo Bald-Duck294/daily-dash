@@ -5,17 +5,11 @@ import locationTypesApi from "@/features/locationTypes/locationTypes.api";
 import { useCompanyId } from "@/providers/CompanyProvider";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
-import {
-  Layers,
-  Info,
-  ChevronDown,
-  RotateCcw,
-  Save,
-} from "lucide-react";
+import { Layers, Info, ChevronDown, RotateCcw, Save } from "lucide-react";
 
 export default function CreateForm({ onCreated, allTypes }) {
   const { companyId } = useCompanyId();
-const router = useRouter();
+  const router = useRouter();
   const [name, setName] = useState("");
   const [parentId, setParentId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -53,7 +47,7 @@ const router = useRouter();
           name: name.trim(),
           parent_id: parentId ? Number(parentId) : null,
         },
-        companyId
+        companyId,
       );
 
       toast.success("Zone created successfully", { id: loading });
@@ -70,7 +64,6 @@ const router = useRouter();
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-
       {/* ===== FORM HEADER ===== */}
       {/* <div className="flex items-center gap-4 pb-4 border-b border-border">
         <div className="h-11 w-11 rounded-xl bg-indigo-100 flex items-center justify-center">
@@ -100,7 +93,7 @@ const router = useRouter();
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder=""
+            placeholder="eg: Ward A"
             disabled={isSubmitting}
             maxLength={100}
             className="w-full rounded-xl border border-border bg-background py-3 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-60"
@@ -153,7 +146,7 @@ const router = useRouter();
       <div className="flex gap-4 pt-6">
         <button
           type="button"
-          onClick={()=>router.push("/location-types")}
+          onClick={() => router.push("/location-types")}
           disabled={isSubmitting}
           className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-orange-400 py-3 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
         >
