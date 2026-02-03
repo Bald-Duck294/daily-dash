@@ -44,6 +44,7 @@ export default function ViewUserPage() {
         const response = await UsersApi.getUserById(userId);
         console.log(response, "response");
         if (response.success) {
+          console.log(response, "response");
           setUser(response.data);
         } else {
           toast.error("Failed to fetch user data.");
@@ -109,7 +110,7 @@ export default function ViewUserPage() {
                       user.location_assignments &&
                       user.location_assignments.length > 0
                         ? user.location_assignments
-                            .map((a) => a.location.name)
+                            .map((a) => a.locations.name)
                             .join(", ")
                         : "None"
                     }

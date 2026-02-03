@@ -2644,24 +2644,22 @@ const AddAssignmentPage = () => {
   return (
     <>
       <Toaster position="top-center" />
-      <div className="min-h-screen bg-white dark:bg-background w-full py-4 sm:py-6 px-4 sm:px-6 md:px-8 flex flex-col items-center relative overflow-hidden">
+      <div className="min-h-screen bg-white dark:bg-background w-full py-4 sm:py-6 px-4 sm:px-6 md:px-8 flex flex-col items-center relative overflow-x-hidden">
         {/* Background Decorative Blur */}
         <div className="absolute top-0 right-0 w-40 h-40 sm:w-48 sm:h-48 md:w-56 md:h-56 bg-[#CBF3F0] rounded-full blur-3xl opacity-50 -mr-12 sm:-mr-16 -mt-12 sm:-mt-16 pointer-events-none" />
 
         {/* Back Button */}
         <div className="absolute top-4 sm:top-6 md:top-8 left-4 sm:left-6 md:left-8 z-20">
           <button
-            className="cursor-pointer p-2 hover:bg-slate-100 dark:hover:bg-slate-700 
-          rounded-full text-slate-600 dark:text-slate-300 
-          transition-colors"
+            className="cursor-pointer p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full text-slate-600 dark:text-slate-300 transition-colors"
             onClick={() => router.back()}
           >
             <ArrowLeft size={20} strokeWidth={2.5} />
           </button>
         </div>
 
-        {/* Main Card */}
-        <div className="max-w-2xl w-full bg-white dark:bg-card rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-100 dark:border-border overflow-hidden relative z-10 mt-12 sm:mt-0">
+        {/* Main Card - ENHANCED SHADOW */}
+        <div className="max-w-2xl w-full bg-white dark:bg-card rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_40px_rgba(0,0,0,0.3)] border border-slate-100 dark:border-border relative z-10 mt-12 sm:mt-0">
           {/* Card Header */}
           <div className="bg-[#CBF3F0] dark:bg-[#2a4a4a] px-4 sm:px-6 py-3 sm:py-4 border-b border-[#CBF3F1] dark:border-border flex justify-between items-center">
             <div className="flex items-center gap-2 sm:gap-3">
@@ -3031,8 +3029,7 @@ const AddAssignmentPage = () => {
               )}
             </div>
 
-            {/* Location Selection */}
-            <div className="text-left space-y-2" ref={locationDropdownRef}>
+            <div className="text-left space-y-2">
               <label className="text-xs font-black text-[#0f0f0f] dark:text-slate-100 uppercase tracking-widest ml-1">
                 {assignmentMode === "multi"
                   ? `Select Locations (${selectedLocations.length} selected)`
@@ -3056,7 +3053,8 @@ const AddAssignmentPage = () => {
                 </div>
               )}
 
-              <div className="relative">
+              {/* FIXED: Remove overflow-hidden, add proper z-index */}
+              <div className="relative" ref={locationDropdownRef}>
                 <div
                   onClick={() => {
                     if (assignmentMode === "single" && !singleUser) return;
@@ -3073,9 +3071,7 @@ const AddAssignmentPage = () => {
                     readOnly
                     value={
                       selectedLocations.length > 0
-                        ? `${selectedLocations.length} location${
-                            selectedLocations.length > 1 ? "s" : ""
-                          } selected`
+                        ? `${selectedLocations.length} location${selectedLocations.length > 1 ? "s" : ""} selected`
                         : "Click to select locations..."
                     }
                     placeholder="Click to select locations..."
@@ -3083,23 +3079,21 @@ const AddAssignmentPage = () => {
                     className="w-full px-4 sm:px-6 py-3 sm:py-3.5 text-sm sm:text-base rounded-xl border border-slate-200 dark:border-border bg-white dark:bg-card font-medium text-[#0f0f0f] dark:text-slate-100 outline-none focus:border-[#93C5FD] dark:focus:border-[hsl(var(--primary))] focus:ring-2 focus:ring-[#93C5FD]/20 dark:focus:ring-[hsl(var(--primary))]/20 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                   <ChevronDown
-                    className={`absolute right-4 sm:right-5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 group-hover:text-[#FF9F1C] dark:group-hover:text-[hsl(var(--primary))] transition-all duration-300 ${
-                      isLocationDropdownOpen ? "rotate-180" : ""
-                    }`}
+                    className={`absolute right-4 sm:right-5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 group-hover:text-[#FF9F1C] dark:group-hover:text-[hsl(var(--primary))] transition-all duration-300 ${isLocationDropdownOpen ? "rotate-180" : ""}`}
                     size={18}
                     strokeWidth={2.5}
                   />
                 </div>
 
-                {/* Dropdown Menu - INCREASED HEIGHT FOR BETTER SCROLLING */}
+                {/* FIXED DROPDOWN - Increased Height, Better Scroll, Higher Z-index */}
                 {isLocationDropdownOpen &&
                   (assignmentMode === "multi" || singleUser) && (
                     <div
-                      className="absolute z-50 w-full mt-2 bg-white dark:bg-card border border-slate-200 dark:border-border rounded-xl shadow-xl overflow-hidden flex flex-col"
+                      className="absolute z-[100] w-full mt-2 bg-white dark:bg-card border-2 border-slate-200 dark:border-border rounded-xl shadow-[0_12px_40px_rgba(0,0,0,0.15)] dark:shadow-[0_12px_50px_rgba(0,0,0,0.4)] flex flex-col"
                       style={{ maxHeight: "500px" }}
                     >
-                      {/* Search Bar - Reduced Padding */}
-                      <div className="p-2.5 border-b border-slate-100 dark:border-border flex-shrink-0">
+                      {/* Search Bar */}
+                      <div className="p-3 border-b border-slate-100 dark:border-border flex-shrink-0">
                         <div className="relative">
                           <Search
                             className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500"
@@ -3112,16 +3106,16 @@ const AddAssignmentPage = () => {
                               setLocationSearchTerm(e.target.value)
                             }
                             placeholder="Search locations..."
-                            className="w-full pl-10 pr-4 py-2 text-sm rounded-lg border border-slate-200 dark:border-border bg-slate-50 dark:bg-[hsl(224,48%,12%)] text-slate-700 dark:text-slate-200 outline-none focus:border-[#93C5FD] dark:focus:border-[hsl(var(--primary))]"
+                            className="w-full pl-10 pr-4 py-2.5 text-sm rounded-lg border border-slate-200 dark:border-border bg-slate-50 dark:bg-[hsl(224,48%,12%)] text-slate-700 dark:text-slate-200 outline-none focus:border-[#93C5FD] dark:focus:border-[hsl(var(--primary))]"
                             onClick={(e) => e.stopPropagation()}
                           />
                         </div>
                       </div>
 
-                      {/* Select All - Reduced Padding */}
+                      {/* Select All */}
                       {assignmentMode === "multi" && (
-                        <div className="p-1.5 border-b border-slate-100 dark:border-border flex-shrink-0">
-                          <label className="flex items-center gap-2 px-2 py-1.5 cursor-pointer hover:bg-slate-50 dark:hover:bg-[hsl(224,48%,14%)] rounded-lg transition-colors">
+                        <div className="p-2.5 border-b border-slate-100 dark:border-border flex-shrink-0 bg-slate-50/50 dark:bg-[hsl(224,48%,10%)]">
+                          <label className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-white dark:hover:bg-[hsl(224,48%,14%)] rounded-lg transition-colors">
                             <input
                               type="checkbox"
                               checked={allLocationsSelected}
@@ -3129,20 +3123,23 @@ const AddAssignmentPage = () => {
                               className="w-4 h-4 text-[#FF9F1C] dark:text-[hsl(var(--primary))] border-slate-300 rounded focus:ring-[#FF9F1C]"
                               onClick={(e) => e.stopPropagation()}
                             />
-                            <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                            <span className="text-sm font-bold text-slate-700 dark:text-slate-200">
                               Select All ({filteredLocations.length})
                             </span>
                           </label>
                         </div>
                       )}
 
-                      {/* Locations List - SIGNIFICANTLY INCREASED SCROLL AREA */}
+                      {/* FIXED: Locations List - PROPER SCROLLABLE AREA */}
                       <div
-                        className="overflow-y-auto flex-1"
-                        style={{ minHeight: "250px", maxHeight: "420px" }}
+                        className="overflow-y-auto flex-1 py-1"
+                        style={{
+                          minHeight: "200px",
+                          maxHeight: "380px",
+                        }}
                       >
                         {filteredLocations.length === 0 ? (
-                          <div className="p-4 text-center text-sm text-slate-500 dark:text-slate-400">
+                          <div className="p-6 text-center text-sm text-slate-500 dark:text-slate-400">
                             {assignmentMode === "single" && singleUser
                               ? "All locations are already assigned to this user"
                               : "No locations found"}
@@ -3156,10 +3153,10 @@ const AddAssignmentPage = () => {
                               <div
                                 key={location.id}
                                 onClick={() => handleLocationSelect(location)}
-                                className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors ${
+                                className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-all hover:bg-[#FDF9F2] dark:hover:bg-[hsl(224,48%,16%)] ${
                                   isSelected
-                                    ? "bg-[#FDF9F2] dark:bg-[hsl(224,48%,16%)]"
-                                    : "hover:bg-slate-50 dark:hover:bg-[hsl(224,48%,14%)]"
+                                    ? "bg-[#FDF9F2] dark:bg-[hsl(224,48%,16%)] border-l-4 border-[#FF9F1C]"
+                                    : ""
                                 }`}
                               >
                                 {assignmentMode === "multi" ? (
@@ -3183,6 +3180,7 @@ const AddAssignmentPage = () => {
                                     )}
                                   </div>
                                 )}
+
                                 <MapPin className="w-4 h-4 text-slate-400 dark:text-slate-500 flex-shrink-0" />
                                 <span className="text-sm font-medium text-slate-900 dark:text-slate-100 flex-1">
                                   {location.name}
@@ -3196,9 +3194,9 @@ const AddAssignmentPage = () => {
                   )}
               </div>
 
-              {/* SELECTED LOCATIONS CHIPS - NEW */}
+              {/* SELECTED LOCATIONS CHIPS */}
               {selectedLocations.length > 0 && (
-                <div className="mt-3 p-3 bg-slate-50 dark:bg-[hsl(224,48%,12%)] rounded-lg border border-slate-200 dark:border-border max-h-40 overflow-y-auto">
+                <div className="mt-3 p-3 bg-slate-50 dark:bg-[hsl(224,48%,12%)] rounded-lg border border-slate-200 dark:border-border max-h-48 overflow-y-auto">
                   <div className="flex flex-wrap gap-2">
                     {selectedLocations.map((location) => (
                       <div
@@ -3228,7 +3226,7 @@ const AddAssignmentPage = () => {
               <button
                 type="submit"
                 disabled={isLoading || isValidating || !canAddAssignment}
-                className={`w-full py-3 sm:py-4 px-4 sm:px-6 text-sm sm:text-base font-bold text-white rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 sm:gap-3 disabled:cursor-not-allowed disabled:opacity-50 ${
+                className={`w-full py-3 sm:py-4 px-4 sm:px-6 text-sm sm:text-base font-bold text-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 sm:gap-3 disabled:cursor-not-allowed disabled:opacity-50 ${
                   assignmentMode === "multi"
                     ? "bg-gradient-to-r from-[#FF9F1C] to-[#FFBF69] dark:from-[hsl(var(--primary))] dark:to-[hsl(var(--primary-light))] hover:from-[#E68900] hover:to-[#FF9F1C] shadow-[#FF9F1C]/30 dark:shadow-[hsl(var(--primary))]/30"
                     : "bg-gradient-to-r from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 hover:from-blue-600 hover:to-blue-700 shadow-blue-500/30 dark:shadow-blue-600/30"
@@ -3249,15 +3247,11 @@ const AddAssignmentPage = () => {
                     <Check size={20} strokeWidth={3} className="text-white" />
                     <span>
                       {assignmentMode === "multi"
-                        ? `Create ${
-                            selectedUsers.length > 0 &&
-                            selectedLocations.length > 0
-                              ? selectedUsers.length * selectedLocations.length
-                              : 0
-                          } Assignments`
-                        : `Assign ${selectedLocations.length} Location${
-                            selectedLocations.length !== 1 ? "s" : ""
-                          }`}
+                        ? selectedUsers.length > 0 &&
+                          selectedLocations.length > 0
+                          ? `Create ${selectedUsers.length} × ${selectedLocations.length} Assignments`
+                          : "Create Assignments"
+                        : `Assign ${selectedLocations.length} Location${selectedLocations.length !== 1 ? "s" : ""}`}
                     </span>
                   </>
                 )}

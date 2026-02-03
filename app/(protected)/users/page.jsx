@@ -1485,7 +1485,7 @@ export default function UsersPage() {
                             <button
                               onClick={() =>
                                 router.push(
-                                  `/users/view/${user.id}?companyId=${companyId}`,
+                                  `/users/${user.id}?companyId=${companyId}`,
                                 )
                               }
                               className="p-2 cursor-pointer text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
@@ -1497,7 +1497,7 @@ export default function UsersPage() {
                               <button
                                 onClick={() =>
                                   router.push(
-                                    `/users/${user.id}?companyId=${companyId}`,
+                                    `/users/${user.id}/edit?companyId=${companyId}`,
                                   )
                                 }
                                 className="p-2 cursor-pointer text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
