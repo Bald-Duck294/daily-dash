@@ -351,7 +351,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import roleApi from "@/features/roles/roles.api";
+import RolesApi from "@/features/roles/api/roles.api";
 import LocationsApi from "@/features/locations/locations.api";
 import { CompanyApi } from "@/features/companies/api/companies.api";
 import { useCompanyId } from "@/providers/CompanyProvider";

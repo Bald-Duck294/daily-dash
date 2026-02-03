@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { UsersApi } from "@/lib/api/usersApi";
+import { UsersApi } from "@/features/users/users.api";
 import toast, { Toaster } from "react-hot-toast";
 import {
   ArrowLeft,

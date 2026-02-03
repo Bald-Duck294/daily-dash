@@ -2,15 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { UsersApi } from "@/lib/api/usersApi";
+import { UsersApi } from "@/features/users/users.api";
 import toast, { Toaster } from "react-hot-toast";
-import UserForm from "@/components/users/UserForm";
+import UserForm from "../../components/UserForm";
 import { ArrowLeft, Loader2, AlertTriangle } from "lucide-react"; // ✅ ADD AlertTriangle
-import { useCompanyId } from "@/lib/providers/CompanyProvider";
-import { useRequirePermission } from "@/lib/hooks/useRequirePermission";
-import { usePermissions } from "@/lib/hooks/usePermissions";
-import { MODULES } from "@/lib/constants/permissions";
-
+import { useCompanyId } from "@/providers/CompanyProvider";
+import { useRequirePermission } from "@/shared/hooks/useRequirePermission";
+import { MODULES } from "@/shared/constants/permissions";
+import { usePermissions } from "@/shared/hooks/usePermission";
 export default function EditUserPage() {
   const router = useRouter();
   const params = useParams();
