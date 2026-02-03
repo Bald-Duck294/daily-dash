@@ -8,9 +8,9 @@ import { UsersApi } from "@/features/users/users.api.js";
 import LocationsApi from "@/features/locations/locations.api.js";
 import { AssignmentsApi } from "@/features/assignments/assignments.api.js";
 import { useCompanyId } from "@/providers/CompanyProvider";
-import { useRequirePermission } from '@/shared/hooks/useRequirePermission';
-import { usePermissions } from '@/shared/hooks/usePermission';
-import { MODULES } from '@/shared/constants/permissions';
+import { useRequirePermission } from "@/shared/hooks/useRequirePermission";
+import { usePermissions } from "@/shared/hooks/usePermission";
+import { MODULES } from "@/shared/constants/permissions";
 import {
   ClipboardPlus,
   User,
@@ -27,7 +27,6 @@ import {
 } from "lucide-react";
 
 const AddAssignmentPage = () => {
-
   useRequirePermission(MODULES.ASSIGNMENTS);
 
   const { canAdd } = usePermissions();
@@ -62,8 +61,12 @@ const AddAssignmentPage = () => {
   const router = useRouter();
 
   // ✅ UPDATED: Filter out role_id 1 and 2, then get unique roles
-  const assignableUsers = allUsers.filter(u => u.role_id !== 1 && u.role_id !== 2);
-  const uniqueRoles = [...new Set(assignableUsers.map(u => u.role?.name).filter(Boolean))];
+  const assignableUsers = allUsers.filter(
+    (u) => u.role_id !== 1 && u.role_id !== 2,
+  );
+  const uniqueRoles = [
+    ...new Set(assignableUsers.map((u) => u.role?.name).filter(Boolean)),
+  ];
 
   // ✅ UPDATED: Remove emojis, only show background colors
   const getRoleColor = (roleName) => {
@@ -71,12 +74,12 @@ const AddAssignmentPage = () => {
 
     const role = roleName.toLowerCase();
     switch (role) {
-      case 'supervisor':
+      case "supervisor":
         return "bg-blue-100 text-blue-700";
-      case 'cleaner':
+      case "cleaner":
         return "bg-purple-100 text-purple-700";
-      case 'zonal admin':
-      case 'zonaladmin':
+      case "zonal admin":
+      case "zonaladmin":
         return "bg-orange-100 text-orange-700";
       default:
         return "bg-gray-100 text-gray-700";
@@ -120,7 +123,7 @@ const AddAssignmentPage = () => {
     try {
       const response = await AssignmentsApi.getAssignmentsByCleanerId(
         userId,
-        companyId
+        companyId,
       );
 
       if (response.success) {
@@ -128,7 +131,7 @@ const AddAssignmentPage = () => {
         setUserAssignedLocations(assignedLocationIds);
 
         const unassignedLocations = allLocations.filter(
-          (loc) => !assignedLocationIds.includes(loc.id)
+          (loc) => !assignedLocationIds.includes(loc.id),
         );
         setAvailableLocations(unassignedLocations);
       }
@@ -147,20 +150,21 @@ const AddAssignmentPage = () => {
     const conflicts = [];
 
     try {
-      const usersToCheck = assignmentMode === "multi"
-        ? selectedUsers
-        : [assignableUsers.find(u => u.id === singleUser)];
+      const usersToCheck =
+        assignmentMode === "multi"
+          ? selectedUsers
+          : [assignableUsers.find((u) => u.id === singleUser)];
 
       for (const user of usersToCheck) {
         const response = await AssignmentsApi.getAssignmentsByCleanerId(
           user.id,
-          companyId
+          companyId,
         );
 
         if (response.success) {
           const assignedLocationIds = response.data.map((a) => a.location_id);
           const userConflicts = selectedLocations.filter((loc) =>
-            assignedLocationIds.includes(loc.id)
+            assignedLocationIds.includes(loc.id),
           );
 
           if (userConflicts.length > 0) {
@@ -218,7 +222,7 @@ const AddAssignmentPage = () => {
       setSelectedUsers((prev) =>
         prev.some((u) => u.id === user.id)
           ? prev.filter((u) => u.id !== user.id)
-          : [...prev, user]
+          : [...prev, user],
       );
     } else {
       setSingleUser(user.id);
@@ -232,7 +236,7 @@ const AddAssignmentPage = () => {
     setSelectedLocations((prev) =>
       prev.some((loc) => loc.id === location.id)
         ? prev.filter((loc) => loc.id !== location.id)
-        : [...prev, location]
+        : [...prev, location],
     );
   };
 
@@ -260,11 +264,9 @@ const AddAssignmentPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-
     if (!canAddAssignment) {
       return toast.error("You don't have permission to add assignments");
     }
-
 
     // Validation
     if (assignmentMode === "multi") {
@@ -310,7 +312,7 @@ const AddAssignmentPage = () => {
             </button>
           </div>
         ),
-        { duration: Infinity, style: { maxWidth: "500px" } }
+        { duration: Infinity, style: { maxWidth: "500px" } },
       );
 
       return;
@@ -351,13 +353,15 @@ const AddAssignmentPage = () => {
 
         await Promise.all(promises);
       } else {
-        const selectedUserData = assignableUsers.find(u => u.id === singleUser);
+        const selectedUserData = assignableUsers.find(
+          (u) => u.id === singleUser,
+        );
         const response = await AssignmentsApi.createAssignment({
           cleaner_user_id: singleUser,
           location_ids: selectedLocations.map((loc) => loc.id),
           status: "assigned",
           company_id: companyId,
-          role_id: selectedUserData?.role_id
+          role_id: selectedUserData?.role_id,
         });
 
         if (response.success) {
@@ -371,8 +375,9 @@ const AddAssignmentPage = () => {
       // Show results
       if (successCount > 0 && failureCount === 0) {
         toast.success(
-          `Successfully created ${successCount} assignment${successCount !== 1 ? "s" : ""
-          }!`
+          `Successfully created ${successCount} assignment${
+            successCount !== 1 ? "s" : ""
+          }!`,
         );
 
         setSelectedUsers([]);
@@ -395,7 +400,8 @@ const AddAssignmentPage = () => {
                     Partial Success
                   </p>
                   <p className="text-sm text-yellow-700 mb-2">
-                    Created {successCount} assignment{successCount !== 1 ? "s" : ""}, but {failureCount} failed:
+                    Created {successCount} assignment
+                    {successCount !== 1 ? "s" : ""}, but {failureCount} failed:
                   </p>
                   <div className="text-sm text-yellow-700 space-y-1">
                     {errors.slice(0, 3).map((error, idx) => (
@@ -415,7 +421,7 @@ const AddAssignmentPage = () => {
               </button>
             </div>
           ),
-          { duration: Infinity, style: { maxWidth: "500px" } }
+          { duration: Infinity, style: { maxWidth: "500px" } },
         );
       } else {
         toast.error(
@@ -445,7 +451,7 @@ const AddAssignmentPage = () => {
               </button>
             </div>
           ),
-          { duration: Infinity, style: { maxWidth: "500px" } }
+          { duration: Infinity, style: { maxWidth: "500px" } },
         );
       }
     } catch (error) {
@@ -463,7 +469,7 @@ const AddAssignmentPage = () => {
             </button>
           </div>
         ),
-        { duration: Infinity }
+        { duration: Infinity },
       );
     } finally {
       setIsLoading(false);
@@ -472,8 +478,11 @@ const AddAssignmentPage = () => {
 
   // ✅ UPDATED: Filter logic - exclude role_id 1 & 2, then filter by search and role
   const filteredUsers = assignableUsers.filter((user) => {
-    const matchesSearch = user.name.toLowerCase().includes(userSearchTerm.toLowerCase());
-    const matchesRole = selectedRoleFilter === "all" ||
+    const matchesSearch = user.name
+      .toLowerCase()
+      .includes(userSearchTerm.toLowerCase());
+    const matchesRole =
+      selectedRoleFilter === "all" ||
       user.role?.name?.toLowerCase() === selectedRoleFilter.toLowerCase();
     return matchesSearch && matchesRole;
   });
@@ -481,7 +490,7 @@ const AddAssignmentPage = () => {
   const filteredLocations = (
     assignmentMode === "single" ? availableLocations : allLocations
   ).filter((loc) =>
-    loc.name.toLowerCase().includes(locationSearchTerm.toLowerCase())
+    loc.name.toLowerCase().includes(locationSearchTerm.toLowerCase()),
   );
 
   const locationsToShow =
@@ -538,16 +547,18 @@ const AddAssignmentPage = () => {
               <button
                 type="button"
                 onClick={handleModeToggle}
-                className={`relative inline-flex h-10 w-20 sm:h-11 sm:w-24 items-center rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 flex-shrink-0 shadow-md ${assignmentMode === "multi"
-                  ? "bg-indigo-600 focus:ring-indigo-500"
-                  : "bg-green-600 focus:ring-green-500"
-                  }`}
+                className={`relative inline-flex h-10 w-20 sm:h-11 sm:w-24 items-center rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 flex-shrink-0 shadow-md ${
+                  assignmentMode === "multi"
+                    ? "bg-indigo-600 focus:ring-indigo-500"
+                    : "bg-green-600 focus:ring-green-500"
+                }`}
               >
                 <span
-                  className={`inline-block h-8 w-8 sm:h-9 sm:w-9 transform rounded-full bg-white transition-transform shadow-lg ${assignmentMode === "multi"
-                    ? "translate-x-1"
-                    : "translate-x-11 sm:translate-x-14"
-                    }`}
+                  className={`inline-block h-8 w-8 sm:h-9 sm:w-9 transform rounded-full bg-white transition-transform shadow-lg ${
+                    assignmentMode === "multi"
+                      ? "translate-x-1"
+                      : "translate-x-11 sm:translate-x-14"
+                  }`}
                 >
                   {assignmentMode === "multi" ? (
                     <Users className="w-5 h-5 sm:w-6 sm:h-6 m-1.5 text-indigo-600" />
@@ -569,7 +580,8 @@ const AddAssignmentPage = () => {
                     No Permission
                   </h4>
                   <p className="text-sm text-red-700">
-                    You dont have permission to create assignments. Please contact your administrator.
+                    You dont have permission to create assignments. Please
+                    contact your administrator.
                   </p>
                 </div>
               </div>
@@ -586,28 +598,32 @@ const AddAssignmentPage = () => {
                 <button
                   type="button"
                   onClick={() => setSelectedRoleFilter("all")}
-                  className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all ${selectedRoleFilter === "all"
-                    ? "bg-indigo-600 text-white shadow-md"
-                    : "bg-white text-slate-700 hover:bg-indigo-100 border border-indigo-300"
-                    }`}
+                  className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all ${
+                    selectedRoleFilter === "all"
+                      ? "bg-indigo-600 text-white shadow-md"
+                      : "bg-white text-slate-700 hover:bg-indigo-100 border border-indigo-300"
+                  }`}
                 >
                   All Roles ({assignableUsers.length})
                 </button>
                 {uniqueRoles.map((role) => {
                   const roleCount = assignableUsers.filter(
-                    u => u.role?.name === role
+                    (u) => u.role?.name === role,
                   ).length;
                   return (
                     <button
                       key={role}
                       type="button"
                       onClick={() => setSelectedRoleFilter(role)}
-                      className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all ${selectedRoleFilter === role
-                        ? "bg-indigo-600 text-white shadow-md"
-                        : "bg-white text-slate-700 hover:bg-indigo-100 border border-indigo-300"
-                        }`}
+                      className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all ${
+                        selectedRoleFilter === role
+                          ? "bg-indigo-600 text-white shadow-md"
+                          : "bg-white text-slate-700 hover:bg-indigo-100 border border-indigo-300"
+                      }`}
                     >
-                      <span className={`inline-block px-2 py-0.5 rounded-full mr-1.5 ${getRoleColor(role)}`}>
+                      <span
+                        className={`inline-block px-2 py-0.5 rounded-full mr-1.5 ${getRoleColor(role)}`}
+                      >
                         {role}
                       </span>
                       ({roleCount})
@@ -618,7 +634,9 @@ const AddAssignmentPage = () => {
               {selectedRoleFilter !== "all" && (
                 <div className="mt-2 flex items-center gap-2">
                   <span className="text-xs text-indigo-700">
-                    Showing {filteredUsers.length} user{filteredUsers.length !== 1 ? 's' : ''} with role: {selectedRoleFilter}
+                    Showing {filteredUsers.length} user
+                    {filteredUsers.length !== 1 ? "s" : ""} with role:{" "}
+                    {selectedRoleFilter}
                   </span>
                   <button
                     type="button"
@@ -646,13 +664,15 @@ const AddAssignmentPage = () => {
                   >
                     <span className="truncate">
                       {selectedUsers.length > 0
-                        ? `${selectedUsers.length} user${selectedUsers.length !== 1 ? "s" : ""
-                        } selected`
+                        ? `${selectedUsers.length} user${
+                            selectedUsers.length !== 1 ? "s" : ""
+                          } selected`
                         : "Click to select users..."}
                     </span>
                     <ChevronDown
-                      className={`w-4 h-4 sm:w-5 sm:h-5 text-slate-400 transition-transform flex-shrink-0 ${isUserDropdownOpen ? "rotate-180" : ""
-                        }`}
+                      className={`w-4 h-4 sm:w-5 sm:h-5 text-slate-400 transition-transform flex-shrink-0 ${
+                        isUserDropdownOpen ? "rotate-180" : ""
+                      }`}
                     />
                   </button>
 
@@ -704,7 +724,7 @@ const AddAssignmentPage = () => {
                               <input
                                 type="checkbox"
                                 checked={selectedUsers.some(
-                                  (u) => u.id === user.id
+                                  (u) => u.id === user.id,
                                 )}
                                 onChange={() => handleUserSelect(user)}
                                 className="h-3.5 w-3.5 sm:h-4 sm:w-4 rounded text-indigo-600 border-slate-300 focus:ring-indigo-500"
@@ -714,8 +734,11 @@ const AddAssignmentPage = () => {
                                 <span className="text-xs sm:text-sm text-slate-700 group-hover:text-slate-900">
                                   {user.name}
                                 </span>
-                                <span className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full font-medium ${getRoleColor(user.role?.name)
-                                  }`}>
+                                <span
+                                  className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full font-medium ${getRoleColor(
+                                    user.role?.name,
+                                  )}`}
+                                >
                                   {user.role?.name || "No Role"}
                                 </span>
                               </div>
@@ -741,8 +764,12 @@ const AddAssignmentPage = () => {
                         key={user.id}
                         className="inline-flex items-center gap-1 px-2 sm:px-3 py-0.5 sm:py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-medium"
                       >
-                        <span className="truncate max-w-[150px]">{user.name}</span>
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${getRoleColor(user.role?.name)}`}>
+                        <span className="truncate max-w-[150px]">
+                          {user.name}
+                        </span>
+                        <span
+                          className={`text-[10px] px-1.5 py-0.5 rounded-full ${getRoleColor(user.role?.name)}`}
+                        >
                           {user.role?.name}
                         </span>
                         <button
@@ -772,21 +799,28 @@ const AddAssignmentPage = () => {
                     <span className="truncate">
                       {singleUser
                         ? (() => {
-                          const user = assignableUsers.find((u) => u.id === singleUser);
-                          return user ? (
-                            <span className="flex items-center gap-2">
-                              {user.name}
-                              <span className={`text-[10px] px-2 py-0.5 rounded-full ${getRoleColor(user.role?.name)}`}>
-                                {user.role?.name}
+                            const user = assignableUsers.find(
+                              (u) => u.id === singleUser,
+                            );
+                            return user ? (
+                              <span className="flex items-center gap-2">
+                                {user.name}
+                                <span
+                                  className={`text-[10px] px-2 py-0.5 rounded-full ${getRoleColor(user.role?.name)}`}
+                                >
+                                  {user.role?.name}
+                                </span>
                               </span>
-                            </span>
-                          ) : "Select a user...";
-                        })()
+                            ) : (
+                              "Select a user..."
+                            );
+                          })()
                         : "Select a user..."}
                     </span>
                     <ChevronDown
-                      className={`w-4 h-4 sm:w-5 sm:h-5 text-slate-400 transition-transform flex-shrink-0 ${isUserDropdownOpen ? "rotate-180" : ""
-                        }`}
+                      className={`w-4 h-4 sm:w-5 sm:h-5 text-slate-400 transition-transform flex-shrink-0 ${
+                        isUserDropdownOpen ? "rotate-180" : ""
+                      }`}
                     />
                   </button>
 
@@ -811,16 +845,22 @@ const AddAssignmentPage = () => {
                             <div
                               key={user.id}
                               onClick={() => handleUserSelect(user)}
-                              className={`p-1.5 sm:p-2 rounded-md hover:bg-slate-100 cursor-pointer transition-colors ${singleUser === user.id
-                                ? "bg-green-50 text-green-700 font-medium"
-                                : "text-slate-700"
-                                }`}
+                              className={`p-1.5 sm:p-2 rounded-md hover:bg-slate-100 cursor-pointer transition-colors ${
+                                singleUser === user.id
+                                  ? "bg-green-50 text-green-700 font-medium"
+                                  : "text-slate-700"
+                              }`}
                             >
                               {/* ✅ UPDATED: Show user with role (no emoji) */}
                               <div className="flex items-center justify-between gap-2">
-                                <span className="text-xs sm:text-sm">{user.name}</span>
-                                <span className={`text-[10px] px-1.5 py-0.5 rounded-full whitespace-nowrap ${getRoleColor(user.role?.name)
-                                  }`}>
+                                <span className="text-xs sm:text-sm">
+                                  {user.name}
+                                </span>
+                                <span
+                                  className={`text-[10px] px-1.5 py-0.5 rounded-full whitespace-nowrap ${getRoleColor(
+                                    user.role?.name,
+                                  )}`}
+                                >
                                   {user.role?.name || "No Role"}
                                 </span>
                               </div>
@@ -875,13 +915,15 @@ const AddAssignmentPage = () => {
                 >
                   <span className="truncate">
                     {selectedLocations.length > 0
-                      ? `${selectedLocations.length} location${selectedLocations.length !== 1 ? "s" : ""
-                      } selected`
+                      ? `${selectedLocations.length} location${
+                          selectedLocations.length !== 1 ? "s" : ""
+                        } selected`
                       : "Click to select locations..."}
                   </span>
                   <ChevronDown
-                    className={`w-4 h-4 sm:w-5 sm:h-5 text-slate-400 transition-transform flex-shrink-0 ${isLocationDropdownOpen ? "rotate-180" : ""
-                      }`}
+                    className={`w-4 h-4 sm:w-5 sm:h-5 text-slate-400 transition-transform flex-shrink-0 ${
+                      isLocationDropdownOpen ? "rotate-180" : ""
+                    }`}
                   />
                 </button>
 
@@ -935,7 +977,7 @@ const AddAssignmentPage = () => {
                             <input
                               type="checkbox"
                               checked={selectedLocations.some(
-                                (loc) => loc.id === location.id
+                                (loc) => loc.id === location.id,
                               )}
                               onChange={() => handleLocationSelect(location)}
                               className="h-3.5 w-3.5 sm:h-4 sm:w-4 rounded text-indigo-600 border-slate-300 focus:ring-indigo-500"
@@ -986,13 +1028,17 @@ const AddAssignmentPage = () => {
               <button
                 type="submit"
                 disabled={isLoading || isValidating || !canAddAssignment}
-                className={`w-full px-4 py-2.5 sm:py-3 font-semibold text-white text-sm sm:text-base rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all disabled:cursor-not-allowed disabled:opacity-50 flex items-center justify-center gap-2 ${assignmentMode === "multi"
-                  ? "bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500"
-                  : "bg-green-600 hover:bg-green-700 focus:ring-green-500"
-                  }`}
-                title={!canAddAssignment ? "You don't have permission to add assignments" : ""}
+                className={`w-full px-4 py-2.5 sm:py-3 font-semibold text-white text-sm sm:text-base rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all disabled:cursor-not-allowed disabled:opacity-50 flex items-center justify-center gap-2 ${
+                  assignmentMode === "multi"
+                    ? "bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500"
+                    : "bg-green-600 hover:bg-green-700 focus:ring-green-500"
+                }`}
+                title={
+                  !canAddAssignment
+                    ? "You don't have permission to add assignments"
+                    : ""
+                }
               >
-
                 {isValidating ? (
                   <>
                     <Loader className="w-4 h-4 animate-spin" />
@@ -1004,13 +1050,16 @@ const AddAssignmentPage = () => {
                     <span>Creating Assignments...</span>
                   </>
                 ) : assignmentMode === "multi" ? (
-                  `Create ${selectedUsers.length * selectedLocations.length
-                  } Assignment${selectedUsers.length * selectedLocations.length !== 1
-                    ? "s"
-                    : ""
+                  `Create ${
+                    selectedUsers.length * selectedLocations.length
+                  } Assignment${
+                    selectedUsers.length * selectedLocations.length !== 1
+                      ? "s"
+                      : ""
                   }`
                 ) : (
-                  `Assign ${selectedLocations.length} Location${selectedLocations.length !== 1 ? "s" : ""
+                  `Assign ${selectedLocations.length} Location${
+                    selectedLocations.length !== 1 ? "s" : ""
                   }`
                 )}
               </button>

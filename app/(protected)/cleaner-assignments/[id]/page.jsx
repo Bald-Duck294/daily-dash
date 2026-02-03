@@ -4,11 +4,11 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import toast, { Toaster } from "react-hot-toast";
-import { AssignmentsApi } from "@/lib/api/assignmentsApi";
+import { AssignmentsApi } from "@/features/assignments/assignments.api";
 import LocationsApi from "@/features/locations/locations.api"; // ✅ Add LocationsApi
 import { useCompanyId } from "@/providers/CompanyProvider";
-import Loader from '@/components/ui/Loader';
-import { MapPin, User, Save, ArrowLeft } from 'lucide-react';
+import Loader from "@/components/ui/Loader";
+import { MapPin, User, Save, ArrowLeft } from "lucide-react";
 
 export default function EditAssignmentPage() {
   const { id } = useParams();
@@ -28,7 +28,7 @@ export default function EditAssignmentPage() {
   // ✅ Enhanced fetch function to get assignment and locations
   const fetchAssignmentAndLocations = async () => {
     if (!id || !companyId) {
-      console.log('Skipping - ID or company ID not ready');
+      console.log("Skipping - ID or company ID not ready");
       setLoading(false);
       setHasInitialized(true);
       return;
@@ -38,11 +38,11 @@ export default function EditAssignmentPage() {
       // ✅ Fetch both assignment and locations in parallel
       const [assignmentRes, locationsRes] = await Promise.all([
         AssignmentsApi.getAssignmentById(id, companyId),
-        LocationsApi.getAllLocations(companyId)
+        LocationsApi.getAllLocations(companyId),
       ]);
 
-      console.log('Assignment Response:', assignmentRes);
-      console.log('Locations Response:', locationsRes);
+      console.log("Assignment Response:", assignmentRes);
+      console.log("Locations Response:", locationsRes);
 
       // Handle assignment data
       if (assignmentRes.success) {
@@ -53,7 +53,7 @@ export default function EditAssignmentPage() {
           setStatus(assignmentData.status || "assigned");
           setLocationId(assignmentData.location_id || ""); // ✅ Set current location
 
-          console.log('Assignment loaded:', assignmentData);
+          console.log("Assignment loaded:", assignmentData);
         } else {
           toast.error("Assignment data not found");
         }
@@ -64,15 +64,14 @@ export default function EditAssignmentPage() {
       // Handle locations data
       if (locationsRes.success) {
         setAllLocations(locationsRes.data || []);
-        console.log('Locations loaded:', locationsRes.data?.length || 0);
+        console.log("Locations loaded:", locationsRes.data?.length || 0);
       } else {
-        console.error('Failed to fetch locations:', locationsRes.error);
+        console.error("Failed to fetch locations:", locationsRes.error);
         toast.error("Failed to load locations");
       }
-
     } catch (error) {
-      console.error('Fetch data error:', error);
-      toast.error('Failed to load assignment data');
+      console.error("Fetch data error:", error);
+      toast.error("Failed to load assignment data");
     } finally {
       setLoading(false);
       setHasInitialized(true);
@@ -83,13 +82,13 @@ export default function EditAssignmentPage() {
   const handleUpdate = async (e) => {
     e.preventDefault();
 
-    if (!id || id === 'null' || id === null) {
-      toast.error('Invalid assignment ID');
+    if (!id || id === "null" || id === null) {
+      toast.error("Invalid assignment ID");
       return;
     }
 
     if (!locationId) {
-      toast.error('Please select a location');
+      toast.error("Please select a location");
       return;
     }
 
@@ -98,14 +97,14 @@ export default function EditAssignmentPage() {
       // ✅ Include location_id in update data
       const updateData = {
         status,
-        location_id: locationId // ✅ Add location_id to update
+        location_id: locationId, // ✅ Add location_id to update
       };
 
-      console.log('Updating assignment with data:', updateData);
+      console.log("Updating assignment with data:", updateData);
 
       const res = await AssignmentsApi.updateAssignment(id, updateData);
 
-      console.log('Update response:', res);
+      console.log("Update response:", res);
 
       if (res.success) {
         toast.success("Assignment updated successfully!");
@@ -114,8 +113,8 @@ export default function EditAssignmentPage() {
         toast.error(res.error || "Failed to update assignment");
       }
     } catch (error) {
-      console.error('Update assignment error:', error);
-      toast.error('Failed to update assignment');
+      console.error("Update assignment error:", error);
+      toast.error("Failed to update assignment");
     } finally {
       setUpdating(false);
     }
@@ -127,7 +126,7 @@ export default function EditAssignmentPage() {
 
   // ✅ Get location name for display
   const getLocationName = (locationId) => {
-    const location = allLocations.find(loc => loc.id == locationId);
+    const location = allLocations.find((loc) => loc.id == locationId);
     return location?.name || `Location #${locationId}`;
   };
 
@@ -137,7 +136,9 @@ export default function EditAssignmentPage() {
       <div className="p-6 max-w-4xl mx-auto">
         <div className="flex items-center gap-3 mb-6">
           <button
-            onClick={() => router.push(`/cleaner-assignments?companyId=${companyId}`)}
+            onClick={() =>
+              router.push(`/cleaner-assignments?companyId=${companyId}`)
+            }
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-gray-600" />
@@ -161,7 +162,9 @@ export default function EditAssignmentPage() {
       <div className="p-6 max-w-4xl mx-auto">
         <div className="flex items-center gap-3 mb-6">
           <button
-            onClick={() => router.push(`/cleaner-assignments?companyId=${companyId}`)}
+            onClick={() =>
+              router.push(`/cleaner-assignments?companyId=${companyId}`)
+            }
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-gray-600" />
@@ -170,10 +173,16 @@ export default function EditAssignmentPage() {
         </div>
         <div className="text-center py-12">
           <div className="text-6xl mb-4">❌</div>
-          <h2 className="text-xl font-semibold text-gray-800 mb-2">Assignment Not Found</h2>
-          <p className="text-gray-600 mb-6">The assignment youre looking for doesnt exist or has been deleted.</p>
+          <h2 className="text-xl font-semibold text-gray-800 mb-2">
+            Assignment Not Found
+          </h2>
+          <p className="text-gray-600 mb-6">
+            The assignment youre looking for doesnt exist or has been deleted.
+          </p>
           <button
-            onClick={() => router.push(`/cleaner-assignments?companyId=${companyId}`)}
+            onClick={() =>
+              router.push(`/cleaner-assignments?companyId=${companyId}`)
+            }
             className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
           >
             Back to Assignments
@@ -190,14 +199,20 @@ export default function EditAssignmentPage() {
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <button
-          onClick={() => router.push(`/cleaner-assignments?companyId=${companyId}`)}
+          onClick={() =>
+            router.push(`/cleaner-assignments?companyId=${companyId}`)
+          }
           className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
         >
           <ArrowLeft className="w-5 h-5 text-gray-600" />
         </button>
         <div>
-          <h1 className="text-2xl font-bold">Edit Assignment #{assignment.id}</h1>
-          <p className="text-sm text-gray-600">Update assignment details and location</p>
+          <h1 className="text-2xl font-bold">
+            Edit Assignment #{assignment.id}
+          </h1>
+          <p className="text-sm text-gray-600">
+            Update assignment details and location
+          </p>
         </div>
       </div>
 
@@ -228,20 +243,24 @@ export default function EditAssignmentPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block font-semibold mb-2 text-sm text-gray-700">Cleaner User ID</label>
+              <label className="block font-semibold mb-2 text-sm text-gray-700">
+                Cleaner User ID
+              </label>
               <input
                 type="text"
-                value={assignment.cleaner_user_id || 'N/A'}
+                value={assignment.cleaner_user_id || "N/A"}
                 disabled
                 className="w-full p-3 border rounded-lg bg-slate-100 text-gray-600"
               />
             </div>
 
             <div>
-              <label className="block font-semibold mb-2 text-sm text-gray-700">Cleaner Name</label>
+              <label className="block font-semibold mb-2 text-sm text-gray-700">
+                Cleaner Name
+              </label>
               <input
                 type="text"
-                value={assignment.cleaner_user?.name || 'Unknown Cleaner'}
+                value={assignment.cleaner_user?.name || "Unknown Cleaner"}
                 disabled
                 className="w-full p-3 border rounded-lg bg-slate-100 text-gray-600"
               />
@@ -249,7 +268,9 @@ export default function EditAssignmentPage() {
 
             {assignment.cleaner_user?.email && (
               <div>
-                <label className="block font-semibold mb-2 text-sm text-gray-700">Email</label>
+                <label className="block font-semibold mb-2 text-sm text-gray-700">
+                  Email
+                </label>
                 <input
                   type="text"
                   value={assignment.cleaner_user.email}
@@ -261,7 +282,9 @@ export default function EditAssignmentPage() {
 
             {assignment.cleaner_user?.phone && (
               <div>
-                <label className="block font-semibold mb-2 text-sm text-gray-700">Phone</label>
+                <label className="block font-semibold mb-2 text-sm text-gray-700">
+                  Phone
+                </label>
                 <input
                   type="text"
                   value={assignment.cleaner_user.phone}
@@ -282,14 +305,18 @@ export default function EditAssignmentPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block font-semibold mb-2 text-sm text-gray-700">Current Location</label>
+              <label className="block font-semibold mb-2 text-sm text-gray-700">
+                Current Location
+              </label>
               <input
                 type="text"
                 value={getLocationName(assignment.location_id)}
                 disabled
                 className="w-full p-3 border rounded-lg bg-slate-100 text-gray-600"
               />
-              <p className="text-xs text-gray-500 mt-1">Original location: ID #{assignment.location_id}</p>
+              <p className="text-xs text-gray-500 mt-1">
+                Original location: ID #{assignment.location_id}
+              </p>
             </div>
 
             <div>
@@ -321,7 +348,8 @@ export default function EditAssignmentPage() {
           {assignment.locations?.location_types?.name && (
             <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
               <p className="text-sm text-blue-800">
-                <strong>Current Location Type:</strong> {assignment.locations.location_types.name}
+                <strong>Current Location Type:</strong>{" "}
+                {assignment.locations.location_types.name}
               </p>
             </div>
           )}
@@ -332,7 +360,9 @@ export default function EditAssignmentPage() {
           <h2 className="text-lg font-semibold mb-4">Assignment Status</h2>
 
           <div className="max-w-md">
-            <label className="block font-semibold mb-2 text-sm text-gray-700">Status</label>
+            <label className="block font-semibold mb-2 text-sm text-gray-700">
+              Status
+            </label>
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
@@ -368,7 +398,9 @@ export default function EditAssignmentPage() {
 
           <button
             type="button"
-            onClick={() => router.push(`/cleaner-assignments?companyId=${companyId}`)}
+            onClick={() =>
+              router.push(`/cleaner-assignments?companyId=${companyId}`)
+            }
             className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
           >
             Cancel
