@@ -1,12 +1,10 @@
 @import "tailwindcss";
 
-/* ===============================
-   THEME VARIABLES (SOURCE OF TRUTH)
-   =============================== */
 
 :root {
   /* Core */
-  --background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  --background: #f4f7fe;
+  --dashboard-bg: #f6f9fc;
 
   --foreground: #0f172a;
   --surface: #ffffff;
@@ -22,7 +20,8 @@
   --radius: 0.5rem;
 
   /* Sidebar */
-  --sidebar-bg: linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%);
+  --sidebar-bg: #e6f5f4;
+
   --sidebar-text: #0f172a;
   --sidebar-muted: #475569;
   --sidebar-hover: rgba(15, 23, 42, 0.06);
@@ -51,11 +50,173 @@
   --accent-green: linear-gradient(135deg, #ecfdf5, #dcfce7, #bbf7d0);
   --accent-yellow: linear-gradient(135deg, #fffbeb, #fef3c7, #fde68a);
   --accent-pink: linear-gradient(135deg, #fdf2f8, #fce7f3, #fbcfe8);
+
+  --dashboard-card-bg: #ffffff;
+  --dashboard-card-border: #e6edf5;
+  --dashboard-card-shadow: 0 8px 24px rgba(16, 24, 40, 0.06);
+
+  --stat-blue-gradient: linear-gradient(
+    90deg,
+    rgba(59, 130, 246, 0) 0%,
+    rgba(59, 130, 246, 0.12) 100%
+  );
+
+  --stat-teal-gradient: linear-gradient(
+    90deg,
+    rgba(20, 184, 166, 0) 0%,
+    rgba(20, 184, 166, 0.12) 100%
+  );
+
+  --stat-green-gradient: linear-gradient(
+    90deg,
+    rgba(34, 197, 94, 0) 0%,
+    rgba(34, 197, 94, 0.12) 100%
+  );
+
+  --stat-orange-gradient: linear-gradient(
+    90deg,
+    rgba(251, 146, 60, 0) 0%,
+    rgba(251, 146, 60, 0.14) 100%
+  );
+
+  /* ===============================
+   WASHROOM PAGE THEME TOKENS
+   =============================== */
+
+  /* Page background */
+  --washroom-bg: #f8fafc;
+
+  /* Surface / cards */
+  --washroom-surface: #ffffff;
+  --washroom-border: #e5e7eb;
+  --washroom-shadow: 0 8px 24px rgba(16, 24, 40, 0.06);
+
+  /* Headers */
+  --washroom-title: #0f172a;
+  --washroom-subtitle: #64748b;
+
+  /* Table */
+  --washroom-table-header-bg: #f1f5f9;
+  --washroom-table-row-hover: rgba(59, 130, 246, 0.08);
+  --washroom-table-divider: #e5e7eb;
+
+  /* Primary action (orange) */
+  --washroom-primary: #ffab2d;
+  --washroom-primary-hover: #f59e0b;
+  --washroom-primary-text: #ffffff;
+
+  /* Status — ACTIVE */
+  --washroom-status-active-bg: #ecfdf5;
+  --washroom-status-active-text: #047857;
+  --washroom-status-active-border: #a7f3d0;
+  --washroom-status-dot-active: #10b981;
+
+  /* Status — INACTIVE */
+  --washroom-status-inactive-bg: #fef2f2;
+  --washroom-status-inactive-text: #b91c1c;
+  --washroom-status-inactive-border: #fecaca;
+  --washroom-status-dot-inactive: #ef4444;
+
+  /* Rating pills */
+  --washroom-score-bg: #eff6ff;
+  --washroom-score-text: #2563eb;
+
+  --washroom-input-bg: #f3f4f6; /* light neutral gray */
+  --washroom-text: #1f2937; /* dark slate text */
+
+  --washroom-filter-bg: #f8fafc;
+  --washroom-filter-text: #64748b;
+
+  --washroom-filter-active-bg: #ffffff;
+  --washroom-filter-active-text: #2563eb;
+  --washroom-filter-active-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  --washroom-delete-bg: #f00909;
+
+  --washroom-filter-clear: #94a3b8;
+  --washroom-filter-clear-hover: #ef4444;
+
+   /* ===============================
+     ASSIGNMENTS PAGE – LIGHT MODE
+     =============================== */
+
+  /* Page background */
+  --assignment-bg: #f8fafc;
+
+  /* Surface / cards */
+  --assignment-surface: #ffffff;
+  --assignment-border: rgba(15, 23, 42, 0.08);
+  --assignment-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+
+  /* Header */
+  --assignment-header-bg: #f1f5f9;
+  --assignment-header-border: rgba(15, 23, 42, 0.08);
+  --assignment-title: #0f172a;
+  --assignment-subtitle: #64748b;
+
+  /* Accent / highlight */
+  --assignment-accent-bg: rgba(99, 102, 241, 0.08);
+  --assignment-accent-border: rgba(99, 102, 241, 0.25);
+  --assignment-accent-text: #4f46e5;
+
+  /* Mode toggle */
+  --assignment-toggle-bg: rgba(15, 23, 42, 0.08);
+  --assignment-toggle-active-bg: #6366f1;
+  --assignment-toggle-knob: #ffffff;
+  --assignment-toggle-shadow: 0 2px 6px rgba(15, 23, 42, 0.15);
+
+  /* Inputs / dropdowns */
+  --assignment-input-bg: #ffffff;
+  --assignment-input-border: rgba(15, 23, 42, 0.12);
+  --assignment-input-focus-border: #6366f1;
+  --assignment-input-text: #0f172a;
+  --assignment-input-placeholder: #94a3b8;
+
+  /* Dropdown surfaces */
+  --assignment-dropdown-bg: #ffffff;
+  --assignment-dropdown-border: rgba(15, 23, 42, 0.08);
+  --assignment-dropdown-hover: rgba(15, 23, 42, 0.04);
+  --assignment-dropdown-selected: rgba(99, 102, 241, 0.12);
+
+  /* Chips (selected users / locations) */
+  --assignment-chip-bg: rgba(15, 23, 42, 0.04);
+  --assignment-chip-border: rgba(99, 102, 241, 0.25);
+  --assignment-chip-text: #0f172a;
+  --assignment-chip-remove-hover: #ef4444;
+
+  /* Primary action */
+  --assignment-primary-bg: linear-gradient(
+    90deg,
+    #6366f1 0%,
+    #818cf8 100%
+  );
+  --assignment-primary-hover-bg: linear-gradient(
+    90deg,
+    #4f46e5 0%,
+    #6366f1 100%
+  );
+  --assignment-primary-text: #ffffff;
+  --assignment-primary-shadow: 0 10px 22px rgba(99, 102, 241, 0.25);
+
+  /* Loading / validating */
+  --assignment-loading-text: #4f46e5;
+
+  /* Warnings / permissions */
+  --assignment-warning-bg: rgba(251, 146, 60, 0.12);
+  --assignment-warning-border: rgba(251, 146, 60, 0.4);
+  --assignment-warning-text: #c2410c;
+
+  /* Success indicator */
+  --assignment-success-dot: #22c55e;
+
+  /* Dividers */
+  --assignment-divider: rgba(15, 23, 42, 0.08);
 }
 
 html[data-theme="dark"] {
   /* Core */
   --background: radial-gradient(1200px circle at top, #0b1220 0%, #020617 60%);
+  --dashboard-bg: #020617;
+
   --foreground: #e5e7eb;
   --surface: #020617;
   --muted: rgba(255, 255, 255, 0.04);
@@ -97,6 +258,166 @@ html[data-theme="dark"] {
   --accent-green: linear-gradient(135deg, #052e1b, #064e3b, #065f46);
   --accent-yellow: linear-gradient(135deg, #2e1b05, #422006, #713f12);
   --accent-pink: linear-gradient(135deg, #2a0a1a, #3b0a2a, #5b0f3a);
+
+  --dashboard-card-bg: #020617;
+  --dashboard-card-border: rgba(255, 255, 255, 0.08);
+  --dashboard-card-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+
+  --stat-blue-gradient: linear-gradient(
+    90deg,
+    rgba(59, 130, 246, 0) 0%,
+    rgba(59, 130, 246, 0.18) 100%
+  );
+
+  --stat-teal-gradient: linear-gradient(
+    90deg,
+    rgba(20, 184, 166, 0) 0%,
+    rgba(20, 184, 166, 0.18) 100%
+  );
+
+  --stat-green-gradient: linear-gradient(
+    90deg,
+    rgba(34, 197, 94, 0) 0%,
+    rgba(34, 197, 94, 0.18) 100%
+  );
+
+  --stat-orange-gradient: linear-gradient(
+    90deg,
+    rgba(251, 146, 60, 0) 0%,
+    rgba(251, 146, 60, 0.2) 100%
+  );
+
+  /* ===============================
+   WASHROOM PAGE – DARK MODE
+   =============================== */
+
+  --washroom-bg: #020617;
+
+  /* Surface / cards */
+  --washroom-surface: #020617;
+  --washroom-border: rgba(255, 255, 255, 0.08);
+  --washroom-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+
+  /* Headers */
+  --washroom-title: #f8fafc;
+  --washroom-subtitle: #94a3b8;
+
+  /* Table */
+  --washroom-table-header-bg: rgba(255, 255, 255, 0.04);
+  --washroom-table-row-hover: rgba(99, 102, 241, 0.12);
+  --washroom-table-divider: rgba(255, 255, 255, 0.08);
+
+  /* Primary action */
+  --washroom-primary: #fbbf24;
+  --washroom-primary-hover: #f59e0b;
+  --washroom-primary-text: #020617;
+
+  /* Status — ACTIVE */
+  --washroom-status-active-bg: #064e3b;
+  --washroom-status-active-text: #6ee7b7;
+  --washroom-status-active-border: #065f46;
+  --washroom-status-dot-active: #34d399;
+
+  /* Status — INACTIVE */
+  --washroom-status-inactive-bg: #450a0a;
+  --washroom-status-inactive-text: #fca5a5;
+  --washroom-status-inactive-border: #7f1d1d;
+  --washroom-status-dot-inactive: #f87171;
+
+  /* Rating pills */
+  --washroom-score-bg: rgba(59, 130, 246, 0.15);
+  --washroom-score-text: #60a5fa;
+
+  --washroom-input-bg: #1e293b; /* dark slate blue */
+  --washroom-text: #e5e7eb; /* soft light gray */
+
+  --washroom-filter-bg: #020617;
+  --washroom-filter-text: #94a3b8;
+
+   --washroom-delete-bg: #c20909;
+
+  --washroom-filter-active-bg: #0f172a;
+  --washroom-filter-active-text: #60a5fa;
+  --washroom-filter-active-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+
+  --washroom-filter-clear: #64748b;
+  --washroom-filter-clear-hover: #f87171;
+
+    /* ===============================
+     ASSIGNMENTS PAGE – LIGHT MODE
+     =============================== */
+
+  /* Page background */
+  --assignment-bg: #f8fafc;
+
+  /* Surface / cards */
+  --assignment-surface: #ffffff;
+  --assignment-border: rgba(15, 23, 42, 0.08);
+  --assignment-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+
+  /* Header */
+  --assignment-header-bg: #f1f5f9;
+  --assignment-header-border: rgba(15, 23, 42, 0.08);
+  --assignment-title: #0f172a;
+  --assignment-subtitle: #64748b;
+
+  /* Accent / highlight */
+  --assignment-accent-bg: rgba(99, 102, 241, 0.08);
+  --assignment-accent-border: rgba(99, 102, 241, 0.25);
+  --assignment-accent-text: #4f46e5;
+
+  /* Mode toggle */
+  --assignment-toggle-bg: rgba(15, 23, 42, 0.08);
+  --assignment-toggle-active-bg: #6366f1;
+  --assignment-toggle-knob: #ffffff;
+  --assignment-toggle-shadow: 0 2px 6px rgba(15, 23, 42, 0.15);
+
+  /* Inputs / dropdowns */
+  --assignment-input-bg: #ffffff;
+  --assignment-input-border: rgba(15, 23, 42, 0.12);
+  --assignment-input-focus-border: #6366f1;
+  --assignment-input-text: #0f172a;
+  --assignment-input-placeholder: #94a3b8;
+
+  /* Dropdown surfaces */
+  --assignment-dropdown-bg: #ffffff;
+  --assignment-dropdown-border: rgba(15, 23, 42, 0.08);
+  --assignment-dropdown-hover: rgba(15, 23, 42, 0.04);
+  --assignment-dropdown-selected: rgba(99, 102, 241, 0.12);
+
+  /* Chips (selected users / locations) */
+  --assignment-chip-bg: rgba(15, 23, 42, 0.04);
+  --assignment-chip-border: rgba(99, 102, 241, 0.25);
+  --assignment-chip-text: #0f172a;
+  --assignment-chip-remove-hover: #ef4444;
+
+  /* Primary action */
+  --assignment-primary-bg: linear-gradient(
+    90deg,
+    #6366f1 0%,
+    #818cf8 100%
+  );
+  --assignment-primary-hover-bg: linear-gradient(
+    90deg,
+    #4f46e5 0%,
+    #6366f1 100%
+  );
+  --assignment-primary-text: #ffffff;
+  --assignment-primary-shadow: 0 10px 22px rgba(99, 102, 241, 0.25);
+
+  /* Loading / validating */
+  --assignment-loading-text: #4f46e5;
+
+  /* Warnings / permissions */
+  --assignment-warning-bg: rgba(251, 146, 60, 0.12);
+  --assignment-warning-border: rgba(251, 146, 60, 0.4);
+  --assignment-warning-text: #c2410c;
+
+  /* Success indicator */
+  --assignment-success-dot: #22c55e;
+
+  /* Dividers */
+  --assignment-divider: rgba(15, 23, 42, 0.08);
 }
 
 .action {
@@ -166,4 +487,9 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+.washroom-page {
+  background: var(--washroom-bg);
+  color: var(--washroom-text);
 }

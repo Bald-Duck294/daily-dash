@@ -88,7 +88,7 @@ export const UsersApi = {
 
   updateUser: async (id, userData) => {
     try {
-      const response = await axiosInstance.put(`/users/${id}`, userData);
+      const response = await axiosInstance.post(`/users/${id}`, userData);
 
       return {
         success: true,

@@ -363,7 +363,7 @@ export default function UserForm({
   canSubmit = true,
 }) {
   const { companyId } = useCompanyId();
-
+  console.log(isEditing, "isEditing");
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -385,6 +385,14 @@ export default function UserForm({
     const hasPhone = formData.phone.trim().length === 10;
     const hasRole = formData.role_id !== "";
     const hasPassword = isEditing || formData.password.trim().length >= 6;
+    console.log(
+      hasName,
+      hasPhone,
+      hasRole,
+      hasPassword,
+      "has name has phone has role has password ",
+    );
+
     return hasName && hasPhone && hasRole && hasPassword;
   };
 
@@ -403,7 +411,8 @@ export default function UserForm({
           setCurrentCompany(companyRes.data);
         }
 
-        const rolesRes = await roleApi.getAllRoles(companyId);
+        const rolesRes = await RolesApi.getAllRoles(companyId);
+        console.log(rolesRes, "roles res");
         if (rolesRes.success) {
           const filteredRoles = (rolesRes.data?.roles || []).filter(
             (role) => role.id !== 1,
@@ -530,8 +539,8 @@ export default function UserForm({
         </div>
       </div> */}
 
-      <div class="flex items-center gap-3">
-        <div class="h-10 w-10 rounded-xl bg-[#CBF3F0] flex items-center justify-center">
+      <div className="flex items-center gap-3">
+        <div className="h-10 w-10 rounded-xl bg-[#CBF3F0] flex items-center justify-center">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="18"
@@ -539,10 +548,10 @@ export default function UserForm({
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            class="lucide lucide-building2 lucide-building-2 text-[#FF9F1C]"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="lucide lucide-building2 lucide-building-2 text-[#FF9F1C]"
             aria-hidden="true"
           >
             <path d="M10 12h4"></path>
@@ -553,10 +562,10 @@ export default function UserForm({
           </svg>
         </div>
         <div>
-          <h3 class="text-sm font-black text-slate-800 uppercase tracking-tight">
+          <h3 className="text-sm font-black text-slate-800 uppercase tracking-tight">
             Assigned Operation Node
           </h3>
-          <p class="text-xs font-medium text-slate-500">
+          <p className="text-xs font-medium text-slate-500">
             Select the operation node for this user
           </p>
         </div>
@@ -701,7 +710,7 @@ export default function UserForm({
               disabled={isLoadingData}
             >
               <option value="">
-                {isLoadingData ? "Loading roles..." : "Cleaner"}
+                {isLoadingData ? "Loading roles..." : "select role"}
               </option>
               {roles.map((role) => (
                 <option key={role.id} value={role.id}>
@@ -785,6 +794,13 @@ export default function UserForm({
           type="submit"
           className="cursor-pointer px-6 py-2.5 text-sm font-semibold text-white bg-amber-500 rounded-lg hover:bg-amber-600 transition-all shadow-sm hover:shadow-md disabled:bg-slate-300 disabled:cursor-not-allowed disabled:shadow-none flex items-center gap-2"
           disabled={isLoadingData || !isFormValid() || !canSubmit}
+          title={
+            !canSubmit
+              ? "You do not have permission to perform this action"
+              : !isFormValid()
+                ? "Please fill all required fields correctly"
+                : ""
+          }
         >
           <svg
             className="w-4 h-4"

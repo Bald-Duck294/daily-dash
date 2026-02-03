@@ -147,17 +147,17 @@ export default function LoginPage() {
     <>
       <Toaster position="top-center" />
       <div className="flex min-h-screen items-center justify-center bg-[var(--background)] px-4">
-        <div className="w-full max-w-md rounded-2xl border border-black/5 bg-white p-8 shadow-xl">
+        <div className="w-full max-w-md rounded-2xl border border-[var(--border)] bg-[var(--card)] p-8 shadow-xl">
           {/* Icon */}
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-blue-50">
-            <ShieldCheck className="h-7 w-7 text-blue-600" />
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-[var(--accent-muted)]">
+            <ShieldCheck className="h-7 w-7 text-[var(--primary)]" />
           </div>
 
           {/* Title */}
-          <h1 className="text-center text-xl font-semibold text-black">
+          <h1 className="text-center text-xl font-semibold text-[var(--foreground)]">
             SAFAI PORTAL
           </h1>
-          <p className="mt-1 text-center text-sm text-gray-500">
+          <p className="mt-1 text-center text-sm text-[var(--muted-foreground)]">
             Initialize an encrypted session to manage your workspace.
           </p>
 
@@ -165,11 +165,11 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
             {/* Phone */}
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
+              <label className="mb-1 block text-sm font-medium text-[var(--foreground)]">
                 Mobile Number
               </label>
-              <div className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2">
-                <Phone className="h-4 w-4 text-gray-400" />
+              <div className="flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--input)] px-3 py-2">
+                <Phone className="h-4 w-4 text-[var(--muted-foreground)]" />
                 <input
                   inputMode="numeric"
                   placeholder="Enter Mobile Number"
@@ -180,7 +180,7 @@ export default function LoginPage() {
                       phone: e.target.value.replace(/\D/g, "").slice(0, 10),
                     }))
                   }
-                  className="w-full bg-transparent text-sm outline-none"
+                  className="w-full bg-transparent text-sm text-[var(--foreground)] outline-none placeholder:text-[var(--muted-foreground)]"
                   required
                 />
               </div>
@@ -188,11 +188,11 @@ export default function LoginPage() {
 
             {/* Password */}
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
+              <label className="mb-1 block text-sm font-medium text-[var(--foreground)]">
                 Access Key
               </label>
-              <div className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2">
-                <Lock className="h-4 w-4 text-gray-400" />
+              <div className="flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--input)] px-3 py-2">
+                <Lock className="h-4 w-4 text-[var(--muted-foreground)]" />
                 <input
                   type="password"
                   placeholder="Enter Password"
@@ -203,7 +203,7 @@ export default function LoginPage() {
                       password: e.target.value,
                     }))
                   }
-                  className="w-full bg-transparent text-sm outline-none"
+                  className="w-full bg-transparent text-sm text-[var(--foreground)] outline-none placeholder:text-[var(--muted-foreground)]"
                   required
                 />
               </div>
@@ -213,7 +213,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 py-3 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-70"
+              className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg bg-[var(--primary)] py-3 text-sm font-semibold text-[var(--primary-foreground)] hover:opacity-90 disabled:opacity-70"
             >
               <Lock className="h-4 w-4" />
               {loading ? "Authenticating..." : "Authenticate Session"}
@@ -221,9 +221,12 @@ export default function LoginPage() {
           </form>
 
           {/* Footer */}
-          <div className="mt-6 border-t pt-4 text-center text-xs text-gray-500">
+          <div className="mt-6 border-t border-[var(--border)] pt-4 text-center text-xs text-[var(--muted-foreground)]">
             Forgot access?{" "}
-            <a href="/forgot-password" className="font-semibold text-blue-600">
+            <a
+              href="/forgot-password"
+              className="font-semibold text-[var(--primary)]"
+            >
               Recover Account
             </a>
           </div>

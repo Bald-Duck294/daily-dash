@@ -62,10 +62,13 @@ export default function EditCompanyPage() {
 
     setIsLoading(true);
 
-    const response = await CompanyApi.updateCompany(id, {
-      name,
-      description,
-      contact_email: contactEmail,
+    const response = await CompanyApi.updateCompany({
+      id,
+      companyData: {
+        name,
+        description,
+        contact_email: contactEmail,
+      },
     });
 
     if (response.success) {

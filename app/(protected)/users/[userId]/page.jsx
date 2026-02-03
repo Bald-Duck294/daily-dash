@@ -26,19 +26,23 @@ const DetailItem = ({ icon, label, value }) => (
   </div>
 );
 
+import { useCompanyId } from "@/providers/CompanyProvider";
+
 export default function ViewUserPage() {
   const router = useRouter();
   const params = useParams();
-  const { id } = params;
+  const { userId } = params;
+  const { companyId } = useCompanyId();
 
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (id) {
+    if (userId) {
       const fetchUser = async () => {
         setIsLoading(true);
-        const response = await UsersApi.getUserById(id);
+        const response = await UsersApi.getUserById(userId);
+        console.log(response, "response");
         if (response.success) {
           setUser(response.data);
         } else {
@@ -49,7 +53,7 @@ export default function ViewUserPage() {
       };
       fetchUser();
     }
-  }, [id, router]);
+  }, [userId, router]);
 
   return (
     <>
@@ -80,8 +84,7 @@ export default function ViewUserPage() {
                     </p>
                   </div>
 
-                  {/* `/users/${user.id}/edit`     */}
-                  <Link href={`users/${user.id}?companyId=${companyId}`}>
+                  <Link href={`/users/${user.id}/edit?companyId=${companyId}`}>
                     <span className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 cursor-pointer">
                       <Edit size={16} />
                       Edit User

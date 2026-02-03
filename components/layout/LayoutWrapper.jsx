@@ -1,35 +1,35 @@
 "use client";
 
-import { useState } from "react";
 import { usePathname } from "next/navigation";
 import Header from "./Header";
 import dynamic from "next/dynamic";
 import AuthChecker from "./AuthChecker";
-// import AuthChecker from "../components/AuthChecker"; // ✅ Import AuthChecker
+
 const Sidebar = dynamic(() => import("./Sidebar"), { ssr: false });
 
 export default function LayoutWrapper({ children }) {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
   const pathname = usePathname();
-
-  // Pages to exclude layout (public pages)
   const hideLayoutFor = ["/", "/login", "/register"];
   const shouldHideLayout = hideLayoutFor.includes(pathname);
 
-  // ✅ Wrap everything with AuthChecker
   if (shouldHideLayout) {
     return <AuthChecker>{children}</AuthChecker>;
   }
 
   return (
     <AuthChecker>
-      <div className="flex h-screen min-h-screen w-full overflow-hidden">
-        <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+      <div className="flex h-screen w-full bg-[var(--background)]">
+        {/* Sidebar */}
+        <Sidebar />
 
-        {/* Main content */}
-        <div className="flex flex-col flex-grow h-full">
+        {/* Main area */}
+        <div className="flex flex-col flex-1 min-w-0">
           <Header />
-          <div className="bg-gray-50 flex-grow overflow-y-auto">{children}</div>
+
+          {/* THIS is where scrolling belongs */}
+          <main className="flex-1 overflow-y-auto p-4 sm:p-6">
+            {children}
+          </main>
         </div>
       </div>
     </AuthChecker>

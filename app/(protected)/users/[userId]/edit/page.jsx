@@ -13,7 +13,7 @@ import { usePermissions } from "@/shared/hooks/usePermission";
 export default function EditUserPage() {
   const router = useRouter();
   const params = useParams();
-  const { id } = params;
+  const { userId } = params;
   const { companyId } = useCompanyId();
 
   const [user, setUser] = useState(null);
@@ -25,10 +25,10 @@ export default function EditUserPage() {
   const canEditUser = canUpdate(MODULES.USERS);
 
   useEffect(() => {
-    if (id) {
+    if (userId) {
       const fetchUser = async () => {
         setIsLoading(true);
-        const response = await UsersApi.getUserById(id);
+        const response = await UsersApi.getUserById(userId);
         if (response.success) {
           setUser(response.data);
         } else {
@@ -39,7 +39,7 @@ export default function EditUserPage() {
       };
       fetchUser();
     }
-  }, [id, router]);
+  }, [userId, router]);
 
   const handleUpdateUser = async (formData) => {
     // Prevent sending an empty password string
@@ -48,7 +48,7 @@ export default function EditUserPage() {
     }
 
     const toastId = toast.loading("Updating user...");
-    const response = await UsersApi.updateUser(id, formData);
+    const response = await UsersApi.updateUser(userId, formData);
 
     if (response.success) {
       toast.success("User updated successfully!", { id: toastId });
@@ -57,15 +57,6 @@ export default function EditUserPage() {
       toast.error(response.error || "Failed to update user.", { id: toastId });
     }
   };
-
-  // ❌ REMOVE THIS - it's outside the return statement so it won't render!
-  // {
-  //   !canEditUser && (
-  //     <div className="p-4 bg-amber-50 border-l-4 border-amber-500 rounded-r-lg mb-6">
-  //       ...
-  //     </div>
-  //   )
-  // }
 
   return (
     <>

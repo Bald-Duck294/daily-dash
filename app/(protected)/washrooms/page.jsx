@@ -18,9 +18,9 @@ import {
   Star,
   CheckCircle2,
   XCircle,
-  EllipsisVertical,
   Grid3x3,
   List,
+  EllipsisVertical,
 } from "lucide-react";
 import LocationsApi from "@/features/locations/locations.api";
 import { useRouter } from "next/navigation";
@@ -48,8 +48,7 @@ function WashroomsPage() {
   const [currentScoreSortOrder, setCurrentScoreSortOrder] = useState(null);
   const [avgScoreSortOrder, setAvgScoreSortOrder] = useState(null);
   const [statusSortOrder, setStatusSortOrder] = useState(null);
-  const [viewMode, setViewMode] = useState("table"); // "grid" | "table"
-
+  const [viewMode, setViewMode] = useState("table");
   const [deleteModal, setDeleteModal] = useState({
     open: false,
     location: null,
@@ -310,7 +309,14 @@ function WashroomsPage() {
 
   const renderRating = (rating, reviewCount = 0) => {
     if (!rating) {
-      return <span className="text-sm text-slate-400">—</span>;
+      return (
+        <span
+          className="text-sm"
+          style={{ color: "var(--washroom-text-muted)" }}
+        >
+          —
+        </span>
+      );
     }
 
     const smartRound = (rating) => {
@@ -451,7 +457,14 @@ function WashroomsPage() {
   // Cleaner Badge Rendering
   const renderCleanerBadge = (locationName, cleaners) => {
     if (!cleaners || cleaners.length === 0) {
-      return <span className="text-xs text-slate-300 italic">Unassigned</span>;
+      return (
+        <span
+          className="text-xs  italic"
+          style={{ color: "var(--washroom-text-muted)" }}
+        >
+          Unassigned
+        </span>
+      );
     }
     const firstName = cleaners[0].cleaner_user?.name || "Cleaner";
     return (
@@ -492,28 +505,52 @@ function WashroomsPage() {
 
       {/* Main Container */}
       <div
-        className="min-h-screen bg-[#F8F9FA] p-6 font-sans 
+        className="min-h-screen  p-6 font-sans 
        max-[786px]:flex
     max-[786px]:items-center
     max-[786px]:justify-center
     max-[786px]:mx-auto
       "
+        style={{ background: "var(--washroom-bg)" }}
       >
         <div className="max-w-[1600px] mx-auto">
           {/* Header Card */}
-          <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-100 mb-6">
+          <div
+            className="rounded-2xl p-4 sm:p-6 mb-6"
+            style={{
+              background: "var(--washroom-surface)",
+              border: "1px solid var(--washroom-border)",
+              boxShadow: "var(--washroom-shadow)",
+            }}
+          >
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               {/* Left: Icon + Title */}
               <div className="flex items-start sm:items-center gap-4">
-                <div className="w-12 h-12 bg-white rounded-xl border border-slate-200 flex items-center justify-center shadow-sm shrink-0">
-                  <MapPin className="text-slate-800 w-6 h-6" />
+                <div
+                  className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
+                  style={{
+                    background: "var(--washroom-surface)",
+                    border: "1px solid var(--washroom-border)",
+                    boxShadow: "var(--washroom-shadow)",
+                  }}
+                >
+                  <MapPin
+                    className=" w-6 h-6"
+                    style={{ color: "var(--washroom-text)" }}
+                  />
                 </div>
 
                 <div className="min-w-0">
-                  <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-slate-800 tracking-tight leading-tight">
+                  <h1
+                    className="text-lg sm:text-xl md:text-2xl font-bold"
+                    style={{ color: "var(--washroom-title)" }}
+                  >
                     WASHROOM LOCATIONS
                   </h1>
-                  <p className="text-slate-400 text-xs sm:text-sm font-medium uppercase tracking-wider mt-1">
+                  <p
+                    className="text-xs sm:text-sm font-medium uppercase tracking-wider mt-1"
+                    style={{ color: "var(--washroom-subtitle)" }}
+                  >
                     Overview of details, assignments, and facility ratings
                   </p>
                 </div>
@@ -524,7 +561,19 @@ function WashroomsPage() {
                 {canAddLocation && (
                   <button
                     onClick={handleAddToilet}
-                    className="w-full sm:w-auto justify-center bg-[#FFAB2D] hover:bg-[#f39c12] text-white px-6 py-3 rounded-xl font-bold text-sm transition-all flex items-center gap-2 shadow-sm uppercase tracking-wide"
+                    className="w-full sm:w-auto justify-center  px-6 py-3 rounded-xl font-bold text-sm transition-all flex items-center gap-2 shadow-sm uppercase tracking-wide"
+                    style={{
+                      background: "var(--washroom-primary)",
+                      color: "var(--washroom-primary-text)",
+                    }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.background =
+                        "var(--washroom-primary-hover)")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.background =
+                        "var(--washroom-primary)")
+                    }
                   >
                     <Plus strokeWidth={3} className="w-4 h-4" />
                     Add Location
@@ -534,7 +583,19 @@ function WashroomsPage() {
                 {canAssignCleaner && (
                   <button
                     onClick={handleAssignWashroom}
-                    className="w-full sm:w-auto justify-center bg-[#FFAB2D] hover:bg-[#f39c12] text-white px-6 py-3 rounded-xl font-bold text-sm transition-all shadow-sm uppercase tracking-wide"
+                    className="w-full sm:w-auto justify-center  px-6 py-3 rounded-xl font-bold text-sm transition-all shadow-sm uppercase tracking-wide"
+                    style={{
+                      background: "var(--washroom-primary)",
+                      color: "var(--washroom-primary-text)",
+                    }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.background =
+                        "var(--washroom-primary-hover)")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.background =
+                        "var(--washroom-primary)")
+                    }
                   >
                     Assign
                   </button>
@@ -544,14 +605,29 @@ function WashroomsPage() {
           </div>
 
           {/* Filters Card */}
-          <div className="bg-white rounded-2xl p-2 md:p-3 shadow-sm border border-slate-100 mb-6 flex flex-col xl:flex-row items-center gap-3">
+          <div
+            className="rounded-2xl p-2 md:p-3 mb-6 flex flex-col xl:flex-row items-center gap-3"
+            style={{
+              background: "var(--washroom-surface)",
+              border: "1px solid var(--washroom-border)",
+              boxShadow: "var(--washroom-shadow)",
+            }}
+          >
             {/* Search */}
             <div className="relative flex-1 w-full xl:w-auto min-w-[300px]">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+              <Search
+                style={{ color: "var(--washroom-text-muted)" }}
+                className="absolute left-4 top-1/2 -translate-y-1/2  w-4 h-4"
+              />
               <input
                 type="text"
                 placeholder="Search facility name or ID..."
-                className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 focus:ring-2 focus:ring-orange-200 focus:border-orange-400 outline-none transition-all placeholder:text-slate-400"
+                className="w-full pl-11 pr-4 py-3 rounded-xl text-sm outline-none transition-all"
+                style={{
+                  background: "var(--washroom-input-bg)",
+                  color: "var(--washroom-text)",
+                  border: "1px solid var(--washroom-border)",
+                }}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -560,7 +636,12 @@ function WashroomsPage() {
             <div className="flex flex-wrap items-center gap-2 w-full xl:w-auto justify-end">
               {/* Dropdowns */}
               <select
-                className="px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 bg-white hover:bg-slate-50 outline-none cursor-pointer min-w-[120px]"
+                className="px-4 py-2.5 border  rounded-xl text-sm font-semibold  outline-none cursor-pointer min-w-[120px]"
+                style={{
+                  background: "var(--washroom-surface)",
+                  color: "var(--washroom-text)",
+                  border: "1px solid var(--washroom-border)",
+                }}
                 value={selectedLocationTypeId}
                 onChange={(e) => setSelectedLocationTypeId(e.target.value)}
               >
@@ -573,7 +654,12 @@ function WashroomsPage() {
               </select>
 
               <select
-                className="px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 bg-white hover:bg-slate-50 outline-none cursor-pointer min-w-[140px]"
+                className="px-4 py-2.5 border  rounded-xl text-sm font-semibold  outline-none cursor-pointer min-w-[140px]"
+                style={{
+                  background: "var(--washroom-surface)",
+                  color: "var(--washroom-text)",
+                  border: "1px solid var(--washroom-border)",
+                }}
                 value={facilityCompanyId}
                 onChange={(e) => {
                   // console.log(e.target.value, "e.target.value 1");
@@ -594,7 +680,12 @@ function WashroomsPage() {
               </select>
 
               <select
-                className="px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 bg-white hover:bg-slate-50 outline-none cursor-pointer"
+                className="px-4 py-2.5 border  rounded-xl text-sm font-semibold  outline-none cursor-pointer"
+                style={{
+                  background: "var(--washroom-surface)",
+                  color: "var(--washroom-text)",
+                  border: "1px solid var(--washroom-border)",
+                }}
                 value={minRating}
                 onChange={(e) => setMinRating(e.target.value)}
               >
@@ -605,19 +696,59 @@ function WashroomsPage() {
               </select>
 
               {/* Toggle Buttons */}
-              <div className="bg-slate-50 p-1 rounded-xl border border-slate-100 flex items-center">
+              <div
+                className="p-1 rounded-xl flex items-center"
+                style={{
+                  background: "var(--washroom-filter-bg)",
+                  border: "1px solid var(--washroom-border)",
+                }}
+              >
+                {/* ALL */}
                 <button
                   onClick={() => setAssignmentFilter("")}
-                  className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all uppercase tracking-wider ${assignmentFilter === "" ? "bg-white text-blue-500 shadow-sm" : "text-slate-400 hover:text-slate-600"}`}
+                  className="px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all"
+                  style={{
+                    background:
+                      assignmentFilter === ""
+                        ? "var(--washroom-filter-active-bg)"
+                        : "transparent",
+                    color:
+                      assignmentFilter === ""
+                        ? "var(--washroom-filter-active-text)"
+                        : "var(--washroom-filter-text)",
+                    boxShadow:
+                      assignmentFilter === ""
+                        ? "var(--washroom-filter-active-shadow)"
+                        : "none",
+                  }}
                 >
                   ALL
                 </button>
+
+                {/* ASSIGNED */}
                 <button
                   onClick={() => setAssignmentFilter("assigned")}
-                  className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 uppercase tracking-wider ${assignmentFilter === "assigned" ? "bg-white text-blue-500 shadow-sm" : "text-slate-400 hover:text-slate-600"}`}
+                  className="px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1"
+                  style={{
+                    background:
+                      assignmentFilter === "assigned"
+                        ? "var(--washroom-filter-active-bg)"
+                        : "transparent",
+                    color:
+                      assignmentFilter === "assigned"
+                        ? "var(--washroom-filter-active-text)"
+                        : "var(--washroom-filter-text)",
+                    boxShadow:
+                      assignmentFilter === "assigned"
+                        ? "var(--washroom-filter-active-shadow)"
+                        : "none",
+                  }}
                 >
-                  <CheckCircle2 size={12} /> Assigned
+                  <CheckCircle2 size={12} />
+                  Assigned
                 </button>
+
+                {/* CLEAR FILTERS */}
                 {(searchQuery ||
                   minRating ||
                   facilityCompanyId ||
@@ -625,36 +756,80 @@ function WashroomsPage() {
                   assignmentFilter) && (
                   <button
                     onClick={clearAllFilters}
-                    className="ml-1 p-1.5 text-slate-300 hover:text-red-500 transition-colors"
+                    className="ml-1 p-1.5 rounded-lg transition-colors"
+                    style={{
+                      color: "var(--washroom-filter-clear)",
+                    }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.color =
+                        "var(--washroom-filter-clear-hover)")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.color =
+                        "var(--washroom-filter-clear)")
+                    }
                   >
                     <XCircle size={18} />
                   </button>
                 )}
               </div>
 
-              <span className="text-sm font-medium text-slate-600 px-3 py-2 bg-slate-100 rounded-xl">
+              <span
+                className="text-sm font-medium px-3 py-2 rounded-xl"
+                style={{
+                  background: "var(--washroom-input-bg)",
+                  color: "var(--washroom-subtitle)",
+                  border: "1px solid var(--washroom-border)",
+                }}
+              >
                 {filteredList.length} of {list.length}
               </span>
-              <div className="flex bg-slate-100 rounded-xl p-1">
+
+              <div
+                className="flex rounded-xl p-1"
+                style={{
+                  background: "var(--washroom-input-bg)",
+                  border: "1px solid var(--washroom-border)",
+                }}
+              >
+                {/* Grid View */}
                 <button
                   onClick={() => setViewMode("grid")}
-                  className={`cursor-pointer p-2 rounded-lg transition-all ${
-                    viewMode === "grid"
-                      ? "bg-gradient-to-r from-[#FFAB2D] to-[#FF8C42] text-white shadow-md"
-                      : "text-slate-600 hover:bg-white"
-                  }`}
                   title="Grid View"
+                  className="cursor-pointer p-2 rounded-lg transition-all"
+                  style={
+                    viewMode === "grid"
+                      ? {
+                          background:
+                            "linear-gradient(90deg, var(--washroom-primary), var(--washroom-primary-hover))",
+                          color: "var(--washroom-primary-text)",
+                          boxShadow: "0 4px 10px rgba(0,0,0,0.15)",
+                        }
+                      : {
+                          color: "var(--washroom-subtitle)",
+                        }
+                  }
                 >
                   <Grid3x3 className="h-5 w-5" />
                 </button>
+
+                {/* Table View */}
                 <button
                   onClick={() => setViewMode("table")}
-                  className={`cursor-pointer p-2 rounded-lg transition-all ${
-                    viewMode === "table"
-                      ? "bg-gradient-to-r from-[#FFAB2D] to-[#FF8C42] text-white shadow-md"
-                      : "text-slate-600 hover:bg-white"
-                  }`}
                   title="Table View"
+                  className="cursor-pointer p-2 rounded-lg transition-all"
+                  style={
+                    viewMode === "table"
+                      ? {
+                          background:
+                            "linear-gradient(90deg, var(--washroom-primary), var(--washroom-primary-hover))",
+                          color: "var(--washroom-primary-text)",
+                          boxShadow: "0 4px 10px rgba(0,0,0,0.15)",
+                        }
+                      : {
+                          color: "var(--washroom-subtitle)",
+                        }
+                  }
                 >
                   <List className="h-5 w-5" />
                 </button>
@@ -662,7 +837,7 @@ function WashroomsPage() {
             </div>
           </div>
 
-          {/* NEW CONTENT LOGIC: Toggle between Grid/Table + Mobile */}
+          {/* Table Container */}
           {filteredList.length === 0 ? (
             <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-16 text-center lg:col-span-2">
               <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-[#FFAB2D]/20 to-[#FF8C42]/20 flex items-center justify-center">
@@ -684,29 +859,56 @@ function WashroomsPage() {
                       <div
                         key={item.id}
                         onClick={() => handleView(item.id)}
-                        className="group bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer relative overflow-hidden"
+                        className="
+        group rounded-2xl p-6 cursor-pointer relative overflow-hidden
+        transition-all duration-300 hover:-translate-y-1
+      "
+                        style={{
+                          background: "var(--washroom-surface)",
+                          border: "1px solid var(--washroom-border)",
+                          boxShadow: "var(--washroom-shadow)",
+                        }}
                       >
-                        {/* Subtle top accent bar */}
-                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-400 to-orange-300 transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-300" />
+                        {/* Top Accent */}
+                        <div
+                          className="absolute top-0 left-0 w-full h-1 origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-300"
+                          style={{
+                            background:
+                              "linear-gradient(90deg, var(--washroom-primary), var(--washroom-primary-hover))",
+                          }}
+                        />
 
                         {/* Header */}
                         <div className="flex justify-between items-start mb-6">
                           <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center font-bold text-lg">
+                            <div
+                              className="w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg"
+                              style={{
+                                background: "var(--washroom-score-bg)",
+                                color: "var(--washroom-score-text)",
+                              }}
+                            >
                               {item.name?.charAt(0).toUpperCase()}
                             </div>
+
                             <div>
-                              <h3 className="font-bold text-slate-800 text-lg leading-tight group-hover:text-orange-600 transition-colors">
+                              <h3
+                                className="font-bold text-lg leading-tight transition-colors"
+                                style={{ color: "var(--washroom-title)" }}
+                              >
                                 {item.name}
                               </h3>
-                              <p className="text-xs text-slate-400 mt-1 font-medium tracking-wide">
+                              <p
+                                className="text-xs mt-1 font-medium tracking-wide"
+                                style={{ color: "var(--washroom-subtitle)" }}
+                              >
                                 ID: #{String(index + 1).padStart(2, "0")} •{" "}
                                 {item.location_types?.name}
                               </p>
                             </div>
                           </div>
 
-                          {/* Menu Trigger */}
+                          {/* Menu */}
                           <div
                             className="relative"
                             onClick={(e) => e.stopPropagation()}
@@ -717,11 +919,12 @@ function WashroomsPage() {
                                   actionsMenuOpen === item.id ? null : item.id,
                                 )
                               }
-                              className="p-2 hover:bg-slate-50 rounded-full text-slate-400 transition-colors"
+                              className="p-2 rounded-full transition-colors"
+                              style={{ color: "var(--washroom-subtitle)" }}
                             >
                               <MoreVertical size={18} />
                             </button>
-                            {/* ... Menu Dropdown logic ... */}
+
                             {actionsMenuOpen === item.id && (
                               <LocationActionsMenu
                                 item={item}
@@ -737,71 +940,138 @@ function WashroomsPage() {
                           </div>
                         </div>
 
-                        {/* Metrics Row */}
+                        {/* Metrics */}
                         <div className="grid grid-cols-2 gap-4 mb-6">
-                          <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                          <div
+                            className="rounded-xl p-3"
+                            style={{
+                              background: "var(--washroom-input-bg)",
+                              border: "1px solid var(--washroom-border)",
+                            }}
+                          >
+                            <p
+                              className="text-[10px] font-bold uppercase tracking-wider mb-1"
+                              style={{ color: "var(--washroom-subtitle)" }}
+                            >
                               Current Score
                             </p>
                             <div className="flex items-baseline gap-1">
-                              <span className="text-2xl font-bold text-slate-800">
+                              <span
+                                className="text-2xl font-bold"
+                                style={{ color: "var(--washroom-title)" }}
+                              >
                                 {Math.round(item.currentScore * 10) / 10 || "-"}
                               </span>
-                              <span className="text-xs text-slate-400 font-medium">
+                              <span
+                                className="text-xs font-medium"
+                                style={{ color: "var(--washroom-subtitle)" }}
+                              >
                                 / 10
                               </span>
                             </div>
                           </div>
-                          <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+
+                          <div
+                            className="rounded-xl p-3"
+                            style={{
+                              background: "var(--washroom-input-bg)",
+                              border: "1px solid var(--washroom-border)",
+                            }}
+                          >
+                            <p
+                              className="text-[10px] font-bold uppercase tracking-wider mb-1"
+                              style={{ color: "var(--washroom-subtitle)" }}
+                            >
                               Avg Rating
                             </p>
                             <div className="flex items-center gap-1.5">
-                              <Star className="w-4 h-4 text-orange-400 fill-orange-400" />
-                              <span className="text-lg font-bold text-slate-800">
+                              <Star
+                                className="w-4 h-4"
+                                style={{ color: "var(--washroom-primary)" }}
+                                fill="currentColor"
+                              />
+                              <span
+                                className="text-lg font-bold"
+                                style={{ color: "var(--washroom-title)" }}
+                              >
                                 {item.averageRating || "0.0"}
                               </span>
                             </div>
                           </div>
                         </div>
 
-                        {/* Footer Meta */}
-                        <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+                        {/* Footer */}
+                        <div
+                          className="flex items-center justify-between pt-4"
+                          style={{
+                            borderTop: "1px solid var(--washroom-border)",
+                          }}
+                        >
                           <div className="flex items-center gap-2">
                             <div
-                              className={`w-2 h-2 rounded-full ${item.status ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]" : "bg-rose-500"}`}
+                              className="w-2 h-2 rounded-full"
+                              style={{
+                                background: item.status
+                                  ? "var(--washroom-status-dot-active)"
+                                  : "var(--washroom-status-dot-inactive)",
+                              }}
                             />
                             <span
-                              className={`text-xs font-bold uppercase tracking-wider ${item.status ? "text-emerald-600" : "text-rose-600"}`}
+                              className="text-xs font-bold uppercase tracking-wider"
+                              style={{
+                                color: item.status
+                                  ? "var(--washroom-status-active-text)"
+                                  : "var(--washroom-status-inactive-text)",
+                              }}
                             >
                               {item.status ? "Active" : "Inactive"}
                             </span>
                           </div>
 
-                          <div className="flex -space-x-2">
-                            {/* Cleaner Avatars or Count */}
-                            {item.cleaner_assignments?.length > 0 ? (
-                              <div className="pl-3 text-xs font-medium text-slate-500">
-                                <span className="text-slate-800 font-bold">
-                                  {item.cleaner_assignments.length}
-                                </span>{" "}
-                                Cleaner
-                                {item.cleaner_assignments.length > 1 ? "s" : ""}
-                              </div>
-                            ) : (
-                              <span className="text-xs text-slate-400 italic">
-                                Unassigned
-                              </span>
-                            )}
-                          </div>
+                          {item.cleaner_assignments?.length > 0 ? (
+                            <div
+                              className="text-xs font-medium"
+                              style={{ color: "var(--washroom-subtitle)" }}
+                            >
+                              <span
+                                className="font-bold"
+                                style={{ color: "var(--washroom-title)" }}
+                              >
+                                {item.cleaner_assignments.length}
+                              </span>{" "}
+                              Cleaner
+                              {item.cleaner_assignments.length > 1 ? "s" : ""}
+                            </div>
+                          ) : (
+                            <span
+                              className="text-xs italic"
+                              style={{ color: "var(--washroom-subtitle)" }}
+                            >
+                              Unassigned
+                            </span>
+                          )}
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hidden lg:block">
+                  <div
+                    className="rounded-2xl overflow-hidden hidden lg:block"
+                    style={{
+                      background: "var(--washroom-surface)",
+                      border: "1px solid var(--washroom-border)",
+                      boxShadow: "var(--washroom-shadow)",
+                    }}
+                  >
                     {/* Grid Header - FIXED WIDTHS to prevent scroll */}
-                    <div className="grid grid-cols-[60px_2fr_1.2fr_100px_100px_1.5fr_1fr_120px_90px] gap-2 px-6 py-4 bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-widest items-center">
+                    <div
+                      className="grid grid-cols-[60px_2fr_1.2fr_100px_100px_1.5fr_1fr_120px_90px] gap-2 px-6 py-4  text-[11px] font-bold  uppercase tracking-widest items-center"
+                      style={{
+                        background: "var(--washroom-table-header-bg)",
+                        borderBottom: "1px solid var(--washroom-table-divider)",
+                        color: "var(--washroom-text-muted)",
+                      }}
+                    >
                       <div className="text-center text-blue-500">#</div>
 
                       <button
@@ -846,16 +1116,33 @@ function WashroomsPage() {
                     </div>
 
                     {/* Grid Body */}
-                    <div className="divide-y divide-slate-100">
+                    <div
+                      className="divide-y"
+                      style={{ borderColor: "var(--washroom-divider)" }}
+                    >
                       {filteredList.length === 0 ? (
                         <div className="p-12 text-center">
-                          <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <MapPin className="h-8 w-8 text-slate-300" />
+                          <div
+                            className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
+                            style={{ background: "var(--washroom-muted-bg)" }}
+                          >
+                            <MapPin
+                              className="h-8 w-8"
+                              style={{ color: "var(--washroom-muted-text)" }}
+                            />
                           </div>
-                          <h3 className="text-lg font-bold text-slate-700">
+
+                          <h3
+                            className="text-lg font-bold"
+                            style={{ color: "var(--washroom-text-strong)" }}
+                          >
                             No washrooms found
                           </h3>
-                          <p className="text-sm text-slate-400 mt-1">
+
+                          <p
+                            className="text-sm mt-1"
+                            style={{ color: "var(--washroom-text-muted)" }}
+                          >
                             Try adjusting your filters
                           </p>
                         </div>
@@ -864,21 +1151,40 @@ function WashroomsPage() {
                           <div
                             key={item.id}
                             onClick={() => handleView(item.id)}
-                            className="grid grid-cols-[60px_2fr_1.2fr_100px_100px_1.5fr_1fr_120px_90px] gap-2 px-6 py-4 items-center hover:bg-blue-50/30 transition-colors cursor-pointer group border-l-4 border-l-transparent hover:border-l-blue-500"
+                            className="grid grid-cols-[60px_2fr_1.2fr_100px_100px_1.5fr_1fr_120px_90px] gap-2 px-6 py-4 items-center cursor-pointer transition-colors border-l-4 border-l-transparent"
+                            onMouseEnter={(e) =>
+                              (e.currentTarget.style.background =
+                                "var(--washroom-table-row-hover)")
+                            }
+                            onMouseLeave={(e) =>
+                              (e.currentTarget.style.background = "transparent")
+                            }
                           >
                             {/* Rank */}
                             <div className="flex justify-center">
-                              <span className="w-8 h-8 flex items-center justify-center bg-slate-100 text-blue-600 text-xs font-bold rounded-lg group-hover:bg-white group-hover:shadow-sm">
+                              <span
+                                className="w-8 h-8 flex items-center justify-center text-xs font-bold rounded-lg"
+                                style={{
+                                  background: "var(--washroom-muted-bg)",
+                                  color: "var(--washroom-accent)",
+                                }}
+                              >
                                 {String(index + 1).padStart(2, "0")}
                               </span>
                             </div>
 
                             {/* Name */}
                             <div className="min-w-0 pr-2">
-                              <p className="font-bold text-slate-700 text-sm truncate">
+                              <p
+                                className="font-bold text-sm truncate"
+                                style={{ color: "var(--washroom-text-strong)" }}
+                              >
                                 {item.name}
                               </p>
-                              <p className="text-[10px] text-slate-400 mt-0.5 truncate">
+                              <p
+                                className="text-[10px] mt-0.5 truncate"
+                                style={{ color: "var(--washroom-text-muted)" }}
+                              >
                                 ID: {item.id} •{" "}
                                 {new Date(item.created_at).toLocaleDateString()}
                               </p>
@@ -886,14 +1192,27 @@ function WashroomsPage() {
 
                             {/* Zone */}
                             <div className="min-w-0">
-                              <span className="inline-block bg-slate-100 text-slate-600 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wide truncate max-w-full">
+                              <span
+                                className="inline-block text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wide truncate max-w-full"
+                                style={{
+                                  background: "var(--washroom-muted-bg)",
+                                  color: "var(--washroom-text)",
+                                }}
+                              >
                                 {item.location_types?.name || "N/A"}
                               </span>
                             </div>
 
                             {/* Current Score */}
                             <div className="flex justify-center">
-                              <span className="px-4 py-1.5 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 text-sm font-bold">
+                              <span
+                                className="px-4 py-1.5 rounded-xl text-sm font-bold"
+                                style={{
+                                  background: "var(--washroom-score-bg)",
+                                  color: "var(--washroom-score-text)",
+                                  border: "1px solid var(--washroom-border)",
+                                }}
+                              >
                                 {item.currentScore
                                   ? Math.round(item.currentScore * 10) / 10
                                   : "-"}
@@ -904,9 +1223,13 @@ function WashroomsPage() {
                             <div className="flex justify-center items-center gap-1.5">
                               <Star
                                 size={14}
-                                className="text-orange-400 fill-orange-400"
+                                style={{ color: "var(--washroom-rating-star)" }}
+                                fill="currentColor"
                               />
-                              <span className="text-sm font-bold text-slate-700">
+                              <span
+                                className="text-sm font-bold"
+                                style={{ color: "var(--washroom-text-strong)" }}
+                              >
                                 {item.averageRating || "0.0"}
                               </span>
                             </div>
@@ -921,7 +1244,10 @@ function WashroomsPage() {
 
                             {/* Facility */}
                             <div className="min-w-0">
-                              <span className="text-xs font-medium text-slate-500 truncate block">
+                              <span
+                                className="text-xs font-medium truncate block"
+                                style={{ color: "var(--washroom-text-muted)" }}
+                              >
                                 {item.facility_companies?.name || "N/A"}
                               </span>
                             </div>
@@ -939,27 +1265,38 @@ function WashroomsPage() {
                                       location: item,
                                     })
                                   }
-                                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border transition-all ${
-                                    item.status === true || item.status === null
-                                      ? "bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100"
-                                      : "bg-red-50 text-red-600 border-red-100 hover:bg-red-100"
-                                  }`}
+                                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border transition-all"
+                                  style={{
+                                    background:
+                                      item.status === true ||
+                                      item.status === null
+                                        ? "var(--washroom-status-active-bg)"
+                                        : "var(--washroom-status-inactive-bg)",
+                                    color:
+                                      item.status === true ||
+                                      item.status === null
+                                        ? "var(--washroom-status-active-text)"
+                                        : "var(--washroom-status-inactive-text)",
+                                    borderColor:
+                                      item.status === true ||
+                                      item.status === null
+                                        ? "var(--washroom-status-active-border)"
+                                        : "var(--washroom-status-inactive-border)",
+                                  }}
                                 >
-                                  {item.status === true ||
-                                  item.status === null ? (
-                                    <>
-                                      <div className="relative flex h-2 w-2">
-                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                                      </div>
-                                      Active
-                                    </>
-                                  ) : (
-                                    <>
-                                      <div className="h-2 w-2 rounded-full bg-red-500"></div>
-                                      Inactive
-                                    </>
-                                  )}
+                                  <div
+                                    className="h-2 w-2 rounded-full"
+                                    style={{
+                                      background:
+                                        item.status === true ||
+                                        item.status === null
+                                          ? "var(--washroom-status-dot-active)"
+                                          : "var(--washroom-status-dot-inactive)",
+                                    }}
+                                  />
+                                  {item.status === true || item.status === null
+                                    ? "Active"
+                                    : "Inactive"}
                                 </button>
                               )}
                             </div>
@@ -976,10 +1313,20 @@ function WashroomsPage() {
                                     item.longitude,
                                   )
                                 }
-                                className="p-2 text-slate-400 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition-colors"
+                                className="p-2 rounded-lg transition-colors"
+                                style={{ color: "var(--washroom-icon-muted)" }}
+                                onMouseEnter={(e) =>
+                                  (e.currentTarget.style.background =
+                                    "var(--washroom-muted-bg)")
+                                }
+                                onMouseLeave={(e) =>
+                                  (e.currentTarget.style.background =
+                                    "transparent")
+                                }
                               >
                                 <Navigation size={16} />
                               </button>
+
                               <div
                                 className="relative"
                                 ref={
@@ -996,10 +1343,22 @@ function WashroomsPage() {
                                         : item.id,
                                     )
                                   }
-                                  className="p-2 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors"
+                                  className="p-2 rounded-lg transition-colors"
+                                  style={{
+                                    color: "var(--washroom-icon-muted)",
+                                  }}
+                                  onMouseEnter={(e) =>
+                                    (e.currentTarget.style.background =
+                                      "var(--washroom-muted-bg)")
+                                  }
+                                  onMouseLeave={(e) =>
+                                    (e.currentTarget.style.background =
+                                      "transparent")
+                                  }
                                 >
                                   <MoreVertical size={16} />
                                 </button>
+
                                 {actionsMenuOpen === item.id && (
                                   <LocationActionsMenu
                                     item={item}
@@ -1018,8 +1377,16 @@ function WashroomsPage() {
                         ))
                       )}
                     </div>
+
                     {/* Footer */}
-                    <div className="bg-slate-50 px-6 py-3 border-t border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                    <div
+                      className="px-6 py-3 text-xs font-bold uppercase tracking-wider"
+                      style={{
+                        background: "var(--washroom-table-footer-bg)",
+                        borderTop: "1px solid var(--washroom-table-divider)",
+                        color: "var(--washroom-muted-text)",
+                      }}
+                    >
                       Showing {filteredList.length} washroom records
                     </div>
                   </div>
@@ -1385,7 +1752,7 @@ function WashroomsPage() {
                         </button>
                       </div>
                     </div>
-                  </div>  
+                  </div>
                 )}
               </div>
             </div>

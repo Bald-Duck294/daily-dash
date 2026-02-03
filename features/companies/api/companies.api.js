@@ -59,7 +59,7 @@ export const CompanyApi = {
   // UPDATE (mutation → no cancellation)
   updateCompany: async ({ id, companyData }) => {
     try {
-      const response = await axiosInstance.put(`/companies/${id}`, companyData);
+      const response = await axiosInstance.post(`/companies/${id}`, companyData);
       return { success: true, data: response.data };
     } catch (error) {
       return {
