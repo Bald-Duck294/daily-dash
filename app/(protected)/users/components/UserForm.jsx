@@ -405,7 +405,7 @@ export default function UserForm({
               }}
             >
               <option value="">
-                {isLoadingData ? "Loading roles..." : "Cleaner"}
+                {isLoadingData ? "Loading roles..." : "Select role"}
               </option>
               {roles.map((role) => (
                 <option key={role.id} value={role.id}>

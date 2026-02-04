@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -186,45 +187,76 @@ export default function FacilityCompaniesPage() {
     <>
       <Toaster position="top-right" />
 
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 p-4 sm:p-6 md:p-8">
+      <div
+        className="
+    min-h-screen
+    bg-[var(--washroom-bg)]
+    p-4 sm:p-6 md:p-8
+  "
+      >
+
         <div className="max-w-7xl mx-auto">
           {/* Header */}
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-6 mb-4 sm:mb-6">
+          <div
+            className="
+    rounded-xl p-4 sm:p-6 mb-4 sm:mb-6
+    bg-[var(--washroom-surface)]
+    border border-[var(--washroom-border)]
+    shadow-[var(--washroom-shadow)]
+  "
+          >
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div className="flex items-center gap-3">
-                <div className="p-2 sm:p-3 bg-blue-50 rounded-lg">
-                  <Building2 className="w-5 h-5 sm:w-6 sm:h-6 " />
+                {/* Icon */}
+                <div
+                  className="
+          inline-flex items-center justify-center
+          w-10 h-10 sm:w-11 sm:h-11
+          rounded-lg
+          bg-[var(--user-add-accent)]
+          text-white
+        "
+                >
+                  <Building2 className="w-5 h-5 sm:w-6 sm:h-6" />
                 </div>
 
-                {/* <div
-                  className="inline-flex items-center justify-center
-  w-9 h-9
-  bg-[#fff4e6]
-  border-2 border-[#ff9f1c]
-  rounded-lg
-  shadow-sm
-"
-                >
-                  <Building2 className="w-5 h-5 text-[#ff9f1c]" />
-                </div> */}
-
+                {/* Title */}
                 <div>
-                  <h1 className="text-xl sm:text-2xl font-bold text-slate-800">
+                  <h1
+                    className="
+            text-xl sm:text-2xl font-bold
+            text-[var(--washroom-title)]
+          "
+                  >
                     Facility Companies
                   </h1>
-                  <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+                  <p
+                    className="
+            text-xs sm:text-sm mt-0.5
+            text-[var(--washroom-subtitle)]
+          "
+                  >
                     Manage facility management companies
                   </p>
                 </div>
               </div>
 
+              {/* CTA */}
               {canAddFacility && (
                 <button
                   onClick={() =>
                     router.push(`/facility-company/add?companyId=${companyId}`)
                   }
-                  className="inline-flex items-center gap-2 px-5 py-2.5 font-bold text-sm text-white bg-gradient-to-r from-orange-500 to-orange-600
- rounded-lg shadow-md hover:shadow-lg hover:from-orange-600 hover:to-orange-700 transition-all duration-200 cursor-pointer uppercase"
+                  className="
+          inline-flex items-center gap-2
+          px-5 py-2.5 text-sm font-bold uppercase
+          rounded-lg cursor-pointer
+          text-[var(--washroom-primary-text)]
+          bg-[var(--washroom-primary)]
+          hover:bg-[var(--washroom-primary-hover)]
+          shadow-md hover:shadow-lg
+          transition-all duration-200
+        "
                 >
                   <Plus className="w-4 h-4" />
                   Add Facility Company
@@ -233,43 +265,86 @@ export default function FacilityCompaniesPage() {
             </div>
           </div>
 
+
           {/* Search and Filters */}
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-6 mb-4 sm:mb-6">
+          <div
+            className="
+    rounded-xl p-4 sm:p-6 mb-4 sm:mb-6
+    bg-[var(--washroom-surface)]
+    border border-[var(--washroom-border)]
+    shadow-[var(--washroom-shadow)]
+  "
+          >
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
               {/* Search */}
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+              <div className="relative flex-1">
+                <Search
+                  className="
+          absolute left-3 top-1/2 -translate-y-1/2
+          w-4 h-4
+          text-[var(--washroom-filter-text)]
+        "
+                />
+
                 <input
                   type="text"
                   placeholder="Search by name, email, phone..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                  className="
+          w-full pl-10 pr-4 py-2.5 text-sm rounded-lg
+          bg-[var(--washroom-input-bg)]
+          border border-[var(--washroom-border)]
+          text-[var(--washroom-text)]
+          placeholder:text-[var(--washroom-filter-text)]
+          focus:outline-none
+          focus:border-[var(--primary)]
+          focus:ring-2 focus:ring-[color:var(--primary)/25]
+        "
                 />
+
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery("")}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    className="
+            absolute right-3 top-1/2 -translate-y-1/2
+            text-[var(--washroom-filter-clear)]
+            hover:text-[var(--washroom-filter-clear-hover)]
+          "
                   >
                     <X className="w-4 h-4" />
                   </button>
                 )}
               </div>
 
-              {/* Status Filter */}
+              {/* Filter toggle */}
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setShowFilters(!showFilters)}
-                  className={`flex items-center gap-2 px-4 py-2.5 border rounded-lg font-medium text-sm transition-colors ${
-                    showFilters
-                      ? "bg-blue-50 border-blue-300 text-blue-700"
-                      : "bg-white border-slate-300 text-slate-700 hover:bg-slate-50"
-                  }`}
+                  className={`
+          inline-flex items-center gap-2
+          px-4 py-2.5 rounded-lg text-sm font-medium
+          border transition-colors
+          ${showFilters
+                      ? `
+                bg-[var(--washroom-filter-active-bg)]
+                border-[var(--primary)]
+                text-[var(--washroom-filter-active-text)]
+              `
+                      : `
+                bg-[var(--washroom-surface)]
+                border-[var(--washroom-border)]
+                text-[var(--washroom-text)]
+                hover:bg-[var(--washroom-filter-bg)]
+              `
+                    }
+        `}
                 >
                   <Filter className="w-4 h-4" />
                   Filters
+
                   {statusFilter !== "all" && (
-                    <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                    <span className="w-2 h-2 rounded-full bg-[var(--primary)]" />
                   )}
                 </button>
               </div>
@@ -277,35 +352,69 @@ export default function FacilityCompaniesPage() {
 
             {/* Filter Options */}
             {showFilters && (
-              <div className="mt-4 pt-4 border-t border-slate-200">
+              <div
+                className="
+        mt-4 pt-4
+        border-t border-[var(--washroom-border)]
+      "
+              >
                 <div className="flex flex-wrap gap-2">
+                  {/* ALL */}
                   <button
                     onClick={() => setStatusFilter("all")}
-                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                      statusFilter === "all"
-                        ? "bg-blue-600 text-white"
-                        : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                    }`}
+                    className={`
+            px-3 py-1.5 rounded-full text-sm font-medium transition-colors
+            ${statusFilter === "all"
+                        ? "bg-[var(--primary)] text-white"
+                        : `
+                  bg-[var(--washroom-filter-bg)]
+                  text-[var(--washroom-filter-text)]
+                  hover:bg-[var(--washroom-table-row-hover)]
+                `
+                      }
+          `}
                   >
                     All ({companies.length})
                   </button>
+
+                  {/* ACTIVE */}
                   <button
                     onClick={() => setStatusFilter("active")}
-                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                      statusFilter === "active"
-                        ? "bg-green-600 text-white"
-                        : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                    }`}
+                    className={`
+            px-3 py-1.5 rounded-full text-sm font-medium transition-colors
+            ${statusFilter === "active"
+                        ? `
+                  bg-[var(--washroom-status-active-bg)]
+                  text-[var(--washroom-status-active-text)]
+                `
+                        : `
+                  bg-[var(--washroom-filter-bg)]
+                  text-[var(--washroom-filter-text)]
+                  hover:bg-[var(--washroom-table-row-hover)]
+                `
+                      }
+          `}
                   >
                     Active ({companies.filter((c) => c.status).length})
                   </button>
+
+                  {/* INACTIVE */}
                   <button
                     onClick={() => setStatusFilter("inactive")}
-                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                      statusFilter === "inactive"
-                        ? "bg-red-600 text-white"
-                        : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                    }`}
+                    className={`
+            px-3 py-1.5 rounded-full text-sm font-medium transition-colors
+            ${statusFilter === "inactive"
+                        ? `
+                  bg-[var(--washroom-status-inactive-bg)]
+                  text-[var(--washroom-status-inactive-text)]
+                `
+                        : `
+                  bg-[var(--washroom-filter-bg)]
+                  text-[var(--washroom-filter-text)]
+                  hover:bg-[var(--washroom-table-row-hover)]
+                `
+                      }
+          `}
                   >
                     Inactive ({companies.filter((c) => !c.status).length})
                   </button>
@@ -314,128 +423,205 @@ export default function FacilityCompaniesPage() {
             )}
 
             {/* Results count */}
-            <div className="mt-3 text-sm text-slate-600">
-              Showing {filteredCompanies.length} of {companies.length} facility
-              companies
+            <div className="mt-3 text-sm text-[var(--washroom-filter-text)]">
+              Showing {filteredCompanies.length} of {companies.length} facility companies
             </div>
           </div>
 
+
+
           {/* Table/List */}
           {isLoading ? (
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 flex flex-col items-center justify-center">
-              <Loader2 className="w-12 h-12 text-blue-600 animate-spin mb-4" />
-              <p className="text-slate-500">Loading facility companies...</p>
+            <div
+              className="
+    rounded-xl p-12 flex flex-col items-center justify-center
+    bg-[var(--washroom-surface)]
+    border border-[var(--washroom-border)]
+    shadow-[var(--washroom-shadow)]
+  "
+            >
+              <Loader2
+                className="
+      w-12 h-12 mb-4 animate-spin
+      text-[var(--primary)]
+    "
+              />
+              <p className="text-[var(--washroom-filter-text)]">
+                Loading facility companies...
+              </p>
             </div>
+
           ) : filteredCompanies.length === 0 ? (
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center">
-              <Building2 className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-slate-800 mb-2">
+            <div
+              className="
+    rounded-xl p-12 text-center
+    bg-[var(--washroom-surface)]
+    border border-[var(--washroom-border)]
+    shadow-[var(--washroom-shadow)]
+  "
+            >
+              <Building2
+                className="
+      w-16 h-16 mx-auto mb-4
+      text-[var(--washroom-filter-text)]
+      opacity-60
+    "
+              />
+
+              <h3
+                className="
+      text-lg font-semibold mb-2
+      text-[var(--washroom-title)]
+    "
+              >
                 No facility companies found
               </h3>
-              <p className="text-slate-500 mb-4">
+
+              <p
+                className="
+      mb-4
+      text-[var(--washroom-subtitle)]
+    "
+              >
                 {searchQuery
                   ? "Try adjusting your search or filters"
                   : "Get started by adding your first facility company"}
               </p>
+
               {!searchQuery && canAddFacility && (
                 <button
                   onClick={() =>
                     router.push(`facility-company/add?companyId=${companyId}`)
                   }
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  className="
+        inline-flex items-center gap-2
+        px-4 py-2 text-sm font-semibold
+        rounded-lg cursor-pointer
+        text-[var(--washroom-primary-text)]
+        bg-[var(--washroom-primary)]
+        hover:bg-[var(--washroom-primary-hover)]
+        transition-colors
+      "
                 >
                   <Plus className="w-4 h-4" />
                   Add Facility Company
                 </button>
               )}
             </div>
+
           ) : (
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div
+              className="
+    rounded-xl overflow-hidden
+    bg-[var(--washroom-surface)]
+    border border-[var(--washroom-border)]
+    shadow-[var(--washroom-shadow)]
+  "
+            >
+
               {/* Desktop Table */}
               <div className="hidden md:block overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-slate-50 border-b border-slate-200">
+                  <thead
+                    className="
+          bg-[var(--washroom-table-header-bg)]
+          border-b border-[var(--washroom-border)]
+        "
+                  >
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                        Name
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                        Contact
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                        Created At
-                      </th>
-                      <th className="px-6 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                      {["Name", "Contact", "Status", "Created At"].map((h) => (
+                        <th
+                          key={h}
+                          className="
+                px-6 py-3 text-left
+                text-xs font-semibold uppercase tracking-wider
+                text-[var(--washroom-filter-text)]
+              "
+                        >
+                          {h}
+                        </th>
+                      ))}
+                      <th
+                        className="
+              px-6 py-3 text-right
+              text-xs font-semibold uppercase tracking-wider
+              text-[var(--washroom-filter-text)]
+            "
+                      >
                         Actions
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-200">
+                  <tbody className="divide-y divide-[var(--washroom-border)]">
                     {filteredCompanies.map((company) => (
                       <tr
                         key={company.id}
-                        className="hover:bg-slate-50 transition-colors"
+                        className="
+        transition-colors
+        hover:bg-[var(--washroom-table-row-hover)]
+      "
                       >
+                        {/* NAME */}
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
-                            {/* <div className="p-2 bg-blue-100 rounded-lg">
-                              <Building2 className="w-5 h-5 " />
-                            </div> */}
-
                             <div
-                              className="inline-flex items-center justify-center
-  w-9 h-9
-  bg-[#ff9f1c]
-  rounded-lg
-  shadow-sm
-"
+                              className="
+              inline-flex items-center justify-center
+              w-9 h-9 rounded-lg shadow-sm
+              bg-[var(--user-add-accent)]
+              text-white
+            "
                             >
-                              <Building2 className="w-5 h-5 text-white" />
+                              <Building2 className="w-5 h-5" />
                             </div>
 
                             <div>
-                              <p className="font-medium text-slate-800">
+                              <p className="font-medium text-[var(--washroom-title)]">
                                 {company.name}
                               </p>
-                              <p className="text-xs text-slate-500">
+                              <p className="text-xs text-[var(--washroom-subtitle)]">
                                 {company.contact_person_name}
                               </p>
                             </div>
                           </div>
                         </td>
+
+                        {/* CONTACT */}
                         <td className="px-6 py-4">
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2 text-sm text-slate-600">
-                              <Phone className="w-4 h-4 text-slate-400" />
+                          <div className="space-y-1 text-sm text-[var(--washroom-filter-text)]">
+                            <div className="flex items-center gap-2">
+                              <Phone className="w-4 h-4 opacity-60" />
                               {company.phone || "N/A"}
                             </div>
-                            <div className="flex items-center gap-2 text-sm text-slate-600">
-                              <Mail className="w-4 h-4 text-slate-400" />
+                            <div className="flex items-center gap-2">
+                              <Mail className="w-4 h-4 opacity-60" />
                               {company.email || "N/A"}
                             </div>
                           </div>
                         </td>
+
+                        {/* STATUS */}
                         <td className="px-6 py-4">
                           <button
                             onClick={() => handleStatusClick(company)}
                             disabled={!canEditFacility}
-                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                              canEditFacility
-                                ? "cursor-pointer"
-                                : "cursor-not-allowed opacity-60"
-                            } ${
-                              company.status
-                                ? "bg-green-100 text-green-700 hover:bg-green-200"
-                                : "bg-red-100 text-red-700 hover:bg-red-200"
-                            }`}
-                            title={
-                              !canEditFacility
-                                ? "No permission to update status"
-                                : ""
-                            }
+                            title={!canEditFacility ? "No permission to update status" : ""}
+                            className={`
+            inline-flex items-center gap-1.5 px-3 py-1.5
+            rounded-full text-xs font-medium
+            transition-colors
+            ${!canEditFacility ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}
+            ${company.status
+                                ? `
+                  bg-[var(--washroom-status-active-bg)]
+                  text-[var(--washroom-status-active-text)]
+                `
+                                : `
+                  bg-[var(--washroom-status-inactive-bg)]
+                  text-[var(--washroom-status-inactive-text)]
+                `
+                              }
+          `}
                           >
                             {company.status ? (
                               <>
@@ -450,47 +636,46 @@ export default function FacilityCompaniesPage() {
                             )}
                           </button>
                         </td>
+
+                        {/* CREATED */}
                         <td className="px-6 py-4">
-                          <div className="flex items-center gap-2 text-sm text-slate-600">
-                            <Calendar className="w-4 h-4 text-slate-400" />
+                          <div className="flex items-center gap-2 text-sm text-[var(--washroom-filter-text)]">
+                            <Calendar className="w-4 h-4 opacity-60" />
                             {formatDate(company.created_at)}
                           </div>
                         </td>
+
+                        {/* ACTIONS */}
                         <td className="px-6 py-4">
-                          <div className="flex items-center justify-end gap-2">
-                            {/* View */}
+                          <div className="flex justify-end gap-2">
                             <button
                               onClick={() =>
-                                router.push(
-                                  `/facility-company/${company.id}?companyId=${companyId}`,
-                                )
+                                router.push(`/facility-company/${company.id}?companyId=${companyId}`)
                               }
-                              className="btn-icon btn-icon-view cursor-pointer"
+                              className="btn-icon btn-icon-view"
                               title="View"
                             >
                               <Eye size={16} />
                             </button>
 
-                            {/* Edit */}
                             {canEditFacility && (
                               <button
                                 onClick={() =>
                                   router.push(
-                                    `/facility-company/${company.id}/edit?companyId=${companyId}`,
+                                    `/facility-company/${company.id}/edit?companyId=${companyId}`
                                   )
                                 }
-                                className="btn-icon btn-icon-edit cursor-pointer"
+                                className="btn-icon btn-icon-edit"
                                 title="Edit"
                               >
                                 <Edit size={16} />
                               </button>
                             )}
 
-                            {/* Delete */}
                             {canDeleteFacility && (
                               <button
                                 onClick={() => handleDeleteClick(company)}
-                                className="btn-icon btn-icon-delete cursor-pointer"
+                                className="btn-icon btn-icon-delete"
                                 title="Delete"
                               >
                                 <Trash2 size={16} />
@@ -501,62 +686,55 @@ export default function FacilityCompaniesPage() {
                       </tr>
                     ))}
                   </tbody>
+
                 </table>
               </div>
 
               {/* Mobile Cards */}
-              <div className="md:hidden divide-y divide-slate-200">
+              <div className="md:hidden divide-y divide-[var(--washroom-border)]">
                 {filteredCompanies.map((company) => (
                   <div key={company.id} className="p-4">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-3">
-                        {/* <div
-                          className="inline-flex items-center justify-center
-  w-9 h-9
-  border-2 border-[#ff9f1c]
-  rounded-lg
-  bg-white
-  shadow-sm
-"
-                        >
-                          <Building2 className="w-5 h-5 text-[#ff9f1c]" />
-                        </div> */}
-
                         <div
-                          className="inline-flex items-center justify-center
-                                                  w-9 h-9
-                                                bg-[#ff9f1c]
-                                                rounded-lg
-                                                shadow-sm
-                                                            "
+                          className="
+              w-9 h-9 rounded-lg shadow-sm
+              flex items-center justify-center
+              bg-[var(--user-add-accent)]
+              text-white
+            "
                         >
-                          <Building2 className="w-5 h-5 text-white" />
+                          <Building2 className="w-5 h-5" />
                         </div>
 
                         <div>
-                          <h3 className="font-medium text-slate-800">
+                          <h3 className="font-medium text-[var(--washroom-title)]">
                             {company.name}
                           </h3>
-                          <p className="text-xs text-slate-500">
+                          <p className="text-xs text-[var(--washroom-subtitle)]">
                             {company.contact_person_name}
                           </p>
                         </div>
                       </div>
+
                       <button
                         onClick={() => handleStatusClick(company)}
                         disabled={!canEditFacility}
-                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-                          canEditFacility
-                            ? "cursor-pointer"
-                            : "cursor-not-allowed opacity-60"
-                        } ${
-                          company.status
-                            ? "bg-green-100 text-green-700"
-                            : "bg-red-100 text-red-700"
-                        }`}
-                        title={
-                          !canEditFacility ? "No permission to update" : ""
-                        }
+                        className={`
+            inline-flex items-center gap-1 px-2 py-1
+            rounded-full text-xs font-medium
+            ${!canEditFacility ? "opacity-60 cursor-not-allowed" : ""}
+            ${company.status
+                            ? `
+                  bg-[var(--washroom-status-active-bg)]
+                  text-[var(--washroom-status-active-text)]
+                `
+                            : `
+                  bg-[var(--washroom-status-inactive-bg)]
+                  text-[var(--washroom-status-inactive-text)]
+                `
+                          }
+          `}
                       >
                         {company.status ? (
                           <>
@@ -572,58 +750,24 @@ export default function FacilityCompaniesPage() {
                       </button>
                     </div>
 
-                    <div className="space-y-2 mb-3">
-                      <div className="flex items-center gap-2 text-sm text-slate-600">
-                        <Phone className="w-4 h-4 text-slate-400" />
+                    <div className="space-y-2 text-sm text-[var(--washroom-filter-text)] mb-3">
+                      <div className="flex items-center gap-2">
+                        <Phone className="w-4 h-4 opacity-60" />
                         {company.phone || "N/A"}
                       </div>
-                      <div className="flex items-center gap-2 text-sm text-slate-600">
-                        <Mail className="w-4 h-4 text-slate-400" />
+                      <div className="flex items-center gap-2">
+                        <Mail className="w-4 h-4 opacity-60" />
                         {company.email || "N/A"}
                       </div>
-                      <div className="flex items-center gap-2 text-sm text-slate-600">
-                        <Calendar className="w-4 h-4 text-slate-400" />
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4 opacity-60" />
                         {formatDate(company.created_at)}
                       </div>
-                    </div>
-
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() =>
-                          router.push(
-                            `/facility-company/${company.id}?companyId=${companyId}`,
-                          )
-                        }
-                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium"
-                      >
-                        <Eye className="w-4 h-4" />
-                        View
-                      </button>
-                      {canEditFacility && (
-                        <button
-                          onClick={() =>
-                            router.push(
-                              `/facility-company/${company.id}/edit?companyId=${companyId}`,
-                            )
-                          }
-                          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-amber-600 bg-amber-50 rounded-lg hover:bg-amber-100 transition-colors text-sm font-medium"
-                        >
-                          <Edit className="w-4 h-4" />
-                          Edit
-                        </button>
-                      )}
-                      {canDeleteFacility && (
-                        <button
-                          onClick={() => handleDeleteClick(company)}
-                          className="flex items-center justify-center gap-2 px-3 py-2 text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors text-sm font-medium"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
                     </div>
                   </div>
                 ))}
               </div>
+
             </div>
           )}
         </div>
@@ -631,90 +775,211 @@ export default function FacilityCompaniesPage() {
 
       {/* Delete Confirmation Modal */}
       {deleteModal.show && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+        <div
+          className="
+    fixed inset-0 z-50 p-4
+    flex items-center justify-center
+    bg-[rgba(0,0,0,0.5)]
+    backdrop-blur-sm
+  "
+        >
+
+          <div
+            className="
+    max-w-md w-full p-6 rounded-xl
+    bg-[var(--washroom-surface)]
+    border border-[var(--washroom-border)]
+    shadow-[var(--washroom-shadow)]
+  "
+          >
+
             <div className="flex items-center gap-3 mb-4">
-              <div className="p-3 bg-red-100 rounded-full">
-                <AlertTriangle className="w-6 h-6 text-red-600" />
+              <div
+                className="
+      p-3 rounded-full
+      bg-[var(--washroom-status-inactive-bg)]
+    "
+              >
+                <AlertTriangle
+                  className="
+        w-6 h-6
+        text-[var(--washroom-status-inactive-text)]
+      "
+                />
               </div>
-              <h3 className="text-lg font-semibold text-slate-800">
+
+              <h3
+                className="
+      text-lg font-semibold
+      text-[var(--washroom-title)]
+    "
+              >
                 Delete Facility Company
               </h3>
             </div>
 
-            <p className="text-slate-600 mb-6">
+            <p
+              className="
+    mb-6
+    text-[var(--washroom-subtitle)]
+  "
+            >
               Are you sure you want to delete{" "}
-              <span className="font-semibold">{deleteModal.company?.name}</span>
+              <span className="font-semibold text-[var(--washroom-title)]">
+                {deleteModal.company?.name}
+              </span>
               ? This action cannot be undone.
             </p>
 
+
             <div className="flex gap-3">
+              {/* Cancel */}
               <button
                 onClick={() => setDeleteModal({ show: false, company: null })}
-                className="flex-1 px-4 py-2.5 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors font-medium"
+                className="
+      flex-1 px-4 py-2.5 rounded-lg font-medium
+      bg-[var(--washroom-filter-bg)]
+      text-[var(--washroom-text)]
+      border border-[var(--washroom-border)]
+      hover:bg-[var(--washroom-muted-bg)]
+      transition-colors
+    "
               >
                 Cancel
               </button>
+
+              {/* Delete */}
               <button
                 onClick={confirmDelete}
-                className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+                className="
+      flex-1 px-4 py-2.5 rounded-lg font-medium
+      bg-[var(--washroom-status-inactive-bg)]
+      text-[var(--washroom-status-inactive-text)]
+      hover:bg-[var(--washroom-delete-bg)]
+      transition-colors
+    "
               >
                 Delete
               </button>
             </div>
+
           </div>
         </div>
       )}
 
       {/* Status Toggle Confirmation Modal */}
       {statusModal.show && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+        <div
+          className="
+    fixed inset-0 z-50 p-4
+    flex items-center justify-center
+    bg-[rgba(0,0,0,0.5)]
+    backdrop-blur-sm
+  "
+        >
+          <div
+            className="
+      max-w-md w-full p-6 rounded-xl
+      bg-[var(--washroom-surface)]
+      border border-[var(--washroom-border)]
+      shadow-[var(--washroom-shadow)]
+    "
+          >
+            {/* Header */}
             <div className="flex items-center gap-3 mb-4">
               <div
-                className={`p-3 rounded-full ${
-                  statusModal.company?.status ? "bg-red-100" : "bg-green-100"
-                }`}
+                className={`
+          p-3 rounded-full
+          ${statusModal.company?.status
+                    ? "bg-[var(--washroom-status-inactive-bg)]"
+                    : "bg-[var(--washroom-status-active-bg)]"
+                  }
+        `}
               >
                 {statusModal.company?.status ? (
-                  <XCircle className="w-6 h-6 text-red-600" />
+                  <XCircle
+                    className="
+              w-6 h-6
+              text-[var(--washroom-status-inactive-text)]
+            "
+                  />
                 ) : (
-                  <CheckCircle className="w-6 h-6 text-green-600" />
+                  <CheckCircle
+                    className="
+              w-6 h-6
+              text-[var(--washroom-status-active-text)]
+            "
+                  />
                 )}
               </div>
-              <h3 className="text-lg font-semibold text-slate-800">
-                {statusModal.company?.status ? "Deactivate" : "Activate"}{" "}
-                Company
+
+              <h3
+                className="
+          text-lg font-semibold
+          text-[var(--washroom-title)]
+        "
+              >
+                {statusModal.company?.status ? "Deactivate" : "Activate"} Company
               </h3>
             </div>
 
-            <p className="text-slate-600 mb-6">
+            {/* Body */}
+            <p
+              className="
+        mb-6
+        text-[var(--washroom-subtitle)]
+      "
+            >
               Are you sure you want to{" "}
               {statusModal.company?.status ? "deactivate" : "activate"}{" "}
-              <span className="font-semibold">{statusModal.company?.name}</span>
+              <span className="font-semibold text-[var(--washroom-title)]">
+                {statusModal.company?.name}
+              </span>
               ?
             </p>
 
+            {/* Actions */}
             <div className="flex gap-3">
+              {/* Cancel */}
               <button
                 onClick={() => setStatusModal({ show: false, company: null })}
-                className="flex-1 px-4 py-2.5 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors font-medium"
+                className="
+          flex-1 px-4 py-2.5 rounded-lg font-medium
+          bg-[var(--washroom-filter-bg)]
+          text-[var(--washroom-text)]
+          border border-[var(--washroom-border)]
+          hover:bg-[var(--washroom-muted-bg)]
+          transition-colors
+        "
               >
                 Cancel
               </button>
+
+              {/* Confirm */}
               <button
                 onClick={confirmStatusToggle}
-                className={`flex-1 px-4 py-2.5 text-white rounded-lg transition-colors font-medium ${
-                  statusModal.company?.status
-                    ? "bg-red-600 hover:bg-red-700"
-                    : "bg-green-600 hover:bg-green-700"
-                }`}
+                className={`
+          flex-1 px-4 py-2.5 rounded-lg font-medium
+          transition-colors
+          ${statusModal.company?.status
+                    ? `
+                bg-[var(--washroom-status-inactive-bg)]
+                text-[var(--washroom-status-inactive-text)]
+                hover:bg-[var(--washroom-delete-bg)]
+              `
+                    : `
+                bg-[var(--washroom-status-active-bg)]
+                text-[var(--washroom-status-active-text)]
+              `
+                  }
+        `}
               >
                 {statusModal.company?.status ? "Deactivate" : "Activate"}
               </button>
             </div>
           </div>
         </div>
+
       )}
     </>
   );

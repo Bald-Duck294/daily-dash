@@ -2037,15 +2037,26 @@ export default function UsersPage() {
                   </p>
                 </div>
               </div>
-              {canAddUser && (
+              <div className="flex items-center gap-3">
+                {canAddUser && (
+                  <a
+                    href={`/users/add?companyId=${companyId}`}
+                    className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-xl font-bold text-sm shadow-lg shadow-orange-500/20 hover:shadow-orange-500/30 transition-all duration-200 active:scale-95"
+                  >
+                    <Plus size={18} strokeWidth={3} />
+                    ADD NEW USER
+                  </a>
+                )}
+
                 <a
-                  href={`/users/add?companyId=${companyId}`}
+                  href={`/userMapping?companyId=${companyId}`}
                   className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-xl font-bold text-sm shadow-lg shadow-orange-500/20 hover:shadow-orange-500/30 transition-all duration-200 active:scale-95"
                 >
                   <Plus size={18} strokeWidth={3} />
-                  ADD NEW USER
+                  Assign
                 </a>
-              )}
+              </div>
+
             </div>
           </div>
 
@@ -2054,11 +2065,10 @@ export default function UsersPage() {
             {/* Total Users Card */}
             <button
               onClick={() => setSelectedRole("all")}
-              className={`group relative overflow-hidden rounded-2xl p-4 transition-all duration-300 cursor-pointer text-left border ${
-                selectedRole === "all"
+              className={`group relative overflow-hidden rounded-2xl p-4 transition-all duration-300 cursor-pointer text-left border ${selectedRole === "all"
                   ? "bg-slate-800 dark:bg-slate-700 border-slate-700 text-white shadow-md ring-2 ring-slate-700 dark:ring-slate-600"
                   : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:border-orange-400 dark:hover:border-orange-500 hover:shadow-sm"
-              }`}
+                }`}
             >
               <div className="flex justify-between items-start mb-2">
                 <Users
@@ -2125,22 +2135,20 @@ export default function UsersPage() {
             <div className="flex p-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shrink-0">
               <button
                 onClick={() => setViewMode("table")}
-                className={`p-2.5 rounded-lg transition-all ${
-                  viewMode === "table"
+                className={`p-2.5 rounded-lg transition-all ${viewMode === "table"
                     ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm"
                     : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
-                } hidden md:block`}
+                  } hidden md:block`}
                 title="List View"
               >
                 <List size={20} />
               </button>
               <button
                 onClick={() => setViewMode("grid")}
-                className={`p-2.5 rounded-lg transition-all ${
-                  viewMode === "grid"
+                className={`p-2.5 rounded-lg transition-all ${viewMode === "grid"
                     ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm"
                     : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
-                }`}
+                  }`}
                 title="Grid View"
               >
                 <LayoutGrid size={20} />

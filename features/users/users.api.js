@@ -117,4 +117,32 @@ export const UsersApi = {
       };
     }
   },
+
+
+    changePassword: async (payload) => {
+    try {
+      /**
+       * payload = {
+       *   currentPassword: string,
+       *   newPassword: string
+       * }
+       */
+
+      const response = await axiosInstance.patch(
+        "/users/change-password",
+        payload,
+      );
+
+      return {
+        success: true,
+        data: response.data,
+      };
+    } catch (error) {
+      console.error("Error changing password:", error);
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message,
+      };
+    }
+  },
 };

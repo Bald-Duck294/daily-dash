@@ -111,24 +111,47 @@ export default function LocationTypesPage() {
 
       <div className="min-h-screen bg-background p-6">
         <div className="mx-auto max-w-7xl space-y-6">
+
           {/* Header Card */}
-          <div className="rounded-2xl bg-background shadow-sm border border-border p-5 flex items-center justify-between">
+          <div
+            className="
+    rounded-2xl bg-background shadow-sm border border-border p-4 sm:p-5
+    flex flex-col gap-4
+    sm:flex-row sm:items-center sm:justify-between
+  "
+          >
+            {/* Left section */}
             <div className="flex items-center gap-4">
-              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                 <FolderTree className="h-5 w-5 text-primary" />
               </div>
+
               <div>
-                <h1 className="text-lg font-semibold">Location Hierarchy</h1>
-                <p className="text-xs text-muted-foreground uppercase">
+                <h1 className="text-base sm:text-lg font-semibold">
+                  Location Hierarchy
+                </h1>
+                <p className="text-[11px] sm:text-xs text-muted-foreground uppercase">
                   Organization Structure & Zones
                 </p>
               </div>
             </div>
 
-            <div className="flex gap-3">
+            {/* Right section (actions) */}
+            <div
+              className="
+      flex flex-col gap-3
+      sm:flex-row sm:items-center sm:gap-3
+      w-full sm:w-auto
+    "
+            >
               <button
                 onClick={() => setShowTree((v) => !v)}
-                className="rounded-lg border border-primary/40 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/10"
+                className="
+        w-full sm:w-auto
+        rounded-lg border border-primary/40
+        px-4 py-2 text-sm font-medium
+        text-primary hover:bg-primary/10
+      "
               >
                 Show Hierarchy
               </button>
@@ -136,13 +159,20 @@ export default function LocationTypesPage() {
               {canAdd && (
                 <Link
                   href={`/location-types/add${companyId ? `?companyId=${companyId}` : ""}`}
-                  className="rounded-lg bg-orange-300 px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
+                  className="
+          w-full sm:w-auto
+          rounded-lg bg-orange-300
+          px-4 py-2 text-sm font-medium
+          text-primary-foreground text-center
+          hover:opacity-90
+        "
                 >
                   + Add Tree Hierarchy
                 </Link>
               )}
             </div>
           </div>
+
 
           {/* Search */}
           <div className="max-w-md">
@@ -159,31 +189,113 @@ export default function LocationTypesPage() {
 
           {/* Table Card */}
           <div className="rounded-2xl bg-background shadow-sm border border-border overflow-hidden">
+
             {!showTree ? (
-              <table className="w-full">
-                <thead className="bg-muted/40">
-                  <tr className="text-xs text-muted-foreground">
-                    <th className="px-6 py-3 text-left"># ID</th>
-                    <th className="px-6 py-3 text-left">ZONE NAME</th>
-                    <th className="px-6 py-3 text-left">PARENT HIERARCHY</th>
-                    <th className="px-6 py-3 text-center">MAP VIEW</th>
-                    <th className="px-6 py-3 text-center">ACTION</th>
-                  </tr>
-                </thead>
+              <>
+                {/* ================= DESKTOP TABLE ================= */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-muted/40">
+                      <tr className="text-xs text-muted-foreground">
+                        <th className="px-6 py-3 text-left"># ID</th>
+                        <th className="px-6 py-3 text-left">ZONE NAME</th>
+                        <th className="px-6 py-3 text-left">PARENT HIERARCHY</th>
+                        <th className="px-6 py-3 text-center">MAP VIEW</th>
+                        <th className="px-6 py-3 text-center">ACTION</th>
+                      </tr>
+                    </thead>
 
-                <tbody>
+                    <tbody>
+                      {filteredTypes.map((type) => (
+                        <tr
+                          key={type.id}
+                          className="border-t border-border/50 hover:bg-muted/30"
+                        >
+                          <td className="px-6 py-4 text-sm">#{type.id}</td>
+
+                          <td className="px-6 py-4 text-sm font-medium">
+                            {type.name}
+                          </td>
+
+                          <td className="px-6 py-4">
+                            {type.parent_id ? (
+                              <span className="inline-flex rounded-md bg-cyan-50 px-3 py-1 text-xs font-medium text-cyan-700">
+                                {parentName(type.parent_id)}
+                              </span>
+                            ) : (
+                              <span className="inline-flex rounded-md bg-cyan-50 px-3 py-1 text-xs font-medium text-cyan-700">
+                                —
+                              </span>
+                            )}
+                          </td>
+
+                          <td className="px-6 py-4 text-center">
+                            <Link
+                              href={`/locations`}
+                              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border hover:bg-muted transition-colors"
+                              title="View Locations"
+                            >
+                              <MapPin className="h-4 w-4" />
+                            </Link>
+                          </td>
+
+                          <td className="px-6 py-4 text-center">
+                            <div className="flex justify-center gap-3">
+                              {canUpdate && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    router.push(
+                                      `/location-types/${type.id}${companyId ? `?companyId=${companyId}` : ""
+                                      }`
+                                    )
+                                  }
+                                  className="h-9 w-9 rounded-full border border-blue-200 flex items-center justify-center text-blue-600 hover:bg-blue-50"
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </button>
+                              )}
+
+                              {canDelete && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteClick(type)}
+                                  className="h-9 w-9 rounded-full border border-red-200 flex items-center justify-center text-red-600 hover:bg-red-50"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* ================= MOBILE CARDS ================= */}
+                <div className="md:hidden divide-y divide-border">
                   {filteredTypes.map((type) => (
-                    <tr
-                      key={type.id}
-                      className="border-t border-border/50 hover:bg-muted/30"
-                    >
-                      <td className="px-6 py-4 text-sm">#{type.id}</td>
+                    <div key={type.id} className="p-4 space-y-3">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="text-xs text-muted-foreground">
+                            #{type.id}
+                          </p>
+                          <h3 className="font-medium">
+                            {type.name}
+                          </h3>
+                        </div>
 
-                      <td className="px-6 py-4 text-sm font-medium">
-                        {type.name}
-                      </td>
+                        <Link
+                          href={`/locations`}
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border hover:bg-muted"
+                        >
+                          <MapPin className="h-4 w-4" />
+                        </Link>
+                      </div>
 
-                      <td className="px-6 py-4">
+                      <div>
                         {type.parent_id ? (
                           <span className="inline-flex rounded-md bg-cyan-50 px-3 py-1 text-xs font-medium text-cyan-700">
                             {parentName(type.parent_id)}
@@ -193,50 +305,41 @@ export default function LocationTypesPage() {
                             —
                           </span>
                         )}
-                      </td>
+                      </div>
 
-                      <td className="px-6 py-4 text-center">
-                        <div className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border hover:bg-muted">
-                          <MapPin className="h-4 w-4" />
-                        </div>
-                      </td>
+                      <div className="flex gap-3 pt-2">
+                        {canUpdate && (
+                          <button
+                            onClick={() =>
+                              router.push(
+                                `/location-types/${type.id}${companyId ? `?companyId=${companyId}` : ""
+                                }`
+                              )
+                            }
+                            className="flex-1 rounded-lg border border-blue-200 px-3 py-2 text-sm text-blue-600 hover:bg-blue-50"
+                          >
+                            Edit
+                          </button>
+                        )}
 
-                      <td className="px-6 py-4 text-center">
-                        <div className="flex justify-center gap-3">
-                          {canUpdate && (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                router.push(
-                                  `/location-types/${type.id}${companyId ? `?companyId=${companyId}` : ""}`,
-                                )
-                              }
-                              className="h-9 w-9 rounded-full border border-blue-200 flex items-center justify-center text-blue-600 hover:bg-blue-50"
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </button>
-                          )}
-
-                          {canDelete && (
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteClick(type)}
-                              className="h-9 w-9 rounded-full border border-red-200 flex items-center justify-center text-red-600 hover:bg-red-50"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
+                        {canDelete && (
+                          <button
+                            onClick={() => handleDeleteClick(type)}
+                            className="flex-1 rounded-lg border border-red-200 px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+                          >
+                            Delete
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   ))}
-                </tbody>
-              </table>
+                </div>
+              </>
             ) : (
               <div className="p-6">
                 <TreeView
                   types={types}
-                  onUpdate={() => {}}
+                  onUpdate={() => { }}
                   flag={false}
                   canUpdate={canUpdate}
                   canDelete={canDelete}
@@ -244,6 +347,7 @@ export default function LocationTypesPage() {
               </div>
             )}
           </div>
+
 
           {/* Footer */}
           <div className="flex justify-between text-xs text-muted-foreground">
