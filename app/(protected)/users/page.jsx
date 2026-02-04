@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/immutability */
 // "use client";
 
 // import { useState, useEffect, useCallback } from "react";
@@ -1754,6 +1755,16 @@ export default function UsersPage() {
   const [selectedRole, setSelectedRole] = useState("all");
   const [viewMode, setViewMode] = useState("table");
 
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const isMobile = window.innerWidth < 768; // md breakpoint
+      if (isMobile) {
+        setViewMode("grid");
+      }
+    }
+  }, []);
+  
   const currentUser = useSelector((state) => state.auth.user);
   const { companyId } = useCompanyId();
   const router = useRouter();
@@ -2066,8 +2077,8 @@ export default function UsersPage() {
             <button
               onClick={() => setSelectedRole("all")}
               className={`group relative overflow-hidden rounded-2xl p-4 transition-all duration-300 cursor-pointer text-left border ${selectedRole === "all"
-                  ? "bg-slate-800 dark:bg-slate-700 border-slate-700 text-white shadow-md ring-2 ring-slate-700 dark:ring-slate-600"
-                  : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:border-orange-400 dark:hover:border-orange-500 hover:shadow-sm"
+                ? "bg-slate-800 dark:bg-slate-700 border-slate-700 text-white shadow-md ring-2 ring-slate-700 dark:ring-slate-600"
+                : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:border-orange-400 dark:hover:border-orange-500 hover:shadow-sm"
                 }`}
             >
               <div className="flex justify-between items-start mb-2">
@@ -2136,8 +2147,8 @@ export default function UsersPage() {
               <button
                 onClick={() => setViewMode("table")}
                 className={`p-2.5 rounded-lg transition-all ${viewMode === "table"
-                    ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm"
-                    : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                  ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm"
+                  : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
                   } hidden md:block`}
                 title="List View"
               >
@@ -2146,8 +2157,8 @@ export default function UsersPage() {
               <button
                 onClick={() => setViewMode("grid")}
                 className={`p-2.5 rounded-lg transition-all ${viewMode === "grid"
-                    ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm"
-                    : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                  ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm"
+                  : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
                   }`}
                 title="Grid View"
               >
