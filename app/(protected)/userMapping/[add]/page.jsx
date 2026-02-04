@@ -2515,8 +2515,7 @@ const AddAssignmentPage = () => {
       // Show results
       if (successCount > 0 && failureCount === 0) {
         toast.success(
-          `Successfully created ${successCount} assignment${
-            successCount !== 1 ? "s" : ""
+          `Successfully created ${successCount} assignment${successCount !== 1 ? "s" : ""
           }!`,
         );
 
@@ -2644,546 +2643,475 @@ const AddAssignmentPage = () => {
   return (
     <>
       <Toaster position="top-center" />
-      <div className="min-h-screen bg-white dark:bg-background w-full py-4 sm:py-6 px-4 sm:px-6 md:px-8 flex flex-col items-center relative overflow-x-hidden">
+      <div
+        className="min-h-screen w-full py-4 sm:py-6 px-4 sm:px-6 md:px-8 flex flex-col items-center relative "
+        style={{
+          background: "var(--assignment-bg)",
+        }}
+      >
+
         {/* Background Decorative Blur */}
-        <div className="absolute top-0 right-0 w-40 h-40 sm:w-48 sm:h-48 md:w-56 md:h-56 bg-[#CBF3F0] rounded-full blur-3xl opacity-50 -mr-12 sm:-mr-16 -mt-12 sm:-mt-16 pointer-events-none" />
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div
+            className="absolute top-0 right-0 w-40 h-40 sm:w-48 sm:h-48 md:w-56 md:h-56 
+               rounded-full blur-3xl opacity-50 
+               translate-x-1/2 -translate-y-1/2"
+            style={{ background: "var(--assignment-accent-bg)" }}
+          />
+        </div>
+
 
         {/* Back Button */}
         <div className="absolute top-4 sm:top-6 md:top-8 left-4 sm:left-6 md:left-8 z-20">
           <button
-            className="cursor-pointer p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full text-slate-600 dark:text-slate-300 transition-colors"
             onClick={() => router.back()}
+            className="cursor-pointer p-2 rounded-full transition-colors"
+            style={{
+              color: "var(--assignment-title)",
+              background: "transparent",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "var(--assignment-accent-bg)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "transparent";
+            }}
           >
             <ArrowLeft size={20} strokeWidth={2.5} />
           </button>
         </div>
 
-        {/* Main Card - ENHANCED SHADOW */}
-        <div className="max-w-2xl w-full bg-white dark:bg-card rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_40px_rgba(0,0,0,0.3)] border border-slate-100 dark:border-border relative z-10 mt-12 sm:mt-0">
-          {/* Card Header */}
-          <div className="bg-[#CBF3F0] dark:bg-[#2a4a4a] px-4 sm:px-6 py-3 sm:py-4 border-b border-[#CBF3F1] dark:border-border flex justify-between items-center">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <ClipboardPlus
-                size={18}
-                className="text-[#FF9F1C] flex-shrink-0"
-              />
-              <h1 className="text-base sm:text-lg md:text-xl font-extrabold tracking-tight text-[#0f0f0f] dark:text-slate-100">
-                Create Assignments
-              </h1>
-            </div>
-            <div className="h-2 w-2 rounded-full bg-[#28C76F] animate-pulse" />
-          </div>
 
-          <form
-            onSubmit={handleSubmit}
-            className="p-4 sm:p-6 md:p-8 space-y-6 sm:space-y-8"
+        {/* Main Card */}
+        <div className="max-w-2xl w-full relative z-10">
+          {/* visual card */}
+          <div
+            className="rounded-2xl"
+            style={{
+              background: "var(--assignment-surface)",
+              border: "1px solid var(--assignment-border)",
+              boxShadow: "var(--assignment-shadow)",
+            }}
           >
-            {/* Mode Toggle Box */}
-            <div className="bg-white dark:bg-card border border-slate-50 dark:border-border rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all duration-300">
-              <div className="flex items-center gap-3 sm:gap-4 flex-1">
-                <div
-                  className={`h-10 w-10 sm:h-11 sm:w-11 rounded-lg bg-white dark:bg-[hsl(224,48%,14%)] flex items-center justify-center shadow-sm transition-all duration-300 flex-shrink-0 ${
-                    assignmentMode === "multi"
-                      ? "bg-[#FDF9F2] dark:bg-[hsl(224,48%,16%)]"
-                      : "bg-blue-50 dark:bg-blue-900/20"
-                  }`}
+
+            {/* Card Header */}
+            <div
+              className="px-4 sm:px-6 py-3 sm:py-4 flex justify-between items-center"
+              style={{
+                background: "var(--assignment-header-bg)",
+                borderBottom: "1px solid var(--assignment-header-border)",
+              }}
+            >
+              <div className="flex items-center gap-2 sm:gap-3">
+                <ClipboardPlus
+                  size={18}
+                  className="flex-shrink-0"
+                  style={{ color: "var(--assignment-accent-text)" }}
+                />
+                <h1
+                  className="text-base sm:text-lg md:text-xl font-extrabold tracking-tight"
+                  style={{ color: "var(--assignment-title)" }}
                 >
-                  <ShieldCheck
-                    className={`transition-colors duration-300 ${
-                      assignmentMode === "multi"
-                        ? "text-[#FF9F1C]"
-                        : "text-blue-600 dark:text-blue-400"
-                    }`}
-                    size={20}
-                  />
-                </div>
-                <div className="text-left">
-                  <h3
-                    className={`text-xs sm:text-sm font-black uppercase tracking-tight transition-colors duration-300 ${
-                      assignmentMode === "multi"
-                        ? "text-slate-800 dark:text-slate-100"
-                        : "text-blue-700 dark:text-blue-300"
-                    }`}
-                  >
-                    {assignmentMode === "multi"
-                      ? "Multiple Mode"
-                      : "Single Mode"}
-                  </h3>
-                  <p
-                    className={`text-[10px] sm:text-xs font-bold transition-colors duration-300 ${
-                      assignmentMode === "multi"
-                        ? "text-slate-500 dark:text-slate-400"
-                        : "text-blue-600 dark:text-blue-400"
-                    }`}
-                  >
-                    {assignmentMode === "multi"
-                      ? "Bulk mapping active"
-                      : "One-to-one mapping active"}
-                  </p>
-                </div>
+                  Create Assignments
+                </h1>
               </div>
 
-              {/* Enhanced Toggle Switch */}
-              <button
-                type="button"
-                onClick={handleModeToggle}
-                className={`relative inline-flex h-8 w-14 sm:h-9 sm:w-16 items-center rounded-full transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 active:scale-95 hover:scale-105 flex-shrink-0 ${
-                  assignmentMode === "multi"
-                    ? "bg-[#CBF3F0] dark:bg-[hsl(var(--primary))]/30 focus:ring-[#CBF3F0] shadow-md shadow-[#CBF3F0]/20"
-                    : "bg-blue-500 dark:bg-blue-600 focus:ring-blue-500 shadow-md shadow-blue-500/20"
-                }`}
+              <div
+                className="h-2 w-2 rounded-full animate-pulse"
+                style={{ background: "var(--assignment-success-dot)" }}
+              />
+            </div>
+
+
+            <form
+              onSubmit={handleSubmit}
+              className="p-4 sm:p-6 md:p-8 space-y-6 sm:space-y-8"
+            >
+              {/* Mode Toggle Box */}
+              <div
+                className="rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all duration-300"
+                style={{
+                  background: "var(--assignment-surface)",
+                  border: "1px solid var(--assignment-border)",
+                }}
               >
-                <span
-                  className={`inline-flex items-center justify-center h-6 w-6 sm:h-7 sm:w-7 transform rounded-full bg-white dark:bg-slate-100 transition-all duration-300 ease-out shadow-lg ${
-                    assignmentMode === "multi"
-                      ? "translate-x-7 sm:translate-x-8"
-                      : "translate-x-1"
-                  }`}
-                >
-                  <Users
-                    size={14}
-                    className={`absolute transition-all duration-300 ${
-                      assignmentMode === "multi"
-                        ? "text-[#FF9F1C] opacity-100 scale-100 rotate-0"
-                        : "opacity-0 scale-0 -rotate-90"
-                    }`}
-                  />
-                  <User
-                    size={14}
-                    className={`absolute transition-all duration-300 ${
-                      assignmentMode !== "multi"
-                        ? "text-blue-600 dark:text-blue-400 opacity-100 scale-100 rotate-0"
-                        : "opacity-0 scale-0 rotate-90"
-                    }`}
-                  />
-                </span>
-              </button>
-            </div>
-
-            {/* Filter by Role - ENHANCED WITH BETTER SHADOW AND VISIBILITY */}
-            <div className="text-left space-y-3 bg-gradient-to-br from-[#FDF9F2] to-[#FFF4E6] dark:from-[hsl(224,48%,12%)] dark:to-[hsl(224,48%,14%)] p-4 sm:p-5 rounded-xl border-2 border-[#CBF3F0] dark:border-[hsl(var(--primary))]/30 shadow-md shadow-[#CBF3F0]/30 dark:shadow-[hsl(var(--primary))]/20">
-              <p className="text-xs font-black text-[#FF9F1C] dark:text-[hsl(var(--primary))] uppercase tracking-widest ml-1">
-                Filter by Role
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => setSelectedRoleFilter("all")}
-                  className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all border shadow-sm ${
-                    selectedRoleFilter === "all"
-                      ? "bg-[#CBF3F0] dark:bg-[hsl(var(--primary))] border-[#CBF3F0] dark:border-[hsl(var(--primary))] text-[#FF9F1C] dark:text-white shadow-md shadow-[#CBF3F0]/40"
-                      : "bg-white dark:bg-card border-slate-200 dark:border-border text-slate-500 dark:text-slate-400 hover:border-[#CBF3F0] dark:hover:border-[hsl(var(--primary))] hover:shadow-md"
-                  }`}
-                >
-                  All Roles
-                </button>
-                {uniqueRoles.map((role) => (
-                  <button
-                    key={role}
-                    type="button"
-                    onClick={() => setSelectedRoleFilter(role)}
-                    className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all border shadow-sm ${
-                      selectedRoleFilter === role
-                        ? "bg-[#CBF3F0] dark:bg-[hsl(var(--primary))] border-[#CBF3F0] dark:border-[hsl(var(--primary))] text-[#FF9F1C] dark:text-white shadow-md shadow-[#CBF3F0]/40"
-                        : "bg-white dark:bg-card border-slate-200 dark:border-border text-slate-500 dark:text-slate-400 hover:border-[#CBF3F0] dark:hover:border-[hsl(var(--primary))] hover:shadow-md"
-                    }`}
+                <div className="flex items-center gap-3 sm:gap-4 flex-1">
+                  <div
+                    className="h-10 w-10 sm:h-11 sm:w-11 rounded-lg flex items-center justify-center shadow-sm transition-all duration-300 flex-shrink-0"
+                    style={{
+                      background:
+                        assignmentMode === "multi"
+                          ? "var(--assignment-accent-bg)"
+                          : "var(--assignment-input-bg)",
+                    }}
                   >
-                    {role}
-                  </button>
-                ))}
-              </div>
-            </div>
+                    <ShieldCheck
+                      size={20}
+                      style={{
+                        color:
+                          assignmentMode === "multi"
+                            ? "var(--assignment-accent-text)"
+                            : "var(--assignment-subtitle)",
+                      }}
+                    />
+                  </div>
 
-            {/* Permission Warning */}
-            {!canAddAssignment && (
-              <div className="p-3 sm:p-4 bg-orange-50 dark:bg-orange-900/20 border-2 border-orange-200 dark:border-orange-800 rounded-xl shadow-sm">
-                <div className="flex items-start gap-2 sm:gap-3">
-                  <AlertCircle className="w-5 h-5 text-orange-600 dark:text-orange-400 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="text-sm font-semibold text-orange-700 dark:text-orange-300">
-                      You don't have permission to create assignments. Please
-                      contact your administrator.
+                  <div className="text-left">
+                    <h3
+                      className="text-xs sm:text-sm font-black uppercase tracking-tight transition-colors duration-300"
+                      style={{ color: "var(--assignment-title)" }}
+                    >
+                      {assignmentMode === "multi" ? "Multiple Mode" : "Single Mode"}
+                    </h3>
+
+                    <p
+                      className="text-[10px] sm:text-xs font-bold transition-colors duration-300"
+                      style={{ color: "var(--assignment-subtitle)" }}
+                    >
+                      {assignmentMode === "multi"
+                        ? "Bulk mapping active"
+                        : "One-to-one mapping active"}
                     </p>
                   </div>
                 </div>
-              </div>
-            )}
 
-            {/* User Selection */}
-            <div className="text-left space-y-2" ref={userDropdownRef}>
-              <label className="text-xs font-black text-[#0f0f0f] dark:text-slate-100 uppercase tracking-widest ml-1">
-                {assignmentMode === "multi"
-                  ? `Select Users (${selectedUsers.length} selected)`
-                  : "Select User"}
-              </label>
-              <div className="relative">
-                <div
-                  onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
-                  className="relative cursor-pointer group"
-                >
-                  <input
-                    type="text"
-                    readOnly
-                    value={
+                {/* Toggle Switch */}
+                <button
+                  type="button"
+                  onClick={handleModeToggle}
+                  className="relative inline-flex h-8 w-14 sm:h-9 sm:w-16 items-center rounded-full transition-all duration-300 ease-in-out active:scale-95 hover:scale-105 flex-shrink-0"
+                  style={{
+                    background:
                       assignmentMode === "multi"
-                        ? selectedUsers.length > 0
-                          ? `${selectedUsers.length} user${
-                              selectedUsers.length > 1 ? "s" : ""
-                            } selected`
-                          : "Click to select users..."
-                        : singleUser
-                          ? assignableUsers.find((u) => u.id === singleUser)
-                              ?.name || "Select a user..."
-                          : "Select a user..."
-                    }
-                    placeholder={
-                      assignmentMode === "multi"
-                        ? "Click to select users..."
-                        : "Select a user..."
-                    }
-                    className="w-full px-4 sm:px-6 py-3 sm:py-3.5 text-sm sm:text-base rounded-xl border border-slate-200 dark:border-border bg-white dark:bg-card font-medium text-[#0f0f0f] dark:text-slate-100 outline-none focus:border-[#93C5FD] dark:focus:border-[hsl(var(--primary))] focus:ring-2 focus:ring-[#93C5FD]/20 dark:focus:ring-[hsl(var(--primary))]/20 transition-all cursor-pointer"
-                  />
-                  <ChevronDown
-                    className={`absolute right-4 sm:right-5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 group-hover:text-[#FF9F1C] dark:group-hover:text-[hsl(var(--primary))] transition-all duration-300 ${
-                      isUserDropdownOpen ? "rotate-180" : ""
-                    }`}
-                    size={18}
-                    strokeWidth={2.5}
-                  />
-                </div>
-
-                {/* Dropdown Menu - IMPROVED HEIGHT */}
-                {isUserDropdownOpen && (
-                  <div
-                    className="absolute z-50 w-full mt-2 bg-white dark:bg-card border border-slate-200 dark:border-border rounded-xl shadow-xl overflow-hidden flex flex-col"
-                    style={{ maxHeight: "420px" }}
-                  >
-                    {/* Search Bar */}
-                    <div className="p-3 border-b border-slate-100 dark:border-border flex-shrink-0">
-                      <div className="relative">
-                        <Search
-                          className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500"
-                          size={16}
-                        />
-                        <input
-                          type="text"
-                          value={userSearchTerm}
-                          onChange={(e) => setUserSearchTerm(e.target.value)}
-                          placeholder="Search users..."
-                          className="w-full pl-10 pr-4 py-2 text-sm rounded-lg border border-slate-200 dark:border-border bg-slate-50 dark:bg-[hsl(224,48%,12%)] text-slate-700 dark:text-slate-200 outline-none focus:border-[#93C5FD] dark:focus:border-[hsl(var(--primary))]"
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Select All (Multiple Mode Only) */}
-                    {assignmentMode === "multi" && (
-                      <div className="p-2 border-b border-slate-100 dark:border-border flex-shrink-0">
-                        <label className="flex items-center gap-2 px-2 py-1.5 cursor-pointer hover:bg-slate-50 dark:hover:bg-[hsl(224,48%,14%)] rounded-lg transition-colors">
-                          <input
-                            type="checkbox"
-                            checked={allUsersSelected}
-                            onChange={handleSelectAllUsers}
-                            className="w-4 h-4 text-[#FF9F1C] dark:text-[hsl(var(--primary))] border-slate-300 rounded focus:ring-[#FF9F1C]"
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                          <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
-                            Select All ({filteredUsers.length})
-                          </span>
-                        </label>
-                      </div>
-                    )}
-
-                    {/* Users List - IMPROVED SCROLL */}
-                    <div
-                      className="overflow-y-auto flex-1"
-                      style={{ minHeight: "150px", maxHeight: "300px" }}
-                    >
-                      {filteredUsers.length === 0 ? (
-                        <div className="p-4 text-center text-sm text-slate-500 dark:text-slate-400">
-                          No users found
-                        </div>
-                      ) : (
-                        filteredUsers.map((user) => {
-                          const isSelected =
-                            assignmentMode === "multi"
-                              ? selectedUsers.some((u) => u.id === user.id)
-                              : singleUser === user.id;
-                          return (
-                            <div
-                              key={user.id}
-                              onClick={() => handleUserSelect(user)}
-                              className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors ${
-                                isSelected
-                                  ? "bg-[#FDF9F2] dark:bg-[hsl(224,48%,16%)]"
-                                  : "hover:bg-slate-50 dark:hover:bg-[hsl(224,48%,14%)]"
-                              }`}
-                            >
-                              {assignmentMode === "multi" ? (
-                                <input
-                                  type="checkbox"
-                                  checked={isSelected}
-                                  onChange={() => {}}
-                                  className="w-4 h-4 text-[#FF9F1C] dark:text-[hsl(var(--primary))] border-slate-300 rounded focus:ring-[#FF9F1C]"
-                                  onClick={(e) => e.stopPropagation()}
-                                />
-                              ) : (
-                                <div
-                                  className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                                    isSelected
-                                      ? "border-[#FF9F1C] dark:border-[hsl(var(--primary))] bg-[#FF9F1C] dark:bg-[hsl(var(--primary))]"
-                                      : "border-slate-300 dark:border-slate-500"
-                                  }`}
-                                >
-                                  {isSelected && (
-                                    <div className="w-2 h-2 rounded-full bg-white" />
-                                  )}
-                                </div>
-                              )}
-                              <div className="flex-1">
-                                <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                                  {user.name}
-                                </p>
-                                <p className="text-xs text-slate-500 dark:text-slate-400">
-                                  {user.email}
-                                </p>
-                              </div>
-                              <span
-                                className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${getRoleColor(
-                                  user.role?.name,
-                                )}`}
-                              >
-                                {user.role?.name || "No Role"}
-                              </span>
-                            </div>
-                          );
-                        })
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* SELECTED USERS CHIPS - NEW */}
-              {assignmentMode === "multi" && selectedUsers.length > 0 && (
-                <div className="mt-3 p-3 bg-slate-50 dark:bg-[hsl(224,48%,12%)] rounded-lg border border-slate-200 dark:border-border max-h-32 overflow-y-auto">
-                  <div className="flex flex-wrap gap-2">
-                    {selectedUsers.map((user) => (
-                      <div
-                        key={user.id}
-                        className="inline-flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-card border border-[#CBF3F0] dark:border-[hsl(var(--primary))]/30 rounded-lg shadow-sm group hover:shadow-md transition-all"
-                      >
-                        <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">
-                          {user.name}
-                        </span>
-                        <span
-                          className={`text-[9px] px-1.5 py-0.5 rounded-full ${getRoleColor(
-                            user.role?.name,
-                          )}`}
-                        >
-                          {user.role?.name}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveUser(user.id)}
-                          className="p-0.5 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-full transition-colors group-hover:scale-110"
-                        >
-                          <X className="w-3.5 h-3.5 text-slate-400 hover:text-red-600 dark:hover:text-red-400" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* SINGLE USER CHIP - NEW */}
-              {assignmentMode === "single" && singleUser && (
-                <div className="mt-3 p-3 bg-slate-50 dark:bg-[hsl(224,48%,12%)] rounded-lg border border-slate-200 dark:border-border">
-                  <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-card border border-blue-200 dark:border-blue-800 rounded-lg shadow-sm">
-                    <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">
-                      {assignableUsers.find((u) => u.id === singleUser)?.name}
-                    </span>
-                    <span
-                      className={`text-[9px] px-1.5 py-0.5 rounded-full ${getRoleColor(
-                        assignableUsers.find((u) => u.id === singleUser)?.role
-                          ?.name,
-                      )}`}
-                    >
-                      {
-                        assignableUsers.find((u) => u.id === singleUser)?.role
-                          ?.name
-                      }
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSingleUser("");
-                        setUserSearchTerm("");
-                      }}
-                      className="p-0.5 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-full transition-colors"
-                    >
-                      <X className="w-3.5 h-3.5 text-slate-400 hover:text-red-600 dark:hover:text-red-400" />
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="text-left space-y-2">
-              <label className="text-xs font-black text-[#0f0f0f] dark:text-slate-100 uppercase tracking-widest ml-1">
-                {assignmentMode === "multi"
-                  ? `Select Locations (${selectedLocations.length} selected)`
-                  : singleUser
-                    ? `Select Locations (${selectedLocations.length} selected)`
-                    : "Select Locations (0 selected)"}
-              </label>
-
-              {assignmentMode === "single" && !singleUser && (
-                <div className="p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-xl">
-                  <p className="text-sm font-medium text-orange-700 dark:text-orange-300">
-                    Please select a user first to see available locations.
-                  </p>
-                </div>
-              )}
-
-              {isFetchingAssignments && (
-                <div className="flex items-center gap-2 text-xs sm:text-sm text-[#FF9F1C] dark:text-[hsl(var(--primary))] mb-2">
-                  <Loader className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" />
-                  <span>Loading available locations...</span>
-                </div>
-              )}
-
-              {/* FIXED: Remove overflow-hidden, add proper z-index */}
-              <div className="relative" ref={locationDropdownRef}>
-                <div
-                  onClick={() => {
-                    if (assignmentMode === "single" && !singleUser) return;
-                    setIsLocationDropdownOpen(!isLocationDropdownOpen);
+                        ? "var(--assignment-toggle-active-bg)"
+                        : "var(--assignment-toggle-bg)",
+                    boxShadow: "var(--assignment-toggle-shadow)",
                   }}
-                  className={`relative cursor-pointer group ${
-                    assignmentMode === "single" && !singleUser
-                      ? "opacity-50 cursor-not-allowed"
-                      : ""
-                  }`}
                 >
-                  <input
-                    type="text"
-                    readOnly
-                    value={
-                      selectedLocations.length > 0
-                        ? `${selectedLocations.length} location${selectedLocations.length > 1 ? "s" : ""} selected`
-                        : "Click to select locations..."
-                    }
-                    placeholder="Click to select locations..."
-                    disabled={assignmentMode === "single" && !singleUser}
-                    className="w-full px-4 sm:px-6 py-3 sm:py-3.5 text-sm sm:text-base rounded-xl border border-slate-200 dark:border-border bg-white dark:bg-card font-medium text-[#0f0f0f] dark:text-slate-100 outline-none focus:border-[#93C5FD] dark:focus:border-[hsl(var(--primary))] focus:ring-2 focus:ring-[#93C5FD]/20 dark:focus:ring-[hsl(var(--primary))]/20 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                  />
-                  <ChevronDown
-                    className={`absolute right-4 sm:right-5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 group-hover:text-[#FF9F1C] dark:group-hover:text-[hsl(var(--primary))] transition-all duration-300 ${isLocationDropdownOpen ? "rotate-180" : ""}`}
-                    size={18}
-                    strokeWidth={2.5}
-                  />
-                </div>
+                  <span
+                    className="inline-flex items-center justify-center h-6 w-6 sm:h-7 sm:w-7 rounded-full transition-all duration-300 ease-out"
+                    style={{
+                      background: "var(--assignment-toggle-knob)",
+                      transform:
+                        assignmentMode === "multi"
+                          ? "translateX(1.75rem)"
+                          : "translateX(0.25rem)",
+                    }}
+                  >
+                    <Users
+                      size={14}
+                      style={{
+                        opacity: assignmentMode === "multi" ? 1 : 0,
+                        transform:
+                          assignmentMode === "multi" ? "scale(1)" : "scale(0)",
+                        color: "var(--assignment-accent-text)",
+                      }}
+                    />
+                    <User
+                      size={14}
+                      style={{
+                        opacity: assignmentMode !== "multi" ? 1 : 0,
+                        transform:
+                          assignmentMode !== "multi" ? "scale(1)" : "scale(0)",
+                        color: "var(--assignment-subtitle)",
+                        position: "absolute",
+                      }}
+                    />
+                  </span>
+                </button>
+              </div>
 
-                {/* FIXED DROPDOWN - Increased Height, Better Scroll, Higher Z-index */}
-                {isLocationDropdownOpen &&
-                  (assignmentMode === "multi" || singleUser) && (
-                    <div
-                      className="absolute z-[100] w-full mt-2 bg-white dark:bg-card border-2 border-slate-200 dark:border-border rounded-xl shadow-[0_12px_40px_rgba(0,0,0,0.15)] dark:shadow-[0_12px_50px_rgba(0,0,0,0.4)] flex flex-col"
-                      style={{ maxHeight: "500px" }}
+
+              {/* Filter by Role - ENHANCED WITH BETTER SHADOW AND VISIBILITY */}
+              <div
+                className="text-left space-y-3 p-4 sm:p-5 rounded-xl shadow-md"
+                style={{
+                  background: "var(--assignment-accent-bg)",
+                  border: "2px solid var(--assignment-accent-border)",
+                  boxShadow: "var(--assignment-shadow)",
+                }}
+              >
+                <p
+                  className="text-xs font-black uppercase tracking-widest ml-1"
+                  style={{ color: "var(--assignment-accent-text)" }}
+                >
+                  Filter by Role
+                </p>
+
+                <div className="flex flex-wrap gap-2">
+                  {/* ALL ROLES */}
+                  <button
+                    type="button"
+                    onClick={() => setSelectedRoleFilter("all")}
+                    className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all border"
+                    style={{
+                      background:
+                        selectedRoleFilter === "all"
+                          ? "var(--assignment-accent-bg)"
+                          : "var(--assignment-surface)",
+                      borderColor:
+                        selectedRoleFilter === "all"
+                          ? "var(--assignment-accent-border)"
+                          : "var(--assignment-border)",
+                      color:
+                        selectedRoleFilter === "all"
+                          ? "var(--assignment-accent-text)"
+                          : "var(--assignment-subtitle)",
+                      boxShadow:
+                        selectedRoleFilter === "all"
+                          ? "var(--assignment-shadow)"
+                          : "none",
+                    }}
+                  >
+                    All Roles
+                  </button>
+
+                  {/* ROLE BUTTONS */}
+                  {uniqueRoles.map((role) => (
+                    <button
+                      key={role}
+                      type="button"
+                      onClick={() => setSelectedRoleFilter(role)}
+                      className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all border"
+                      style={{
+                        background:
+                          selectedRoleFilter === role
+                            ? "var(--assignment-accent-bg)"
+                            : "var(--assignment-surface)",
+                        borderColor:
+                          selectedRoleFilter === role
+                            ? "var(--assignment-accent-border)"
+                            : "var(--assignment-border)",
+                        color:
+                          selectedRoleFilter === role
+                            ? "var(--assignment-accent-text)"
+                            : "var(--assignment-subtitle)",
+                        boxShadow:
+                          selectedRoleFilter === role
+                            ? "var(--assignment-shadow)"
+                            : "none",
+                      }}
                     >
-                      {/* Search Bar */}
-                      <div className="p-3 border-b border-slate-100 dark:border-border flex-shrink-0">
+                      {role}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+
+              {/* Permission Warning */}
+              {!canAddAssignment && (
+                <div
+                  className="p-3 sm:p-4 rounded-xl shadow-sm"
+                  style={{
+                    background: "var(--assignment-warning-bg)",
+                    border: "2px solid var(--assignment-warning-border)",
+                    color: "var(--assignment-warning-text)",
+                  }}
+                >
+                  <div className="flex items-start gap-2 sm:gap-3">
+                    <AlertCircle
+                      className="w-5 h-5 flex-shrink-0 mt-0.5"
+                      style={{ color: "var(--assignment-warning-text)" }}
+                    />
+                    <div>
+                      <p className="text-sm font-semibold">
+                        You don&apos;t have permission to create assignments. Please contact your
+                        administrator.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+
+              {/* User Selection */}
+              <div className="text-left space-y-2" ref={userDropdownRef}>
+                <label
+                  className="text-xs font-black uppercase tracking-widest ml-1"
+                  style={{ color: "var(--assignment-title)" }}
+                >
+                  {assignmentMode === "multi"
+                    ? `Select Users (${selectedUsers.length} selected)`
+                    : "Select User"}
+                </label>
+
+                <div className="relative">
+                  <div
+                    onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
+                    className="relative cursor-pointer group"
+                  >
+                    <input
+                      type="text"
+                      readOnly
+                      value={
+                        assignmentMode === "multi"
+                          ? selectedUsers.length > 0
+                            ? `${selectedUsers.length} user${selectedUsers.length > 1 ? "s" : ""
+                            } selected`
+                            : "Click to select users..."
+                          : singleUser
+                            ? assignableUsers.find((u) => u.id === singleUser)?.name ||
+                            "Select a user..."
+                            : "Select a user..."
+                      }
+                      placeholder={
+                        assignmentMode === "multi"
+                          ? "Click to select users..."
+                          : "Select a user..."
+                      }
+                      className="w-full px-4 sm:px-6 py-3 sm:py-3.5 text-sm sm:text-base rounded-xl outline-none cursor-pointer transition-all"
+                      style={{
+                        background: "var(--assignment-input-bg)",
+                        border: "1px solid var(--assignment-input-border)",
+                        color: "var(--assignment-input-text)",
+                      }}
+                    />
+
+                    <ChevronDown
+                      size={18}
+                      strokeWidth={2.5}
+                      className={`absolute right-4 sm:right-5 top-1/2 -translate-y-1/2 transition-transform duration-300 ${isUserDropdownOpen ? "rotate-180" : ""
+                        }`}
+                      style={{ color: "var(--assignment-subtitle)" }}
+                    />
+                  </div>
+
+                  {/* DROPDOWN */}
+                  {isUserDropdownOpen && (
+                    <div
+                      className="absolute left-0 right-0 top-full mt-3 z-50 rounded-xl overflow-hidden flex flex-col"
+                      style={{
+                        background: "var(--assignment-dropdown-bg)",
+                        border: "1px solid var(--assignment-dropdown-border)",
+                        boxShadow: "0 20px 50px rgba(0,0,0,0.25)",
+                      }}
+                    >
+
+                      {/* SEARCH */}
+                      <div
+                        className="p-3 flex-shrink-0"
+                        style={{ borderBottom: "1px solid var(--assignment-divider)" }}
+                      >
                         <div className="relative">
                           <Search
-                            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500"
                             size={16}
+                            className="absolute left-3 top-1/2 -translate-y-1/2"
+                            style={{ color: "var(--assignment-subtitle)" }}
                           />
                           <input
                             type="text"
-                            value={locationSearchTerm}
-                            onChange={(e) =>
-                              setLocationSearchTerm(e.target.value)
-                            }
-                            placeholder="Search locations..."
-                            className="w-full pl-10 pr-4 py-2.5 text-sm rounded-lg border border-slate-200 dark:border-border bg-slate-50 dark:bg-[hsl(224,48%,12%)] text-slate-700 dark:text-slate-200 outline-none focus:border-[#93C5FD] dark:focus:border-[hsl(var(--primary))]"
+                            value={userSearchTerm}
+                            onChange={(e) => setUserSearchTerm(e.target.value)}
+                            placeholder="Search users..."
+                            className="w-full pl-10 pr-4 py-2 text-sm rounded-lg outline-none"
+                            style={{
+                              background: "var(--assignment-input-bg)",
+                              border: "1px solid var(--assignment-input-border)",
+                              color: "var(--assignment-input-text)",
+                            }}
                             onClick={(e) => e.stopPropagation()}
                           />
                         </div>
                       </div>
 
-                      {/* Select All */}
+                      {/* SELECT ALL */}
                       {assignmentMode === "multi" && (
-                        <div className="p-2.5 border-b border-slate-100 dark:border-border flex-shrink-0 bg-slate-50/50 dark:bg-[hsl(224,48%,10%)]">
-                          <label className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-white dark:hover:bg-[hsl(224,48%,14%)] rounded-lg transition-colors">
+                        <div
+                          className="p-2 flex-shrink-0"
+                          style={{ borderBottom: "1px solid var(--assignment-divider)" }}
+                        >
+                          <label className="flex items-center gap-2 px-2 py-1.5 cursor-pointer rounded-lg transition-colors">
                             <input
                               type="checkbox"
-                              checked={allLocationsSelected}
-                              onChange={handleSelectAllLocations}
-                              className="w-4 h-4 text-[#FF9F1C] dark:text-[hsl(var(--primary))] border-slate-300 rounded focus:ring-[#FF9F1C]"
+                              checked={allUsersSelected}
+                              onChange={handleSelectAllUsers}
                               onClick={(e) => e.stopPropagation()}
                             />
-                            <span className="text-sm font-bold text-slate-700 dark:text-slate-200">
-                              Select All ({filteredLocations.length})
+                            <span
+                              className="text-sm font-medium"
+                              style={{ color: "var(--assignment-input-text)" }}
+                            >
+                              Select All ({filteredUsers.length})
                             </span>
                           </label>
                         </div>
                       )}
 
-                      {/* FIXED: Locations List - PROPER SCROLLABLE AREA */}
+                      {/* USERS LIST */}
                       <div
-                        className="overflow-y-auto flex-1 py-1"
-                        style={{
-                          minHeight: "200px",
-                          maxHeight: "380px",
-                        }}
+                        className="overflow-y-auto "
+                        style={{ minHeight: "150px", maxHeight: "320px" }}
                       >
-                        {filteredLocations.length === 0 ? (
-                          <div className="p-6 text-center text-sm text-slate-500 dark:text-slate-400">
-                            {assignmentMode === "single" && singleUser
-                              ? "All locations are already assigned to this user"
-                              : "No locations found"}
+                        {filteredUsers.length === 0 ? (
+                          <div
+                            className="p-4 text-center text-sm"
+                            style={{ color: "var(--assignment-subtitle)" }}
+                          >
+                            No users found
                           </div>
                         ) : (
-                          filteredLocations.map((location) => {
-                            const isSelected = selectedLocations.some(
-                              (loc) => loc.id === location.id,
-                            );
+                          filteredUsers.map((user) => {
+                            const isSelected =
+                              assignmentMode === "multi"
+                                ? selectedUsers.some((u) => u.id === user.id)
+                                : singleUser === user.id;
+
                             return (
                               <div
-                                key={location.id}
-                                onClick={() => handleLocationSelect(location)}
-                                className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-all hover:bg-[#FDF9F2] dark:hover:bg-[hsl(224,48%,16%)] ${
-                                  isSelected
-                                    ? "bg-[#FDF9F2] dark:bg-[hsl(224,48%,16%)] border-l-4 border-[#FF9F1C]"
-                                    : ""
-                                }`}
+                                key={user.id}
+                                onClick={() => handleUserSelect(user)}
+                                className="flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors"
+                                style={{
+                                  background: isSelected
+                                    ? "var(--assignment-dropdown-selected)"
+                                    : "transparent",
+                                }}
                               >
                                 {assignmentMode === "multi" ? (
-                                  <input
-                                    type="checkbox"
-                                    checked={isSelected}
-                                    onChange={() => {}}
-                                    className="w-4 h-4 text-[#FF9F1C] dark:text-[hsl(var(--primary))] border-slate-300 rounded focus:ring-[#FF9F1C] flex-shrink-0"
-                                    onClick={(e) => e.stopPropagation()}
-                                  />
+                                  <input type="checkbox" checked={isSelected} readOnly />
                                 ) : (
                                   <div
-                                    className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
-                                      isSelected
-                                        ? "border-[#FF9F1C] dark:border-[hsl(var(--primary))] bg-[#FF9F1C] dark:bg-[hsl(var(--primary))]"
-                                        : "border-slate-300 dark:border-slate-500"
-                                    }`}
+                                    className="w-4 h-4 rounded-full border-2 flex items-center justify-center"
+                                    style={{
+                                      borderColor: isSelected
+                                        ? "var(--assignment-accent-border)"
+                                        : "var(--assignment-border)",
+                                      background: isSelected
+                                        ? "var(--assignment-accent-bg)"
+                                        : "transparent",
+                                    }}
                                   >
                                     {isSelected && (
-                                      <div className="w-2 h-2 rounded-full bg-white" />
+                                      <div
+                                        className="w-2 h-2 rounded-full"
+                                        style={{ background: "var(--assignment-accent-text)" }}
+                                      />
                                     )}
                                   </div>
                                 )}
 
-                                <MapPin className="w-4 h-4 text-slate-400 dark:text-slate-500 flex-shrink-0" />
-                                <span className="text-sm font-medium text-slate-900 dark:text-slate-100 flex-1">
-                                  {location.name}
+                                <div className="flex-1">
+                                  <p
+                                    className="text-sm font-medium"
+                                    style={{ color: "var(--assignment-input-text)" }}
+                                  >
+                                    {user.name}
+                                  </p>
+                                  <p
+                                    className="text-xs"
+                                    style={{ color: "var(--assignment-subtitle)" }}
+                                  >
+                                    {user.email}
+                                  </p>
+                                </div>
+
+                                <span
+                                  className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${getRoleColor(
+                                    user.role?.name,
+                                  )}`}
+                                >
+                                  {user.role?.name || "No Role"}
                                 </span>
                               </div>
                             );
@@ -3192,72 +3120,430 @@ const AddAssignmentPage = () => {
                       </div>
                     </div>
                   )}
+                </div>
+
+                {/* MULTI USER CHIPS */}
+                {assignmentMode === "multi" && selectedUsers.length > 0 && (
+                  <div
+                    className="mt-3 p-3 rounded-lg max-h-32 overflow-y-auto"
+                    style={{
+                      background: "var(--assignment-chip-bg)",
+                      border: "1px solid var(--assignment-chip-border)",
+                    }}
+                  >
+                    <div className="flex flex-wrap gap-2">
+                      {selectedUsers.map((user) => (
+                        <div
+                          key={user.id}
+                          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg shadow-sm transition-all"
+                          style={{
+                            background: "var(--assignment-surface)",
+                            border: "1px solid var(--assignment-chip-border)",
+                          }}
+                        >
+                          <span
+                            className="text-xs font-semibold"
+                            style={{ color: "var(--assignment-chip-text)" }}
+                          >
+                            {user.name}
+                          </span>
+
+                          <span
+                            className={`text-[9px] px-1.5 py-0.5 rounded-full ${getRoleColor(
+                              user.role?.name,
+                            )}`}
+                          >
+                            {user.role?.name}
+                          </span>
+
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveUser(user.id)}
+                            className="p-0.5 rounded-full transition-colors"
+                            style={{ color: "var(--assignment-chip-remove-hover)" }}
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* SINGLE USER CHIP */}
+                {assignmentMode === "single" && singleUser && (
+                  <div
+                    className="mt-3 p-3 rounded-lg"
+                    style={{
+                      background: "var(--assignment-chip-bg)",
+                      border: "1px solid var(--assignment-chip-border)",
+                    }}
+                  >
+                    <div
+                      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg shadow-sm"
+                      style={{
+                        background: "var(--assignment-surface)",
+                        border: "1px solid var(--assignment-chip-border)",
+                      }}
+                    >
+                      <span
+                        className="text-xs font-semibold"
+                        style={{ color: "var(--assignment-chip-text)" }}
+                      >
+                        {assignableUsers.find((u) => u.id === singleUser)?.name}
+                      </span>
+
+                      <span
+                        className={`text-[9px] px-1.5 py-0.5 rounded-full ${getRoleColor(
+                          assignableUsers.find((u) => u.id === singleUser)?.role?.name,
+                        )}`}
+                      >
+                        {
+                          assignableUsers.find((u) => u.id === singleUser)?.role?.name
+                        }
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSingleUser("");
+                          setUserSearchTerm("");
+                        }}
+                        className="p-0.5 rounded-full transition-colors"
+                        style={{ color: "var(--assignment-chip-remove-hover)" }}
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {/* SELECTED LOCATIONS CHIPS */}
-              {selectedLocations.length > 0 && (
-                <div className="mt-3 p-3 bg-slate-50 dark:bg-[hsl(224,48%,12%)] rounded-lg border border-slate-200 dark:border-border max-h-48 overflow-y-auto">
-                  <div className="flex flex-wrap gap-2">
-                    {selectedLocations.map((location) => (
-                      <div
-                        key={location.id}
-                        className="inline-flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-card border border-[#CBF3F0] dark:border-[hsl(var(--primary))]/30 rounded-lg shadow-sm group hover:shadow-md transition-all"
-                      >
-                        <MapPin className="w-3.5 h-3.5 text-[#FF9F1C] dark:text-[hsl(var(--primary))] flex-shrink-0" />
-                        <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">
-                          {location.name}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveLocation(location.id)}
-                          className="p-0.5 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-full transition-colors group-hover:scale-110"
-                        >
-                          <X className="w-3.5 h-3.5 text-slate-400 hover:text-red-600 dark:hover:text-red-400" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
 
-            {/* Action Button */}
-            <div className="pt-4 sm:pt-6 border-t border-slate-100 dark:border-border">
-              <button
-                type="submit"
-                disabled={isLoading || isValidating || !canAddAssignment}
-                className={`w-full py-3 sm:py-4 px-4 sm:px-6 text-sm sm:text-base font-bold text-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 sm:gap-3 disabled:cursor-not-allowed disabled:opacity-50 ${
-                  assignmentMode === "multi"
-                    ? "bg-gradient-to-r from-[#FF9F1C] to-[#FFBF69] dark:from-[hsl(var(--primary))] dark:to-[hsl(var(--primary-light))] hover:from-[#E68900] hover:to-[#FF9F1C] shadow-[#FF9F1C]/30 dark:shadow-[hsl(var(--primary))]/30"
-                    : "bg-gradient-to-r from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 hover:from-blue-600 hover:to-blue-700 shadow-blue-500/30 dark:shadow-blue-600/30"
-                }`}
-              >
-                {isValidating ? (
-                  <>
-                    <Loader className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
-                    <span>Validating...</span>
-                  </>
-                ) : isLoading ? (
-                  <>
-                    <Loader className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
-                    <span>Creating...</span>
-                  </>
-                ) : (
-                  <>
-                    <Check size={20} strokeWidth={3} className="text-white" />
-                    <span>
-                      {assignmentMode === "multi"
-                        ? selectedUsers.length > 0 &&
-                          selectedLocations.length > 0
-                          ? `Create ${selectedUsers.length} × ${selectedLocations.length} Assignments`
-                          : "Create Assignments"
-                        : `Assign ${selectedLocations.length} Location${selectedLocations.length !== 1 ? "s" : ""}`}
-                    </span>
-                  </>
+              {/* Location Selection */}
+              <div className="text-left space-y-2" ref={locationDropdownRef}>
+                <label
+                  className="text-xs font-black uppercase tracking-widest ml-1"
+                  style={{ color: "var(--assignment-title)" }}
+                >
+                  {assignmentMode === "multi"
+                    ? `Select Locations (${selectedLocations.length} selected)`
+                    : singleUser
+                      ? `Select Locations (${selectedLocations.length} selected)`
+                      : "Select Locations (0 selected)"}
+                </label>
+
+                {/* SINGLE MODE WARNING */}
+                {assignmentMode === "single" && !singleUser && (
+                  <div
+                    className="p-3 rounded-xl"
+                    style={{
+                      background: "var(--assignment-warning-bg)",
+                      border: "1px solid var(--assignment-warning-border)",
+                      color: "var(--assignment-warning-text)",
+                    }}
+                  >
+                    <p className="text-sm font-medium">
+                      Please select a user first to see available locations.
+                    </p>
+                  </div>
                 )}
-              </button>
-            </div>
-          </form>
+
+                {/* LOADING */}
+                {isFetchingAssignments && (
+                  <div
+                    className="flex items-center gap-2 text-xs sm:text-sm mb-2"
+                    style={{ color: "var(--assignment-loading-text)" }}
+                  >
+                    <Loader className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" />
+                    <span>Loading available locations...</span>
+                  </div>
+                )}
+
+                <div className="relative">
+                  <div
+                    onClick={() => {
+                      if (assignmentMode === "single" && !singleUser) return;
+                      setIsLocationDropdownOpen(!isLocationDropdownOpen);
+                    }}
+                    className={`relative cursor-pointer group ${assignmentMode === "single" && !singleUser
+                      ? "opacity-50 cursor-not-allowed"
+                      : ""
+                      }`}
+                  >
+                    <input
+                      type="text"
+                      readOnly
+                      disabled={assignmentMode === "single" && !singleUser}
+                      value={
+                        selectedLocations.length > 0
+                          ? `${selectedLocations.length} location${selectedLocations.length > 1 ? "s" : ""
+                          } selected`
+                          : "Click to select locations..."
+                      }
+                      placeholder="Click to select locations..."
+                      className="w-full px-4 sm:px-6 py-3 sm:py-3.5 text-sm sm:text-base rounded-xl outline-none cursor-pointer transition-all disabled:cursor-not-allowed"
+                      style={{
+                        background: "var(--assignment-input-bg)",
+                        border: "1px solid var(--assignment-input-border)",
+                        color: "var(--assignment-input-text)",
+                      }}
+                    />
+
+                    <ChevronDown
+                      size={18}
+                      strokeWidth={2.5}
+                      className={`absolute right-4 sm:right-5 top-1/2 -translate-y-1/2 transition-transform duration-300 ${isLocationDropdownOpen ? "rotate-180" : ""
+                        }`}
+                      style={{ color: "var(--assignment-subtitle)" }}
+                    />
+                  </div>
+
+                  {/* DROPDOWN */}
+                  {isLocationDropdownOpen &&
+                    (assignmentMode === "multi" || singleUser) && (
+                      <div
+                        className="absolute z-50 w-full mt-2 rounded-xl overflow-hidden flex flex-col"
+                        style={{
+                          background: "var(--assignment-dropdown-bg)",
+                          border: "1px solid var(--assignment-dropdown-border)",
+                          boxShadow: "var(--assignment-shadow)",
+                          maxHeight: "500px",
+                        }}
+                      >
+                        {/* SEARCH */}
+                        <div
+                          className="p-2.5 flex-shrink-0"
+                          style={{ borderBottom: "1px solid var(--assignment-divider)" }}
+                        >
+                          <div className="relative">
+                            <Search
+                              size={16}
+                              className="absolute left-3 top-1/2 -translate-y-1/2"
+                              style={{ color: "var(--assignment-subtitle)" }}
+                            />
+                            <input
+                              type="text"
+                              value={locationSearchTerm}
+                              onChange={(e) => setLocationSearchTerm(e.target.value)}
+                              placeholder="Search locations..."
+                              className="w-full pl-10 pr-4 py-2 text-sm rounded-lg outline-none"
+                              style={{
+                                background: "var(--assignment-input-bg)",
+                                border: "1px solid var(--assignment-input-border)",
+                                color: "var(--assignment-input-text)",
+                              }}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </div>
+                        </div>
+
+                        {/* SELECT ALL */}
+                        {assignmentMode === "multi" && (
+                          <div
+                            className="p-1.5 flex-shrink-0"
+                            style={{ borderBottom: "1px solid var(--assignment-divider)" }}
+                          >
+                            <label className="flex items-center gap-2 px-2 py-1.5 cursor-pointer rounded-lg">
+                              <input
+                                type="checkbox"
+                                checked={allLocationsSelected}
+                                onChange={handleSelectAllLocations}
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                              <span
+                                className="text-sm font-medium"
+                                style={{ color: "var(--assignment-input-text)" }}
+                              >
+                                Select All ({filteredLocations.length})
+                              </span>
+                            </label>
+                          </div>
+                        )}
+
+                        {/* LOCATIONS LIST */}
+                        <div
+                          className="overflow-y-auto flex-1"
+                          style={{ minHeight: "250px", maxHeight: "420px" }}
+                        >
+                          {filteredLocations.length === 0 ? (
+                            <div
+                              className="p-4 text-center text-sm"
+                              style={{ color: "var(--assignment-subtitle)" }}
+                            >
+                              {assignmentMode === "single" && singleUser
+                                ? "All locations are already assigned to this user"
+                                : "No locations found"}
+                            </div>
+                          ) : (
+                            filteredLocations.map((location) => {
+                              const isSelected = selectedLocations.some(
+                                (loc) => loc.id === location.id,
+                              );
+
+                              return (
+                                <div
+                                  key={location.id}
+                                  onClick={() => handleLocationSelect(location)}
+                                  className="flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors"
+                                  style={{
+                                    background: isSelected
+                                      ? "var(--assignment-dropdown-selected)"
+                                      : "transparent",
+                                  }}
+                                >
+                                  {assignmentMode === "multi" ? (
+                                    <input type="checkbox" checked={isSelected} readOnly />
+                                  ) : (
+                                    <div
+                                      className="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0"
+                                      style={{
+                                        borderColor: isSelected
+                                          ? "var(--assignment-accent-border)"
+                                          : "var(--assignment-border)",
+                                        background: isSelected
+                                          ? "var(--assignment-accent-bg)"
+                                          : "transparent",
+                                      }}
+                                    >
+                                      {isSelected && (
+                                        <div
+                                          className="w-2 h-2 rounded-full"
+                                          style={{
+                                            background:
+                                              "var(--assignment-accent-text)",
+                                          }}
+                                        />
+                                      )}
+                                    </div>
+                                  )}
+
+                                  <MapPin
+                                    className="w-4 h-4 flex-shrink-0"
+                                    style={{ color: "var(--assignment-subtitle)" }}
+                                  />
+
+                                  <span
+                                    className="text-sm font-medium flex-1"
+                                    style={{ color: "var(--assignment-input-text)" }}
+                                  >
+                                    {location.name}
+                                  </span>
+                                </div>
+                              );
+                            })
+                          )}
+                        </div>
+                      </div>
+                    )}
+                </div>
+
+                {/* SELECTED LOCATIONS CHIPS */}
+                {selectedLocations.length > 0 && (
+                  <div
+                    className="mt-3 p-3 rounded-lg max-h-40 overflow-y-auto"
+                    style={{
+                      background: "var(--assignment-chip-bg)",
+                      border: "1px solid var(--assignment-chip-border)",
+                    }}
+                  >
+                    <div className="flex flex-wrap gap-2">
+                      {selectedLocations.map((location) => (
+                        <div
+                          key={location.id}
+                          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg shadow-sm transition-all"
+                          style={{
+                            background: "var(--assignment-surface)",
+                            border: "1px solid var(--assignment-chip-border)",
+                          }}
+                        >
+                          <MapPin
+                            className="w-3.5 h-3.5 flex-shrink-0"
+                            style={{ color: "var(--assignment-accent-text)" }}
+                          />
+
+                          <span
+                            className="text-xs font-semibold"
+                            style={{ color: "var(--assignment-chip-text)" }}
+                          >
+                            {location.name}
+                          </span>
+
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveLocation(location.id)}
+                            className="p-0.5 rounded-full transition-colors"
+                            style={{ color: "var(--assignment-chip-remove-hover)" }}
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+
+              {/* Action Button */}
+              <div
+                className="pt-4 sm:pt-6"
+                style={{ borderTop: "1px solid var(--assignment-divider)" }}
+              >
+                <button
+                  type="submit"
+                  disabled={isLoading || isValidating || !canAddAssignment}
+                  className="w-full py-3 sm:py-4 px-4 sm:px-6 text-sm sm:text-base font-bold rounded-2xl transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 sm:gap-3 disabled:cursor-not-allowed disabled:opacity-50"
+                  style={{
+                    background:
+                      assignmentMode === "multi"
+                        ? "var(--assignment-primary-bg)"
+                        : "var(--assignment-primary-bg)",
+                    color: "var(--assignment-primary-text)",
+                    boxShadow: "var(--assignment-primary-shadow)",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background =
+                      "var(--assignment-primary-hover-bg)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background =
+                      "var(--assignment-primary-bg)";
+                  }}
+                >
+                  {isValidating ? (
+                    <>
+                      <Loader className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
+                      <span style={{ color: "var(--assignment-primary-text)" }}>
+                        Validating...
+                      </span>
+                    </>
+                  ) : isLoading ? (
+                    <>
+                      <Loader className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
+                      <span style={{ color: "var(--assignment-primary-text)" }}>
+                        Creating...
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <Check size={20} strokeWidth={3} />
+                      <span>
+                        {assignmentMode === "multi"
+                          ? `Create ${selectedUsers.length > 0 && selectedLocations.length > 0
+                            ? selectedUsers.length * selectedLocations.length
+                            : 0
+                          } Assignments`
+                          : `Assign ${selectedLocations.length} Location${selectedLocations.length !== 1 ? "s" : ""
+                          }`}
+                      </span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+            </form>
+          </div>
         </div>
       </div>
     </>

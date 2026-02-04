@@ -343,72 +343,87 @@ html[data-theme="dark"] {
      =============================== */
 
   /* Page background */
-  --assignment-bg: #f8fafc;
+  --assignment-bg: #020617;
 
   /* Surface / cards */
-  --assignment-surface: #ffffff;
-  --assignment-border: rgba(15, 23, 42, 0.08);
-  --assignment-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+  --assignment-surface: #020617;
+  --assignment-border: rgba(255, 255, 255, 0.08);
+  --assignment-shadow: 0 16px 36px rgba(0, 0, 0, 0.55);
 
   /* Header */
-  --assignment-header-bg: #f1f5f9;
-  --assignment-header-border: rgba(15, 23, 42, 0.08);
-  --assignment-title: #0f172a;
-  --assignment-subtitle: #64748b;
+  --assignment-header-bg: rgba(255, 255, 255, 0.03);
+  --assignment-header-border: rgba(255, 255, 255, 0.08);
+  --assignment-title: #f8fafc;
+  --assignment-subtitle: #94a3b8;
 
   /* Accent / highlight */
-  --assignment-accent-bg: rgba(99, 102, 241, 0.08);
-  --assignment-accent-border: rgba(99, 102, 241, 0.25);
-  --assignment-accent-text: #4f46e5;
+  --assignment-accent-bg: rgba(99, 102, 241, 0.15);
+  --assignment-accent-border: rgba(99, 102, 241, 0.4);
+  --assignment-accent-text: #a5b4fc;
 
   /* Mode toggle */
-  --assignment-toggle-bg: rgba(15, 23, 42, 0.08);
+  --assignment-toggle-bg: rgba(255, 255, 255, 0.12);
   --assignment-toggle-active-bg: #6366f1;
   --assignment-toggle-knob: #ffffff;
-  --assignment-toggle-shadow: 0 2px 6px rgba(15, 23, 42, 0.15);
+  --assignment-toggle-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
 
   /* Inputs / dropdowns */
-  --assignment-input-bg: #ffffff;
-  --assignment-input-border: rgba(15, 23, 42, 0.12);
-  --assignment-input-focus-border: #6366f1;
-  --assignment-input-text: #0f172a;
-  --assignment-input-placeholder: #94a3b8;
+  --assignment-input-bg: #0f172a;
+  --assignment-input-border: rgba(255, 255, 255, 0.12);
+  --assignment-input-focus-border: #818cf8;
+  --assignment-input-text: #e5e7eb;
+  --assignment-input-placeholder: #64748b;
 
   /* Dropdown surfaces */
-  --assignment-dropdown-bg: #ffffff;
-  --assignment-dropdown-border: rgba(15, 23, 42, 0.08);
-  --assignment-dropdown-hover: rgba(15, 23, 42, 0.04);
-  --assignment-dropdown-selected: rgba(99, 102, 241, 0.12);
+  --assignment-dropdown-bg: #020617;
+  --assignment-dropdown-border: rgba(255, 255, 255, 0.08);
+  --assignment-dropdown-hover: rgba(255, 255, 255, 0.06);
+  --assignment-dropdown-selected: rgba(99, 102, 241, 0.2);
 
   /* Chips (selected users / locations) */
-  --assignment-chip-bg: rgba(15, 23, 42, 0.04);
-  --assignment-chip-border: rgba(99, 102, 241, 0.25);
-  --assignment-chip-text: #0f172a;
-  --assignment-chip-remove-hover: #ef4444;
+  --assignment-chip-bg: rgba(255, 255, 255, 0.06);
+  --assignment-chip-border: rgba(99, 102, 241, 0.35);
+  --assignment-chip-text: #e5e7eb;
+  --assignment-chip-remove-hover: #f87171;
 
   /* Primary action */
-  --assignment-primary-bg: linear-gradient(90deg, #6366f1 0%, #818cf8 100%);
+  --assignment-primary-bg: linear-gradient(90deg, #6366f1 0%, #4f46e5 100%);
   --assignment-primary-hover-bg: linear-gradient(
     90deg,
     #4f46e5 0%,
-    #6366f1 100%
+    #4338ca 100%
   );
   --assignment-primary-text: #ffffff;
-  --assignment-primary-shadow: 0 10px 22px rgba(99, 102, 241, 0.25);
+  --assignment-primary-shadow: 0 14px 30px rgba(99, 102, 241, 0.45);
 
   /* Loading / validating */
-  --assignment-loading-text: #4f46e5;
+  --assignment-loading-text: #a5b4fc;
 
   /* Warnings / permissions */
-  --assignment-warning-bg: rgba(251, 146, 60, 0.12);
-  --assignment-warning-border: rgba(251, 146, 60, 0.4);
-  --assignment-warning-text: #c2410c;
+  --assignment-warning-bg: rgba(251, 146, 60, 0.18);
+  --assignment-warning-border: rgba(251, 146, 60, 0.45);
+  --assignment-warning-text: #fdba74;
 
   /* Success indicator */
-  --assignment-success-dot: #22c55e;
+  --assignment-success-dot: #4ade80;
 
   /* Dividers */
-  --assignment-divider: rgba(15, 23, 42, 0.08);
+  --assignment-divider: rgba(255, 255, 255, 0.08);
+
+  --assignment-toast-error-bg: rgba(239, 68, 68, 0.18);
+  --assignment-toast-error-border: rgba(239, 68, 68, 0.55);
+  --assignment-toast-error-text: #fca5a5;
+
+  --assignment-toast-warning-bg: rgba(251, 191, 36, 0.2);
+  --assignment-toast-warning-border: rgba(251, 191, 36, 0.6);
+  --assignment-toast-warning-text: #fde68a;
+
+  --assignment-toast-success-bg: rgba(34, 197, 94, 0.2);
+  --assignment-toast-success-border: rgba(34, 197, 94, 0.6);
+  --assignment-toast-success-text: #6ee7b7;
+
+  --assignment-toast-btn-bg: rgba(255, 255, 255, 0.08);
+  --assignment-toast-btn-text: #e5e7eb;
 }
 
 .action {
