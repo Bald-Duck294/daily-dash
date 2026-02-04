@@ -1,6 +1,5 @@
 @import "tailwindcss";
-
-
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 :root {
   /* Core */
   --background: #f4f7fe;
@@ -135,7 +134,7 @@
   --washroom-filter-clear: #94a3b8;
   --washroom-filter-clear-hover: #ef4444;
 
-   /* ===============================
+  /* ===============================
      ASSIGNMENTS PAGE – LIGHT MODE
      =============================== */
 
@@ -184,11 +183,7 @@
   --assignment-chip-remove-hover: #ef4444;
 
   /* Primary action */
-  --assignment-primary-bg: linear-gradient(
-    90deg,
-    #6366f1 0%,
-    #818cf8 100%
-  );
+  --assignment-primary-bg: linear-gradient(90deg, #6366f1 0%, #818cf8 100%);
   --assignment-primary-hover-bg: linear-gradient(
     90deg,
     #4f46e5 0%,
@@ -334,7 +329,7 @@ html[data-theme="dark"] {
   --washroom-filter-bg: #020617;
   --washroom-filter-text: #94a3b8;
 
-   --washroom-delete-bg: #c20909;
+  --washroom-delete-bg: #c20909;
 
   --washroom-filter-active-bg: #0f172a;
   --washroom-filter-active-text: #60a5fa;
@@ -343,7 +338,7 @@ html[data-theme="dark"] {
   --washroom-filter-clear: #64748b;
   --washroom-filter-clear-hover: #f87171;
 
-    /* ===============================
+  /* ===============================
      ASSIGNMENTS PAGE – LIGHT MODE
      =============================== */
 
@@ -392,11 +387,7 @@ html[data-theme="dark"] {
   --assignment-chip-remove-hover: #ef4444;
 
   /* Primary action */
-  --assignment-primary-bg: linear-gradient(
-    90deg,
-    #6366f1 0%,
-    #818cf8 100%
-  );
+  --assignment-primary-bg: linear-gradient(90deg, #6366f1 0%, #818cf8 100%);
   --assignment-primary-hover-bg: linear-gradient(
     90deg,
     #4f46e5 0%,
