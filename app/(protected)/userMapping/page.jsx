@@ -221,8 +221,15 @@ export default function AssignmentListPage() {
 
   if (loading || !hasInitialized) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <Loader size="large" color="#f97316" message="Loading assignments..." />
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ background: "var(--assignment-bg)" }}
+      >
+        <Loader
+          size="large"
+          color="var(--assignment-accent-text)"
+          message="Loading assignments..."
+        />
       </div>
     );
   }

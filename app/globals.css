@@ -139,7 +139,7 @@
      =============================== */
 
   /* Page background */
-   --assignment-bg: #f8fafc;
+  --assignment-bg: #f8fafc;
 
   /* Surface / cards */
   --assignment-surface: #ffffff;
@@ -202,9 +202,62 @@
   /* Success indicator */
   --assignment-success-dot: #22c55e;
 
-
   /* Dividers */
   --assignment-divider: rgba(15, 23, 42, 0.08);
+
+  /* ===============================
+   ADD USER PAGE – LIGHT MODE
+   =============================== */
+  --user-add-bg: #f8fafc;
+
+  /* Card / surface */
+  --user-add-surface: #ffffff;
+  --user-add-border: #e5e7eb;
+  --user-add-shadow: 0 12px 28px rgba(16, 24, 40, 0.08);
+
+  /* Header (mint) */
+  --user-add-header-bg: #cbf3f0;
+  --user-add-header-border: #cbf3f1;
+
+  /* Text */
+  --user-add-title: #0f0f0f;
+  --user-add-subtitle: #64748b;
+
+  /* Accent (icon) */
+  --user-add-accent: #ff9f1c;
+
+  /* Status */
+  --user-add-success-dot: #28c76f;
+
+  /* Back button */
+  --user-add-back-text: #475569;
+  --user-add-back-hover: #0f172a;
+
+  --user-form-surface: #ffffff;
+  --user-form-border: #e5e7eb;
+  --user-form-muted-bg: #f8fafc;
+
+  --user-form-label: #475569;
+  --user-form-text: #0f172a;
+  --user-form-subtext: #64748b;
+
+  --user-form-input-bg: #ffffff;
+  --user-form-input-border: #cbd5e1;
+  --user-form-input-placeholder: #94a3b8;
+  --user-form-input-focus: #14b8a6; /* teal-500 */
+
+  --user-form-accent: #ff9f1c; /* amber/orange */
+  --user-form-accent-hover: #f59e0b;
+
+  --user-form-success: #14b8a6;
+
+  --user-form-cancel-bg: #ffffff;
+  --user-form-cancel-border: #cbd5e1;
+  --user-form-cancel-text: #334155;
+
+  --user-form-submit-bg: #f59e0b;
+  --user-form-submit-hover: #d97706;
+  --user-form-submit-text: #ffffff;
 }
 
 html[data-theme="dark"] {
@@ -424,6 +477,54 @@ html[data-theme="dark"] {
 
   --assignment-toast-btn-bg: rgba(255, 255, 255, 0.08);
   --assignment-toast-btn-text: #e5e7eb;
+
+  /* ===============================
+   ADD USER PAGE – LIGHT MODE
+   =============================== */
+
+  --user-add-bg: #020617;
+
+  --user-add-surface: #020617;
+  --user-add-border: rgba(255, 255, 255, 0.08);
+  --user-add-shadow: 0 16px 36px rgba(0, 0, 0, 0.55);
+
+  --user-add-header-bg: rgba(203, 243, 240, 0.08);
+  --user-add-header-border: rgba(203, 243, 240, 0.18);
+
+  --user-add-title: #f8fafc;
+  --user-add-subtitle: #94a3b8;
+
+  --user-add-accent: #ffb454;
+  --user-add-success-dot: #4ade80;
+
+  --user-add-back-text: #94a3b8;
+  --user-add-back-hover: #f8fafc;
+
+  --user-form-surface: #020617;
+  --user-form-border: rgba(255, 255, 255, 0.08);
+  --user-form-muted-bg: rgba(255, 255, 255, 0.04);
+
+  --user-form-label: #94a3b8;
+  --user-form-text: #f8fafc;
+  --user-form-subtext: #94a3b8;
+
+  --user-form-input-bg: #0f172a;
+  --user-form-input-border: rgba(255, 255, 255, 0.12);
+  --user-form-input-placeholder: #64748b;
+  --user-form-input-focus: #5eead4;
+
+  --user-form-accent: #ffb454;
+  --user-form-accent-hover: #f59e0b;
+
+  --user-form-success: #5eead4;
+
+  --user-form-cancel-bg: rgba(255, 255, 255, 0.04);
+  --user-form-cancel-border: rgba(255, 255, 255, 0.12);
+  --user-form-cancel-text: #e5e7eb;
+
+  --user-form-submit-bg: #f59e0b;
+  --user-form-submit-hover: #d97706;
+  --user-form-submit-text: #020617;
 }
 
 .action {

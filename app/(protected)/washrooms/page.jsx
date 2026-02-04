@@ -3622,9 +3622,17 @@ function WashroomsPage() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-screen px-4 bg-slate-50">
-        <Loader size="large" color="#FFAB2D" message="Loading washrooms..." />
+      <div
+        className="flex justify-center items-center h-screen px-4"
+        style={{ background: "var(--washroom-bg)" }}
+      >
+        <Loader
+          size="large"
+          color="var(--washroom-primary)"
+          message="Loading washrooms..."
+        />
       </div>
+
     );
   }
 
@@ -3691,12 +3699,12 @@ function WashroomsPage() {
                       color: "var(--washroom-primary-text)",
                     }}
                     onMouseEnter={(e) =>
-                      (e.currentTarget.style.background =
-                        "var(--washroom-primary-hover)")
+                    (e.currentTarget.style.background =
+                      "var(--washroom-primary-hover)")
                     }
                     onMouseLeave={(e) =>
-                      (e.currentTarget.style.background =
-                        "var(--washroom-primary)")
+                    (e.currentTarget.style.background =
+                      "var(--washroom-primary)")
                     }
                   >
                     <Plus strokeWidth={3} className="w-4 h-4" />
@@ -3713,12 +3721,12 @@ function WashroomsPage() {
                       color: "var(--washroom-primary-text)",
                     }}
                     onMouseEnter={(e) =>
-                      (e.currentTarget.style.background =
-                        "var(--washroom-primary-hover)")
+                    (e.currentTarget.style.background =
+                      "var(--washroom-primary-hover)")
                     }
                     onMouseLeave={(e) =>
-                      (e.currentTarget.style.background =
-                        "var(--washroom-primary)")
+                    (e.currentTarget.style.background =
+                      "var(--washroom-primary)")
                     }
                   >
                     Assign
@@ -3876,24 +3884,24 @@ function WashroomsPage() {
                   facilityCompanyId ||
                   selectedLocationTypeId ||
                   assignmentFilter) && (
-                  <button
-                    onClick={clearAllFilters}
-                    className="ml-1 p-1.5 rounded-lg transition-colors"
-                    style={{
-                      color: "var(--washroom-filter-clear)",
-                    }}
-                    onMouseEnter={(e) =>
+                    <button
+                      onClick={clearAllFilters}
+                      className="ml-1 p-1.5 rounded-lg transition-colors"
+                      style={{
+                        color: "var(--washroom-filter-clear)",
+                      }}
+                      onMouseEnter={(e) =>
                       (e.currentTarget.style.color =
                         "var(--washroom-filter-clear-hover)")
-                    }
-                    onMouseLeave={(e) =>
+                      }
+                      onMouseLeave={(e) =>
                       (e.currentTarget.style.color =
                         "var(--washroom-filter-clear)")
-                    }
-                  >
-                    <XCircle size={18} />
-                  </button>
-                )}
+                      }
+                    >
+                      <XCircle size={18} />
+                    </button>
+                  )}
               </div>
 
               <span
@@ -3922,14 +3930,14 @@ function WashroomsPage() {
                   style={
                     viewMode === "grid"
                       ? {
-                          background:
-                            "linear-gradient(90deg, var(--washroom-primary), var(--washroom-primary-hover))",
-                          color: "var(--washroom-primary-text)",
-                          boxShadow: "0 4px 10px rgba(0,0,0,0.15)",
-                        }
+                        background:
+                          "linear-gradient(90deg, var(--washroom-primary), var(--washroom-primary-hover))",
+                        color: "var(--washroom-primary-text)",
+                        boxShadow: "0 4px 10px rgba(0,0,0,0.15)",
+                      }
                       : {
-                          color: "var(--washroom-subtitle)",
-                        }
+                        color: "var(--washroom-subtitle)",
+                      }
                   }
                 >
                   <Grid3x3 className="h-5 w-5" />
@@ -3943,14 +3951,14 @@ function WashroomsPage() {
                   style={
                     viewMode === "table"
                       ? {
-                          background:
-                            "linear-gradient(90deg, var(--washroom-primary), var(--washroom-primary-hover))",
-                          color: "var(--washroom-primary-text)",
-                          boxShadow: "0 4px 10px rgba(0,0,0,0.15)",
-                        }
+                        background:
+                          "linear-gradient(90deg, var(--washroom-primary), var(--washroom-primary-hover))",
+                        color: "var(--washroom-primary-text)",
+                        boxShadow: "0 4px 10px rgba(0,0,0,0.15)",
+                      }
                       : {
-                          color: "var(--washroom-subtitle)",
-                        }
+                        color: "var(--washroom-subtitle)",
+                      }
                   }
                 >
                   <List className="h-5 w-5" />
@@ -4174,7 +4182,7 @@ function WashroomsPage() {
                                   style={{
                                     background:
                                       item.status === true ||
-                                      item.status === null
+                                        item.status === null
                                         ? "var(--washroom-status-dot-active)"
                                         : "var(--washroom-status-dot-inactive)",
                                   }}
@@ -4199,12 +4207,12 @@ function WashroomsPage() {
                               className="p-2 rounded-lg transition-colors"
                               style={{ color: "var(--washroom-icon-muted)" }}
                               onMouseEnter={(e) =>
-                                (e.currentTarget.style.background =
-                                  "var(--washroom-muted-bg)")
+                              (e.currentTarget.style.background =
+                                "var(--washroom-muted-bg)")
                               }
                               onMouseLeave={(e) =>
-                                (e.currentTarget.style.background =
-                                  "transparent")
+                              (e.currentTarget.style.background =
+                                "transparent")
                               }
                             >
                               <Navigation size={16} />
@@ -4231,12 +4239,12 @@ function WashroomsPage() {
                                   color: "var(--washroom-icon-muted)",
                                 }}
                                 onMouseEnter={(e) =>
-                                  (e.currentTarget.style.background =
-                                    "var(--washroom-muted-bg)")
+                                (e.currentTarget.style.background =
+                                  "var(--washroom-muted-bg)")
                                 }
                                 onMouseLeave={(e) =>
-                                  (e.currentTarget.style.background =
-                                    "transparent")
+                                (e.currentTarget.style.background =
+                                  "transparent")
                                 }
                               >
                                 <MoreVertical size={16} />
@@ -4346,7 +4354,7 @@ function WashroomsPage() {
                         className={`p-3 rounded-full ${statusModal.location?.status === true || statusModal.location?.status === null ? "bg-red-100" : "bg-green-100"}`}
                       >
                         {statusModal.location?.status === true ||
-                        statusModal.location?.status === null ? (
+                          statusModal.location?.status === null ? (
                           <PowerOff className="h-6 w-6 text-red-600" />
                         ) : (
                           <Power className="h-6 w-6 text-green-600" />
@@ -4355,7 +4363,7 @@ function WashroomsPage() {
                       <div>
                         <h3 className="text-lg font-semibold text-slate-800">
                           {statusModal.location?.status === true ||
-                          statusModal.location?.status === null
+                            statusModal.location?.status === null
                             ? "Disable"
                             : "Enable"}{" "}
                           Washroom
@@ -4369,7 +4377,7 @@ function WashroomsPage() {
                       <p className="text-sm text-slate-700">
                         Are you sure you want to{" "}
                         {statusModal.location?.status === true ||
-                        statusModal.location?.status === null
+                          statusModal.location?.status === null
                           ? "disable"
                           : "enable"}
                         <strong> "{statusModal.location?.name}"</strong>?
@@ -4377,16 +4385,16 @@ function WashroomsPage() {
 
                       {(statusModal.location?.status === true ||
                         statusModal.location?.status === null) && (
-                        <p className="text-sm text-red-600 mt-2 bg-red-50 p-3 rounded-md border border-red-200">
-                          ⚠️ Disabling this washroom will automatically{" "}
-                          <strong>unassign all cleaners</strong> currently
-                          assigned to it.
-                          <br />
-                          They will need to be{" "}
-                          <strong>manually re-assigned</strong> when the
-                          washroom is enabled again.
-                        </p>
-                      )}
+                          <p className="text-sm text-red-600 mt-2 bg-red-50 p-3 rounded-md border border-red-200">
+                            ⚠️ Disabling this washroom will automatically{" "}
+                            <strong>unassign all cleaners</strong> currently
+                            assigned to it.
+                            <br />
+                            They will need to be{" "}
+                            <strong>manually re-assigned</strong> when the
+                            washroom is enabled again.
+                          </p>
+                        )}
 
                       {statusModal.location?.status === false && (
                         <p className="text-sm text-blue-700 mt-2 bg-blue-50 p-3 rounded-md border border-blue-200">
@@ -4418,7 +4426,7 @@ function WashroomsPage() {
                         {togglingStatus === statusModal.location?.id
                           ? "Processing..."
                           : statusModal.location?.status === true ||
-                              statusModal.location?.status === null
+                            statusModal.location?.status === null
                             ? "Disable"
                             : "Enable"}
                       </button>
