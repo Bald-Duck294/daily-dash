@@ -350,7 +350,7 @@ const getLocalDateString = () => {
 /* ---------------- page ---------------- */
 
 export default function CleanerReviewPage() {
-  useRequirePermission(MODULES.CLEANER_ACTIVITY);
+  useRequirePermission(MODULES.CLEANER_REVIEWS);
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -591,9 +591,7 @@ export default function CleanerReviewPage() {
 
                     <button
                       onClick={() =>
-                        router.push(
-                          `/cleaner-review/${r.id}?companyId=${companyId}`,
-                        )
+                        router.push(`/cleaners/${r.id}?companyId=${companyId}`)
                       }
                       className="w-full py-2 rounded-lg border border-border text-primary text-sm font-medium hover:bg-muted transition"
                     >

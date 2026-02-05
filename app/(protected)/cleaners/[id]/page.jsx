@@ -45,7 +45,7 @@ const getTimeElapsed = (start) => {
 /* ================= page ================= */
 
 export default function ReviewDetails() {
-  useRequirePermission(MODULES.CLEANER_ACTIVITY);
+  useRequirePermission(MODULES.CLEANER_REVIEWS);
 
   const { id } = useParams();
   const router = useRouter();
