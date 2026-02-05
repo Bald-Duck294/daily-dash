@@ -258,6 +258,47 @@
   --user-form-submit-bg: #f59e0b;
   --user-form-submit-hover: #d97706;
   --user-form-submit-text: #ffffff;
+
+  /* ===============================
+   FACILITY COMPANIES – LIGHT MODE
+   =============================== */
+
+  --facility-bg: #f8fafc;
+
+  /* Surface / cards */
+  --facility-surface: #ffffff;
+  --facility-border: #e5e7eb;
+  --facility-shadow: 0 8px 24px rgba(16, 24, 40, 0.06);
+
+  /* Header */
+  --facility-title: #0f172a;
+  --facility-subtitle: #64748b;
+
+  /* Table */
+  --facility-table-header-bg: #f1f5f9;
+  --facility-table-row-hover: rgba(59, 130, 246, 0.08);
+  --facility-table-divider: #e5e7eb;
+
+  /* Primary action (orange CTA) */
+  --facility-primary-bg: linear-gradient(90deg, #fb923c, #f59e0b);
+  --facility-primary-hover-bg: linear-gradient(90deg, #f97316, #d97706);
+  --facility-primary-text: #ffffff;
+
+  /* Icon accent */
+  --facility-icon-bg: #ff9f1c;
+  --facility-icon-text: #ffffff;
+
+  /* Status — ACTIVE */
+  --facility-status-active-bg: #ecfdf5;
+  --facility-status-active-text: #047857;
+
+  /* Status — INACTIVE */
+  --facility-status-inactive-bg: #fef2f2;
+  --facility-status-inactive-text: #b91c1c;
+
+  /* Muted */
+  --facility-muted-bg: #f8fafc;
+  --facility-muted-text: #64748b;
 }
 
 html[data-theme="dark"] {
@@ -525,6 +566,47 @@ html[data-theme="dark"] {
   --user-form-submit-bg: #f59e0b;
   --user-form-submit-hover: #d97706;
   --user-form-submit-text: #020617;
+
+  /* ===============================
+   FACILITY COMPANIES – DARK MODE
+   =============================== */
+
+  --facility-bg: #020617;
+
+  /* Surface / cards */
+  --facility-surface: #020617;
+  --facility-border: rgba(255, 255, 255, 0.08);
+  --facility-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+
+  /* Header */
+  --facility-title: #f8fafc;
+  --facility-subtitle: #94a3b8;
+
+  /* Table */
+  --facility-table-header-bg: rgba(255, 255, 255, 0.04);
+  --facility-table-row-hover: rgba(99, 102, 241, 0.12);
+  --facility-table-divider: rgba(255, 255, 255, 0.08);
+
+  /* Primary action */
+  --facility-primary-bg: linear-gradient(90deg, #fbbf24, #f59e0b);
+  --facility-primary-hover-bg: linear-gradient(90deg, #f59e0b, #d97706);
+  --facility-primary-text: #020617;
+
+  /* Icon accent */
+  --facility-icon-bg: #fb923c;
+  --facility-icon-text: #020617;
+
+  /* Status — ACTIVE */
+  --facility-status-active-bg: #064e3b;
+  --facility-status-active-text: #6ee7b7;
+
+  /* Status — INACTIVE */
+  --facility-status-inactive-bg: #450a0a;
+  --facility-status-inactive-text: #fca5a5;
+
+  /* Muted */
+  --facility-muted-bg: rgba(255, 255, 255, 0.04);
+  --facility-muted-text: #94a3b8;
 }
 
 .action {

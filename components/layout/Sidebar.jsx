@@ -1793,7 +1793,7 @@ const Sidebar = () => {
             }}
           >
             <Link
-              href="/dashboard/settings"
+              href={`/settings/${user?.id}`}
               onClick={() => isMobile && setSidebarOpen(false)}
               className="flex items-center gap-3 group"
             >
