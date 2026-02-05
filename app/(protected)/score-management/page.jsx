@@ -532,10 +532,10 @@ export default function ScoreManagement() {
       const res = await CompanyApi.getAllCompanies();
 
       // ✅ API returns RAW ARRAY
-      if (Array.isArray(res)) {
-        setCompanies(res);
+      if (Array.isArray(res?.data)) {
+        setCompanies(res?.data);
       } else {
-        console.error("❌ Unexpected companies response:", res);
+        console.error("❌ Unexpected companies response:", res?.data);
         setCompanies([]);
       }
     } catch (error) {
