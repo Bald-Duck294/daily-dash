@@ -493,6 +493,7 @@
 //   );
 // }
 
+/* eslint-disable react-hooks/immutability */
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -574,28 +575,45 @@ export default function ViewFacilityCompanyPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <Loader size="large" color="#3b82f6" />
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ background: "var(--facility-bg)" }}
+      >
+        <Loader size="large" color="var(--primary)" />
       </div>
+
     );
   }
 
   if (!facilityCompany) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+      <div
+        className="min-h-screen flex items-center justify-center p-4"
+        style={{ background: "var(--facility-bg)" }}
+      >
         <div className="text-center">
-          <Building2 className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-          <p className="text-slate-600 font-medium">
+          <Building2
+            className="w-16 h-16 mx-auto mb-4"
+            style={{ color: "var(--facility-muted-text)" }}
+          />
+
+          <p
+            className="font-medium"
+            style={{ color: "var(--facility-muted-text)" }}
+          >
             Facility company not found
           </p>
+
           <button
             onClick={() => router.back()}
-            className="mt-4 text-blue-600 hover:underline"
+            className="mt-4 font-bold transition-colors"
+            style={{ color: "var(--primary)" }}
           >
             Go Back
           </button>
         </div>
       </div>
+
     );
   }
 
@@ -603,26 +621,52 @@ export default function ViewFacilityCompanyPage() {
     <>
       <Toaster position="top-right" />
 
-      <div className="min-h-screen bg-slate-50/50 p-6 flex justify-center pb-20">
+      <div
+        className="min-h-screen p-6 flex justify-center pb-20"
+        style={{ background: "var(--facility-bg)" }}
+      >
+
         <div className="w-full max-w-5xl space-y-8">
           {/* --- HEADER --- */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
+              {/* Back button */}
               <button
                 onClick={() =>
                   router.push(`/facility-company?companyId=${companyId}`)
                 }
-                className="p-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors shadow-sm text-slate-500"
+                className="p-2 rounded-xl transition-colors shadow-sm"
+                style={{
+                  background: "var(--facility-surface)",
+                  border: "1px solid var(--facility-border)",
+                  color: "var(--facility-muted-text)",
+                }}
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
+
               <div>
-                <h1 className="text-2xl font-bold text-slate-900">
+                {/* Title */}
+                <h1
+                  className="text-2xl font-bold"
+                  style={{ color: "var(--facility-title)" }}
+                >
                   {facilityCompany.name}
                 </h1>
+
                 <div className="flex items-center gap-2 mt-1">
+                  {/* Status badge */}
                   <span
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border text-[10px] font-bold uppercase tracking-wide ${facilityCompany.status ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-rose-50 text-rose-600 border-rose-100"}`}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border text-[10px] font-bold uppercase tracking-wide"
+                    style={{
+                      background: facilityCompany.status
+                        ? "var(--facility-status-active-bg)"
+                        : "var(--facility-status-inactive-bg)",
+                      color: facilityCompany.status
+                        ? "var(--facility-status-active-text)"
+                        : "var(--facility-status-inactive-text)",
+                      borderColor: "var(--facility-border)",
+                    }}
                   >
                     {facilityCompany.status ? (
                       <Check size={12} strokeWidth={3} />
@@ -631,22 +675,34 @@ export default function ViewFacilityCompanyPage() {
                     )}
                     {facilityCompany.status ? "Active" : "Inactive"}
                   </span>
-                  <span className="text-slate-400 text-xs flex items-center gap-1">
-                    <Clock size={12} /> Added{" "}
-                    {formatDate(facilityCompany.created_at)}
+
+                  {/* Created date */}
+                  <span
+                    className="text-xs flex items-center gap-1"
+                    style={{ color: "var(--facility-muted-text)" }}
+                  >
+                    <Clock size={12} /> Added {formatDate(facilityCompany.created_at)}
                   </span>
                 </div>
               </div>
             </div>
 
+            {/* Actions */}
             <div className="flex gap-3 w-full sm:w-auto">
+              {/* View washrooms */}
               <button
                 onClick={handleViewLocations}
-                className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl transition-all shadow-sm font-bold text-xs uppercase tracking-wide"
+                className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl transition-all shadow-sm font-bold text-xs uppercase tracking-wide"
+                style={{
+                  background: "var(--facility-surface)",
+                  border: "1px solid var(--facility-border)",
+                  color: "var(--facility-muted-text)",
+                }}
               >
-                <MapPin className="w-4 h-4 text-blue-500" /> View Washrooms
+                <MapPin className="w-4 h-4" /> View Washrooms
               </button>
 
+              {/* Edit CTA */}
               {canEditFacility && (
                 <button
                   onClick={() =>
@@ -654,7 +710,11 @@ export default function ViewFacilityCompanyPage() {
                       `/facility-company/${facilityCompanyId}/edit?companyId=${companyId}`,
                     )
                   }
-                  className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg shadow-blue-200/50 transition-all font-bold text-xs uppercase tracking-wide"
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl transition-all shadow-lg font-bold text-xs uppercase tracking-wide"
+                  style={{
+                    background: "var(--facility-primary-bg)",
+                    color: "var(--facility-primary-text)",
+                  }}
                 >
                   <Edit className="w-4 h-4" /> Edit Company
                 </button>
@@ -662,166 +722,257 @@ export default function ViewFacilityCompanyPage() {
             </div>
           </div>
 
+
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* LEFT COLUMN - MAIN INFO */}
             <div className="lg:col-span-2 space-y-6">
               {/* 1. BASIC INFO */}
-              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-                <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
-                  <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center border border-blue-100 text-blue-600">
+              <div
+                className="rounded-2xl p-6"
+                style={{
+                  background: "var(--facility-surface)",
+                  border: "1px solid var(--facility-border)",
+                  boxShadow: "var(--facility-shadow)",
+                }}
+              >
+                <div
+                  className="flex items-center gap-3 mb-6 pb-4"
+                  style={{ borderBottom: "1px solid var(--facility-border)" }}
+                >
+                  <div
+                    className="h-10 w-10 rounded-xl flex items-center justify-center"
+                    style={{
+                      background: "var(--facility-icon-bg)",
+                      color: "var(--facility-icon-text)",
+                    }}
+                  >
                     <Building2 size={20} strokeWidth={2.5} />
                   </div>
                   <div>
-                    <h2 className="text-sm font-black text-slate-800 uppercase tracking-[0.15em]">
+                    <h2
+                      className="text-sm font-black uppercase tracking-[0.15em]"
+                      style={{ color: "var(--facility-title)" }}
+                    >
                       Company Profile
                     </h2>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1 opacity-80">
+                    <p
+                      className="text-[10px] font-bold uppercase tracking-widest mt-1 opacity-80"
+                      style={{ color: "var(--facility-muted-text)" }}
+                    >
                       Primary Information
                     </p>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-6 gap-x-8">
+                  {[
+                    ["Company Name", facilityCompany.name],
+                    ["Organization", facilityCompany.company?.name || "N/A"],
+                  ].map(([label, value]) => (
+                    <div key={label}>
+                      <label
+                        className="text-[10px] font-bold uppercase tracking-wider block mb-1"
+                        style={{ color: "var(--facility-muted-text)" }}
+                      >
+                        {label}
+                      </label>
+                      <p
+                        className="text-sm font-bold"
+                        style={{ color: "var(--facility-title)" }}
+                      >
+                        {value}
+                      </p>
+                    </div>
+                  ))}
+
                   <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                      Company Name
-                    </label>
-                    <p className="text-sm font-bold text-slate-700">
-                      {facilityCompany.name}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                    <label
+                      className="text-[10px] font-bold uppercase tracking-wider block mb-1"
+                      style={{ color: "var(--facility-muted-text)" }}
+                    >
                       Email Address
                     </label>
                     <a
                       href={`mailto:${facilityCompany.email}`}
-                      className="text-sm font-medium text-blue-600 hover:underline flex items-center gap-1"
+                      className="text-sm font-medium flex items-center gap-1 hover:underline"
+                      style={{ color: "var(--primary)" }}
                     >
-                      {facilityCompany.email || "N/A"}{" "}
-                      <ExternalLink size={12} />
+                      {facilityCompany.email || "N/A"} <ExternalLink size={12} />
                     </a>
                   </div>
+
                   <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                    <label
+                      className="text-[10px] font-bold uppercase tracking-wider block mb-1"
+                      style={{ color: "var(--facility-muted-text)" }}
+                    >
                       Phone Number
                     </label>
                     <a
                       href={`tel:${facilityCompany.phone}`}
-                      className="text-sm font-medium text-slate-700 hover:text-blue-600 transition-colors"
+                      className="text-sm font-medium transition-colors"
+                      style={{ color: "var(--facility-title)" }}
                     >
                       {facilityCompany.phone || "N/A"}
                     </a>
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                      Organization
-                    </label>
-                    <p className="text-sm font-medium text-slate-700">
-                      {facilityCompany.company?.name || "N/A"}
-                    </p>
                   </div>
                 </div>
               </div>
 
               {/* 2. ADDRESS */}
-              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-                <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
-                  <div className="h-10 w-10 rounded-xl bg-orange-50 flex items-center justify-center border border-orange-100 text-orange-600">
+              <div
+                className="rounded-2xl p-6"
+                style={{
+                  background: "var(--facility-surface)",
+                  border: "1px solid var(--facility-border)",
+                  boxShadow: "var(--facility-shadow)",
+                }}
+              >
+                <div
+                  className="flex items-center gap-3 mb-6 pb-4"
+                  style={{ borderBottom: "1px solid var(--facility-border)" }}
+                >
+                  <div
+                    className="h-10 w-10 rounded-xl flex items-center justify-center"
+                    style={{
+                      background: "var(--facility-icon-bg)",
+                      color: "var(--facility-icon-text)",
+                    }}
+                  >
                     <MapPin size={20} strokeWidth={2.5} />
                   </div>
                   <div>
-                    <h2 className="text-sm font-black text-slate-800 uppercase tracking-[0.15em]">
+                    <h2
+                      className="text-sm font-black uppercase tracking-[0.15em]"
+                      style={{ color: "var(--facility-title)" }}
+                    >
                       Location
                     </h2>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1 opacity-80">
+                    <p
+                      className="text-[10px] font-bold uppercase tracking-widest mt-1 opacity-80"
+                      style={{ color: "var(--facility-muted-text)" }}
+                    >
                       Headquarters Address
                     </p>
                   </div>
                 </div>
 
                 <div className="space-y-4">
-                  <div className="p-4 bg-slate-50/50 rounded-xl border border-slate-100">
-                    <p className="text-sm font-medium text-slate-600 leading-relaxed">
+                  <div
+                    className="p-4 rounded-xl"
+                    style={{
+                      background: "var(--facility-muted-bg)",
+                      border: "1px solid var(--facility-border)",
+                    }}
+                  >
+                    <p
+                      className="text-sm leading-relaxed"
+                      style={{ color: "var(--facility-muted-text)" }}
+                    >
                       {facilityCompany.address || "No address provided"}
                     </p>
                   </div>
+
                   <div className="grid grid-cols-3 gap-4">
-                    <div>
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                        City
-                      </label>
-                      <p className="text-sm font-bold text-slate-700">
-                        {facilityCompany.city || "N/A"}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                        State
-                      </label>
-                      <p className="text-sm font-bold text-slate-700">
-                        {facilityCompany.state || "N/A"}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                        Pincode
-                      </label>
-                      <p className="text-sm font-bold text-slate-700 font-mono">
-                        {facilityCompany.pincode || "N/A"}
-                      </p>
-                    </div>
+                    {[
+                      ["City", facilityCompany.city],
+                      ["State", facilityCompany.state],
+                      ["Pincode", facilityCompany.pincode],
+                    ].map(([label, value]) => (
+                      <div key={label}>
+                        <label
+                          className="text-[10px] font-bold uppercase tracking-wider block mb-1"
+                          style={{ color: "var(--facility-muted-text)" }}
+                        >
+                          {label}
+                        </label>
+                        <p
+                          className="text-sm font-bold font-mono"
+                          style={{ color: "var(--facility-title)" }}
+                        >
+                          {value || "N/A"}
+                        </p>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
 
               {/* 3. BUSINESS & LEGAL */}
-              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-                <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
-                  <div className="h-10 w-10 rounded-xl bg-teal-50 flex items-center justify-center border border-teal-100 text-teal-600">
+              <div
+                className="rounded-2xl p-6"
+                style={{
+                  background: "var(--facility-surface)",
+                  border: "1px solid var(--facility-border)",
+                  boxShadow: "var(--facility-shadow)",
+                }}
+              >
+                <div
+                  className="flex items-center gap-3 mb-6 pb-4"
+                  style={{ borderBottom: "1px solid var(--facility-border)" }}
+                >
+                  <div
+                    className="h-10 w-10 rounded-xl flex items-center justify-center"
+                    style={{
+                      background: "var(--facility-icon-bg)",
+                      color: "var(--facility-icon-text)",
+                    }}
+                  >
                     <Shield size={20} strokeWidth={2.5} />
                   </div>
                   <div>
-                    <h2 className="text-sm font-black text-slate-800 uppercase tracking-[0.15em]">
+                    <h2
+                      className="text-sm font-black uppercase tracking-[0.15em]"
+                      style={{ color: "var(--facility-title)" }}
+                    >
                       Legal Details
                     </h2>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1 opacity-80">
+                    <p
+                      className="text-[10px] font-bold uppercase tracking-widest mt-1 opacity-80"
+                      style={{ color: "var(--facility-muted-text)" }}
+                    >
                       Registration & Compliance
                     </p>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-6 gap-x-8">
+                  {[
+                    ["GST / Reg Number", facilityCompany.registration_number],
+                    ["PAN Number", facilityCompany.pan_number],
+                    ["License Number", facilityCompany.license_number],
+                  ].map(([label, value]) => (
+                    <div key={label}>
+                      <label
+                        className="text-[10px] font-bold uppercase tracking-wider block mb-1"
+                        style={{ color: "var(--facility-muted-text)" }}
+                      >
+                        {label}
+                      </label>
+                      <p
+                        className="text-sm font-bold font-mono"
+                        style={{ color: "var(--facility-title)" }}
+                      >
+                        {value || "—"}
+                      </p>
+                    </div>
+                  ))}
+
                   <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                      GST / Reg Number
-                    </label>
-                    <p className="text-sm font-bold text-slate-700 font-mono tracking-wide">
-                      {facilityCompany.registration_number || "—"}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                      PAN Number
-                    </label>
-                    <p className="text-sm font-bold text-slate-700 font-mono tracking-wide">
-                      {facilityCompany.pan_number || "—"}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                      License Number
-                    </label>
-                    <p className="text-sm font-medium text-slate-700">
-                      {facilityCompany.license_number || "—"}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                    <label
+                      className="text-[10px] font-bold uppercase tracking-wider block mb-1"
+                      style={{ color: "var(--facility-muted-text)" }}
+                    >
                       License Expiry
                     </label>
                     <p
-                      className={`text-sm font-bold ${new Date(facilityCompany.license_expiry_date) < new Date() ? "text-red-500" : "text-emerald-600"}`}
+                      className="text-sm font-bold"
+                      style={{
+                        color:
+                          new Date(facilityCompany.license_expiry_date) < new Date()
+                            ? "var(--facility-status-inactive-text)"
+                            : "var(--facility-status-active-text)",
+                      }}
                     >
                       {formatDate(facilityCompany.license_expiry_date)}
                     </p>
@@ -830,110 +981,198 @@ export default function ViewFacilityCompanyPage() {
               </div>
             </div>
 
+
             {/* RIGHT COLUMN - CONTACT & CONTRACT */}
             <div className="space-y-6">
               {/* 4. CONTACT PERSON */}
-              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-                <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
-                  <div className="h-10 w-10 rounded-xl bg-purple-50 flex items-center justify-center border border-purple-100 text-purple-600">
+              <div
+                className="rounded-2xl p-6"
+                style={{
+                  background: "var(--facility-surface)",
+                  border: "1px solid var(--facility-border)",
+                  boxShadow: "var(--facility-shadow)",
+                }}
+              >
+                <div
+                  className="flex items-center gap-3 mb-6 pb-4"
+                  style={{ borderBottom: "1px solid var(--facility-border)" }}
+                >
+                  <div
+                    className="h-10 w-10 rounded-xl flex items-center justify-center"
+                    style={{
+                      background: "var(--facility-icon-bg)",
+                      color: "var(--facility-icon-text)",
+                    }}
+                  >
                     <User size={20} strokeWidth={2.5} />
                   </div>
                   <div>
-                    <h2 className="text-sm font-black text-slate-800 uppercase tracking-[0.15em]">
+                    <h2
+                      className="text-sm font-black uppercase tracking-[0.15em]"
+                      style={{ color: "var(--facility-title)" }}
+                    >
                       Primary Contact
                     </h2>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1 opacity-80">
+                    <p
+                      className="text-[10px] font-bold uppercase tracking-widest mt-1 opacity-80"
+                      style={{ color: "var(--facility-muted-text)" }}
+                    >
                       Representative
                     </p>
                   </div>
                 </div>
 
                 <div className="space-y-4">
-                  <div className="flex items-center gap-3 p-3 bg-purple-50/50 rounded-xl border border-purple-100">
-                    <div className="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-bold text-sm">
+                  {/* Contact card */}
+                  <div
+                    className="flex items-center gap-3 p-3 rounded-xl"
+                    style={{
+                      background: "var(--facility-muted-bg)",
+                      border: "1px solid var(--facility-border)",
+                    }}
+                  >
+                    <div
+                      className="h-10 w-10 rounded-full flex items-center justify-center font-bold text-sm"
+                      style={{
+                        background: "var(--facility-icon-bg)",
+                        color: "var(--facility-icon-text)",
+                      }}
+                    >
                       {facilityCompany.contact_person_name?.charAt(0)}
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-slate-800">
+                      <p
+                        className="text-sm font-bold"
+                        style={{ color: "var(--facility-title)" }}
+                      >
                         {facilityCompany.contact_person_name}
                       </p>
-                      <p className="text-[10px] font-bold text-purple-500 uppercase tracking-wide">
+                      <p
+                        className="text-[10px] font-bold uppercase tracking-wide"
+                        style={{ color: "var(--facility-muted-text)" }}
+                      >
                         Key Contact
                       </p>
                     </div>
                   </div>
 
+                  {/* Contact details */}
                   <div className="space-y-3 pt-2">
-                    <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100">
-                      <div className="flex items-center gap-3">
-                        <Phone size={16} className="text-slate-400" />
-                        <span className="text-xs font-medium text-slate-600">
-                          {facilityCompany.contact_person_phone || "N/A"}
+                    {[
+                      [Phone, facilityCompany.contact_person_phone],
+                      [Mail, facilityCompany.contact_person_email],
+                    ].map(([Icon, value], i) => (
+                      <div
+                        key={i}
+                        className="flex items-center gap-3 p-3 rounded-lg"
+                        style={{
+                          background: "var(--facility-muted-bg)",
+                          border: "1px solid var(--facility-border)",
+                        }}
+                      >
+                        <Icon size={16} style={{ color: "var(--facility-muted-text)" }} />
+                        <span
+                          className="text-xs font-medium truncate"
+                          style={{ color: "var(--facility-title)" }}
+                        >
+                          {value || "N/A"}
                         </span>
                       </div>
-                    </div>
-                    <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100">
-                      <div className="flex items-center gap-3">
-                        <Mail size={16} className="text-slate-400" />
-                        <span className="text-xs font-medium text-slate-600 truncate max-w-[180px]">
-                          {facilityCompany.contact_person_email || "N/A"}
-                        </span>
-                      </div>
-                    </div>
+                    ))}
                   </div>
                 </div>
               </div>
 
               {/* 5. CONTRACT DETAILS */}
-              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-                <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
-                  <div className="h-10 w-10 rounded-xl bg-indigo-50 flex items-center justify-center border border-indigo-100 text-indigo-600">
+              <div
+                className="rounded-2xl p-6"
+                style={{
+                  background: "var(--facility-surface)",
+                  border: "1px solid var(--facility-border)",
+                  boxShadow: "var(--facility-shadow)",
+                }}
+              >
+                <div
+                  className="flex items-center gap-3 mb-6 pb-4"
+                  style={{ borderBottom: "1px solid var(--facility-border)" }}
+                >
+                  <div
+                    className="h-10 w-10 rounded-xl flex items-center justify-center"
+                    style={{
+                      background: "var(--facility-icon-bg)",
+                      color: "var(--facility-icon-text)",
+                    }}
+                  >
                     <Briefcase size={20} strokeWidth={2.5} />
                   </div>
                   <div>
-                    <h2 className="text-sm font-black text-slate-800 uppercase tracking-[0.15em]">
+                    <h2
+                      className="text-sm font-black uppercase tracking-[0.15em]"
+                      style={{ color: "var(--facility-title)" }}
+                    >
                       Contract Info
                     </h2>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1 opacity-80">
+                    <p
+                      className="text-[10px] font-bold uppercase tracking-widest mt-1 opacity-80"
+                      style={{ color: "var(--facility-muted-text)" }}
+                    >
                       Duration & Terms
                     </p>
                   </div>
                 </div>
 
                 <div className="space-y-4">
-                  <div className="flex justify-between items-center p-3 bg-slate-50/50 rounded-xl">
-                    <span className="text-xs font-bold text-slate-500 uppercase">
-                      Start Date
-                    </span>
-                    <span className="text-sm font-bold text-slate-700">
-                      {formatDate(facilityCompany.contract_start_date)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-slate-50/50 rounded-xl">
-                    <span className="text-xs font-bold text-slate-500 uppercase">
-                      End Date
-                    </span>
-                    <span className="text-sm font-bold text-slate-700">
-                      {formatDate(facilityCompany.contract_end_date)}
-                    </span>
-                  </div>
+                  {[
+                    ["Start Date", facilityCompany.contract_start_date],
+                    ["End Date", facilityCompany.contract_end_date],
+                  ].map(([label, date]) => (
+                    <div
+                      key={label}
+                      className="flex justify-between items-center p-3 rounded-xl"
+                      style={{ background: "var(--facility-muted-bg)" }}
+                    >
+                      <span
+                        className="text-xs font-bold uppercase"
+                        style={{ color: "var(--facility-muted-text)" }}
+                      >
+                        {label}
+                      </span>
+                      <span
+                        className="text-sm font-bold"
+                        style={{ color: "var(--facility-title)" }}
+                      >
+                        {formatDate(date)}
+                      </span>
+                    </div>
+                  ))}
 
                   {facilityCompany.description && (
-                    <div className="mt-4 pt-4 border-t border-slate-100">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">
+                    <div
+                      className="mt-4 pt-4"
+                      style={{ borderTop: "1px solid var(--facility-border)" }}
+                    >
+                      <label
+                        className="text-[10px] font-bold uppercase tracking-wider block mb-2"
+                        style={{ color: "var(--facility-muted-text)" }}
+                      >
                         Notes / Description
                       </label>
-                      <p className="text-xs text-slate-600 italic leading-relaxed">
-                        "{facilityCompany.description}"
+                      <p
+                        className="text-xs italic leading-relaxed"
+                        style={{ color: "var(--facility-muted-text)" }}
+                      >
+                        &quot;{facilityCompany.description}&quot;
                       </p>
                     </div>
                   )}
                 </div>
               </div>
             </div>
+
           </div>
         </div>
       </div>
     </>
   );
 }
+

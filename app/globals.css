@@ -299,6 +299,48 @@
   /* Muted */
   --facility-muted-bg: #f8fafc;
   --facility-muted-text: #64748b;
+
+  /* ===============================
+   REPORTS PAGE – LIGHT MODE
+   =============================== */
+
+  /* Page background */
+  --report-bg: #f8fafc;
+
+  /* Surface / cards */
+  --report-surface: #ffffff;
+  --report-border: #e5e7eb;
+  --report-shadow: 0 8px 24px rgba(16, 24, 40, 0.06);
+
+  /* Header */
+  --report-title: #0f172a;
+  --report-subtitle: #64748b;
+
+  /* Sidebar */
+  --report-sidebar-bg: #ffffff;
+  --report-sidebar-hover: #f1f5f9;
+  --report-sidebar-active-bg: #ecfdf5;
+  --report-sidebar-active-border: #a7f3d0;
+  --report-sidebar-active-text: #047857;
+
+  /* Inputs / dropdowns */
+  --report-input-bg: #f3f4f6;
+  --report-input-border: #e5e7eb;
+  --report-input-text: #1f2937;
+  --report-input-placeholder: #94a3b8;
+  --report-input-focus: #4f46e5;
+
+  /* Section divider */
+  --report-divider: #e5e7eb;
+
+  /* Buttons */
+  --report-btn-secondary-bg: transparent;
+  --report-btn-secondary-border: #e5e7eb;
+  --report-btn-secondary-text: #334155;
+
+  --report-btn-primary-bg: linear-gradient(90deg, #fb923c, #f59e0b);
+  --report-btn-primary-hover-bg: linear-gradient(90deg, #f97316, #d97706);
+  --report-btn-primary-text: #ffffff;
 }
 
 html[data-theme="dark"] {
@@ -607,6 +649,47 @@ html[data-theme="dark"] {
   /* Muted */
   --facility-muted-bg: rgba(255, 255, 255, 0.04);
   --facility-muted-text: #94a3b8;
+
+  /* ===============================
+   REPORTS PAGE – DARK MODE
+   =============================== */
+
+  --report-bg: #020617;
+
+  /* Surface / cards */
+  --report-surface: #020617;
+  --report-border: rgba(255, 255, 255, 0.08);
+  --report-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+
+  /* Header */
+  --report-title: #f8fafc;
+  --report-subtitle: #94a3b8;
+
+  /* Sidebar */
+  --report-sidebar-bg: #020617;
+  --report-sidebar-hover: rgba(255, 255, 255, 0.04);
+  --report-sidebar-active-bg: #064e3b;
+  --report-sidebar-active-border: #065f46;
+  --report-sidebar-active-text: #6ee7b7;
+
+  /* Inputs / dropdowns */
+  --report-input-bg: #0f172a;
+  --report-input-border: rgba(255, 255, 255, 0.12);
+  --report-input-text: #e5e7eb;
+  --report-input-placeholder: #64748b;
+  --report-input-focus: #6366f1;
+
+  /* Section divider */
+  --report-divider: rgba(255, 255, 255, 0.08);
+
+  /* Buttons */
+  --report-btn-secondary-bg: rgba(255, 255, 255, 0.04);
+  --report-btn-secondary-border: rgba(255, 255, 255, 0.12);
+  --report-btn-secondary-text: #e5e7eb;
+
+  --report-btn-primary-bg: linear-gradient(90deg, #fbbf24, #f59e0b);
+  --report-btn-primary-hover-bg: linear-gradient(90deg, #f59e0b, #d97706);
+  --report-btn-primary-text: #020617;
 }
 
 .action {

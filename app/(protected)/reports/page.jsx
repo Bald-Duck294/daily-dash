@@ -1074,31 +1074,82 @@ const getTodayDate = () => {
 const NoDataModal = ({ isOpen, onClose, filters }) => {
   if (!isOpen) return null;
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full animate-in fade-in zoom-in duration-200">
-        <div className="flex items-center justify-between p-6 border-b border-slate-100">
+    <div
+      className="
+    fixed inset-0
+    flex items-center justify-center
+    z-50 p-4
+    bg-black/50 backdrop-blur-sm
+  "
+    >
+      <div
+        className="
+      max-w-md w-full
+      rounded-2xl
+      animate-in fade-in zoom-in duration-200
+      bg-[var(--surface)]
+      border border-[var(--border)]
+      shadow-[var(--card-shadow)]
+    "
+      >
+        {/* Header */}
+        <div
+          className="
+        flex items-center justify-between
+        p-6
+        border-b border-[var(--border)]
+      "
+        >
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-amber-50 rounded-xl">
-              <AlertCircle className="w-6 h-6 text-amber-500" />
+            <div
+              className="
+            p-2 rounded-xl
+            bg-[var(--accent-yellow)]
+          "
+            >
+              <AlertCircle className="w-6 h-6 text-[var(--washroom-primary)]" />
             </div>
-            <h2 className="text-lg font-bold text-slate-800">No Data Found</h2>
+            <h2 className="text-lg font-bold text-[var(--foreground)]">
+              No Data Found
+            </h2>
           </div>
+
           <button
             onClick={onClose}
-            className="p-2 hover:bg-slate-50 rounded-full transition-colors"
+            className="
+          p-2 rounded-full
+          transition-colors
+          hover:bg-[var(--muted)]
+        "
           >
-            <X className="w-5 h-5 text-slate-400" />
+            <X className="w-5 h-5 text-[var(--muted-foreground)]" />
           </button>
         </div>
+
+        {/* Body */}
         <div className="p-6">
-          <p className="text-slate-600 text-sm mb-4">
+          <p className="text-sm mb-4 text-[var(--muted-foreground)]">
             No records found for the selected filters.
           </p>
-          <div className="bg-slate-50 rounded-xl p-4 mb-4 border border-slate-100">
-            <p className="text-[10px] uppercase tracking-widest font-bold text-slate-400 mb-2">
+
+          <div
+            className="
+          rounded-xl p-4 mb-4
+          bg-[var(--muted)]
+          border border-[var(--border)]
+        "
+          >
+            <p
+              className="
+            text-[10px] mb-2
+            uppercase tracking-widest font-bold
+            text-[var(--muted-foreground)]
+          "
+            >
               Current Filters
             </p>
-            <div className="space-y-1 text-sm text-slate-700">
+
+            <div className="space-y-1 text-sm text-[var(--foreground)]">
               {filters.dateRange && (
                 <p>
                   <span className="font-semibold">Date:</span>{" "}
@@ -1119,9 +1170,17 @@ const NoDataModal = ({ isOpen, onClose, filters }) => {
               )}
             </div>
           </div>
+
           <button
             onClick={onClose}
-            className="w-full py-3 bg-slate-800 text-white rounded-xl font-bold text-sm hover:bg-slate-900 transition-all"
+            className="
+          w-full py-3 rounded-xl
+          font-bold text-sm
+          transition-all
+          bg-[var(--primary)]
+          text-[var(--primary-foreground)]
+          hover:opacity-90
+        "
           >
             Adjust Filters
           </button>
@@ -1443,84 +1502,146 @@ export default function ReportsPage() {
     <>
       <Toaster position="top-right" />
 
-      <div className="min-h-screen bg-slate-50 p-4 md:p-8 font-sans">
+      <div
+        className="
+    min-h-screen
+    p-4 md:p-8
+    font-sans
+    bg-[var(--background)]
+  "
+      >
+
         <div className="max-w-[1400px] mx-auto space-y-6">
           {/* Page Header */}
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-white border border-slate-200 rounded-xl shadow-sm">
-                <FileText className="w-6 h-6 text-blue-600" />
+              <div
+                className="
+        p-3 rounded-xl
+        bg-[var(--report-surface)]
+        border border-[var(--report-border)]
+        shadow-[var(--report-shadow)]
+      "
+              >
+                <FileText className="w-6 h-6 text-[var(--primary)]" />
               </div>
+
               <div>
-                <h1 className="text-2xl font-bold text-slate-800">
+                <h1 className="text-2xl font-bold text-[var(--report-title)]">
                   ANALYTICS REPORTS
                 </h1>
-                <p className="text-sm text-slate-500 font-medium mt-1">
+                <p className="text-sm font-medium mt-1 text-[var(--report-subtitle)]">
                   Select a module and configure parameters to generate insights
                 </p>
               </div>
             </div>
           </div>
 
+
           {/* Main Grid Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* LEFT COLUMN: Sidebar Selection */}
             <div className="lg:col-span-4 xl:col-span-3">
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-2 sticky top-6">
+              <div
+                className="
+      rounded-2xl p-2 sticky top-6
+      bg-[var(--report-surface)]
+      border border-[var(--report-border)]
+      shadow-[var(--report-shadow)]
+    "
+              >
                 <div className="flex items-center gap-2 px-4 py-3 mb-2">
-                  <Filter size={16} className="text-slate-400" />
-                  <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">
+                  <Filter size={16} className="text-[var(--report-subtitle)]" />
+                  <span className="text-[11px] font-black uppercase tracking-widest text-[var(--report-subtitle)]">
                     Report Modules
                   </span>
                 </div>
+
                 <div className="space-y-1">
-                  {REPORT_TYPES.map((report) => (
-                    <button
-                      key={report.value}
-                      onClick={() => {
-                        setSelectedReportType(report.value);
-                        handleReset();
-                      }}
-                      className={`w-full group px-4 py-4 rounded-xl border transition-all flex items-center justify-between outline-none text-left ${
-                        selectedReportType === report.value
-                          ? "bg-emerald-50 border-emerald-100 text-emerald-700 shadow-sm"
-                          : "bg-transparent border-transparent text-slate-600 hover:bg-slate-50"
-                      }`}
-                    >
-                      <span className="text-xs font-bold tracking-tight">
-                        {report.label}
-                      </span>
-                      {selectedReportType === report.value ? (
-                        <Check size={16} className="text-emerald-600" />
-                      ) : (
-                        <ChevronRight
-                          size={16}
-                          className="text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity"
-                        />
-                      )}
-                    </button>
-                  ))}
+                  {REPORT_TYPES.map((report) => {
+                    const isActive = selectedReportType === report.value;
+
+                    return (
+                      <button
+                        key={report.value}
+                        onClick={() => {
+                          setSelectedReportType(report.value);
+                          handleReset();
+                        }}
+                        className={`
+              w-full px-4 py-4 rounded-xl border transition-all
+              flex items-center justify-between text-left outline-none
+              ${isActive
+                            ? `
+                    bg-[var(--report-sidebar-active-bg)]
+                    border-[var(--report-sidebar-active-border)]
+                    text-[var(--report-sidebar-active-text)]
+                    shadow-[var(--report-shadow)]
+                  `
+                            : `
+                    bg-transparent
+                    border-transparent
+                    text-[var(--foreground)]
+                    hover:bg-[var(--report-sidebar-hover)]
+                  `
+                          }
+            `}
+                      >
+                        <span className="text-xs font-bold tracking-tight">
+                          {report.label}
+                        </span>
+
+                        {isActive ? (
+                          <Check
+                            size={16}
+                            className="text-[var(--report-sidebar-active-text)]"
+                          />
+                        ) : (
+                          <ChevronRight
+                            size={16}
+                            className="
+                  text-[var(--muted-foreground)]
+                  opacity-0 group-hover:opacity-100
+                  transition-opacity
+                "
+                          />
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </div>
 
+
             {/* RIGHT COLUMN: Configuration Card */}
             <div className="lg:col-span-8 xl:col-span-9">
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 md:p-8 h-full">
+              <div
+                className="
+      h-full p-6 md:p-8 rounded-2xl
+      bg-[var(--report-surface)]
+      border border-[var(--report-border)]
+      shadow-[var(--report-shadow)]
+    "
+              >
                 {/* Config Header */}
-                <div className="flex items-center gap-3 mb-8 pb-6 border-b border-slate-100">
-                  <div className="p-2 bg-indigo-50 rounded-lg">
-                    <Settings2 size={20} className="text-indigo-600" />
+                <div
+                  className="
+        flex items-center gap-3 mb-8 pb-6
+        border-b border-[var(--report-divider)]
+      "
+                >
+                  <div className="p-2 rounded-lg bg-[var(--muted)]">
+                    <Settings2 size={20} className="text-[var(--primary)]" />
                   </div>
                   <div>
-                    <h2 className="text-sm font-black text-slate-800 uppercase">
+                    <h2 className="text-sm font-black uppercase text-[var(--report-title)]">
                       Configure{" "}
                       {
-                        REPORT_TYPES.find((r) => r.value === selectedReportType)
-                          ?.label
+                        REPORT_TYPES.find((r) => r.value === selectedReportType)?.label
                       }
                     </h2>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+                    <p className="text-[10px] font-bold uppercase tracking-widest mt-0.5 text-[var(--report-subtitle)]">
                       Define your filters
                     </p>
                   </div>
@@ -1528,6 +1649,7 @@ export default function ReportsPage() {
 
                 {/* Filters Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 mb-8">
+
                   {/* Zone Selection */}
                   {flag &&
                     (selectedReportType === "daily_task" ||
@@ -1535,14 +1657,21 @@ export default function ReportsPage() {
                       selectedReportType === "zone_wise") &&
                     isPermitted && (
                       <div className="space-y-2">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide flex items-center gap-2">
-                          <MapPin size={14} className="text-indigo-400" /> Zone
+                        <label className="text-[11px] font-bold uppercase tracking-wide flex items-center gap-2 text-[var(--report-subtitle)]">
+                          <MapPin size={14} className="text-[var(--primary)]" /> Zone
                         </label>
                         <div className="relative">
                           <select
                             value={selectedZone}
                             onChange={(e) => setSelectedZone(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none appearance-none transition-all"
+                            className="
+                  w-full px-4 py-3 text-sm font-medium rounded-xl
+                  bg-[var(--report-input-bg)]
+                  border border-[var(--report-input-border)]
+                  text-[var(--report-input-text)]
+                  focus:border-[var(--report-input-focus)]
+                  outline-none appearance-none transition-all
+                "
                           >
                             <option value="">All Zones</option>
                             {zones.map((z) => (
@@ -1552,8 +1681,8 @@ export default function ReportsPage() {
                             ))}
                           </select>
                           <ChevronDown
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
                             size={16}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--report-input-placeholder)] pointer-events-none"
                           />
                         </div>
                       </div>
@@ -1566,37 +1695,45 @@ export default function ReportsPage() {
                     "washroom_report",
                     "cleaner_report",
                   ].includes(selectedReportType) && (
-                    <div className="space-y-2">
-                      <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide flex items-center gap-2">
-                        <MapPin size={14} className="text-indigo-400" />{" "}
-                        Location{" "}
-                        {loadingLocations && (
-                          <Loader2 size={12} className="animate-spin ml-2" />
-                        )}
-                      </label>
-                      <div className="relative">
-                        <select
-                          value={selectedLocation}
-                          onChange={(e) => setSelectedLocation(e.target.value)}
-                          disabled={loadingLocations}
-                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none appearance-none transition-all disabled:opacity-60"
-                        >
-                          <option value="">
-                            {loadingLocations ? "Loading..." : "All Locations"}
-                          </option>
-                          {locations.map((l) => (
-                            <option key={l.id} value={l.id}>
-                              {l.display_name}
+                      <div className="space-y-2">
+                        <label className="text-[11px] font-bold uppercase tracking-wide flex items-center gap-2 text-[var(--report-subtitle)]">
+                          <MapPin size={14} className="text-[var(--primary)]" />
+                          Location
+                          {loadingLocations && (
+                            <Loader2 size={12} className="animate-spin ml-2" />
+                          )}
+                        </label>
+                        <div className="relative">
+                          <select
+                            value={selectedLocation}
+                            onChange={(e) => setSelectedLocation(e.target.value)}
+                            disabled={loadingLocations}
+                            className="
+                w-full px-4 py-3 text-sm font-medium rounded-xl
+                bg-[var(--report-input-bg)]
+                border border-[var(--report-input-border)]
+                text-[var(--report-input-text)]
+                focus:border-[var(--report-input-focus)]
+                outline-none appearance-none transition-all
+                disabled:opacity-60
+              "
+                          >
+                            <option value="">
+                              {loadingLocations ? "Loading..." : "All Locations"}
                             </option>
-                          ))}
-                        </select>
-                        <ChevronDown
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
-                          size={16}
-                        />
+                            {locations.map((l) => (
+                              <option key={l.id} value={l.id}>
+                                {l.display_name}
+                              </option>
+                            ))}
+                          </select>
+                          <ChevronDown
+                            size={16}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--report-input-placeholder)] pointer-events-none"
+                          />
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
                   {/* Cleaner Selection */}
                   {[
@@ -1604,36 +1741,45 @@ export default function ReportsPage() {
                     "cleaner_report",
                     "detailed_cleaning",
                   ].includes(selectedReportType) && (
-                    <div className="space-y-2">
-                      <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide flex items-center gap-2">
-                        <Users size={14} className="text-indigo-400" /> Cleaner{" "}
-                        {loadingCleaners && (
-                          <Loader2 size={12} className="animate-spin ml-2" />
-                        )}
-                      </label>
-                      <div className="relative">
-                        <select
-                          value={selectedCleaner}
-                          onChange={(e) => setSelectedCleaner(e.target.value)}
-                          disabled={loadingCleaners}
-                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none appearance-none transition-all disabled:opacity-60"
-                        >
-                          <option value="">
-                            {loadingCleaners ? "Loading..." : "All Cleaners"}
-                          </option>
-                          {cleaners.map((c) => (
-                            <option key={c.id} value={c.id}>
-                              {c.name}
+                      <div className="space-y-2">
+                        <label className="text-[11px] font-bold uppercase tracking-wide flex items-center gap-2 text-[var(--report-subtitle)]">
+                          <Users size={14} className="text-[var(--primary)]" />
+                          Cleaner
+                          {loadingCleaners && (
+                            <Loader2 size={12} className="animate-spin ml-2" />
+                          )}
+                        </label>
+                        <div className="relative">
+                          <select
+                            value={selectedCleaner}
+                            onChange={(e) => setSelectedCleaner(e.target.value)}
+                            disabled={loadingCleaners}
+                            className="
+                w-full px-4 py-3 text-sm font-medium rounded-xl
+                bg-[var(--report-input-bg)]
+                border border-[var(--report-input-border)]
+                text-[var(--report-input-text)]
+                focus:border-[var(--report-input-focus)]
+                outline-none appearance-none transition-all
+                disabled:opacity-60
+              "
+                          >
+                            <option value="">
+                              {loadingCleaners ? "Loading..." : "All Cleaners"}
                             </option>
-                          ))}
-                        </select>
-                        <ChevronDown
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
-                          size={16}
-                        />
+                            {cleaners.map((c) => (
+                              <option key={c.id} value={c.id}>
+                                {c.name}
+                              </option>
+                            ))}
+                          </select>
+                          <ChevronDown
+                            size={16}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--report-input-placeholder)] pointer-events-none"
+                          />
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
                   {/* Status Selection */}
                   {[
@@ -1642,34 +1788,41 @@ export default function ReportsPage() {
                     "cleaner_report",
                     "detailed_cleaning",
                   ].includes(selectedReportType) && (
-                    <div className="space-y-2">
-                      <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide flex items-center gap-2">
-                        <Activity size={14} className="text-indigo-400" />{" "}
-                        Status
-                      </label>
-                      <div className="relative">
-                        <select
-                          value={statusFilter}
-                          onChange={(e) => setStatusFilter(e.target.value)}
-                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none appearance-none transition-all"
-                        >
-                          <option value="all">All Status</option>
-                          <option value="completed">Completed</option>
-                          <option value="ongoing">Ongoing</option>
-                        </select>
-                        <ChevronDown
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
-                          size={16}
-                        />
+                      <div className="space-y-2">
+                        <label className="text-[11px] font-bold uppercase tracking-wide flex items-center gap-2 text-[var(--report-subtitle)]">
+                          <Activity size={14} className="text-[var(--primary)]" />
+                          Status
+                        </label>
+                        <div className="relative">
+                          <select
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                            className="
+                w-full px-4 py-3 text-sm font-medium rounded-xl
+                bg-[var(--report-input-bg)]
+                border border-[var(--report-input-border)]
+                text-[var(--report-input-text)]
+                focus:border-[var(--report-input-focus)]
+                outline-none appearance-none transition-all
+              "
+                          >
+                            <option value="all">All Status</option>
+                            <option value="completed">Completed</option>
+                            <option value="ongoing">Ongoing</option>
+                          </select>
+                          <ChevronDown
+                            size={16}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--report-input-placeholder)] pointer-events-none"
+                          />
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
                   {/* Date Pickers */}
                   {selectedReportType === "detailed_cleaning" ? (
                     <div className="space-y-2">
-                      <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide flex items-center gap-2">
-                        <Calendar size={14} className="text-indigo-400" />{" "}
+                      <label className="text-[11px] font-bold uppercase tracking-wide flex items-center gap-2 text-[var(--report-subtitle)]">
+                        <Calendar size={14} className="text-[var(--primary)]" />
                         Select Date
                       </label>
                       <input
@@ -1677,14 +1830,21 @@ export default function ReportsPage() {
                         value={detailedReportDate}
                         max={todayDate}
                         onChange={handleDetailedReportDateChange}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                        className="
+              w-full px-4 py-3 text-sm font-medium rounded-xl
+              bg-[var(--report-input-bg)]
+              border border-[var(--report-input-border)]
+              text-[var(--report-input-text)]
+              focus:border-[var(--report-input-focus)]
+              outline-none transition-all
+            "
                       />
                     </div>
                   ) : (
                     <>
                       <div className="space-y-2">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide flex items-center gap-2">
-                          <Calendar size={14} className="text-indigo-400" />{" "}
+                        <label className="text-[11px] font-bold uppercase tracking-wide flex items-center gap-2 text-[var(--report-subtitle)]">
+                          <Calendar size={14} className="text-[var(--primary)]" />
                           Start Date
                         </label>
                         <input
@@ -1692,13 +1852,21 @@ export default function ReportsPage() {
                           value={startDate}
                           max={endDate || todayDate}
                           onChange={handleStartDateChange}
-                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                          className="
+                w-full px-4 py-3 text-sm font-medium rounded-xl
+                bg-[var(--report-input-bg)]
+                border border-[var(--report-input-border)]
+                text-[var(--report-input-text)]
+                focus:border-[var(--report-input-focus)]
+                outline-none transition-all
+              "
                         />
                       </div>
+
                       <div className="space-y-2">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide flex items-center gap-2">
-                          <Calendar size={14} className="text-indigo-400" /> End
-                          Date
+                        <label className="text-[11px] font-bold uppercase tracking-wide flex items-center gap-2 text-[var(--report-subtitle)]">
+                          <Calendar size={14} className="text-[var(--primary)]" />
+                          End Date
                         </label>
                         <input
                           type="date"
@@ -1710,7 +1878,14 @@ export default function ReportsPage() {
                               : todayDate
                           }
                           onChange={handleEndDateChange}
-                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                          className="
+                w-full px-4 py-3 text-sm font-medium rounded-xl
+                bg-[var(--report-input-bg)]
+                border border-[var(--report-input-border)]
+                text-[var(--report-input-text)]
+                focus:border-[var(--report-input-focus)]
+                outline-none transition-all
+              "
                         />
                       </div>
                     </>
@@ -1718,17 +1893,50 @@ export default function ReportsPage() {
                 </div>
 
                 {/* Footer Buttons */}
-                <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
+                <div
+                  className="
+        flex justify-end gap-3 pt-6
+        border-t border-[var(--report-divider)]
+      "
+                >
                   <button
                     onClick={handleReset}
-                    className="px-6 py-3 rounded-xl border border-slate-200 text-slate-600 font-bold text-[11px] uppercase tracking-widest hover:bg-slate-50 transition-all"
+                    className="
+          px-6 py-3 rounded-xl
+          border border-[var(--report-btn-secondary-border)]
+          bg-[var(--report-btn-secondary-bg)]
+          text-[var(--report-btn-secondary-text)]
+          font-bold text-[11px] uppercase tracking-widest
+          hover:bg-[var(--muted)]
+          transition-all
+        "
                   >
                     Reset Filters
                   </button>
+
                   <button
                     onClick={generateReport}
                     disabled={isLoading || !canViewReports}
-                    className="px-8 py-3 rounded-xl bg-[#FF9F1C] hover:bg-[#e68a00] text-white font-bold text-[11px] uppercase tracking-widest shadow-lg shadow-orange-100 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{
+                      backgroundImage: "var(--report-btn-primary-bg)",
+                    }}
+                    className="
+    px-8 py-3 rounded-xl
+    text-[var(--report-btn-primary-text)]
+    font-bold text-[11px] uppercase tracking-widest
+    shadow-[var(--report-shadow)]
+    transition-all
+    flex items-center gap-2
+    disabled:opacity-50 disabled:cursor-not-allowed
+  "
+                    onMouseEnter={(e) =>
+                    (e.currentTarget.style.backgroundImage =
+                      "var(--report-btn-primary-hover-bg)")
+                    }
+                    onMouseLeave={(e) =>
+                    (e.currentTarget.style.backgroundImage =
+                      "var(--report-btn-primary-bg)")
+                    }
                   >
                     {isLoading ? (
                       <Loader2 size={16} className="animate-spin" />
@@ -1740,6 +1948,7 @@ export default function ReportsPage() {
                 </div>
               </div>
             </div>
+
           </div>
         </div>
       </div>
