@@ -18,7 +18,7 @@ const persistConfig = {
 
 // ✅ Wrap auth reducer with persistReducer
 const persistedAuthReducer = persistReducer(persistConfig, authReducer);
-console.log("in main store");
+
 export const store = configureStore({
   reducer: {
     auth: persistedAuthReducer,

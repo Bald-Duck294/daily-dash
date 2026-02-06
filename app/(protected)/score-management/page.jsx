@@ -32,7 +32,13 @@ import {
   Maximize2,
 } from "lucide-react";
 import { MODULES } from "@/shared/constants/permissions.js";
-
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 const getScoreColor = (score) => {
   if (score >= 8) return "text-green-600";
   if (score >= 5) return "text-orange-500";
@@ -259,9 +265,8 @@ const PhotoModal = ({ photos, onClose }) => {
 
         {/* Image Label Badge */}
         <div
-          className={`absolute top-4 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded-full text-white font-semibold text-lg shadow-lg ${
-            currentPhoto.color === "blue" ? "bg-blue-500" : "bg-green-500"
-          }`}
+          className={`absolute top-4 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded-full text-white font-semibold text-lg shadow-lg ${currentPhoto.color === "blue" ? "bg-blue-500" : "bg-green-500"
+            }`}
         >
           {currentPhoto.label}
         </div>
@@ -338,13 +343,12 @@ const PhotoModal = ({ photos, onClose }) => {
               setCurrentIndex(idx);
               resetZoom();
             }}
-            className={`relative cursor-pointer flex-shrink-0 w-14 h-14 rounded overflow-hidden border-2 transition-all ${
-              idx === currentIndex
+            className={`relative cursor-pointer flex-shrink-0 w-14 h-14 rounded overflow-hidden border-2 transition-all ${idx === currentIndex
                 ? photo.color === "blue"
                   ? "border-blue-500 ring-2 ring-blue-400"
                   : "border-green-500 ring-2 ring-green-400"
                 : "border-gray-600 hover:border-gray-400"
-            }`}
+              }`}
           >
             <img
               src={photo.url}
@@ -353,9 +357,8 @@ const PhotoModal = ({ photos, onClose }) => {
               onError={(e) => (e.target.style.display = "none")}
             />
             <span
-              className={`absolute top-0.5 left-0.5 ${
-                photo.color === "blue" ? "bg-blue-500" : "bg-green-500"
-              } text-white px-1.5 py-0.5 text-[10px] font-bold rounded`}
+              className={`absolute top-0.5 left-0.5 ${photo.color === "blue" ? "bg-blue-500" : "bg-green-500"
+                } text-white px-1.5 py-0.5 text-[10px] font-bold rounded`}
             >
               {photo.label[0]}
             </span>
@@ -463,11 +466,10 @@ const EditableScoreCell = ({
       </span>
       <button
         onClick={handleEditClick}
-        className={`cursor-pointer p-1 rounded transition-colors ${
-          !canEdit || isOngoing
+        className={`cursor-pointer p-1 rounded transition-colors ${!canEdit || isOngoing
             ? "text-slate-300 cursor-not-allowed"
             : "text-slate-400 hover:text-indigo-600 hover:bg-indigo-50"
-        }`}
+          }`}
         title={
           !canEdit
             ? "No permission to edit"
@@ -681,7 +683,7 @@ export default function ScoreManagement() {
           {/* Header */}
           <div className="flex items-center gap-3">
             <Shield className="w-8 h-8" style={{ color: "var(--primary)" }} />
-            <h1 className="text-2xl font-bold">Score Management </h1>
+            <h1 className="text-2xl font-bold">Score Management</h1>
           </div>
 
           {/* Filters Card */}
@@ -701,46 +703,52 @@ export default function ScoreManagement() {
               />
               <input
                 placeholder="Search by cleaner name or location..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 rounded-lg border outline-none"
                 style={{
-                  background: "var(--background)",
-                  color: "var(--foreground)",
-                  borderColor: "var(--input)",
+                  background: "var(--report-input-bg)",
+                  color: "var(--report-input-text)",
+                  borderColor: "var(--report-input-border)",
                 }}
               />
             </div>
 
             {/* Company + Date */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Company */}
               <div>
-                <label className="text-xs font-medium mb-1 flex gap-1">
+                <label
+                  className="text-xs font-medium mb-1 flex gap-1"
+                  style={{ color: "var(--muted-foreground)" }}
+                >
                   <Building2 size={14} /> Company
                 </label>
-                <select
-                  value={companyFilter}
-                  onChange={(e) => setCompanyFilter(e.target.value)}
-                  className="
-    w-full px-3 py-2 rounded-lg
-    bg-background text-foreground
-    border border-border
-    focus:outline-none focus:ring-2 focus:ring-primary
-    dark:bg-background dark:text-foreground
-  "
-                >
-                  <option value="" disabled>
-                    Select company
-                  </option>
 
-                  {companies.map((company) => (
-                    <option key={company.id} value={company.id}>
-                      {company.name}
-                    </option>
-                  ))}
-                </select>
+                <Select value={companyFilter} onValueChange={setCompanyFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select company" />
+                  </SelectTrigger>
+
+                  <SelectContent>
+                    {companies.map((company) => (
+                      <SelectItem key={company.id} value={company.id}>
+                        {company.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
+              {/* Date */}
               <div>
-                <label className="text-xs font-medium mb-1 block">Date</label>
+                <label
+                  className="text-xs font-medium mb-1 block"
+                  style={{ color: "var(--muted-foreground)" }}
+                >
+                  Date
+                </label>
+
                 <div className="relative">
                   <Calendar
                     size={16}
@@ -752,60 +760,62 @@ export default function ScoreManagement() {
                     value={dateFilter}
                     onChange={(e) => setDateFilter(e.target.value)}
                     className="w-full pl-10 pr-3 py-2 rounded-lg border"
+                    style={{
+                      background: "var(--report-input-bg)",
+                      color: "var(--report-input-text)",
+                      borderColor: "var(--report-input-border)",
+                    }}
                   />
                 </div>
               </div>
             </div>
 
-            {/* Status / Scores / Range + Buttons */}
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-3 items-center">
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="
-    px-3 py-2 rounded-lg
-    bg-background text-foreground
-    border border-border
-    focus:outline-none focus:ring-2 focus:ring-primary
-  "
-              >
-                <option value="all">All Status</option>
-                <option value="completed">Completed</option>
-                <option value="ongoing">Ongoing</option>
-              </select>
+            {/* Status / Scores / Range + Reset */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 items-center">
+              {/* Status */}
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="ongoing">Ongoing</SelectItem>
+                </SelectContent>
+              </Select>
 
-              <select
-                value={modifiedFilter}
-                onChange={(e) => setModifiedFilter(e.target.value)}
-                className="px-3 py-2 rounded-lg border"
-              >
-                <option value="all">All Scores</option>
-                <option value="modified">Modified Only</option>
-                <option value="unmodified">Original Only</option>
-              </select>
+              {/* Modified */}
+              <Select value={modifiedFilter} onValueChange={setModifiedFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All Scores" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Scores</SelectItem>
+                  <SelectItem value="modified">Modified Only</SelectItem>
+                  <SelectItem value="unmodified">Original Only</SelectItem>
+                </SelectContent>
+              </Select>
 
-              <select
-                value={scoreFilter}
-                onChange={(e) => setScoreFilter(e.target.value)}
-                className="px-3 py-2 rounded-lg border"
-              >
-                <option value="all">Scores Range</option>
-                <option value="high">High (8–10)</option>
-                <option value="medium">Medium (5–7)</option>
-                <option value="low">Low (0–4)</option>
-              </select>
+              {/* Score Range */}
+              <Select value={scoreFilter} onValueChange={setScoreFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Scores Range" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Scores Range</SelectItem>
+                  <SelectItem value="high">High (8–10)</SelectItem>
+                  <SelectItem value="medium">Medium (5–7)</SelectItem>
+                  <SelectItem value="low">Low (0–4)</SelectItem>
+                </SelectContent>
+              </Select>
 
+              {/* Reset */}
               <button
                 className="px-4 py-2 rounded-lg"
-                style={{ background: "var(--muted)" }}
+                style={{ background: "var(--muted)", color: "var(--foreground)" }}
                 onClick={() => {
-                  // reset draft
-                  setDraftStatus("all");
-                  setDraftModified("all");
-                  setDraftScore("all");
-                  setDraftSearch("");
-
-                  // reset applied
+                  setCompanyFilter("");
+                  setDateFilter("");
                   setStatusFilter("all");
                   setModifiedFilter("all");
                   setScoreFilter("all");
@@ -814,129 +824,196 @@ export default function ScoreManagement() {
               >
                 Reset Filters
               </button>
-
-              <button
-                className="px-4 py-2 rounded-lg text-white font-medium"
-                style={{ background: "var(--primary)" }}
-                onClick={() => {
-                  setStatusFilter(draftStatus);
-                  setModifiedFilter(draftModified);
-                  setScoreFilter(draftScore);
-                  setSearchTerm(draftSearch);
-                }}
-              >
-                Apply Filters
-              </button>
             </div>
           </div>
 
+
+
           {/* Table */}
           <div
-            className="rounded-xl border overflow-hidden"
+            className="hidden md:block rounded-xl border overflow-hidden"
             style={{
               background: "var(--surface)",
               borderColor: "var(--border)",
             }}
           >
-            <table className="w-full text-sm">
-              <thead
-                style={{
-                  background: "var(--muted)",
-                  color: "var(--muted-foreground)",
-                }}
-              >
-                <tr>
-                  <th className="px-4 py-3 text-left">CLEANER</th>
-                  <th className="px-4 py-3 text-left">LOCATION</th>
-                  <th className="px-4 py-3 text-center">PHOTOS</th>
-                  <th className="px-4 py-3 text-center">SCORE</th>
-                  <th className="px-4 py-3 text-center">STATUS</th>
-                  <th className="px-4 py-3 text-center">MODIFIED</th>
-                  <th className="px-4 py-3 text-left">DATE/TIME</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {filteredReviews.map((review) => (
-                  <tr key={review.id} className="border-t">
-                    {/* CLEANER */}
-                    <td className="px-4 py-4 font-medium">
-                      {review.cleaner_user?.name || "—"}
-                    </td>
-
-                    {/* LOCATION */}
-                    <td className="px-4 py-4">
-                      {review.location?.name || "—"}
-                    </td>
-
-                    {/* PHOTOS */}
-                    <td className="px-4 py-4 text-center">
-                      <PhotoPreviewCell
-                        photos={review.photos}
-                        onOpenAt={(idx) => openPhotoModal(review.photos, idx)}
-                      />
-                    </td>
-
-                    {/* SCORE (EditableScoreCell) */}
-                    <td className="px-4 py-4 text-center">
-                      <EditableScoreCell
-                        review={review}
-                        canEdit={canEditScores}
-                        isOngoing={review.status !== "completed"}
-                        onSave={(id, newScore) => {
-                          setReviews((prev) =>
-                            prev.map((r) =>
-                              r.id === id
-                                ? { ...r, score: newScore, is_modified: true }
-                                : r,
-                            ),
-                          );
-                        }}
-                      />
-                    </td>
-
-                    {/* STATUS */}
-                    <td className="px-4 py-4 text-center">
-                      {review.status === "completed" ? (
-                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-green-700 bg-green-100">
-                          <CheckCircle size={14} /> completed
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-yellow-700 bg-yellow-100">
-                          <Clock size={14} /> ongoing
-                        </span>
-                      )}
-                    </td>
-
-                    {/* MODIFIED */}
-                    <td className="px-4 py-3">
-                      <div className="flex justify-center">
-                        {!review.is_modified ? (
-                          <AlertCircle
-                            size={18}
-                            className="text-orange-500"
-                            title="Original Score"
-                          />
-                        ) : (
-                          <CheckCircle
-                            size={18}
-                            className="text-green-500"
-                            title="Modified"
-                          />
-                        )}
-                      </div>
-                    </td>
-
-                    {/* DATE */}
-                    <td className="px-4 py-4">
-                      {new Date(review.created_at).toLocaleString()}
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm min-w-[900px]">
+                <thead
+                  style={{
+                    background: "var(--muted)",
+                    color: "var(--muted-foreground)",
+                  }}
+                >
+                  <tr>
+                    <th className="px-4 py-3 text-left">CLEANER</th>
+                    <th className="px-4 py-3 text-left">LOCATION</th>
+                    <th className="px-4 py-3 text-center">PHOTOS</th>
+                    <th className="px-4 py-3 text-center">SCORE</th>
+                    <th className="px-4 py-3 text-center">STATUS</th>
+                    <th className="px-4 py-3 text-center">MODIFIED</th>
+                    <th className="px-4 py-3 text-left">DATE/TIME</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+
+                <tbody>
+                  {filteredReviews.map((review) => (
+                    <tr key={review.id} className="border-t">
+                      {/* CLEANER */}
+                      <td className="px-4 py-4 font-medium">
+                        {review.cleaner_user?.name || "—"}
+                      </td>
+
+                      {/* LOCATION */}
+                      <td className="px-4 py-4">
+                        {review.location?.name || "—"}
+                      </td>
+
+                      {/* PHOTOS */}
+                      <td className="px-4 py-4 text-center">
+                        <PhotoPreviewCell
+                          photos={review.photos}
+                          onOpenAt={(idx) => openPhotoModal(review.photos, idx)}
+                        />
+                      </td>
+
+                      {/* SCORE (EditableScoreCell) */}
+                      <td className="px-4 py-4 text-center">
+                        <EditableScoreCell
+                          review={review}
+                          canEdit={canEditScores}
+                          isOngoing={review.status !== "completed"}
+                          onSave={(id, newScore) => {
+                            setReviews((prev) =>
+                              prev.map((r) =>
+                                r.id === id
+                                  ? { ...r, score: newScore, is_modified: true }
+                                  : r,
+                              ),
+                            );
+                          }}
+                        />
+                      </td>
+
+                      {/* STATUS */}
+                      <td className="px-4 py-4 text-center">
+                        {review.status === "completed" ? (
+                          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-green-700 bg-green-100">
+                            <CheckCircle size={14} /> completed
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-yellow-700 bg-yellow-100">
+                            <Clock size={14} /> ongoing
+                          </span>
+                        )}
+                      </td>
+
+                      {/* MODIFIED */}
+                      <td className="px-4 py-3">
+                        <div className="flex justify-center">
+                          {!review.is_modified ? (
+                            <AlertCircle
+                              size={18}
+                              className="text-orange-500"
+                              title="Original Score"
+                            />
+                          ) : (
+                            <CheckCircle
+                              size={18}
+                              className="text-green-500"
+                              title="Modified"
+                            />
+                          )}
+                        </div>
+                      </td>
+
+                      {/* DATE */}
+                      <td className="px-4 py-4">
+                        {new Date(review.created_at).toLocaleString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
+        {/* Mobile Cards */}
+        <div className="space-y-4 md:hidden">
+          {filteredReviews.map((review) => (
+            <div
+              key={review.id}
+              className="rounded-xl border p-4 space-y-3"
+              style={{
+                background: "var(--surface)",
+                borderColor: "var(--border)",
+              }}
+            >
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-sm font-semibold">
+                    {review.cleaner_user?.name || "—"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {review.location?.name || "—"}
+                  </p>
+                </div>
+
+                <span
+                  className="text-xs px-2 py-1 rounded-full"
+                  style={{
+                    background:
+                      review.status === "completed"
+                        ? "rgba(34,197,94,.15)"
+                        : "rgba(234,179,8,.15)",
+                    color:
+                      review.status === "completed"
+                        ? "#16a34a"
+                        : "#ca8a04",
+                  }}
+                >
+                  {review.status}
+                </span>
+              </div>
+
+              {/* Score */}
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-muted-foreground">Score</span>
+                <EditableScoreCell
+                  review={review}
+                  canEdit={canEditScores}
+                  isOngoing={review.status !== "completed"}
+                  onSave={(id, newScore) => {
+                    setReviews((prev) =>
+                      prev.map((r) =>
+                        r.id === id
+                          ? { ...r, score: newScore, is_modified: true }
+                          : r,
+                      ),
+                    );
+                  }}
+                />
+              </div>
+
+              {/* Photos */}
+              <PhotoPreviewCell
+                photos={review.photos}
+                onOpenAt={(idx) => openPhotoModal(review.photos, idx)}
+              />
+
+              {/* Meta */}
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>
+                  {review.is_modified ? "Modified" : "Original"}
+                </span>
+                <span>
+                  {new Date(review.created_at).toLocaleString()}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+
       </div>
 
       {isPhotoModalOpen && selectedPhotos && (
