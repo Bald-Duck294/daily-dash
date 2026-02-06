@@ -852,7 +852,7 @@ export default function ClientDashboard() {
   const handleActivityClick = (item) => {
     const reviewId = item.reviewId || item.id;
     if (reviewId) {
-      router.push(`/cleaner-review/${reviewId}?companyId=${companyId}`);
+      router.push(`/cleaners/${reviewId}?companyId=${companyId}`);
     }
   };
 
@@ -973,7 +973,7 @@ dark:from-[#0B0E14] dark:via-slate-950 dark:to-slate-900"
             color="from-cyan-400 to-teal-400"
             onClick={() =>
               router.push(
-                `/cleaner-review?companyId=${companyId}&status=ongoing`,
+                `/cleaners?companyId=${companyId}&status=ongoing`,
               )
             }
           />
@@ -986,7 +986,7 @@ dark:from-[#0B0E14] dark:via-slate-950 dark:to-slate-900"
             color="from-emerald-400 to-teal-500"
             onClick={() =>
               router.push(
-                `/cleaner-review?companyId=${companyId}&status=completed`,
+                `/cleaners?companyId=${companyId}&status=completed`,
               )
             }
           />
