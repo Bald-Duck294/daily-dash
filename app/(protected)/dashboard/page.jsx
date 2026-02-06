@@ -329,7 +329,7 @@ export default function DashboardPage() {
   const { data: companiesCountData, isLoading: companiesCountLoading } =
     useCompaniesCount(); // NEW: Lightweight count query
 
-  console.log(companiesCountData, "data");
+  // console.log(companiesCountData, "data");
 
   // Get users count (consider making this a query too)
   const [usersCounts, setUsersCounts] = useState({
@@ -442,5 +442,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-

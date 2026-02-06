@@ -681,7 +681,7 @@ export default function ScoreManagement() {
           {/* Header */}
           <div className="flex items-center gap-3">
             <Shield className="w-8 h-8" style={{ color: "var(--primary)" }} />
-            <h1 className="text-2xl font-bold">Score Management 11</h1>
+            <h1 className="text-2xl font-bold">Score Management </h1>
           </div>
 
           {/* Filters Card */}
