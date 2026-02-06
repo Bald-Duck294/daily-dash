@@ -725,7 +725,7 @@ const ActivityCard = ({ items, formatTime, onItemClick }) => (
             <div className="relative flex flex-col items-center mt-1">
               <div
                 className={`h-3.5 w-3.5 rounded-full shadow-[0_0_12px] ${
-                  item.rating >= 4
+                  item?.score >= 4
                     ? "bg-emerald-400 shadow-emerald-400/60"
                     : "bg-cyan-400 shadow-cyan-400/60"
                 }`}
@@ -739,19 +739,19 @@ const ActivityCard = ({ items, formatTime, onItemClick }) => (
                 className="text-sm font-bold text-slate-700 dark:text-slate-300 
               group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors line-clamp-2"
               >
-                {item.text}
+                {item?.text}
               </p>
               <div className="flex items-center gap-2 mt-1.5">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
                   {formatTime(item.timestamp)}
                 </span>
-                {item.rating && (
+                {item.score && (
                   <span
                     className="text-[10px] font-bold px-2 py-0.5 
                   bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20
                   text-amber-600 dark:text-amber-400 rounded-md shadow-sm"
                   >
-                    ★ {item.rating}
+                    ★ {item.score}
                   </span>
                 )}
               </div>
