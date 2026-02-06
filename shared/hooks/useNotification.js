@@ -43,7 +43,7 @@ export default function useNotifications() {
     console.log("🚀 Initializing FCM for user:", user.id);
     isInitialized.current = true;
 
-    let unsubscribeFCM = () => {};
+    let unsubscribeFCM = () => { };
 
     const initializeFCM = async () => {
       const token = await requestFCMToken();
@@ -56,7 +56,9 @@ export default function useNotifications() {
           await saveFCMToken({
             fcmToken: token,
             userId: user.id,
-          }).unwrap();
+          }).unwrap()
+            .then((payload) => console.log('fulfilled', payload))
+            .catch((error) => console.error('rejected', error));
           // console.log("✅ FCM token saved to backend");
         } catch (error) {
           console.error("❌ Error saving FCM token:", error);

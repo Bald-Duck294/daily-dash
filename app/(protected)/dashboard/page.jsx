@@ -254,7 +254,7 @@ function StatCard({ label, value, href, loading, accent, icon: Icon }) {
     <button
       disabled={loading || !href}
       onClick={() => href && router.push(href)}
-      className="group w-full text-left disabled:opacity-60 disabled:cursor-not-allowed"
+      className="cursor-pointer group w-full text-left disabled:opacity-60 disabled:cursor-not-allowed"
     >
       <div
         className="relative rounded-2xl p-6 border transition-all duration-300 transform hover:scale-105"
@@ -361,17 +361,17 @@ export default function DashboardPage() {
   }, []);
 
   // Update companies count when it loads
-  useEffect(() => {
-    setCounts((prev) => ({
-      ...prev,
-      companies: companiesCountData?.totalCount || 0,
-    }));
-  }, [companiesCountData]);
+  // useEffect(() => {
+  //   setCounts((prev) => ({
+  //     ...prev,
+  //     companies: companiesCountData?.totalCount || 0,
+  //   }));
+  // },[companiesCountData.totalCount]);
 
   const cards = [
     {
       label: "Organizations",
-      value: counts.companies,
+      value: companiesCountData?.totalCount || 0, // Use count from separate query,
       href: "/companies",
       accent: "var(--accent-blue)",
       icon: Building,
@@ -442,3 +442,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+

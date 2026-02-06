@@ -486,6 +486,9 @@
 //   );
 // }
 
+
+
+
 "use client";
 
 import { Bar, Line } from "react-chartjs-2";
@@ -503,6 +506,7 @@ import {
   Legend,
   Filler,
 } from "chart.js";
+
 
 ChartJS.register(
   CategoryScale,

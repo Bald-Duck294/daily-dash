@@ -6,11 +6,29 @@ import storage from "redux-persist/lib/storage"; // uses localStorage
 import { notificationApi } from "@/features/notification/notification.api";
 import notificationReducer from "@/features/notification/notification.slice";
 export const store = configureStore({
-  reducer: {
+  reducer: {  
     auth: authReducer,
     ui: uiReducer,
     notifications: notificationReducer,
-  },
+    [notificationApi.reducerPath]: notificationApi.reducer,
+  },    
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({
+      serializableCheck: {
+        // ✅ Ignore redux-persist actions
+        ignoredActions: ["persist/PERSIST", "persist/REHYDRATE"],
+      },
+    })
+      .concat(
+        // configurationApi.middleware,
+        //   reviewApi.middleware,
+        //   shiftApi.middleware,
+          notificationApi.middleware
+      ),
 });
+
+
+
+
 
 console.log("in index store");
