@@ -61,14 +61,32 @@ export default function LocationActionsMenu({
   };
 
   return (
-    <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-10">
+    <div
+      className="absolute right-0 mt-1 w-48 rounded-lg py-1 z-10"
+      style={{
+        background: "var(--washroom-surface)",
+        border: "1px solid var(--washroom-border)",
+        boxShadow: "var(--washroom-shadow)",
+      }}
+    >
       {/* View Cleaners */}
       {canViewAssignments && (
         <button
           onMouseDown={handleViewCleaners}
-          className="cursor-pointer w-full flex items-center gap-2 px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+          className="w-full flex items-center gap-2 px-4 py-2 text-left text-sm transition-colors"
+          style={{ color: "var(--washroom-text)" }}
+          onMouseEnter={(e) =>
+          (e.currentTarget.style.background =
+            "var(--washroom-table-row-hover)")
+          }
+          onMouseLeave={(e) =>
+            (e.currentTarget.style.background = "transparent")
+          }
         >
-          <Users className="h-4 w-4 text-blue-600" />
+          <Users
+            className="h-4 w-4"
+            style={{ color: "var(--washroom-primary)" }}
+          />
           View Cleaners
         </button>
       )}
@@ -76,34 +94,72 @@ export default function LocationActionsMenu({
       {/* View Supervisor */}
       {canViewSupervisor && (
         <button
-          onMouseDown={handleViewSupervisor} // ✅ Changed from onClick
-          className="cursor-pointer w-full flex items-center gap-2 px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 transition-colors border-t border-slate-200"
+          onMouseDown={handleViewSupervisor}
+          className="w-full flex items-center gap-2 px-4 py-2 text-left text-sm transition-colors"
+          style={{
+            color: "var(--washroom-text)",
+            borderTop: "1px solid var(--washroom-border)",
+          }}
+          onMouseEnter={(e) =>
+          (e.currentTarget.style.background =
+            "var(--washroom-table-row-hover)")
+          }
+          onMouseLeave={(e) =>
+            (e.currentTarget.style.background = "transparent")
+          }
         >
-          <Users className="h-4 w-4 text-green-600" />
+          <Users
+            className="h-4 w-4"
+            style={{ color: "var(--washroom-status-active-text)" }}
+          />
           View Supervisor
         </button>
       )}
 
+      {/* Edit Washroom */}
       {(canViewSupervisor || canEditLocation) && (
         <button
-          onMouseDown={(e) =>
+          onMouseDown={() =>
             router.push(
               `/washrooms/item/${location_id}/edit?companyId=${companyId}`,
             )
-          } // ✅ Changed from onClick
-          className="cursor-pointer w-full flex items-center gap-2 px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+          }
+          className="w-full flex items-center gap-2 px-4 py-2 text-left text-sm transition-colors"
+          style={{ color: "var(--washroom-text)" }}
+          onMouseEnter={(e) =>
+          (e.currentTarget.style.background =
+            "var(--washroom-table-row-hover)")
+          }
+          onMouseLeave={(e) =>
+            (e.currentTarget.style.background = "transparent")
+          }
         >
-          <Edit className="h-4 w-4 text-yellow-300" />
+          <Edit
+            className="h-4 w-4"
+            style={{ color: "var(--washroom-primary)" }}
+          />
           Edit Washroom
         </button>
       )}
 
+      {/* Delete Washroom */}
       {(canViewSupervisor || canDeleteLocation) && (
         <button
-          onMouseDown={handleDelete} // ✅ Changed from onClick
-          className="cursor-pointer w-full flex items-center gap-2 px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+          onMouseDown={handleDelete}
+          className="w-full flex items-center gap-2 px-4 py-2 text-left text-sm transition-colors"
+          style={{ color: "var(--washroom-status-inactive-text)" }}
+          onMouseEnter={(e) =>
+          (e.currentTarget.style.background =
+            "var(--washroom-status-inactive-bg)")
+          }
+          onMouseLeave={(e) =>
+            (e.currentTarget.style.background = "transparent")
+          }
         >
-          <Delete className="h-4 w-4 text-red-600" />
+          <Delete
+            className="h-4 w-4"
+            style={{ color: "var(--washroom-status-dot-inactive)" }}
+          />
           Delete Washroom
         </button>
       )}

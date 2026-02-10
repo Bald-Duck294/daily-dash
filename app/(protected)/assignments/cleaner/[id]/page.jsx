@@ -104,13 +104,28 @@ export default function CleanerViewPage() {
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
       case "completed":
-        return "bg-green-100 text-green-700";
+        return {
+          background: "var(--cleaner-status-active-bg)",
+          color: "var(--cleaner-status-active-text)",
+        };
+
       case "ongoing":
-        return "bg-blue-100 text-blue-700";
+        return {
+          background: "var(--assignment-accent-bg)",
+          color: "var(--assignment-accent-text)",
+        };
+
       case "pending":
-        return "bg-yellow-100 text-yellow-700";
+        return {
+          background: "var(--assignment-warning-bg)",
+          color: "var(--assignment-warning-text)",
+        };
+
       default:
-        return "bg-slate-100 text-slate-700";
+        return {
+          background: "var(--muted)",
+          color: "var(--muted-foreground)",
+        };
     }
   };
 
@@ -122,10 +137,13 @@ export default function CleanerViewPage() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-screen">
+      <div
+        className="flex justify-center items-center h-screen"
+        style={{ background: "var(--cleaner-bg)" }}
+      >
         <Loader
           size="large"
-          color="#3b82f6"
+          color="var(--cleaner-primary-text)"
           message="Loading cleaner details..."
         />
       </div>
@@ -134,12 +152,31 @@ export default function CleanerViewPage() {
 
   if (!cleanerData) {
     return (
-      <div className="flex justify-center items-center h-screen">
+      <div
+        className="flex justify-center items-center h-screen"
+        style={{ background: "var(--cleaner-bg)" }}
+      >
         <div className="text-center">
-          <p className="text-slate-600">Cleaner not found</p>
+          <p
+            className="mb-4"
+            style={{ color: "var(--muted-foreground)" }}
+          >
+            Cleaner not found
+          </p>
+
           <button
             onClick={() => router.back()}
-            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg"
+            className="px-4 py-2 rounded-lg font-medium transition-all"
+            style={{
+              background: "var(--cleaner-primary-bg)",
+              color: "var(--cleaner-primary-text)",
+            }}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.filter = "brightness(0.95)")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.filter = "none")
+            }
           >
             Go Back
           </button>
@@ -152,85 +189,211 @@ export default function CleanerViewPage() {
     <>
       <Toaster position="top-right" />
 
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 p-3 sm:p-4 md:p-6">
+      <div
+        className="min-h-screen p-3 sm:p-4 md:p-6"
+        style={{ background: "var(--cleaner-bg)" }}
+      >
+
         <div className="max-w-7xl mx-auto">
           {/* Header */}
-          <div className="bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden mb-6">
-            <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-6">
+          <div
+            className="rounded-xl overflow-hidden mb-6"
+            style={{
+              background: "var(--cleaner-surface)",
+              border: "1px solid var(--cleaner-border)",
+              boxShadow: "var(--cleaner-shadow)",
+            }}
+          >
+            <div
+              className="px-6 py-6"
+              style={{ background: "var(--cleaner-primary-bg)" }}
+            >
               <div className="flex items-center gap-4">
                 <button
                   onClick={() => router.back()}
-                  className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                  className="p-2 rounded-lg transition-colors"
+                  style={{ color: "var(--cleaner-primary-text)" }}
+                  onMouseEnter={(e) =>
+                  (e.currentTarget.style.background =
+                    "rgba(255,255,255,0.12)")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.background = "transparent")
+                  }
                 >
-                  <ArrowLeft className="h-5 w-5 text-white" />
+                  <ArrowLeft className="h-5 w-5" />
                 </button>
+
                 <div className="flex-1">
-                  <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-                    <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-                      <User className="w-6 h-6 text-white" />
+                  <h1
+                    className="text-2xl font-bold flex items-center gap-3"
+                    style={{ color: "var(--cleaner-primary-text)" }}
+                  >
+                    <div
+                      className="w-12 h-12 rounded-full flex items-center justify-center"
+                      style={{ background: "rgba(255,255,255,0.2)" }}
+                    >
+                      <User className="w-6 h-6" />
                     </div>
                     {cleanerData.name}
                   </h1>
-                  <p className="text-blue-100 text-sm mt-1">
+
+                  <p
+                    className="text-sm mt-1"
+                    style={{
+                      color: "var(--cleaner-primary-text)",
+                      opacity: 0.85,
+                    }}
+                  >
                     Cleaner Profile & Activity
                   </p>
+
                 </div>
               </div>
             </div>
           </div>
 
+
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+            {/* Total Reviews */}
+            <div
+              className="rounded-xl p-4"
+              style={{
+                background: "var(--cleaner-surface)",
+                border: "1px solid var(--cleaner-border)",
+                boxShadow: "var(--cleaner-shadow)",
+              }}
+            >
               <div className="flex items-center gap-3">
-                <div className="p-3 bg-blue-100 rounded-lg">
-                  <Briefcase className="w-5 h-5 text-blue-600" />
+                <div
+                  className="p-3 rounded-lg"
+                  style={{ background: "var(--assignment-accent-bg)" }}
+                >
+                  <Briefcase
+                    className="w-5 h-5"
+                    style={{ color: "var(--assignment-accent-text)" }}
+                  />
                 </div>
                 <div>
-                  <p className="text-sm text-slate-600">Total Reviews</p>
-                  <p className="text-2xl font-bold text-slate-800">
+                  <p
+                    className="text-sm"
+                    style={{ color: "var(--cleaner-subtitle)" }}
+                  >
+                    Total Reviews
+                  </p>
+                  <p
+                    className="text-2xl font-bold"
+                    style={{ color: "var(--cleaner-title)" }}
+                  >
                     {stats.total_reviews || 0}
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+            {/* Completed */}
+            <div
+              className="rounded-xl p-4"
+              style={{
+                background: "var(--cleaner-surface)",
+                border: "1px solid var(--cleaner-border)",
+                boxShadow: "var(--cleaner-shadow)",
+              }}
+            >
               <div className="flex items-center gap-3">
-                <div className="p-3 bg-green-100 rounded-lg">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
+                <div
+                  className="p-3 rounded-lg"
+                  style={{ background: "var(--cleaner-status-active-bg)" }}
+                >
+                  <CheckCircle
+                    className="w-5 h-5"
+                    style={{ color: "var(--cleaner-status-active-text)" }}
+                  />
                 </div>
                 <div>
-                  <p className="text-sm text-slate-600">Completed</p>
-                  <p className="text-2xl font-bold text-slate-800">
+                  <p
+                    className="text-sm"
+                    style={{ color: "var(--cleaner-subtitle)" }}
+                  >
+                    Completed
+                  </p>
+                  <p
+                    className="text-2xl font-bold"
+                    style={{ color: "var(--cleaner-title)" }}
+                  >
                     {stats.completed_reviews || 0}
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+            {/* Ongoing */}
+            <div
+              className="rounded-xl p-4"
+              style={{
+                background: "var(--cleaner-surface)",
+                border: "1px solid var(--cleaner-border)",
+                boxShadow: "var(--cleaner-shadow)",
+              }}
+            >
               <div className="flex items-center gap-3">
-                <div className="p-3 bg-yellow-100 rounded-lg">
-                  <Clock className="w-5 h-5 text-yellow-600" />
+                <div
+                  className="p-3 rounded-lg"
+                  style={{ background: "var(--assignment-warning-bg)" }}
+                >
+                  <Clock
+                    className="w-5 h-5"
+                    style={{ color: "var(--assignment-warning-text)" }}
+                  />
                 </div>
                 <div>
-                  <p className="text-sm text-slate-600">Ongoing</p>
-                  <p className="text-2xl font-bold text-slate-800">
+                  <p
+                    className="text-sm"
+                    style={{ color: "var(--cleaner-subtitle)" }}
+                  >
+                    Ongoing
+                  </p>
+                  <p
+                    className="text-2xl font-bold"
+                    style={{ color: "var(--cleaner-title)" }}
+                  >
                     {stats.ongoing_reviews || 0}
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+            {/* Today’s Tasks */}
+            <div
+              className="rounded-xl p-4"
+              style={{
+                background: "var(--cleaner-surface)",
+                border: "1px solid var(--cleaner-border)",
+                boxShadow: "var(--cleaner-shadow)",
+              }}
+            >
               <div className="flex items-center gap-3">
-                <div className="p-3 bg-purple-100 rounded-lg">
-                  <TrendingUp className="w-5 h-5 text-purple-600" />
+                <div
+                  className="p-3 rounded-lg"
+                  style={{ background: "var(--stat-green-gradient)" }}
+                >
+                  <TrendingUp
+                    className="w-5 h-5"
+                    style={{ color: "var(--trend-up)" }}
+                  />
                 </div>
                 <div>
-                  <p className="text-sm text-slate-600">Today's Tasks</p>
-                  <p className="text-2xl font-bold text-slate-800">
+                  <p
+                    className="text-sm"
+                    style={{ color: "var(--cleaner-subtitle)" }}
+                  >
+                    Today&apos;s Tasks
+                  </p>
+                  <p
+                    className="text-2xl font-bold"
+                    style={{ color: "var(--cleaner-title)" }}
+                  >
                     {stats.total_tasks_today || 0}
                   </p>
                 </div>
@@ -238,33 +401,63 @@ export default function CleanerViewPage() {
             </div>
           </div>
 
+
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left Column - Cleaner Info & Assigned Locations */}
             <div className="lg:col-span-1 space-y-6">
               {/* Cleaner Information Card */}
-              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-                <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                  <User className="w-5 h-5 text-blue-600" />
+              <div
+                className="rounded-xl p-6"
+                style={{
+                  background: "var(--cleaner-surface)",
+                  border: "1px solid var(--cleaner-border)",
+                  boxShadow: "var(--cleaner-shadow)",
+                }}
+              >
+                <h2
+                  className="text-lg font-semibold mb-4 flex items-center gap-2"
+                  style={{ color: "var(--cleaner-title)" }}
+                >
+                  <User
+                    className="w-5 h-5"
+                    style={{ color: "var(--assignment-accent-text)" }}
+                  />
                   Cleaner Information
                 </h2>
+
                 <div className="space-y-4">
                   <div>
-                    <label className="text-xs text-slate-500 uppercase font-medium">
+                    <label
+                      className="text-xs uppercase font-medium"
+                      style={{ color: "var(--muted-foreground)" }}
+                    >
                       Full Name
                     </label>
-                    <p className="text-sm font-medium text-slate-800 mt-1">
+                    <p
+                      className="text-sm font-medium mt-1"
+                      style={{ color: "var(--cleaner-title)" }}
+                    >
                       {cleanerData.name}
                     </p>
                   </div>
 
                   {cleanerData.email && (
                     <div>
-                      <label className="text-xs text-slate-500 uppercase font-medium">
+                      <label
+                        className="text-xs uppercase font-medium"
+                        style={{ color: "var(--muted-foreground)" }}
+                      >
                         Email
                       </label>
                       <div className="flex items-center gap-2 mt-1">
-                        <Mail className="w-4 h-4 text-slate-400" />
-                        <p className="text-sm text-slate-700">
+                        <Mail
+                          className="w-4 h-4"
+                          style={{ color: "var(--muted-foreground)" }}
+                        />
+                        <p
+                          className="text-sm"
+                          style={{ color: "var(--cleaner-subtitle)" }}
+                        >
                           {cleanerData.email}
                         </p>
                       </div>
@@ -273,12 +466,21 @@ export default function CleanerViewPage() {
 
                   {cleanerData.phone && (
                     <div>
-                      <label className="text-xs text-slate-500 uppercase font-medium">
+                      <label
+                        className="text-xs uppercase font-medium"
+                        style={{ color: "var(--muted-foreground)" }}
+                      >
                         Phone
                       </label>
                       <div className="flex items-center gap-2 mt-1">
-                        <Phone className="w-4 h-4 text-slate-400" />
-                        <p className="text-sm text-slate-700">
+                        <Phone
+                          className="w-4 h-4"
+                          style={{ color: "var(--muted-foreground)" }}
+                        />
+                        <p
+                          className="text-sm"
+                          style={{ color: "var(--cleaner-subtitle)" }}
+                        >
                           {cleanerData.phone}
                         </p>
                       </div>
@@ -287,12 +489,21 @@ export default function CleanerViewPage() {
 
                   {cleanerData.role && (
                     <div>
-                      <label className="text-xs text-slate-500 uppercase font-medium">
+                      <label
+                        className="text-xs uppercase font-medium"
+                        style={{ color: "var(--muted-foreground)" }}
+                      >
                         Role
                       </label>
                       <div className="flex items-center gap-2 mt-1">
-                        <Briefcase className="w-4 h-4 text-slate-400" />
-                        <p className="text-sm text-slate-700">
+                        <Briefcase
+                          className="w-4 h-4"
+                          style={{ color: "var(--muted-foreground)" }}
+                        />
+                        <p
+                          className="text-sm"
+                          style={{ color: "var(--cleaner-subtitle)" }}
+                        >
                           {cleanerData.role.name}
                         </p>
                       </div>
@@ -301,19 +512,24 @@ export default function CleanerViewPage() {
 
                   {cleanerData.created_at && (
                     <div>
-                      <label className="text-xs text-slate-500 uppercase font-medium">
+                      <label
+                        className="text-xs uppercase font-medium"
+                        style={{ color: "var(--muted-foreground)" }}
+                      >
                         Joined Date
                       </label>
                       <div className="flex items-center gap-2 mt-1">
-                        <Calendar className="w-4 h-4 text-slate-400" />
-                        <p className="text-sm text-slate-700">
+                        <Calendar
+                          className="w-4 h-4"
+                          style={{ color: "var(--muted-foreground)" }}
+                        />
+                        <p
+                          className="text-sm"
+                          style={{ color: "var(--cleaner-subtitle)" }}
+                        >
                           {new Date(cleanerData.created_at).toLocaleDateString(
                             "en-US",
-                            {
-                              year: "numeric",
-                              month: "long",
-                              day: "numeric",
-                            },
+                            { year: "numeric", month: "long", day: "numeric" }
                           )}
                         </p>
                       </div>
@@ -323,54 +539,112 @@ export default function CleanerViewPage() {
               </div>
 
               {/* Assigned Locations Card */}
-              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-                <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                  <MapPin className="w-5 h-5 text-blue-600" />
+              <div
+                className="rounded-xl p-6"
+                style={{
+                  background: "var(--cleaner-surface)",
+                  border: "1px solid var(--cleaner-border)",
+                  boxShadow: "var(--cleaner-shadow)",
+                }}
+              >
+                <h2
+                  className="text-lg font-semibold mb-4 flex items-center gap-2"
+                  style={{ color: "var(--cleaner-title)" }}
+                >
+                  <MapPin
+                    className="w-5 h-5"
+                    style={{ color: "var(--assignment-accent-text)" }}
+                  />
                   Assigned Locations ({assignedLocations.length})
                 </h2>
+
                 <div className="space-y-3 max-h-96 overflow-y-auto">
                   {assignedLocations.length === 0 ? (
-                    <p className="text-sm text-slate-500 text-center py-4">
+                    <p
+                      className="text-sm text-center py-4"
+                      style={{ color: "var(--muted-foreground)" }}
+                    >
                       No locations assigned
                     </p>
                   ) : (
                     assignedLocations.map((assignment) => (
                       <div
                         key={assignment.id}
-                        className="p-3 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+                        className="p-3 rounded-lg transition-colors"
+                        style={{
+                          border: "1px solid var(--cleaner-border)",
+                        }}
+                        onMouseEnter={(e) =>
+                        (e.currentTarget.style.background =
+                          "var(--assignment-accent-bg)")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.background = "transparent")
+                        }
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex-1">
-                            <h3 className="font-medium text-slate-800 text-sm">
+                            <h3
+                              className="font-medium text-sm"
+                              style={{ color: "var(--cleaner-title)" }}
+                            >
                               {assignment.locations?.name || "Unknown Location"}
                             </h3>
+
                             {assignment.locations?.address && (
-                              <p className="text-xs text-slate-500 mt-1">
+                              <p
+                                className="text-xs mt-1"
+                                style={{ color: "var(--cleaner-subtitle)" }}
+                              >
                                 {assignment.locations.address}
                               </p>
                             )}
+
                             <div className="flex items-center gap-2 mt-2">
                               <span
-                                className={`text-xs px-2 py-1 rounded-full font-medium ${
+                                className="text-xs px-2 py-1 rounded-full font-medium"
+                                style={
                                   assignment.status === "assigned"
-                                    ? "bg-green-100 text-green-700"
-                                    : "bg-gray-100 text-gray-700"
-                                }`}
+                                    ? {
+                                      background:
+                                        "var(--cleaner-status-active-bg)",
+                                      color:
+                                        "var(--cleaner-status-active-text)",
+                                    }
+                                    : {
+                                      background:
+                                        "var(--cleaner-status-inactive-bg)",
+                                      color:
+                                        "var(--cleaner-status-inactive-text)",
+                                    }
+                                }
                               >
                                 {assignment.status}
                               </span>
                             </div>
                           </div>
+
                           {assignment.locations?.latitude &&
                             assignment.locations?.longitude && (
                               <button
                                 onClick={() =>
                                   handleViewLocation(
                                     assignment.locations.latitude,
-                                    assignment.locations.longitude,
+                                    assignment.locations.longitude
                                   )
                                 }
-                                className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                className="p-2 rounded-lg transition-colors"
+                                style={{
+                                  color: "var(--assignment-accent-text)",
+                                }}
+                                onMouseEnter={(e) =>
+                                (e.currentTarget.style.background =
+                                  "var(--assignment-accent-bg)")
+                                }
+                                onMouseLeave={(e) =>
+                                (e.currentTarget.style.background =
+                                  "transparent")
+                                }
                                 title="View on Map"
                               >
                                 <Navigation className="w-4 h-4" />
@@ -384,56 +658,102 @@ export default function CleanerViewPage() {
               </div>
             </div>
 
+
             {/* Right Column - Recent Activities */}
             <div className="lg:col-span-2">
-              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-                <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                  <Activity className="w-5 h-5 text-blue-600" />
+              <div
+                className="rounded-xl p-6"
+                style={{
+                  background: "var(--cleaner-surface)",
+                  border: "1px solid var(--cleaner-border)",
+                  boxShadow: "var(--cleaner-shadow)",
+                }}
+              >
+                <h2
+                  className="text-lg font-semibold mb-4 flex items-center gap-2"
+                  style={{ color: "var(--cleaner-title)" }}
+                >
+                  <Activity
+                    className="w-5 h-5"
+                    style={{ color: "var(--assignment-accent-text)" }}
+                  />
                   Recent Activities (Last 10)
                 </h2>
+
                 <div className="space-y-4">
                   {recentActivities.length === 0 ? (
                     <div className="text-center py-12">
-                      <ClipboardList className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                      <p className="text-slate-500">No activities found</p>
+                      <ClipboardList
+                        className="w-12 h-12 mx-auto mb-3"
+                        style={{ color: "var(--muted-foreground)" }}
+                      />
+                      <p style={{ color: "var(--muted-foreground)" }}>
+                        No activities found
+                      </p>
                     </div>
                   ) : (
                     recentActivities.map((activity, index) => (
                       <div
                         key={activity.id}
-                        className="border border-slate-200 rounded-lg p-4 hover:bg-slate-50 transition-colors"
+                        className="rounded-lg p-4 transition-colors"
+                        style={{ border: "1px solid var(--cleaner-border)" }}
+                        onMouseEnter={(e) =>
+                        (e.currentTarget.style.background =
+                          "var(--assignment-accent-bg)")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.background = "transparent")
+                        }
                       >
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex-1">
+                            {/* Header */}
                             <div className="flex items-center gap-2 mb-2">
-                              <span className="font-medium text-slate-800">
-                                #{index + 1} -{" "}
+                              <span
+                                className="font-medium"
+                                style={{ color: "var(--cleaner-title)" }}
+                              >
+                                #{index + 1} –{" "}
                                 {activity.location?.name || "Unknown Location"}
                               </span>
+
                               <span
-                                className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusColor(activity.status)}`}
+                                className="text-xs px-2 py-1 rounded-full font-medium"
+                                style={getStatusColor(activity.status)}
                               >
                                 {activity.status}
                               </span>
                             </div>
 
+                            {/* Address */}
                             {activity.address && (
-                              <div className="flex items-start gap-2 text-sm text-slate-600 mb-2">
+                              <div
+                                className="flex items-start gap-2 text-sm mb-2"
+                                style={{ color: "var(--cleaner-subtitle)" }}
+                              >
                                 <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
                                 <span>{activity.address}</span>
                               </div>
                             )}
 
+                            {/* Tasks */}
                             {activity.tasks && activity.tasks.length > 0 && (
                               <div className="mt-2">
-                                <p className="text-xs text-slate-500 mb-1">
+                                <p
+                                  className="text-xs mb-1"
+                                  style={{ color: "var(--muted-foreground)" }}
+                                >
                                   Tasks:
                                 </p>
                                 <div className="flex flex-wrap gap-1">
                                   {activity.tasks.map((task, idx) => (
                                     <span
                                       key={idx}
-                                      className="text-xs px-2 py-1 bg-slate-100 text-slate-600 rounded"
+                                      className="text-xs px-2 py-1 rounded"
+                                      style={{
+                                        background: "var(--muted)",
+                                        color: "var(--cleaner-subtitle)",
+                                      }}
                                     >
                                       {task}
                                     </span>
@@ -442,28 +762,36 @@ export default function CleanerViewPage() {
                               </div>
                             )}
 
+                            {/* Score */}
                             {activity.score && (
                               <div className="mt-2 flex items-center gap-2">
-                                <TrendingUp className="w-4 h-4 text-green-600" />
-                                <span className="text-sm font-medium text-green-600">
+                                <TrendingUp
+                                  className="w-4 h-4"
+                                  style={{ color: "var(--trend-up)" }}
+                                />
+                                <span
+                                  className="text-sm font-medium"
+                                  style={{ color: "var(--trend-up)" }}
+                                >
                                   Score: {activity.score}/10
                                 </span>
                               </div>
                             )}
 
-                            <div className="flex items-center gap-2 mt-2 text-xs text-slate-500">
+                            {/* Timestamp */}
+                            <div
+                              className="flex items-center gap-2 mt-2 text-xs"
+                              style={{ color: "var(--muted-foreground)" }}
+                            >
                               <Calendar className="w-3 h-3" />
                               <span>
-                                {new Date(activity.created_at).toLocaleString(
-                                  "en-US",
-                                  {
-                                    year: "numeric",
-                                    month: "short",
-                                    day: "numeric",
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  },
-                                )}
+                                {new Date(activity.created_at).toLocaleString("en-US", {
+                                  year: "numeric",
+                                  month: "short",
+                                  day: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
                               </span>
                             </div>
                           </div>

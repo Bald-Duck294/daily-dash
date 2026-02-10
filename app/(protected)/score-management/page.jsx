@@ -344,10 +344,10 @@ const PhotoModal = ({ photos, onClose }) => {
               resetZoom();
             }}
             className={`relative cursor-pointer flex-shrink-0 w-14 h-14 rounded overflow-hidden border-2 transition-all ${idx === currentIndex
-                ? photo.color === "blue"
-                  ? "border-blue-500 ring-2 ring-blue-400"
-                  : "border-green-500 ring-2 ring-green-400"
-                : "border-gray-600 hover:border-gray-400"
+              ? photo.color === "blue"
+                ? "border-blue-500 ring-2 ring-blue-400"
+                : "border-green-500 ring-2 ring-green-400"
+              : "border-gray-600 hover:border-gray-400"
               }`}
           >
             <img
@@ -467,8 +467,8 @@ const EditableScoreCell = ({
       <button
         onClick={handleEditClick}
         className={`cursor-pointer p-1 rounded transition-colors ${!canEdit || isOngoing
-            ? "text-slate-300 cursor-not-allowed"
-            : "text-slate-400 hover:text-indigo-600 hover:bg-indigo-50"
+          ? "text-slate-300 cursor-not-allowed"
+          : "text-slate-400 hover:text-indigo-600 hover:bg-indigo-50"
           }`}
         title={
           !canEdit
@@ -485,6 +485,18 @@ const EditableScoreCell = ({
   );
 };
 
+const EmptyState = ({ message = "No reviews found" }) => (
+  <div
+    className="flex flex-col items-center justify-center py-16 text-center"
+    style={{ color: "var(--muted-foreground)" }}
+  >
+    <Shield size={40} className="mb-3 opacity-60" />
+    <p className="text-sm font-medium">{message}</p>
+    <p className="text-xs mt-1 opacity-80">
+      Try adjusting filters or selecting a different company/date
+    </p>
+  </div>
+);
 export default function ScoreManagement() {
   useRequirePermission({
     module: MODULES.SCORES,
@@ -787,10 +799,10 @@ export default function ScoreManagement() {
               {/* Modified */}
               <Select value={modifiedFilter} onValueChange={setModifiedFilter}>
                 <SelectTrigger>
-                  <SelectValue placeholder="All Scores" />
+                  <SelectValue placeholder="All Reviews" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Scores</SelectItem>
+                  <SelectItem value="all">All Reviews</SelectItem>
                   <SelectItem value="modified">Modified Only</SelectItem>
                   <SelectItem value="unmodified">Original Only</SelectItem>
                 </SelectContent>
@@ -857,7 +869,13 @@ export default function ScoreManagement() {
                 </thead>
 
                 <tbody>
-                  {filteredReviews.map((review) => (
+                  {filteredReviews.length === 0 ? (
+                    <tr>
+                      <td colSpan={7}>
+                        <EmptyState message="No reviews found for the selected filters" />
+                      </td>
+                    </tr>
+                  ) : (filteredReviews.map((review) => (
                     <tr key={review.id} className="border-t">
                       {/* CLEANER */}
                       <td className="px-4 py-4 font-medium">
@@ -932,7 +950,7 @@ export default function ScoreManagement() {
                         {new Date(review.created_at).toLocaleString()}
                       </td>
                     </tr>
-                  ))}
+                  )))}
                 </tbody>
               </table>
             </div>
@@ -940,78 +958,81 @@ export default function ScoreManagement() {
         </div>
         {/* Mobile Cards */}
         <div className="space-y-4 md:hidden">
-          {filteredReviews.map((review) => (
-            <div
-              key={review.id}
-              className="rounded-xl border p-4 space-y-3"
-              style={{
-                background: "var(--surface)",
-                borderColor: "var(--border)",
-              }}
-            >
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="text-sm font-semibold">
-                    {review.cleaner_user?.name || "—"}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {review.location?.name || "—"}
-                  </p>
+          {filteredReviews.length === 0 ? (
+            <EmptyState message="No reviews available" />
+          ) : (
+            filteredReviews.map((review) => (
+              <div
+                key={review.id}
+                className="rounded-xl border p-4 space-y-3"
+                style={{
+                  background: "var(--surface)",
+                  borderColor: "var(--border)",
+                }}
+              >
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-sm font-semibold">
+                      {review.cleaner_user?.name || "—"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {review.location?.name || "—"}
+                    </p>
+                  </div>
+
+                  <span
+                    className="text-xs px-2 py-1 rounded-full"
+                    style={{
+                      background:
+                        review.status === "completed"
+                          ? "rgba(34,197,94,.15)"
+                          : "rgba(234,179,8,.15)",
+                      color:
+                        review.status === "completed"
+                          ? "#16a34a"
+                          : "#ca8a04",
+                    }}
+                  >
+                    {review.status}
+                  </span>
                 </div>
 
-                <span
-                  className="text-xs px-2 py-1 rounded-full"
-                  style={{
-                    background:
-                      review.status === "completed"
-                        ? "rgba(34,197,94,.15)"
-                        : "rgba(234,179,8,.15)",
-                    color:
-                      review.status === "completed"
-                        ? "#16a34a"
-                        : "#ca8a04",
-                  }}
-                >
-                  {review.status}
-                </span>
-              </div>
+                {/* Score */}
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-muted-foreground">Score</span>
+                  <EditableScoreCell
+                    review={review}
+                    canEdit={canEditScores}
+                    isOngoing={review.status !== "completed"}
+                    onSave={(id, newScore) => {
+                      setReviews((prev) =>
+                        prev.map((r) =>
+                          r.id === id
+                            ? { ...r, score: newScore, is_modified: true }
+                            : r,
+                        ),
+                      );
+                    }}
+                  />
+                </div>
 
-              {/* Score */}
-              <div className="flex justify-between items-center">
-                <span className="text-xs text-muted-foreground">Score</span>
-                <EditableScoreCell
-                  review={review}
-                  canEdit={canEditScores}
-                  isOngoing={review.status !== "completed"}
-                  onSave={(id, newScore) => {
-                    setReviews((prev) =>
-                      prev.map((r) =>
-                        r.id === id
-                          ? { ...r, score: newScore, is_modified: true }
-                          : r,
-                      ),
-                    );
-                  }}
+                {/* Photos */}
+                <PhotoPreviewCell
+                  photos={review.photos}
+                  onOpenAt={(idx) => openPhotoModal(review.photos, idx)}
                 />
-              </div>
 
-              {/* Photos */}
-              <PhotoPreviewCell
-                photos={review.photos}
-                onOpenAt={(idx) => openPhotoModal(review.photos, idx)}
-              />
-
-              {/* Meta */}
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>
-                  {review.is_modified ? "Modified" : "Original"}
-                </span>
-                <span>
-                  {new Date(review.created_at).toLocaleString()}
-                </span>
+                {/* Meta */}
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>
+                    {review.is_modified ? "Modified" : "Original"}
+                  </span>
+                  <span>
+                    {new Date(review.created_at).toLocaleString()}
+                  </span>
+                </div>
               </div>
-            </div>
-          ))}
+            )))}
         </div>
 
       </div>

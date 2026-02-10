@@ -11,6 +11,8 @@ import {
   Calendar,
   Activity,
   Star,
+  AlertTriangle,
+  AlertCircle,
   Image as ImageIcon,
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
@@ -115,26 +117,190 @@ export default function ReviewDetails() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center text-muted-foreground">
-        Loading review…
+      <div
+        className="min-h-screen flex items-center justify-center p-6"
+        style={{
+          background: "var(--cleaner-bg)",
+        }}
+      >
+        <div
+          className="flex flex-col items-center text-center"
+          style={{ color: "var(--cleaner-title)" }}
+        >
+          {/* Spinner */}
+          <div
+            className="w-10 h-10 rounded-full border-2 border-t-transparent animate-spin mb-4"
+            style={{
+              borderColor: "var(--cleaner-kpi-value)",
+              borderTopColor: "transparent",
+            }}
+          />
+
+          {/* Title */}
+          <p className="text-sm font-medium">
+            Loading review
+          </p>
+
+          {/* Helper text */}
+          <p
+            className="text-xs mt-1"
+            style={{ color: "var(--cleaner-subtitle)" }}
+          >
+            Fetching cleaning details and evidence
+          </p>
+        </div>
       </div>
+
     );
   }
 
   if (isError) {
     toast.error(error?.message || "Failed to load review");
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        Failed to load review
+      <div
+        className="min-h-screen flex items-center justify-center p-6"
+        style={{
+          background: "var(--cleaner-bg)",
+          color: "var(--cleaner-title)",
+        }}
+      >
+        <div
+          className="max-w-md w-full text-center rounded-xl p-8"
+          style={{
+            background: "var(--cleaner-surface)",
+            border: "1px solid var(--cleaner-border)",
+            boxShadow: "var(--cleaner-shadow)",
+          }}
+        >
+          {/* Icon */}
+          <div
+            className="mx-auto mb-4 w-14 h-14 rounded-full flex items-center justify-center"
+            style={{
+              background: "var(--cleaner-danger-bg)",
+              border: "1px solid var(--cleaner-border)",
+            }}
+          >
+            <AlertCircle
+              size={22}
+              style={{ color: "var(--cleaner-danger-text)" }}
+            />
+          </div>
+
+          {/* Title */}
+          <h2
+            className="text-lg font-semibold mb-2"
+            style={{ color: "var(--cleaner-title)" }}
+          >
+            Failed to load review
+          </h2>
+
+          {/* Description */}
+          <p
+            className="text-sm mb-6"
+            style={{ color: "var(--cleaner-subtitle)" }}
+          >
+            We couldn’t fetch the cleaning review right now.
+            This may be due to a network issue or a temporary server problem.
+          </p>
+
+          {/* Actions */}
+          <div className="flex items-center justify-center gap-3">
+            <button
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 rounded-lg text-sm font-medium transition"
+              style={{
+                background: "var(--cleaner-primary-bg)",
+                color: "var(--cleaner-primary-text)",
+              }}
+            >
+              Try again
+            </button>
+
+            <button
+              onClick={() => router.push("/cleaners")}
+              className="px-4 py-2 rounded-lg text-sm font-medium transition"
+              style={{
+                background: "var(--cleaner-input-bg)",
+                border: "1px solid var(--cleaner-border)",
+                color: "var(--cleaner-title)",
+              }}
+            >
+              Back to cleaner activity
+            </button>
+          </div>
+        </div>
       </div>
+
     );
   }
 
   if (!review) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        Review not found
+      <div
+        className="min-h-screen flex items-center justify-center p-6"
+        style={{
+          background: "var(--cleaner-bg)",
+          color: "var(--cleaner-title)",
+        }}
+      >
+        <div
+          className="max-w-md w-full text-center rounded-xl p-8"
+          style={{
+            background: "var(--cleaner-surface)",
+            border: "1px solid var(--cleaner-border)",
+            boxShadow: "var(--cleaner-shadow)",
+          }}
+        >
+          {/* Icon */}
+          <div
+            className="mx-auto mb-4 w-14 h-14 rounded-full flex items-center justify-center"
+            style={{
+              background: "var(--cleaner-input-bg)",
+              border: "1px solid var(--cleaner-border)",
+            }}
+          >
+            <AlertTriangle
+              size={22}
+              style={{ color: "var(--cleaner-header-icon-fg)" }}
+            />
+          </div>
+
+          {/* Title */}
+          <h2
+            className="text-lg font-semibold mb-2"
+            style={{ color: "var(--cleaner-title)" }}
+          >
+            Review not found
+          </h2>
+
+          {/* Description */}
+          <p
+            className="text-sm mb-6"
+            style={{ color: "var(--cleaner-subtitle)" }}
+          >
+            The cleaning review you’re looking for doesn’t exist or may have been
+            removed.
+          </p>
+
+          {/* Action */}
+          <button
+            onClick={() => router.push("/cleaners")}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition"
+            style={{
+              background: "var(--cleaner-input-bg)",
+              border: "1px solid var(--cleaner-border)",
+              color: "var(--cleaner-title)",
+            }}
+          >
+            <ArrowLeft
+              size={14}
+              style={{ color: "var(--cleaner-header-icon-fg)" }}
+            />
+            Back to cleaner activity
+          </button>
+        </div>
       </div>
+
     );
   }
 
@@ -149,96 +315,210 @@ export default function ReviewDetails() {
     <>
       <Toaster position="top-center" />
 
-      <div className="min-h-screen bg-background text-foreground p-6">
+      <div
+        className="min-h-screen p-6"
+        style={{
+          background: "var(--cleaner-bg)",
+          color: "var(--cleaner-title)",
+        }}
+      >
+
         <div className="max-w-6xl mx-auto space-y-6">
+
           {/* ================= HEADER ================= */}
-          <div className="bg-[var(--surface)] border border-border rounded-xl p-5">
+          <div
+            className="rounded-xl p-5"
+            style={{
+              background: "var(--cleaner-surface)",
+              border: "1px solid var(--cleaner-border)",
+              boxShadow: "var(--cleaner-shadow)",
+            }}
+          >
+            {/* Back button */}
             <button
               onClick={() => router.back()}
-              className="flex items-center gap-2 text-sm text-primary mb-3"
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition mb-2"
+              style={{
+                background: "var(--cleaner-input-bg)",
+                border: "1px solid var(--cleaner-border)",
+                color: "var(--cleaner-title)",
+              }}
             >
-              <ArrowLeft size={16} />
+              <ArrowLeft
+                size={14}
+                style={{ color: "var(--cleaner-header-icon-fg)" }}
+              />
               Back to cleaner activity
             </button>
 
+
+            {/* Title + Score */}
             <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-xl font-bold">
+              <h1
+                className="text-xl font-bold"
+                style={{ color: "var(--cleaner-title)" }}
+              >
                 Cleaning Review – {review.cleaner_user?.name}
               </h1>
 
-              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-muted text-primary">
+              <span
+                className="px-3 py-1 rounded-full text-xs font-semibold"
+                style={{
+                  background: "var(--cleaner-status-active-bg)",
+                  color: "var(--cleaner-status-active-text)",
+                }}
+              >
                 {review.score}/10
               </span>
             </div>
 
-            <p className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
-              <MapPin size={14} />
+            {/* Location */}
+            <p
+              className="flex items-center gap-2 text-sm mt-2"
+              style={{ color: "var(--cleaner-subtitle)" }}
+            >
+              <MapPin
+                size={14}
+                style={{ color: "var(--cleaner-header-icon-fg)" }}
+              />
               {review.location?.name}
             </p>
           </div>
 
+
           {/* ================= MAIN GRID ================= */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
             {/* ===== LEFT COLUMN ===== */}
             <div className="space-y-6">
-              {/* Task Details */}
-              <div className="bg-[var(--surface)] border border-border rounded-xl p-5">
-                <h3 className="font-semibold flex items-center gap-2 mb-3">
-                  <Activity size={16} />
+
+              {/* ===== TASK DETAILS ===== */}
+              <div
+                className="rounded-xl p-5"
+                style={{
+                  background: "var(--cleaner-surface)",
+                  border: "1px solid var(--cleaner-border)",
+                  boxShadow: "var(--cleaner-shadow)",
+                }}
+              >
+                <h3
+                  className="font-semibold flex items-center gap-2 mb-3"
+                  style={{ color: "var(--cleaner-title)" }}
+                >
+                  <Activity
+                    size={16}
+                    style={{ color: "var(--cleaner-header-icon-fg)" }}
+                  />
                   Task Details
                 </h3>
 
-                <p className="text-sm text-muted-foreground">
+                <p
+                  className="text-sm"
+                  style={{ color: "var(--cleaner-subtitle)" }}
+                >
                   <strong>Started:</strong>{" "}
                   {new Date(review.created_at).toLocaleString()}
                 </p>
 
                 {review.status === "ongoing" && (
-                  <p className="text-sm text-primary mt-2">
-                    <Clock size={14} className="inline mr-1" />
+                  <p
+                    className="text-sm mt-2 flex items-center gap-1"
+                    style={{ color: "var(--cleaner-primary-text)" }}
+                  >
+                    <Clock
+                      size={14}
+                      style={{ color: "var(--cleaner-header-icon-fg)" }}
+                    />
                     Running for {getTimeElapsed(review.created_at)}
                   </p>
                 )}
 
                 {review.status === "completed" && (
-                  <p className="text-sm text-emerald-600 mt-2">
-                    <CheckCircle size={14} className="inline mr-1" />
+                  <p
+                    className="text-sm mt-2 flex items-center gap-1"
+                    style={{ color: "var(--cleaner-status-active-text)" }}
+                  >
+                    <CheckCircle
+                      size={14}
+                      style={{ color: "var(--cleaner-status-active-text)" }}
+                    />
                     Completed in{" "}
-                    {getCompletionTime(review.created_at, review.updated_at)}
+                    {getCompletionTime(
+                      review.created_at,
+                      review.updated_at
+                    )}
                   </p>
                 )}
               </div>
 
-              {/* Task Review */}
-              <div className="bg-[var(--surface)] border border-border rounded-xl p-5 space-y-4">
-                <h3 className="font-semibold flex items-center gap-2">
-                  <Star size={16} />
+              {/* ===== TASK REVIEW ===== */}
+              <div
+                className="rounded-xl p-5 space-y-4"
+                style={{
+                  background: "var(--cleaner-surface)",
+                  border: "1px solid var(--cleaner-border)",
+                  boxShadow: "var(--cleaner-shadow)",
+                }}
+              >
+                <h3
+                  className="font-semibold flex items-center gap-2"
+                  style={{ color: "var(--cleaner-title)" }}
+                >
+                  <Star
+                    size={16}
+                    style={{ color: "var(--cleaner-header-icon-fg)" }}
+                  />
                   Task Review
                 </h3>
 
-                <div className="bg-muted rounded-lg p-4 flex items-center justify-between">
+                {/* Status Row */}
+                <div
+                  className="rounded-lg p-4 flex items-center justify-between"
+                  style={{
+                    background: "var(--cleaner-input-bg)",
+                    border: "1px solid var(--cleaner-border)",
+                  }}
+                >
                   <div>
-                    <p className="text-xs text-muted-foreground">
+                    <p
+                      className="text-xs"
+                      style={{ color: "var(--cleaner-subtitle)" }}
+                    >
                       CLEANING STATUS
                     </p>
-                    <p className="font-medium text-sm">
+                    <p
+                      className="font-medium text-sm"
+                      style={{ color: "var(--cleaner-title)" }}
+                    >
                       {review.status === "completed"
                         ? "Inspected & Completed"
                         : "Work in Progress"}
                     </p>
                   </div>
 
-                  <span className="px-3 py-1 rounded-full text-xs font-semibold bg-[color-mix(in srgb,var(--primary) 15%,transparent)] text-primary">
+                  <span
+                    className="px-3 py-1 rounded-full text-xs font-semibold"
+                    style={{
+                      background: "var(--cleaner-primary-bg)",
+                      color: "var(--cleaner-primary-text)",
+                    }}
+                  >
                     {review.score}/10
                   </span>
                 </div>
 
                 {review.initial_comment && (
                   <div>
-                    <p className="text-xs font-semibold mb-1">
+                    <p
+                      className="text-xs font-semibold mb-1"
+                      style={{ color: "var(--cleaner-title)" }}
+                    >
                       INITIAL OBSERVATION
                     </p>
-                    <p className="text-sm text-muted-foreground">
+                    <p
+                      className="text-sm"
+                      style={{ color: "var(--cleaner-subtitle)" }}
+                    >
                       {review.initial_comment}
                     </p>
                   </div>
@@ -246,10 +526,16 @@ export default function ReviewDetails() {
 
                 {review.final_comment && (
                   <div>
-                    <p className="text-xs font-semibold mb-1">
+                    <p
+                      className="text-xs font-semibold mb-1"
+                      style={{ color: "var(--cleaner-title)" }}
+                    >
                       POST-CLEANING NOTES
                     </p>
-                    <p className="text-sm text-muted-foreground">
+                    <p
+                      className="text-sm"
+                      style={{ color: "var(--cleaner-subtitle)" }}
+                    >
                       {review.final_comment}
                     </p>
                   </div>
@@ -257,10 +543,24 @@ export default function ReviewDetails() {
               </div>
             </div>
 
+
             {/* ===== RIGHT COLUMN ===== */}
-            <div className="lg:col-span-2 bg-[var(--surface)] border border-border rounded-xl p-5">
-              <h3 className="font-semibold flex items-center gap-2 mb-4">
-                <ImageIcon size={16} />
+            <div
+              className="lg:col-span-2 rounded-xl p-5"
+              style={{
+                background: "var(--cleaner-surface)",
+                border: "1px solid var(--cleaner-border)",
+                boxShadow: "var(--cleaner-shadow)",
+              }}
+            >
+              <h3
+                className="font-semibold flex items-center gap-2 mb-4"
+                style={{ color: "var(--cleaner-title)" }}
+              >
+                <ImageIcon
+                  size={16}
+                  style={{ color: "var(--cleaner-header-icon-fg)" }}
+                />
                 Visual Evidence ({allImages.length} Photos)
               </h3>
 
@@ -274,14 +574,29 @@ export default function ReviewDetails() {
                     <img
                       src={img.url}
                       alt=""
-                      className="w-full h-32 object-cover rounded-lg border border-border"
+                      className="w-full h-32 object-cover rounded-lg"
+                      style={{
+                        border: "1px solid var(--cleaner-border)",
+                      }}
                     />
+
+                    {/* BEFORE / AFTER badge */}
                     <span
-                      className={`absolute top-2 left-2 px-2 py-0.5 text-xs font-semibold rounded ${
-                        img.type === "before"
-                          ? "bg-muted text-muted-foreground"
-                          : "bg-[color-mix(in srgb,var(--primary) 20%,transparent)] text-primary"
-                      }`}
+                      className="absolute top-2 left-2 px-2 py-0.5 text-xs font-semibold rounded"
+                      style={{
+                        background:
+                          img.type === "before"
+                            ? "var(--cleaner-input-bg)"
+                            : "var(--cleaner-primary-bg)",
+                        color:
+                          img.type === "before"
+                            ? "var(--cleaner-subtitle)"
+                            : "var(--cleaner-primary-text)",
+                        border:
+                          img.type === "before"
+                            ? "1px solid var(--cleaner-border)"
+                            : "none",
+                      }}
                     >
                       {img.type.toUpperCase()}
                     </span>
@@ -289,6 +604,8 @@ export default function ReviewDetails() {
                 ))}
               </div>
             </div>
+
+
           </div>
         </div>
       </div>

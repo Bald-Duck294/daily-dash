@@ -3969,14 +3969,37 @@ function WashroomsPage() {
 
           {/* Table Container */}
           {filteredList.length === 0 ? (
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-16 text-center lg:col-span-2">
-              <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-orange-50 flex items-center justify-center">
-                <MapPin className="h-12 w-12 text-orange-400" />
+            <div
+              className="rounded-2xl p-16 text-center lg:col-span-2"
+              style={{
+                background: "var(--washroom-surface)",
+                border: "1px solid var(--washroom-border)",
+                boxShadow: "var(--washroom-shadow)",
+              }}
+            >
+              <div
+                className="w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center"
+                style={{
+                  background: "var(--washroom-filter-bg)",
+                }}
+              >
+                <MapPin
+                  className="h-12 w-12"
+                  style={{ color: "var(--washroom-primary)" }}
+                />
               </div>
-              <h3 className="text-2xl font-bold text-slate-900 mb-2">
+
+              <h3
+                className="text-2xl font-bold mb-2"
+                style={{ color: "var(--washroom-title)" }}
+              >
                 No Washrooms Found
               </h3>
-              <p className="text-slate-500 mb-6">
+
+              <p
+                className="mb-6"
+                style={{ color: "var(--washroom-subtitle)" }}
+              >
                 Try adjusting your search or filter criteria
               </p>
             </div>
@@ -4296,129 +4319,245 @@ function WashroomsPage() {
 
               {cleanerModal.open && (
                 <div
-                  className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                  className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                  style={{
+                    background: "rgba(0,0,0,0.35)",
+                    backdropFilter: "blur(4px)",
+                  }}
                   onClick={() =>
                     setCleanerModal({ open: false, location: null })
                   }
                 >
                   <div
-                    className="bg-white rounded-xl max-w-md w-full max-h-[85vh] overflow-y-scroll p-6 shadow-xl"
+                    className="rounded-xl max-w-md w-full max-h-[85vh] overflow-y-auto p-6"
+                    style={{
+                      background: "var(--washroom-surface)",
+                      border: "1px solid var(--washroom-border)",
+                      boxShadow: "var(--washroom-shadow)",
+                    }}
                     onClick={(e) => e.stopPropagation()}
                   >
+                    {/* Header */}
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-slate-800">
-                        {cleanerModal.location?.name} - Assigned Cleaners
+                      <h3
+                        className="text-lg font-semibold"
+                        style={{ color: "var(--washroom-title)" }}
+                      >
+                        {cleanerModal.location?.name} – Assigned Cleaners
                       </h3>
                       <button
                         onClick={() =>
                           setCleanerModal({ open: false, location: null })
                         }
-                        className="text-slate-400 hover:text-slate-600"
+                        className="transition-colors"
+                        style={{ color: "var(--washroom-subtitle)" }}
                       >
                         <X className="h-5 w-5" />
                       </button>
                     </div>
+
+                    {/* List */}
                     <div className="space-y-3">
-                      {cleanerModal.location?.cleaners?.map((assignment) => (
-                        <div
-                          key={assignment.id}
-                          className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200"
-                        >
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-slate-800 text-sm truncate">
-                              {assignment.cleaner_user?.name || "Unknown"}
-                            </p>
-                            {assignment.cleaner_user?.phone && (
-                              <p className="text-xs text-slate-500">
-                                {assignment.cleaner_user.phone}
-                              </p>
-                            )}
-                          </div>
-                          <span
-                            className={`text-xs px-2 py-1 rounded ${assignment.status === "assigned" ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-600"}`}
+                      {cleanerModal.location?.cleaners?.map((assignment) => {
+                        const isActive = assignment.status === "assigned";
+
+                        return (
+                          <div
+                            key={assignment.id}
+                            className="flex items-center gap-3 p-3 rounded-lg"
+                            style={{
+                              background: "var(--washroom-filter-bg)",
+                              border: "1px solid var(--washroom-border)",
+                            }}
                           >
-                            {assignment.status || "N/A"}
-                          </span>
-                        </div>
-                      ))}
+                            <div className="flex-1 min-w-0">
+                              <p
+                                className="font-medium text-sm truncate"
+                                style={{ color: "var(--washroom-text)" }}
+                              >
+                                {assignment.cleaner_user?.name || "Unknown"}
+                              </p>
+                              {assignment.cleaner_user?.phone && (
+                                <p
+                                  className="text-xs"
+                                  style={{ color: "var(--washroom-subtitle)" }}
+                                >
+                                  {assignment.cleaner_user.phone}
+                                </p>
+                              )}
+                            </div>
+
+                            {/* Status pill */}
+                            <span
+                              className="text-xs px-2 py-1 rounded-full font-medium"
+                              style={
+                                isActive
+                                  ? {
+                                    background: "var(--washroom-status-active-bg)",
+                                    color: "var(--washroom-status-active-text)",
+                                    border: `1px solid var(--washroom-status-active-border)`,
+                                  }
+                                  : {
+                                    background: "var(--washroom-status-inactive-bg)",
+                                    color: "var(--washroom-status-inactive-text)",
+                                    border: `1px solid var(--washroom-status-inactive-border)`,
+                                  }
+                              }
+                            >
+                              {assignment.status || "N/A"}
+                            </span>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
               )}
 
               {statusModal.open && (
-                <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                  <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl">
+                <div
+                  className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                  style={{
+                    background: "rgba(0,0,0,0.35)",
+                    backdropFilter: "blur(4px)",
+                  }}
+                >
+                  <div
+                    className="rounded-xl max-w-md w-full p-6"
+                    style={{
+                      background: "var(--washroom-surface)",
+                      border: "1px solid var(--washroom-border)",
+                      boxShadow: "var(--washroom-shadow)",
+                    }}
+                  >
+                    {/* Header */}
                     <div className="flex items-center gap-4 mb-4">
                       <div
-                        className={`p-3 rounded-full ${statusModal.location?.status === true || statusModal.location?.status === null ? "bg-red-100" : "bg-green-100"}`}
+                        className="p-3 rounded-full"
+                        style={
+                          statusModal.location?.status === true ||
+                            statusModal.location?.status === null
+                            ? {
+                              background: "var(--washroom-status-inactive-bg)",
+                              border: `1px solid var(--washroom-status-inactive-border)`,
+                            }
+                            : {
+                              background: "var(--washroom-status-active-bg)",
+                              border: `1px solid var(--washroom-status-active-border)`,
+                            }
+                        }
                       >
                         {statusModal.location?.status === true ||
                           statusModal.location?.status === null ? (
-                          <PowerOff className="h-6 w-6 text-red-600" />
+                          <PowerOff
+                            className="h-6 w-6"
+                            style={{ color: "var(--washroom-status-inactive-text)" }}
+                          />
                         ) : (
-                          <Power className="h-6 w-6 text-green-600" />
+                          <Power
+                            className="h-6 w-6"
+                            style={{ color: "var(--washroom-status-active-text)" }}
+                          />
                         )}
                       </div>
+
                       <div>
-                        <h3 className="text-lg font-semibold text-slate-800">
+                        <h3
+                          className="text-lg font-semibold"
+                          style={{ color: "var(--washroom-title)" }}
+                        >
                           {statusModal.location?.status === true ||
                             statusModal.location?.status === null
                             ? "Disable"
                             : "Enable"}{" "}
                           Washroom
                         </h3>
-                        <p className="text-slate-600 text-sm">
+                        <p
+                          className="text-sm"
+                          style={{ color: "var(--washroom-subtitle)" }}
+                        >
                           Confirm status change
                         </p>
                       </div>
                     </div>
+
+                    {/* Body */}
                     <div className="mb-6">
-                      <p className="text-sm text-slate-700">
+                      <p
+                        className="text-sm"
+                        style={{ color: "var(--washroom-text)" }}
+                      >
                         Are you sure you want to{" "}
-                        {statusModal.location?.status === true ||
-                          statusModal.location?.status === null
-                          ? "disable"
-                          : "enable"}
-                        <strong> "{statusModal.location?.name}"</strong>?
+                        <strong>
+                          {statusModal.location?.status === true ||
+                            statusModal.location?.status === null
+                            ? "disable"
+                            : "enable"}
+                        </strong>{" "}
+                        <strong>“{statusModal.location?.name}”</strong>?
                       </p>
 
+                      {/* Disable warning */}
                       {(statusModal.location?.status === true ||
                         statusModal.location?.status === null) && (
-                          <p className="text-sm text-red-600 mt-2 bg-red-50 p-3 rounded-md border border-red-200">
+                          <div
+                            className="mt-3 p-3 rounded-md text-sm"
+                            style={{
+                              background: "var(--washroom-status-inactive-bg)",
+                              border: `1px solid var(--washroom-status-inactive-border)`,
+                              color: "var(--washroom-status-inactive-text)",
+                            }}
+                          >
                             ⚠️ Disabling this washroom will automatically{" "}
-                            <strong>unassign all cleaners</strong> currently
-                            assigned to it.
+                            <strong>unassign all cleaners</strong>.
                             <br />
-                            They will need to be{" "}
-                            <strong>manually re-assigned</strong> when the
-                            washroom is enabled again.
-                          </p>
+                            They must be <strong>manually re-assigned</strong> when enabled again.
+                          </div>
                         )}
 
+                      {/* Enable info */}
                       {statusModal.location?.status === false && (
-                        <p className="text-sm text-blue-700 mt-2 bg-blue-50 p-3 rounded-md border border-blue-200">
+                        <div
+                          className="mt-3 p-3 rounded-md text-sm"
+                          style={{
+                            background: "var(--washroom-score-bg)",
+                            color: "var(--washroom-score-text)",
+                          }}
+                        >
                           ℹ️ Enabling this washroom will{" "}
-                          <strong>not automatically assign cleaners</strong>.
+                          <strong>not auto-assign cleaners</strong>.
                           <br />
-                          Please assign cleaners manually after activation.
-                        </p>
+                          Please assign cleaners manually.
+                        </div>
                       )}
                     </div>
 
+                    {/* Actions */}
                     <div className="flex gap-3 justify-end">
                       <button
                         onClick={() =>
                           setStatusModal({ open: false, location: null })
                         }
-                        className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                        className="px-4 py-2 rounded-lg transition-colors"
+                        style={{
+                          color: "var(--washroom-filter-text)",
+                          background: "transparent",
+                        }}
                       >
                         Cancel
                       </button>
+
                       <button
                         onClick={confirmStatusToggle}
                         disabled={togglingStatus === statusModal.location?.id}
-                        className={`px-4 py-2 text-white rounded-lg transition-colors flex items-center gap-2 ${statusModal.location?.status === true || statusModal.location?.status === null ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"}`}
+                        className="px-4 py-2 rounded-lg text-white flex items-center gap-2 transition-colors"
+                        style={{
+                          background:
+                            statusModal.location?.status === true ||
+                              statusModal.location?.status === null
+                              ? "var(--washroom-delete-bg)"
+                              : "var(--washroom-primary)",
+                        }}
                       >
                         {togglingStatus === statusModal.location?.id && (
                           <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -4433,44 +4572,101 @@ function WashroomsPage() {
                     </div>
                   </div>
                 </div>
+
               )}
 
               {deleteModal.open && (
-                <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                  <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl">
+                <div
+                  className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                  style={{
+                    background: "rgba(0,0,0,0.35)",
+                    backdropFilter: "blur(4px)",
+                  }}
+                >
+                  <div
+                    className="rounded-xl max-w-md w-full p-6"
+                    style={{
+                      background: "var(--washroom-surface)",
+                      border: "1px solid var(--washroom-border)",
+                      boxShadow: "var(--washroom-shadow)",
+                    }}
+                  >
+                    {/* Header */}
                     <div className="flex items-center gap-4 mb-4">
-                      <div className="p-3 bg-red-100 rounded-full">
-                        <AlertTriangle className="h-6 w-6 text-red-600" />
+                      <div
+                        className="p-3 rounded-full"
+                        style={{
+                          background: "var(--washroom-status-inactive-bg)",
+                          border: `1px solid var(--washroom-status-inactive-border)`,
+                        }}
+                      >
+                        <AlertTriangle
+                          className="h-6 w-6"
+                          style={{ color: "var(--washroom-status-inactive-text)" }}
+                        />
                       </div>
+
                       <div>
-                        <h3 className="text-lg font-semibold text-slate-800">
+                        <h3
+                          className="text-lg font-semibold"
+                          style={{ color: "var(--washroom-title)" }}
+                        >
                           Delete Washroom
                         </h3>
-                        <p className="text-slate-600 text-sm">
+                        <p
+                          className="text-sm"
+                          style={{ color: "var(--washroom-subtitle)" }}
+                        >
                           This action cannot be undone
                         </p>
                       </div>
                     </div>
+
+                    {/* Body */}
                     <div className="mb-6">
-                      <p className="text-sm text-slate-700">
-                        Are you sure you want to delete "
-                        <strong>{deleteModal.location?.name}</strong>"?
+                      <p
+                        className="text-sm"
+                        style={{ color: "var(--washroom-text)" }}
+                      >
+                        Are you sure you want to delete{" "}
+                        <strong>“{deleteModal.location?.name}”</strong>?
                       </p>
+
+                      <div
+                        className="mt-3 p-3 rounded-md text-sm"
+                        style={{
+                          background: "var(--washroom-status-inactive-bg)",
+                          border: `1px solid var(--washroom-status-inactive-border)`,
+                          color: "var(--washroom-status-inactive-text)",
+                        }}
+                      >
+                        ⚠️ This will permanently remove the washroom and all related data.
+                      </div>
                     </div>
+
+                    {/* Actions */}
                     <div className="flex gap-3 justify-end">
                       <button
                         onClick={() =>
                           setDeleteModal({ open: false, location: null })
                         }
-                        className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
                         disabled={deleting}
+                        className="px-4 py-2 rounded-lg transition-colors"
+                        style={{
+                          color: "var(--washroom-filter-text)",
+                          background: "transparent",
+                        }}
                       >
                         Cancel
                       </button>
+
                       <button
                         onClick={confirmDelete}
                         disabled={deleting}
-                        className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors flex items-center gap-2"
+                        className="px-4 py-2 rounded-lg text-white flex items-center gap-2 transition-colors"
+                        style={{
+                          background: "var(--washroom-delete-bg)",
+                        }}
                       >
                         {deleting && (
                           <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -4480,6 +4676,7 @@ function WashroomsPage() {
                     </div>
                   </div>
                 </div>
+
               )}
             </div>
           )}

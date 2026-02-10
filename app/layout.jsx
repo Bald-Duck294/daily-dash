@@ -20,6 +20,9 @@ const geistMono = Geist_Mono({
 export const metadata = {
   title: "SaafAI Dashboard",
   description: "Admin dashboard",
+  icons: {
+    icon: '/flo-mascot.png'
+  }
 };
 
 export default function RootLayout({ children }) {

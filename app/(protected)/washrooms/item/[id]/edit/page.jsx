@@ -2222,7 +2222,7 @@ const EditLocationPage = () => {
         ...prev.usage_category,
         [gender]: {
           ...prev.usage_category[gender],
-          [field]: value === "" ? 0 : parseInt(value),
+          [field]: value, // allow "" or number
         },
       },
     }));
@@ -2292,7 +2292,10 @@ const EditLocationPage = () => {
 
   // Save
   const handleSave = async () => {
-    if (!formData.name.trim()) return toast.error("Location name required");
+    if (!formData.name.trim()) {
+      toast.error("Location name required");
+      return;
+    }
 
     setSaving(true);
     try {
@@ -2305,7 +2308,21 @@ const EditLocationPage = () => {
         );
       }
 
-      // 2. Update Data & Upload New Images
+      // 2. Normalize usage_category JUST before submit
+      const normalizedUsageCategory = {
+        men: Object.fromEntries(
+          Object.entries(formData.usage_category.men).map(
+            ([k, v]) => [k, Number(v || 0)]
+          )
+        ),
+        women: Object.fromEntries(
+          Object.entries(formData.usage_category.women).map(
+            ([k, v]) => [k, Number(v || 0)]
+          )
+        ),
+      };
+
+      // 3. Prepare final update payload
       const updateData = {
         ...formData,
         name: formData.name.trim(),
@@ -2314,6 +2331,7 @@ const EditLocationPage = () => {
         no_of_photos: formData.no_of_photos || null,
         facility_companiesId: formData.facility_companiesId || null,
         type_id: formData.type_id || null,
+        usage_category: normalizedUsageCategory, // ✅ FIX
       };
 
       const result = await LocationsApi.updateLocation(
@@ -2516,7 +2534,7 @@ const EditLocationPage = () => {
                 </div>
 
                 {/* Photo Count */}
-                <div className="space-y-2">
+                {/* <div className="space-y-2">
                   <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider block ml-1">
                     Required Photo Count
                   </label>
@@ -2535,7 +2553,7 @@ const EditLocationPage = () => {
                       placeholder="0"
                     />
                   </div>
-                </div>
+                </div> */}
               </div>
             </div>
 
@@ -2670,7 +2688,7 @@ const EditLocationPage = () => {
                       <FaPerson className="text-cyan-600 text-lg" />
                     </div>
                     <h3 className="text-xs font-black text-slate-700 uppercase tracking-widest">
-                      Men's Facilities
+                      Men&apos;s Facilities
                     </h3>
                   </div>
                   <div className="grid grid-cols-1 gap-4">
@@ -2683,10 +2701,22 @@ const EditLocationPage = () => {
                           <input
                             type="number"
                             min="0"
-                            value={formData.usage_category.men[field]}
-                            onChange={(e) =>
-                              updateUsageCategory("men", field, e.target.value)
-                            }
+                            step="1"
+                            value={formData.usage_category.men[field] ?? ""}
+                            onChange={(e) => {
+                              const raw = e.target.value;
+
+                              if (raw === "") {
+                                updateUsageCategory("men", field, "");
+                              } else {
+                                updateUsageCategory("men", field, Number(raw));
+                              }
+                            }}
+                            onBlur={() => {
+                              if (formData.usage_category.men[field] === "") {
+                                updateUsageCategory("men", field, 0);
+                              }
+                            }}
                             className="w-full pl-4 py-2 rounded-xl border border-slate-200 bg-white text-sm focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 outline-none transition-all"
                             placeholder="0"
                           />
@@ -2703,7 +2733,7 @@ const EditLocationPage = () => {
                       <FaPersonDress className="text-rose-500 text-lg" />
                     </div>
                     <h3 className="text-xs font-black text-rose-700 uppercase tracking-widest">
-                      Women's Facilities
+                      Women&apos;s Facilities
                     </h3>
                   </div>
                   <div className="grid grid-cols-1 gap-4">
@@ -2716,14 +2746,22 @@ const EditLocationPage = () => {
                           <input
                             type="number"
                             min="0"
-                            value={formData.usage_category.women[field]}
-                            onChange={(e) =>
-                              updateUsageCategory(
-                                "women",
-                                field,
-                                e.target.value,
-                              )
-                            }
+                            step="1"
+                            value={formData.usage_category.women[field] ?? ""}
+                            onChange={(e) => {
+                              const raw = e.target.value;
+
+                              if (raw === "") {
+                                updateUsageCategory("women", field, "");
+                              } else {
+                                updateUsageCategory("women", field, Number(raw));
+                              }
+                            }}
+                            onBlur={() => {
+                              if (formData.usage_category.women[field] === "") {
+                                updateUsageCategory("women", field, 0);
+                              }
+                            }}
                             className="w-full pl-4 py-2 rounded-xl border border-rose-200 bg-white text-sm focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 outline-none transition-all"
                             placeholder="0"
                           />
@@ -2789,16 +2827,12 @@ const EditLocationPage = () => {
           <div className="space-y-8">
             {/* 4. PIN LOCATION (MAP) */}
             <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6">
-              <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
+              <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
                 <div className="h-10 w-10 rounded-xl bg-cyan-400/10 flex items-center justify-center border border-cyan-500/10 shadow-sm">
-                  <MapPin
-                    className="text-cyan-600"
-                    size={20}
-                    strokeWidth={2.5}
-                  />
+                  <MapPin className="text-cyan-600" size={20} strokeWidth={2.5} />
                 </div>
                 <div className="text-left">
-                  <h2 className="text-sm font-black text-slate-800 uppercase tracking-[0.2em] leading-none">
+                  <h2 className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-[0.2em] leading-none">
                     Pin Location
                   </h2>
                   <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1.5 opacity-70">
@@ -2811,9 +2845,7 @@ const EditLocationPage = () => {
               <div className="mb-4">
                 <GoogleMapPicker
                   lat={formData.latitude ? parseFloat(formData.latitude) : null}
-                  lng={
-                    formData.longitude ? parseFloat(formData.longitude) : null
-                  }
+                  lng={formData.longitude ? parseFloat(formData.longitude) : null}
                   onSelect={(lat, lng) => {
                     handleInputChange("latitude", lat?.toString() || "");
                     handleInputChange("longitude", lng?.toString() || "");
@@ -2821,23 +2853,74 @@ const EditLocationPage = () => {
                 />
               </div>
 
-              {/* Coordinates */}
-              <div className="grid grid-cols-2 gap-4 mt-4">
+              {/* Manual Coordinates */}
+              <div className="space-y-4 mt-6">
+                <div className="flex items-center gap-2 mb-3">
+                  <MapPin size={14} className="text-cyan-500" />
+                  <p className="text-[11px] font-black text-slate-600 uppercase tracking-wider">
+                    Manual Coordinates
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 block">
+                      Latitude
+                    </label>
+                    <input
+                      type="number"
+                      step="0.000001"
+                      value={formData.latitude}
+                      onChange={(e) =>
+                        handleInputChange("latitude", e.target.value)
+                      }
+                      placeholder="21.145800"
+                      className="w-full px-3 py-2.5 bg-white border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-mono text-slate-700 dark:text-slate-300 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 transition-all outline-none"
+                    />
+                    <p className="text-[9px] text-slate-400 mt-1 ml-1">
+                      Range: -90 to 90
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 block">
+                      Longitude
+                    </label>
+                    <input
+                      type="number"
+                      step="0.000001"
+                      value={formData.longitude}
+                      onChange={(e) =>
+                        handleInputChange("longitude", e.target.value)
+                      }
+                      placeholder="79.088200"
+                      className="w-full px-3 py-2.5 bg-white border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-mono text-slate-700 dark:text-slate-300 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 transition-all outline-none"
+                    />
+                    <p className="text-[9px] text-slate-400 mt-1 ml-1">
+                      Range: -180 to 180
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Current Coordinates Display */}
+              <div className="grid grid-cols-2 gap-4 mt-6 p-4 bg-gradient-to-r from-cyan-50/50 to-blue-50/50 dark:from-cyan-900/10 dark:to-blue-900/10 rounded-xl border border-cyan-100/50 dark:border-cyan-800/50">
                 <div>
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">
-                    Latitude
+                  <label className="text-[10px] font-bold text-cyan-600 dark:text-cyan-400 uppercase tracking-wider mb-1 block">
+                    Current Latitude
                   </label>
-                  <div className="px-4 py-3 bg-cyan-400/5 border border-cyan-500/10 rounded-xl text-sm font-mono font-bold text-cyan-700 shadow-sm">
+                  <div className="px-3 py-2 bg-white dark:bg-slate-800 border border-cyan-200/50 dark:border-cyan-700/50 rounded-lg text-sm font-mono font-bold text-cyan-700 dark:text-cyan-300 shadow-sm">
                     {formData.latitude
                       ? Number(formData.latitude).toFixed(6)
                       : "N/A"}
                   </div>
                 </div>
+
                 <div>
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">
-                    Longitude
+                  <label className="text-[10px] font-bold text-cyan-600 dark:text-cyan-400 uppercase tracking-wider mb-1 block">
+                    Current Longitude
                   </label>
-                  <div className="px-4 py-3 bg-cyan-400/5 border border-cyan-500/10 rounded-xl text-sm font-mono font-bold text-cyan-700 shadow-sm">
+                  <div className="px-3 py-2 bg-white dark:bg-slate-800 border border-cyan-200/50 dark:border-cyan-700/50 rounded-lg text-sm font-mono font-bold text-cyan-700 dark:text-cyan-300 shadow-sm">
                     {formData.longitude
                       ? Number(formData.longitude).toFixed(6)
                       : "N/A"}
@@ -2845,14 +2928,22 @@ const EditLocationPage = () => {
                 </div>
               </div>
 
-              <div className="mt-6 flex items-start gap-3 p-4 bg-slate-50/50 border border-slate-100 rounded-xl">
+              {/* Info Box */}
+              <div className="mt-6 flex items-start gap-3 p-4 bg-slate-50/50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 rounded-xl">
                 <Info size={14} className="text-cyan-500 shrink-0 mt-0.5" />
-                <p className="text-[10px] font-medium text-slate-500 italic leading-relaxed text-left">
-                  Search an address above or drag the red marker.{" "}
-                  <span className="font-black text-cyan-600 uppercase ml-1">
-                    Coordinates are automatically captured.
-                  </span>
-                </p>
+                <div className="text-[10px] font-medium text-slate-500 dark:text-slate-400 leading-relaxed text-left space-y-1">
+                  <p>
+                    <span className="font-black text-cyan-600">Option 1:</span>{" "}
+                    Drag the map marker to update coordinates automatically
+                  </p>
+                  <p>
+                    <span className="font-black text-cyan-600">Option 2:</span>{" "}
+                    Enter lat/long manually
+                  </p>
+                  <p className="text-amber-600 dark:text-amber-400 font-bold">
+                    Address fields will auto-fill when you pin a location
+                  </p>
+                </div>
               </div>
             </div>
 

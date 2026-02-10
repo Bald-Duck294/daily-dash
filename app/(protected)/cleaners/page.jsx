@@ -328,8 +328,8 @@ import {
 const cleanString = (str) =>
   str
     ? String(str)
-        .replace(/^["'\s]+|["'\s,]+$/g, "")
-        .trim()
+      .replace(/^["'\s]+|["'\s,]+$/g, "")
+      .trim()
     : "";
 
 const getTimeElapsed = (startTime) => {
@@ -415,212 +415,459 @@ export default function CleanerReviewPage() {
     <>
       <Toaster position="top-center" />
 
-      <div className="min-h-screen bg-background text-foreground p-6">
+      <div
+        className="min-h-screen p-6"
+        style={{
+          background: "var(--cleaner-bg)",
+          color: "var(--cleaner-title)",
+        }}
+      >
+
         <div className="max-w-7xl mx-auto space-y-6">
+
           {/* ================= HEADER CARD ================= */}
-          <div className="bg-[var(--surface)] border border-border rounded-xl p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div
+            className="rounded-xl p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4"
+            style={{
+              background: "var(--cleaner-header-bg)",
+              border: "1px solid var(--cleaner-header-border)",
+              backdropFilter: "blur(6px)",
+            }}
+          >
+            {/* LEFT */}
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-md bg-muted">
-                <ListChecks className="text-primary" />
+              <div
+                className="
+    flex items-center justify-center
+    p-3 rounded-xl
+    bg-[var(--cleaner-header-icon-bg)]
+    border border-[var(--cleaner-header-icon-border)]
+    shadow-[var(--cleaner-header-icon-shadow)]
+  "
+              >
+                <ListChecks
+                  size={18}
+                  className="text-[var(--cleaner-header-icon-fg)]"
+                />
               </div>
+
+
+
               <div>
-                <h1 className="text-xl font-bold">CLEANERS ACTIVITY</h1>
-                <p className="text-xs text-muted-foreground">
+                <h1
+                  className="text-xl font-bold"
+                  style={{ color: "var(--cleaner-title)" }}
+                >
+                  CLEANERS ACTIVITY
+                </h1>
+                <p
+                  className="text-xs"
+                  style={{ color: "var(--cleaner-subtitle)" }}
+                >
                   Monitor real-time daily cleaning tasks and progress
                 </p>
               </div>
             </div>
 
-            <div className="flex gap-2 bg-muted p-1 rounded-lg">
-              {["all", "ongoing", "completed"].map((v) => (
-                <button
-                  key={v}
-                  onClick={() => setFilter(v)}
-                  className={`px-4 py-1.5 rounded-md text-sm font-medium transition
-                    ${
-                      filter === v
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:bg-muted/70"
-                    }`}
-                >
-                  {v === "all" ? "All Tasks" : v}
-                </button>
-              ))}
+            {/* FILTER TOGGLE */}
+            <div
+              className="flex gap-2 p-1 rounded-lg"
+              style={{
+                background: "var(--cleaner-input-bg)",
+                border: "1px solid var(--cleaner-border)",
+              }}
+            >
+              {["all", "ongoing", "completed"].map((v) => {
+                const active = filter === v;
+
+                return (
+                  <button
+                    key={v}
+                    onClick={() => setFilter(v)}
+                    className="px-4 py-1.5 rounded-md text-sm font-medium transition"
+                    style={{
+                      background: active
+                        ? "var(--cleaner-primary-bg)"
+                        : "transparent",
+                      color: active
+                        ? "var(--cleaner-primary-text)"
+                        : "var(--cleaner-subtitle)",
+                    }}
+                  >
+                    {v === "all" ? "All Tasks" : v}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
+
           {/* ================= FILTER CARD ================= */}
-          <div className="bg-[var(--surface)] border border-border rounded-xl p-5 space-y-4">
+          <div
+            className="rounded-xl p-5 space-y-4"
+            style={{
+              background: "var(--cleaner-surface)",
+              border: "1px solid var(--cleaner-border)",
+              boxShadow: "var(--cleaner-shadow)",
+            }}
+          >
+            {/* TITLE */}
             <div className="flex items-center gap-2 text-sm font-semibold">
-              <Calendar className="text-primary" size={16} />
-              FILTER BY DATE
+              <div
+                className="flex items-center justify-center p-2 rounded-lg"
+                style={{
+                  background: "var(--cleaner-header-icon-bg)",
+                  border: "1px solid var(--cleaner-header-icon-border)",
+                  boxShadow: "var(--cleaner-header-icon-shadow)",
+                }}
+              >
+                <Calendar
+                  size={16}
+                  style={{ color: "var(--cleaner-header-icon-fg)" }}
+                />
+              </div>
+
+              <span style={{ color: "var(--cleaner-title)" }}>
+                FILTER BY DATE
+              </span>
             </div>
 
+
+            {/* CONTROLS */}
             <div className="flex flex-wrap gap-4 items-center">
-              {/* Date Input Wrapper with Clear Button */}
-              <div className="relative">
-                <input
-                  type="date"
-                  value={date || ""}
-                  onChange={(e) => setDate(e.target.value)}
-                  className="input w-48 border border-border rounded-md px-3 py-2 bg-background pr-8" // Added padding-right for icon
-                />
-                {date && (
-                  <button
-                    onClick={() => setDate("")}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                    title="Clear date filter"
-                  >
-                    <X size={16} />
-                  </button>
-                )}
-              </div>
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="w-48 rounded-md px-3 py-2 text-sm"
+                style={{
+                  background: "var(--cleaner-input-bg)",
+                  border: "1px solid var(--cleaner-input-border)",
+                  color: "var(--cleaner-input-text)",
+                }}
+              />
 
               <button
                 onClick={handleReset}
-                className="action flex items-center gap-2 px-3 py-2 rounded-md bg-muted hover:bg-muted/80 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition"
+                style={{
+                  background: "var(--cleaner-danger-bg)",
+                  color: "var(--cleaner-danger-text)",
+                  border: "1px solid var(--cleaner-border)",
+                }}
               >
                 <RotateCcw size={14} />
-                Reset All
+                Reset Filters
               </button>
             </div>
           </div>
 
+
           {/* ================= MAIN GRID ================= */}
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+
             {/* ===== LEFT: ACTIVITY OVERVIEW ===== */}
-            <div className="bg-[var(--surface)] border border-border rounded-xl p-5 h-fit">
+            <div
+              className="rounded-xl p-5 self-start"
+              style={{
+                background: "var(--cleaner-surface)",
+                border: "1px solid var(--cleaner-border)",
+                boxShadow: "var(--cleaner-shadow)",
+              }}
+            >
+
+              {/* HEADER */}
               <div className="flex items-center gap-2 mb-4">
-                <div className="p-2 rounded-md bg-muted">
-                  <BarChart3 size={16} className="text-primary" />
+                <div
+                  className="
+      flex items-center justify-center
+      p-2 rounded-lg
+      bg-[var(--cleaner-header-icon-bg)]
+      border border-[var(--cleaner-header-icon-border)]
+      shadow-[var(--cleaner-header-icon-shadow)]
+    "
+                >
+                  <BarChart3
+                    size={16}
+                    className="text-[var(--cleaner-header-icon-fg)]"
+                  />
                 </div>
-                <h3 className="font-semibold">Activity Overview</h3>
+
+                <h3 className="font-semibold text-[var(--cleaner-title)]">
+                  Activity Overview
+                </h3>
               </div>
 
+
+              {/* COMPLETION RING */}
               <div className="flex items-center gap-4 mb-5">
-                <div className="w-16 h-16 rounded-full border-4 border-muted flex items-center justify-center text-sm font-bold text-primary">
+                {/* KPI RING */}
+                <div
+                  className="w-16 h-16 rounded-full flex items-center justify-center text-sm font-semibold"
+                  style={{
+                    border: "4px solid var(--cleaner-kpi-value)",
+                    color: "var(--cleaner-title)",
+                    background: "transparent",
+                  }}
+                >
                   75%
                 </div>
+
+                {/* LABELS */}
                 <div>
-                  <p className="text-sm font-medium">Completion Rate</p>
-                  <p className="text-xs text-muted-foreground">
-                    Target: <span className="text-primary">90%</span>
+                  <p
+                    className="text-sm font-medium"
+                    style={{ color: "var(--cleaner-title)" }}
+                  >
+                    Completion Rate
+                  </p>
+
+                  <p
+                    className="text-xs"
+                    style={{ color: "var(--cleaner-subtitle)" }}
+                  >
+                    Target:
+                    <span
+                      className="ml-1 font-medium"
+                      style={{ color: "var(--cleaner-kpi-value)" }}
+                    >
+                      90%
+                    </span>
                   </p>
                 </div>
               </div>
 
-              <p className="text-xs text-muted-foreground">PERFORMANCE SCORE</p>
-              <p className="font-semibold text-lg">
-                8.2 <span className="text-muted-foreground text-sm">/ 10</span>
+
+              {/* PERFORMANCE */}
+              <p className="text-xs tracking-wide text-[var(--cleaner-subtitle)]">
+                PERFORMANCE SCORE
               </p>
+
+              <p className="font-semibold text-lg text-[var(--cleaner-title)]">
+                8.2
+                <span className="ml-1 text-sm text-[var(--cleaner-subtitle)]">
+                  / 10
+                </span>
+              </p>
+
             </div>
+
 
             {/* ===== RIGHT: CLEANER CARDS ===== */}
             <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6">
               {isLoading ? (
-                <div className="col-span-full text-center text-muted-foreground py-10">
-                  Loading cleaner activity...
-                </div>
-              ) : reviews.length ? (
-                reviews.map((r) => (
+                <div className="col-span-full flex flex-col items-center justify-center py-16">
+                  {/* Spinner */}
                   <div
-                    key={r.id}
-                    className="bg-[var(--surface)] border border-border rounded-xl p-5 hover:shadow-md transition-shadow"
+                    className="w-10 h-10 rounded-full border-2 border-t-transparent animate-spin mb-4"
+                    style={{
+                      borderColor: "var(--cleaner-kpi-value)",
+                      borderTopColor: "transparent",
+                    }}
+                  />
+
+                  {/* Text */}
+                  <p
+                    className="text-sm font-medium"
+                    style={{ color: "var(--cleaner-title)" }}
                   >
-                    {/* Header */}
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                          <User size={16} className="text-primary" />
+                    Loading cleaner activity
+                  </p>
+
+                  <p
+                    className="text-xs mt-1"
+                    style={{ color: "var(--cleaner-subtitle)" }}
+                  >
+                    Please wait while we fetch the latest updates
+                  </p>
+                </div>
+
+              ) : reviews.length ? (
+                reviews.map((r) => {
+                  const active = r.status === "completed";
+
+                  return (
+                    <div
+                      key={r.id}
+                      className="rounded-xl p-5"
+                      style={{
+                        background: "var(--cleaner-surface)",
+                        border: "1px solid var(--cleaner-border)",
+                        boxShadow: "var(--cleaner-shadow)",
+                      }}
+                    >
+                      {/* HEADER */}
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className="w-10 h-10 rounded-full flex items-center justify-center"
+                            style={{
+                              background: "var(--cleaner-header-icon-bg)",
+                              border: "1px solid var(--cleaner-header-icon-border)",
+                              boxShadow: "var(--cleaner-header-icon-shadow)",
+                            }}
+                          >
+                            <User
+                              size={16}
+                              style={{ color: "var(--cleaner-header-icon-fg)" }}
+                            />
+                          </div>
+
+
+                          <div>
+                            <p
+                              className="font-semibold"
+                              style={{ color: "var(--cleaner-title)" }}
+                            >
+                              {r.cleaner_user?.name || "Cleaner"}
+                            </p>
+                            <p
+                              className="text-xs"
+                              style={{ color: "var(--cleaner-subtitle)" }}
+                            >
+                              STAFF MEMBER
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-semibold">
-                            {r.cleaner_user?.name || "Cleaner"}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            STAFF MEMBER
-                          </p>
-                        </div>
+
+                        {/* STATUS */}
+                        <span
+                          className="px-3 py-1 rounded-full text-xs font-medium"
+                          style={{
+                            background: active
+                              ? "var(--cleaner-status-active-bg)"
+                              : "var(--cleaner-status-inactive-bg)",
+                            color: active
+                              ? "var(--cleaner-status-active-text)"
+                              : "var(--cleaner-status-inactive-text)",
+                          }}
+                        >
+                          {r.status.toUpperCase()}
+                        </span>
                       </div>
 
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-medium 
-                        ${r.status === "completed" ? "bg-green-100 text-green-700" : "bg-blue-100 text-blue-700"}`}
+                      {/* EVIDENCE */}
+                      <p
+                        className="text-xs mb-2"
+                        style={{ color: "var(--cleaner-subtitle)" }}
                       >
-                        {r.status.toUpperCase()}
-                      </span>
-                    </div>
-
-                    {/* Evidence */}
-                    <p className="text-xs text-muted-foreground mb-2">
-                      EVIDENCE LOGS ({r.before_photo?.length || 0})
-                    </p>
-
-                    <div className="flex items-center gap-2 mb-4">
-                      {(r.before_photo || []).slice(0, 2).map((img, i) => (
-                        <img
-                          key={i}
-                          src={img}
-                          className="w-10 h-10 rounded-full object-cover border border-border"
-                          alt="Evidence"
-                        />
-                      ))}
-                      {(r.before_photo?.length || 0) > 2 && (
-                        <div className="w-10 h-10 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center">
-                          +{r.before_photo.length - 2}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Location */}
-                    <div className="bg-muted/50 rounded-lg p-3 mb-4">
-                      <p className="text-sm font-medium flex items-center gap-2">
-                        <MapPin size={14} className="text-primary" />
-                        {r.location?.name}
+                        EVIDENCE LOGS ({r.before_photo?.length || 0})
                       </p>
-                      <p className="text-xs text-muted-foreground mt-1 ml-5">
-                        Started: {new Date(r.created_at).toLocaleString()}
-                      </p>
-                      {r.status === "ongoing" && (
-                        <p className="text-xs text-primary mt-1 ml-5 font-medium">
-                          <Clock size={12} className="inline mr-1" />
-                          {getTimeElapsed(r.created_at)}
+
+                      <div className="flex items-center gap-2 mb-4">
+                        {(r.before_photo || []).slice(0, 2).map((img, i) => (
+                          <img
+                            key={i}
+                            src={img}
+                            alt=""
+                            className="w-10 h-10 rounded-full object-cover"
+                            style={{ border: "1px solid var(--cleaner-border)" }}
+                          />
+                        ))}
+
+                        {(r.before_photo?.length || 0) > 2 && (
+                          <div
+                            className="w-10 h-10 rounded-full text-xs flex items-center justify-center"
+                            style={{
+                              background: "var(--cleaner-primary-bg)",
+                              color: "var(--cleaner-primary-text)",
+                            }}
+                          >
+                            +{r.before_photo.length - 2}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* LOCATION */}
+                      <div
+                        className="rounded-lg p-3 mb-4"
+                        style={{
+                          background: "var(--cleaner-input-bg)",
+                          border: "1px solid var(--cleaner-border)",
+                        }}
+                      >
+                        <p
+                          className="text-sm font-medium flex items-center gap-2"
+                          style={{ color: "var(--cleaner-title)" }}
+                        >
+                          <MapPin size={14} />
+                          {r.location?.name}
                         </p>
-                      )}
-                    </div>
 
-                    <button
-                      onClick={() =>
-                        router.push(`/cleaners/${r.id}?companyId=${companyId}`)
-                      }
-                      className="w-full py-2 rounded-lg border border-border text-primary text-sm font-medium hover:bg-muted transition"
-                    >
-                      Detailed Report →
-                    </button>
-                  </div>
-                ))
+                        <p
+                          className="text-xs mt-1"
+                          style={{ color: "var(--cleaner-subtitle)" }}
+                        >
+                          Started: {new Date(r.created_at).toLocaleString()}
+                        </p>
+
+                        {r.status === "ongoing" && (
+                          <p
+                            className="text-xs mt-1 flex items-center gap-1"
+                            style={{ color: "var(--cleaner-primary-text)" }}
+                          >
+                            <Clock size={12} />
+                            {getTimeElapsed(r.created_at)}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* ACTION */}
+                      <button
+                        onClick={() =>
+                          router.push(`/cleaners/${r.id}?companyId=${companyId}`)
+                        }
+                        className="w-full py-2 rounded-lg text-sm font-medium transition"
+                        style={{
+                          background: "var(--cleaner-primary-bg)",
+                          color: "var(--cleaner-primary-text)",
+                        }}
+                      >
+                        Detailed Report →
+                      </button>
+                    </div>
+                  );
+                })
               ) : (
-                <div className="col-span-full flex flex-col items-center justify-center py-12 text-muted-foreground bg-[var(--surface)] border border-border rounded-xl">
-                  <ListChecks size={48} className="mb-4 opacity-20" />
-                  <p>
-                    {date
-                      ? "No activity found for this date."
-                      : "No activity found."}
+                <div className="col-span-full flex flex-col items-center justify-center py-16">
+                  {/* Icon */}
+                  <div
+                    className="w-14 h-14 rounded-full flex items-center justify-center mb-4"
+                    style={{
+                      background: "var(--cleaner-input-bg)",
+                      border: "1px solid var(--cleaner-border)",
+                    }}
+                  >
+                    <ListChecks
+                      size={22}
+                      style={{ color: "var(--cleaner-header-icon-fg)" }}
+                    />
+                  </div>
+
+                  {/* Title */}
+                  <p
+                    className="text-sm font-semibold mb-1"
+                    style={{ color: "var(--cleaner-title)" }}
+                  >
+                    No cleaner activity found
                   </p>
-                  {date && (
-                    <button
-                      onClick={() => setDate("")}
-                      className="mt-2 text-primary hover:underline text-sm"
-                    >
-                      Clear date filter
-                    </button>
-                  )}
+
+                  {/* Helper text */}
+                  <p
+                    className="text-xs max-w-sm text-center"
+                    style={{ color: "var(--cleaner-subtitle)" }}
+                  >
+                    There are no cleaning tasks matching your current filters.
+                    Try changing the date or resetting filters.
+                  </p>
                 </div>
+
               )}
             </div>
+
           </div>
         </div>
-      </div>
+      </div >
     </>
   );
 }

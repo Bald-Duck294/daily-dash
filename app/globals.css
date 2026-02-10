@@ -341,6 +341,117 @@
   --report-btn-primary-bg: linear-gradient(90deg, #fb923c, #f59e0b);
   --report-btn-primary-hover-bg: linear-gradient(90deg, #f97316, #d97706);
   --report-btn-primary-text: #ffffff;
+
+  /* ===============================
+   CLEANERS PAGE – LIGHT MODE
+   =============================== */
+
+  /* Page background */
+  --cleaner-bg: #f8fafc;
+
+  /* Surface / cards */
+  --cleaner-surface: #ffffff;
+  --cleaner-border: #e5e7eb;
+  --cleaner-shadow: 0 8px 24px rgba(16, 24, 40, 0.06);
+
+  /* Header */
+  --cleaner-header-bg: rgba(255, 255, 255, 0.85);
+  --cleaner-header-border: #e5e7eb;
+  --cleaner-title: #0f172a;
+  --cleaner-subtitle: #64748b;
+
+  --cleaner-header-icon-bg: linear-gradient(135deg, #ffedd5, #fde68a);
+
+  --cleaner-header-icon-border: rgba(251, 146, 60, 0.35);
+
+  --cleaner-header-icon-shadow:
+    0 8px 20px rgba(251, 146, 60, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+
+  --cleaner-header-icon-fg: #9a3412;
+
+  /* Inputs */
+  --cleaner-input-bg: #ffffff;
+  --cleaner-input-border: #e5e7eb;
+  --cleaner-input-focus: #f59e0b;
+  --cleaner-input-text: #0f172a;
+  --cleaner-input-placeholder: #94a3b8;
+
+  /* Primary action (same orange as others) */
+  --cleaner-primary-bg: linear-gradient(90deg, #fb923c, #f59e0b);
+  --cleaner-primary-hover-bg: linear-gradient(90deg, #f97316, #d97706);
+  --cleaner-primary-text: #ffffff;
+  --cleaner-primary-border: rgba(251, 146, 60, 0.45);
+  /* Cleaner KPI */
+  --cleaner-kpi-track: #e5e7eb;
+  --cleaner-kpi-value: var(--cleaner-primary-border);
+
+  /* Status — ASSIGNED */
+  --cleaner-status-active-bg: #ecfdf5;
+  --cleaner-status-active-text: #047857;
+
+  /* Status — UNASSIGNED */
+  --cleaner-status-inactive-bg: #f1f5f9;
+  --cleaner-status-inactive-text: #475569;
+
+  /* Danger */
+  --cleaner-danger-bg: rgba(239, 68, 68, 0.12);
+  --cleaner-danger-text: #b91c1c;
+
+  /* Table */
+  --cleaner-table-header-bg: #f1f5f9;
+  --cleaner-table-row-hover: rgba(251, 146, 60, 0.08);
+  --cleaner-table-divider: #e5e7eb;
+
+
+  /* ===============================
+   SUPERVISOR PAGE – LIGHT MODE
+   =============================== */
+
+  /* Page background */
+  --supervisor-bg: #f1f5f9; /* slate-100-ish */
+
+  /* Surfaces / cards (slightly warm white) */
+  --supervisor-surface: #ffffff;
+  --supervisor-border: #e2e8f0;
+  --supervisor-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+
+  /* Header */
+  --supervisor-header-bg: rgba(255, 255, 255, 0.9);
+  --supervisor-header-border: #e2e8f0;
+
+  /* Text hierarchy */
+  --supervisor-title: #020617; /* near-black */
+  --supervisor-text: #1e293b; /* strong body */
+  --supervisor-subtitle: #64748b; /* secondary */
+  --supervisor-muted: #94a3b8; /* meta */
+
+  /* Primary action (orange, but controlled) */
+  --supervisor-primary-bg: #f97316;
+  --supervisor-primary-bg-hover: #ea580c;
+  --supervisor-primary-text: #ffffff;
+
+  /* Status */
+  --supervisor-status-active: #16a34a; /* slightly deeper green */
+  --supervisor-status-inactive: #cbd5e1;
+
+  /* Cards */
+  --supervisor-card-hover-border: #fdba74;
+  --supervisor-card-hover-shadow: 0 16px 36px rgba(249, 115, 22, 0.12);
+
+  /* Inputs / filters */
+  --supervisor-input-bg: #ffffff;
+  --supervisor-input-border: #cbd5e1;
+  --supervisor-input-focus: #fb923c;
+
+  /* Dropdown */
+  --supervisor-dropdown-bg: #ffffff;
+  --supervisor-dropdown-border: #e2e8f0;
+  --supervisor-dropdown-hover: #fff7ed;
+
+  /* Danger */
+  --supervisor-danger-bg: #dc2626;
+  --supervisor-danger-text: #ffffff;
+  --supervisor-danger-muted: #fee2e2;
 }
 
 html[data-theme="dark"] {
@@ -690,6 +801,120 @@ html[data-theme="dark"] {
   --report-btn-primary-bg: linear-gradient(90deg, #fbbf24, #f59e0b);
   --report-btn-primary-hover-bg: linear-gradient(90deg, #f59e0b, #d97706);
   --report-btn-primary-text: #020617;
+
+  /* ===============================
+   CLEANERS PAGE – DARK MODE
+   =============================== */
+
+  /* Page background */
+  --cleaner-bg: #020617;
+
+  /* Surface / cards */
+  --cleaner-surface: #020617;
+  --cleaner-border: rgba(255, 255, 255, 0.08);
+  --cleaner-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+
+  /* Header */
+  --cleaner-header-bg: rgba(2, 6, 23, 0.85);
+  --cleaner-header-border: rgba(255, 255, 255, 0.08);
+  --cleaner-title: #f8fafc;
+  --cleaner-subtitle: #94a3b8;
+
+  --cleaner-header-icon-bg: linear-gradient(
+    135deg,
+    rgba(251, 146, 60, 0.35),
+    rgba(251, 191, 36, 0.25)
+  );
+
+  --cleaner-header-icon-border: rgba(251, 146, 60, 0.45);
+
+  --cleaner-header-icon-shadow:
+    0 10px 26px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+
+  --cleaner-header-icon-fg: #fff7ed;
+
+  /* Inputs */
+  --cleaner-input-bg: #0f172a;
+  --cleaner-input-border: rgba(255, 255, 255, 0.12);
+  --cleaner-input-focus: #fbbf24;
+  --cleaner-input-text: #e5e7eb;
+  --cleaner-input-placeholder: #64748b;
+
+  /* Primary action */
+  --cleaner-primary-bg: linear-gradient(90deg, #fbbf24, #f59e0b);
+  --cleaner-primary-hover-bg: linear-gradient(90deg, #f59e0b, #d97706);
+  --cleaner-primary-text: #020617;
+  --cleaner-primary-border: rgba(251, 191, 36, 0.55);
+
+  --cleaner-kpi-track: rgba(255, 255, 255, 0.12);
+  --cleaner-kpi-value: var(--cleaner-primary-border);
+
+  /* Status — ASSIGNED */
+  --cleaner-status-active-bg: #064e3b;
+  --cleaner-status-active-text: #6ee7b7;
+
+  /* Status — UNASSIGNED */
+  --cleaner-status-inactive-bg: rgba(255, 255, 255, 0.06);
+  --cleaner-status-inactive-text: #94a3b8;
+
+  /* Danger */
+  --cleaner-danger-bg: rgba(239, 68, 68, 0.18);
+  --cleaner-danger-text: #fca5a5;
+
+  /* Table */
+  --cleaner-table-header-bg: rgba(255, 255, 255, 0.04);
+  --cleaner-table-row-hover: rgba(251, 146, 60, 0.14);
+  --cleaner-table-divider: rgba(255, 255, 255, 0.08);
+
+  /* ===============================
+   SUPERVISOR PAGE – DARK MODE
+   =============================== */
+
+  /* Page background */
+  --supervisor-bg: #020617;
+
+  /* Surfaces / cards */
+  --supervisor-surface: #020617;
+  --supervisor-border: #1e293b;
+  --supervisor-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+
+  /* Header */
+  --supervisor-header-bg: rgba(2, 6, 23, 0.85);
+  --supervisor-header-border: #1e293b;
+
+  /* Text */
+  --supervisor-title: #f8fafc;
+  --supervisor-subtitle: #94a3b8;
+  --supervisor-text: #cbd5f5;
+  --supervisor-muted: #64748b;
+
+  /* Primary action */
+  --supervisor-primary-bg: #fb923c;
+  --supervisor-primary-bg-hover: #f97316;
+  --supervisor-primary-text: #020617;
+
+  /* Status */
+  --supervisor-status-active: #34d399;
+  --supervisor-status-inactive: #475569;
+
+  /* Cards */
+  --supervisor-card-hover-border: #7c2d12;
+  --supervisor-card-hover-shadow: 0 12px 32px rgba(251, 146, 60, 0.18);
+
+  /* Inputs / filters */
+  --supervisor-input-bg: #020617;
+  --supervisor-input-border: #1e293b;
+  --supervisor-input-focus: #fb923c;
+
+  /* Dropdown */
+  --supervisor-dropdown-bg: #020617;
+  --supervisor-dropdown-border: #1e293b;
+  --supervisor-dropdown-hover: #0f172a;
+
+  /* Danger */
+  --supervisor-danger-bg: #dc2626;
+  --supervisor-danger-text: #f8fafc;
+  --supervisor-danger-muted: #450a0a;
 }
 
 .action {
