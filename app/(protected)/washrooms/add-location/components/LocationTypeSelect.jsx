@@ -5,12 +5,12 @@ export default function LocationTypeSelect({
   selectedType,
   setSelectedType,
 }) {
-  console.log(types, "types");
+  // console.log(types, "types");
   return (
     <div className="mt-4">
-      <label htmlFor="locationType" className="block text-sm font-medium">
+      {/* <label htmlFor="locationType" className="block text-sm font-medium">
         Location Hirarchy
-      </label>
+      </label> */}
       <select
         id="locationType"
         value={selectedType || ""}

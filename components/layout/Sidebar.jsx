@@ -1641,7 +1641,7 @@ const Sidebar = () => {
       {isMobile && (
         <button
           onClick={toggleSidebar}
-          className="fixed top-4 left-4 z-[60] p-3 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 text-white hover:shadow-xl hover:shadow-cyan-300/50 lg:hidden transition-all duration-300 hover:scale-[1.05]"
+          className="fixed top-[0.6rem] left-[0.5rem] z-[60] p-3 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 text-white hover:shadow-xl hover:shadow-cyan-300/50 lg:hidden transition-all duration-300 hover:scale-[1.05]"
         >
           {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
         </button>

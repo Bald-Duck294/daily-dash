@@ -41,9 +41,10 @@ import { MdShower } from "react-icons/md";
 import { HiOutlineCloudUpload } from "react-icons/hi";
 import toast from "react-hot-toast";
 import { State, City } from "country-state-city";
+import AvailabilityCard from "../components/AvailabilityCard";
 
 // API Imports
-import { fetchToiletFeaturesByName } from "@/features/configurations/configurations.api";
+import { fetchToiletFeaturesById } from "@/features/configurations/configurations.api";
 import locationTypesApi from "@/features/locationTypes/locationTypes.api";
 import LocationsApi from "@/features/locations/locations.api";
 import { AssignmentsApi } from "@/features/assignments/assignments.api";
@@ -191,6 +192,7 @@ export default function AddWashroomForm() {
     parent_id: null,
     type_id: null,
     facility_company_id: null,
+    is_public: true,
     latitude: 21.1458, // Default to Nagpur as per screenshot
     longitude: 79.0882,
     address: "",
@@ -208,6 +210,24 @@ export default function AddWashroomForm() {
       men: { wc: 0, indian: 0, urinals: 0, shower: 0, basin: 0 },
       women: { wc: 0, indian: 0, urinals: 0, shower: 0, basin: 0 },
     },
+    schedule: {
+      mode: "TWENTY_FOUR_HOURS", // default
+
+      opens_at: "",
+      closes_at: "",
+      overnight: false,
+
+      days: {
+        monday: { open: false, opens_at: "", closes_at: "", overnight: false },
+        tuesday: { open: false, opens_at: "", closes_at: "", overnight: false },
+        wednesday: { open: false, opens_at: "", closes_at: "", overnight: false },
+        thursday: { open: false, opens_at: "", closes_at: "", overnight: false },
+        friday: { open: false, opens_at: "", closes_at: "", overnight: false },
+        saturday: { open: false, opens_at: "", closes_at: "", overnight: false },
+        sunday: { open: false, opens_at: "", closes_at: "", overnight: false },
+      },
+    },
+
   });
 
   // --- INITIAL DATA LOADING ---
@@ -232,11 +252,10 @@ export default function AddWashroomForm() {
         if (facilities.success) setFacilityCompanies(facilities.data || []);
 
         // 2. Config & Types
-        const config = await fetchToiletFeaturesByName(
-          "Toilet_Features",
-          companyId,
-        );
-        setFeatures(config?.data[0]?.description || []);
+        const config = await fetchToiletFeaturesById(8);
+        setFeatures(config || []);
+        // debugger;  
+
 
         const types = await locationTypesApi.getAll(companyId);
         setLocationTypes(Array.isArray(types) ? types : []);
@@ -428,6 +447,7 @@ export default function AddWashroomForm() {
     }));
   };
 
+
   // Image Handlers
   const handleFileSelect = (e) => {
     const files = Array.from(e.target.files);
@@ -457,6 +477,7 @@ export default function AddWashroomForm() {
     setPreviewImages((prev) => prev.filter((_, i) => i !== index));
   };
 
+
   // Submit Handler
   const handleSubmit = async () => {
     if (!form.name || !form.type_id) {
@@ -464,34 +485,81 @@ export default function AddWashroomForm() {
       return;
     }
 
+    const to12HourFormat = (time24) => {
+      if (!time24) return "";
+
+      const [hour, minute] = time24.split(":");
+      const h = parseInt(hour, 10);
+      const ampm = h >= 12 ? "PM" : "AM";
+      const hour12 = h % 12 || 12;
+
+      return `${hour12.toString().padStart(2, "0")}:${minute} ${ampm}`;
+    };
+
+    // 🔹 Deep copy schedule
+    const normalizedSchedule = JSON.parse(
+      JSON.stringify(form.schedule)
+    );
+
+    // 🔹 FIXED HOURS
+    if (normalizedSchedule.mode === "FIXED_HOURS") {
+      const { opens_at, closes_at } = normalizedSchedule;
+
+      if (opens_at && closes_at) {
+        normalizedSchedule.overnight = closes_at < opens_at;
+
+        normalizedSchedule.opens_at = to12HourFormat(opens_at);
+        normalizedSchedule.closes_at = to12HourFormat(closes_at);
+      }
+    }
+
+    // 🔹 DAY WISE
+    if (normalizedSchedule.mode === "DAY_WISE") {
+      Object.keys(normalizedSchedule.days).forEach((day) => {
+        const dayData = normalizedSchedule.days[day];
+
+        if (dayData.open && dayData.opens_at && dayData.closes_at) {
+          dayData.overnight =
+            dayData.closes_at < dayData.opens_at;
+
+          dayData.opens_at = to12HourFormat(dayData.opens_at);
+          dayData.closes_at = to12HourFormat(dayData.closes_at);
+        }
+      });
+    }
+
+    // 🔹 Normalize usage_category
+    const normalizedUsage = {
+      men: Object.fromEntries(
+        Object.entries(form.usage_category.men).map(
+          ([k, v]) => [k, Number(v || 0)]
+        )
+      ),
+      women: Object.fromEntries(
+        Object.entries(form.usage_category.women).map(
+          ([k, v]) => [k, Number(v || 0)]
+        )
+      ),
+    };
+
     const normalizedForm = {
       ...form,
-      usage_category: {
-        men: Object.fromEntries(
-          Object.entries(form.usage_category.men).map(
-            ([k, v]) => [k, Number(v || 0)]
-          )
-        ),
-        women: Object.fromEntries(
-          Object.entries(form.usage_category.women).map(
-            ([k, v]) => [k, Number(v || 0)]
-          )
-        ),
-      },
+      schedule: normalizedSchedule, // 🔥 IMPORTANT
+      usage_category: normalizedUsage,
     };
 
     setSubmitting(true);
+
     try {
       const locationRes = await LocationsApi.postLocation(
         normalizedForm,
         companyId,
-        images,
+        images
       );
 
       if (locationRes?.success) {
         const createdId = locationRes?.data?.data?.id;
 
-        // Assign Cleaners if selected
         if (selectedCleaners.length > 0 && createdId) {
           await AssignmentsApi.createAssignmentsForLocation({
             location_id: createdId,
@@ -500,8 +568,9 @@ export default function AddWashroomForm() {
             company_id: companyId,
             role_id: 5,
           });
+
           toast.success(
-            `Washroom added & ${selectedCleaners.length} cleaners assigned`,
+            `Washroom added & ${selectedCleaners.length} cleaners assigned`
           );
         } else {
           toast.success("Washroom added successfully");
@@ -509,7 +578,7 @@ export default function AddWashroomForm() {
 
         setTimeout(
           () => router.push(`/washrooms?companyId=${companyId}`),
-          1000,
+          1000
         );
       } else {
         toast.error(locationRes?.error || "Failed to create location");
@@ -521,7 +590,6 @@ export default function AddWashroomForm() {
       setSubmitting(false);
     }
   };
-
 
   // Filter Cleaners
   const filteredCleaners = allCleaners.filter((c) =>
@@ -592,7 +660,7 @@ export default function AddWashroomForm() {
               {/* Location Type (Replaces simple text input) */}
               <div className="space-y-2">
                 <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider block ml-1">
-                  Facility Type <span className="text-rose-500">*</span>
+                   Location Hirarchy <span className="text-rose-500">*</span>
                 </label>
                 <div className="h-11">
                   <LocationTypeSelect
@@ -648,6 +716,59 @@ export default function AddWashroomForm() {
                     ))}
                   </select>
                 </div>
+              </div>
+
+              {/* Public / Private Toggle */}
+              <div className="space-y-2">
+                <label className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider block ml-1">
+                  Toilet Visibility
+                </label>
+
+                <div className="flex items-center gap-3 h-11 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/30 dark:bg-slate-800/30">
+                  {/* Public */}
+                  <span
+                    className={`text-xs font-bold transition-colors ${form.is_public
+                      ? "text-cyan-600 dark:text-cyan-400"
+                      : "text-slate-400"
+                      }`}
+                  >
+                    Public
+                  </span>
+
+                  {/* Toggle */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setForm((prev) => ({
+                        ...prev,
+                        is_public: !prev.is_public,
+                      }))
+                    }
+                    className={`relative w-11 h-6 rounded-full transition-colors border ${form.is_public
+                      ? "bg-cyan-500/90 border-cyan-500"
+                      : "bg-slate-300 dark:bg-slate-600 border-slate-300 dark:border-slate-600"
+                      }`}
+                  >
+                    <span
+                      className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white dark:bg-slate-100 shadow-sm transition-transform ${form.is_public ? "translate-x-5" : ""
+                        }`}
+                    />
+                  </button>
+
+                  {/* Private */}
+                  <span
+                    className={`text-xs font-bold transition-colors ${!form.is_public
+                      ? "text-rose-500 dark:text-rose-400"
+                      : "text-slate-400"
+                      }`}
+                  >
+                    Private
+                  </span>
+                </div>
+
+                <p className="text-[10px] text-slate-400 dark:text-slate-500 ml-1 leading-tight">
+                  Private toilets are restricted to the assigned facility company
+                </p>
               </div>
 
               {/* Image Count */}
@@ -870,24 +991,24 @@ export default function AddWashroomForm() {
                           type="number"
                           min="0"
                           step="1"
-                          value={form.usage_category.men[field] ?? ""}
+                          value={form.usage_category.women[field] ?? ""}
                           onChange={(e) => {
                             const raw = e.target.value;
 
                             if (raw === "") {
-                              updateUsageCategory("men", field, "");
+                              updateUsageCategory("women", field, "");
                             } else {
-                              updateUsageCategory("men", field, Number(raw));
+                              updateUsageCategory("women", field, Number(raw));
                             }
                           }}
                           onBlur={() => {
-                            if (form.usage_category.men[field] === "") {
-                              updateUsageCategory("men", field, 0);
+                            if (form.usage_category.women[field] === "") {
+                              updateUsageCategory("women", field, 0);
                             }
                           }}
-                          className="w-full pl-4 py-2 rounded-xl border border-slate-200 bg-white text-sm focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 outline-none transition-all"
-                          placeholder="0"
+                          className="w-full pl-4 py-2 rounded-xl border border-rose-200 bg-white text-sm focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 outline-none transition-all"
                         />
+
                       </div>
                     ),
                   )}
@@ -942,6 +1063,19 @@ export default function AddWashroomForm() {
               ))}
             </div>
           </div>
+
+          <AvailabilityCard
+            schedule={form.schedule}
+            setSchedule={(updatedSchedule) =>
+              setForm((prev) => ({
+                ...prev,
+                schedule: updatedSchedule,
+              }))
+            }
+          />
+
+
+
         </div>
 
         {/* === RIGHT COLUMN === */}

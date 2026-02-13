@@ -425,7 +425,7 @@ const Header = ({ pageTitle }) => {
       if (company) {
         return (
           <>
-            <Building className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 text-blue-600" />
+            <Building className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 text-blue-600 ml-[15px]" />
             <span className="truncate block min-w-0" title={company.name}>
               {company.name}
             </span>
