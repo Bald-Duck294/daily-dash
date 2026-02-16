@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import { useState, useRef, useEffect } from "react";
@@ -59,13 +60,8 @@ export default function SearchableSelect({
   };
 
   return (
-    <div ref={dropdownRef} className="relative">
-      {label && (
-        <label className="block text-sm font-medium text-slate-700 mb-2">
-          {label} {required && <span className="text-red-500">*</span>}
-        </label>
-      )}
-      
+      <div ref={dropdownRef} className="relative">
+
       <div className="relative">
         <input
           type="text"
@@ -73,32 +69,60 @@ export default function SearchableSelect({
           onChange={handleInputChange}
           onFocus={() => setIsOpen(true)}
           placeholder={placeholder}
-          className="w-full p-3 pr-20 border border-slate-300 rounded-xl bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+          className="
+  w-full p-3 pr-20 rounded-xl text-sm transition-all duration-200 outline-none
+  border border-slate-300 bg-white text-slate-700
+  focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500
+
+  dark:bg-slate-800
+  dark:border-slate-700
+  dark:text-slate-200
+  dark:placeholder-slate-500
+  dark:focus:ring-cyan-400/30
+  dark:focus:border-cyan-400
+"
+
         />
-        
+
         <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
           {value && (
             <button
               type="button"
               onClick={clearSelection}
-              className="text-slate-400 hover:text-slate-600"
+              className="text-slate-400 hover:text-slate-600
+dark:text-slate-500 dark:hover:text-slate-300 hover:text-slate-600"
             >
               <X className="h-4 w-4" />
             </button>
           )}
-          <ChevronDown 
-            className={`h-4 w-4 text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+          <ChevronDown
+            className={`h-4 w-4 text-slate-400 dark:text-slate-500 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+
           />
         </div>
       </div>
 
       {isOpen && filteredOptions.length > 0 && (
-        <div className="absolute z-50 w-full mt-2 bg-white border border-slate-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+        <div className="
+  absolute z-50 w-full mt-2 rounded-xl shadow-lg max-h-60 overflow-y-auto
+  bg-white border border-slate-200
+
+  dark:bg-slate-800
+  dark:border-slate-700
+"
+        >
           {filteredOptions.map((option, index) => (
             <div
               key={index}
               onClick={() => handleSelect(option)}
-              className="px-4 py-3 hover:bg-blue-50 cursor-pointer transition-colors duration-150 text-slate-700"
+              className="
+  px-4 py-3 cursor-pointer transition-colors duration-150
+  text-slate-700 hover:bg-cyan-50
+
+  dark:text-slate-200
+  dark:hover:bg-slate-700
+"
+
             >
               {option}
             </div>
@@ -107,7 +131,15 @@ export default function SearchableSelect({
       )}
 
       {isOpen && filteredOptions.length === 0 && searchTerm && (
-        <div className="absolute z-50 w-full mt-2 bg-white border border-slate-200 rounded-xl shadow-lg p-4 text-center text-slate-500">
+        <div className="
+  absolute z-50 w-full mt-2 p-4 text-center rounded-xl shadow-lg
+  bg-white border border-slate-200 text-slate-500
+
+  dark:bg-slate-800
+  dark:border-slate-700
+  dark:text-slate-400
+"
+        >
           {allowCustom ? `Press Enter to use "${searchTerm}"` : "No results found"}
         </div>
       )}

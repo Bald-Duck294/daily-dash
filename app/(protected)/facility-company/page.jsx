@@ -29,6 +29,35 @@ import { usePermissions } from "@/shared/hooks/usePermission";
 import { useRequirePermission } from "@/shared/hooks/useRequirePermission";
 import { MODULES } from "@/shared/constants/permissions";
 
+function ActionButton({ children, onClick, variant }) {
+  const base =
+    "w-9 h-9 flex items-center justify-center rounded-lg transition-all duration-200 hover:scale-105 active:scale-95";
+
+  const variants = {
+    view: `
+      bg-[var(--facility-action-view-bg)]
+      text-[var(--facility-action-view-text)]
+      hover:bg-[var(--facility-action-view-hover)]
+    `,
+    edit: `
+      bg-[var(--facility-action-edit-bg)]
+      text-[var(--facility-action-edit-text)]
+      hover:bg-[var(--facility-action-edit-hover)]
+    `,
+    delete: `
+      bg-[var(--facility-action-delete-bg)]
+      text-[var(--facility-action-delete-text)]
+      hover:bg-[var(--facility-action-delete-hover)]
+    `,
+  };
+
+  return (
+    <button onClick={onClick} className={`${base} ${variants[variant]}`}>
+      {children}
+    </button>
+  );
+}
+
 export default function FacilityCompaniesPage() {
   useRequirePermission(MODULES.FACILITY_COMPANIES);
 
@@ -648,41 +677,42 @@ export default function FacilityCompaniesPage() {
                         {/* ACTIONS */}
                         <td className="px-6 py-4">
                           <div className="flex justify-end gap-2">
-                            <button
+                            <ActionButton
+                              variant="view"
                               onClick={() =>
                                 router.push(`/facility-company/${company.id}?companyId=${companyId}`)
                               }
-                              className="btn-icon btn-icon-view"
                               title="View"
                             >
                               <Eye size={16} />
-                            </button>
+                            </ActionButton>
 
                             {canEditFacility && (
-                              <button
+                              <ActionButton
+                                variant="edit"
                                 onClick={() =>
                                   router.push(
                                     `/facility-company/${company.id}/edit?companyId=${companyId}`
                                   )
                                 }
-                                className="btn-icon btn-icon-edit"
                                 title="Edit"
                               >
                                 <Edit size={16} />
-                              </button>
+                              </ActionButton>
                             )}
 
                             {canDeleteFacility && (
-                              <button
+                              <ActionButton
+                                variant="delete"
                                 onClick={() => handleDeleteClick(company)}
-                                className="btn-icon btn-icon-delete"
                                 title="Delete"
                               >
                                 <Trash2 size={16} />
-                              </button>
+                              </ActionButton>
                             )}
                           </div>
                         </td>
+
                       </tr>
                     ))}
                   </tbody>
@@ -698,11 +728,11 @@ export default function FacilityCompaniesPage() {
                       <div className="flex items-center gap-3">
                         <div
                           className="
-              w-9 h-9 rounded-lg shadow-sm
-              flex items-center justify-center
-              bg-[var(--user-add-accent)]
-              text-white
-            "
+        w-9 h-9 rounded-lg shadow-sm
+        flex items-center justify-center
+        bg-[var(--user-add-accent)]
+        text-white
+      "
                         >
                           <Building2 className="w-5 h-5" />
                         </div>
@@ -717,38 +747,41 @@ export default function FacilityCompaniesPage() {
                         </div>
                       </div>
 
-                      <button
-                        onClick={() => handleStatusClick(company)}
-                        disabled={!canEditFacility}
-                        className={`
-            inline-flex items-center gap-1 px-2 py-1
-            rounded-full text-xs font-medium
-            ${!canEditFacility ? "opacity-60 cursor-not-allowed" : ""}
-            ${company.status
-                            ? `
-                  bg-[var(--washroom-status-active-bg)]
-                  text-[var(--washroom-status-active-text)]
-                `
-                            : `
-                  bg-[var(--washroom-status-inactive-bg)]
-                  text-[var(--washroom-status-inactive-text)]
-                `
+                      <div className="flex items-center justify-end gap-2 mt-3 pt-3 border-t border-white/10">
+                        <ActionButton
+                          onClick={() =>
+                            router.push(`/facility-company/${company.id}?companyId=${companyId}`)
                           }
-          `}
-                      >
-                        {company.status ? (
-                          <>
-                            <CheckCircle className="w-3 h-3" />
-                            Active
-                          </>
-                        ) : (
-                          <>
-                            <XCircle className="w-3 h-3" />
-                            Inactive
-                          </>
+                          variant="view"
+                        >
+                          <Eye size={16} />
+                        </ActionButton>
+
+                        {canEditFacility && (
+                          <ActionButton
+                            onClick={() =>
+                              router.push(
+                                `/facility-company/${company.id}/edit?companyId=${companyId}`
+                              )
+                            }
+                            variant="edit"
+                          >
+                            <Edit size={16} />
+                          </ActionButton>
                         )}
-                      </button>
+
+                        {canDeleteFacility && (
+                          <ActionButton
+                            onClick={() => handleDeleteClick(company)}
+                            variant="delete"
+                          >
+                            <Trash2 size={16} />
+                          </ActionButton>
+                        )}
+                      </div>
+
                     </div>
+
 
                     <div className="space-y-2 text-sm text-[var(--washroom-filter-text)] mb-3">
                       <div className="flex items-center gap-2">

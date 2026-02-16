@@ -599,19 +599,48 @@ export default function AddWashroomForm() {
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-10 p-6 bg-slate-50 dark:bg-slate-900 min-h-screen">
       {/* --- HEADER --- */}
-      <div className="flex items-center gap-4">
-        <button
-          onClick={() => router.back()}
-          className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full text-slate-600 dark:text-slate-300 transition-colors"
-        >
-          <ArrowLeft size={20} strokeWidth={2.5} />
-        </button>
+        <div className="
+  w-full
+  bg-white dark:bg-slate-900
+  border-b border-slate-200 dark:border-slate-800
+  px-8 py-6
+">
+        <div className="flex items-center gap-4">
+
+          {/* Back Button */}
+          <button
+            onClick={() => router.back()}
+            className="
+        p-2 rounded-xl transition-all
+        bg-slate-100 hover:bg-slate-200
+        text-slate-600
+        dark:bg-slate-800 dark:hover:bg-slate-700
+        dark:text-slate-300
+      "
+          >
+            <ArrowLeft size={18} strokeWidth={2.5} />
+          </button>
+
+          {/* Title Section */}
+          <div>
+            <h1 className="
+        text-xl md:text-2xl font-semibold tracking-tight
+        text-slate-900 dark:text-white
+      ">
+              Add New Washroom
+            </h1>
+
+            <p className="
+        text-xs uppercase tracking-widest mt-1
+        text-slate-500 dark:text-slate-400
+      ">
+              Facility Registration
+            </p>
+          </div>
+
+        </div>
       </div>
-      <div className="w-full">
-        <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-          Add New Washroom
-        </h1>
-      </div>
+
 
       {/* --- MAIN GRID LAYOUT --- */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
@@ -640,18 +669,31 @@ export default function AddWashroomForm() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
               {/* Name */}
               <div className="space-y-2">
-                <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider block ml-1">
+                <label className="text-[11px] font-black text-slate-600 dark:text-slate-300
+ uppercase tracking-wider block ml-1">
                   Washroom Name <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative flex items-center h-11">
                   <Building2
-                    className="absolute left-4 text-slate-400"
+                    className="absolute left-4 text-slate-400 dark:text-slate-400"
                     size={16}
                   />
                   <input
                     value={form.name}
                     onChange={(e) => handleChange("name", e.target.value)}
-                    className="w-full h-full pl-11 pr-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/30 text-sm focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/5 transition-all outline-none"
+                    className="
+  w-full h-full pl-11 pr-4 rounded-xl text-sm transition-all outline-none
+  border border-slate-200 bg-white text-slate-700
+  focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10
+
+  dark:bg-slate-800
+  dark:border-slate-700
+  dark:text-slate-200
+  dark:placeholder-slate-500
+  dark:focus:border-cyan-400
+  dark:focus:ring-cyan-400/20
+"
+
                     placeholder="Enter washroom name"
                   />
                 </div>
@@ -659,8 +701,9 @@ export default function AddWashroomForm() {
 
               {/* Location Type (Replaces simple text input) */}
               <div className="space-y-2">
-                <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider block ml-1">
-                   Location Hirarchy <span className="text-rose-500">*</span>
+                <label className="text-[11px] font-black text-slate-600 dark:text-slate-300
+uppercase tracking-wider block ml-1">
+                  Location Hirarchy <span className="text-rose-500">*</span>
                 </label>
                 <div className="h-11">
                   <LocationTypeSelect
@@ -674,18 +717,32 @@ export default function AddWashroomForm() {
 
               {/* Address/Location */}
               <div className="space-y-2 col-span-1 md:col-span-2">
-                <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider block ml-1">
+                <label className="text-[11px] font-black text-slate-600 dark:text-slate-300
+ uppercase tracking-wider block ml-1">
                   Location (Address)
                 </label>
                 <div className="relative flex items-center h-11">
                   <MapPin
-                    className="absolute left-4 text-slate-400"
+                    className="absolute left-4 text-slate-400 dark:text-slate-400"
+
                     size={16}
                   />
                   <input
                     value={form.address}
                     onChange={(e) => handleChange("address", e.target.value)}
-                    className="w-full h-full pl-11 pr-4 rounded-xl border border-slate-200 bg-slate-50/30 text-sm focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/5 transition-all outline-none"
+                    className="
+  w-full h-full pl-11 pr-4 rounded-xl text-sm transition-all outline-none
+  border border-slate-200 bg-white text-slate-700
+  focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10
+
+  dark:bg-slate-800
+  dark:border-slate-700
+  dark:text-slate-200
+  dark:placeholder-slate-500
+  dark:focus:border-cyan-400
+  dark:focus:ring-cyan-400/20
+"
+
                     placeholder="Enter full address"
                   />
                 </div>
@@ -693,12 +750,13 @@ export default function AddWashroomForm() {
 
               {/* Facility Company */}
               <div className="space-y-2">
-                <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider block ml-1">
+                <label className="text-[11px] font-black text-slate-600 dark:text-slate-300
+ uppercase tracking-wider block ml-1">
                   Facility Company
                 </label>
                 <div className="relative flex items-center h-11">
                   <Factory
-                    className="absolute left-4 text-slate-400"
+                    className="absolute left-4 text-slate-400 dark:text-slate-400"
                     size={16}
                   />
                   <select
@@ -706,7 +764,19 @@ export default function AddWashroomForm() {
                     onChange={(e) =>
                       handleChange("facility_company_id", e.target.value)
                     }
-                    className="w-full h-full pl-11 pr-4 rounded-xl border border-slate-200 bg-slate-50/30 text-sm focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/5 transition-all outline-none appearance-none"
+                    className="
+  w-full h-full pl-11 pr-4 rounded-xl text-sm transition-all outline-none
+  border border-slate-200 bg-white text-slate-700
+  focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10
+
+  dark:bg-slate-800
+  dark:border-slate-700
+  dark:text-slate-200
+  dark:placeholder-slate-500
+  dark:focus:border-cyan-400
+  dark:focus:ring-cyan-400/20
+"
+
                   >
                     <option value="">Select Provider</option>
                     {facilityCompanies.map((fc) => (
@@ -720,7 +790,8 @@ export default function AddWashroomForm() {
 
               {/* Public / Private Toggle */}
               <div className="space-y-2">
-                <label className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider block ml-1">
+                <label className="text-[11px] font-black text-slate-600 dark:text-slate-300
+ dark:text-slate-400 uppercase tracking-wider block ml-1">
                   Toilet Visibility
                 </label>
 
@@ -820,7 +891,8 @@ export default function AddWashroomForm() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
               {/* State */}
               <div className="space-y-2">
-                <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider block ml-1">
+                <label className="text-[11px] font-black text-slate-600 dark:text-slate-300
+ uppercase tracking-wider block ml-1">
                   State
                 </label>
                 <div className="h-11">
@@ -829,7 +901,7 @@ export default function AddWashroomForm() {
                     value={form.state}
                     onChange={(value) => handleChange("state", value)}
                     placeholder="Select or type state"
-                    label="State"
+                    // label="State"
                     allowCustom={true}
                     className="w-full h-full"
                   />
@@ -838,14 +910,27 @@ export default function AddWashroomForm() {
 
               {/* District */}
               <div className="space-y-2">
-                <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider block ml-1">
+                <label className="text-[11px] font-black text-slate-600 dark:text-slate-300
+uppercase tracking-wider block ml-1">
                   District
                 </label>
                 <div className="relative flex items-center h-11">
                   <input
                     value={form.dist}
                     onChange={(e) => handleChange("dist", e.target.value)}
-                    className="w-full h-full px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/30 text-sm focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/5 transition-all outline-none"
+                    className="
+  w-full h-full px-4 rounded-xl text-sm transition-all outline-none
+  border border-slate-200 bg-white text-slate-700
+  focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10
+
+  dark:bg-slate-800
+  dark:border-slate-700
+  dark:text-slate-200
+  dark:placeholder-slate-500
+  dark:focus:border-cyan-400
+  dark:focus:ring-cyan-400/20
+"
+
                     placeholder="Enter district name"
                   />
                 </div>
@@ -853,7 +938,8 @@ export default function AddWashroomForm() {
 
               {/* City */}
               <div className="space-y-2">
-                <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider block ml-1">
+                <label className="text-[11px] font-black text-slate-600 dark:text-slate-300
+ uppercase tracking-wider block ml-1">
                   City
                 </label>
                 <div className="h-11">
@@ -862,7 +948,7 @@ export default function AddWashroomForm() {
                     value={form.city}
                     onChange={(value) => handleChange("city", value)}
                     placeholder="Select or type city"
-                    label="City"
+                    // label="City"
                     allowCustom={true}
                     className="w-full h-full"
                   />
@@ -871,7 +957,8 @@ export default function AddWashroomForm() {
 
               {/* Pincode */}
               <div className="space-y-2">
-                <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider block ml-1">
+                <label className="text-[11px] font-black text-slate-600 dark:text-slate-300
+ uppercase tracking-wider block ml-1">
                   Pincode
                 </label>
                 <div className="relative flex items-center h-11">
@@ -880,8 +967,23 @@ export default function AddWashroomForm() {
                     maxLength={6}
                     value={form.pincode}
                     onChange={(e) => handleChange("pincode", e.target.value)}
-                    className={`w-full h-full px-4 rounded-xl border ${pincodeError ? "border-rose-500" : "border-slate-200"
-                      } dark:border-slate-700 bg-slate-50/30 text-sm focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/5 transition-all outline-none`}
+                    className={`
+  w-full h-full px-4 rounded-xl text-sm transition-all outline-none
+  border border-slate-200 bg-white text-slate-700
+  focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10
+  
+${pincodeError
+                        ? "border-rose-500 dark:border-rose-500"
+                        : "border-slate-200 dark:border-slate-700"}
+
+  dark:bg-slate-800
+  dark:border-slate-700
+  dark:text-slate-200
+  dark:placeholder-slate-500
+  dark:focus:border-cyan-400
+  dark:focus:ring-cyan-400/20
+`}
+
                     placeholder="000000"
                   />
                 </div>
@@ -894,14 +996,27 @@ export default function AddWashroomForm() {
 
               {/* Full Address */}
               <div className="col-span-1 md:col-span-2 space-y-2">
-                <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider block ml-1">
+                <label className="text-[11px] font-black text-slate-600 dark:text-slate-300
+ uppercase tracking-wider block ml-1">
                   Full Address
                 </label>
                 <textarea
                   value={form.address}
                   onChange={(e) => handleChange("address", e.target.value)}
                   rows={3}
-                  className="w-full p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/30 text-sm focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/5 transition-all outline-none resize-none"
+                  className="
+  w-full h-full px-4 rounded-xl text-sm transition-all outline-none
+  border border-slate-200 bg-white text-slate-700
+  focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10
+
+  dark:bg-slate-800
+  dark:border-slate-700
+  dark:text-slate-200
+  dark:placeholder-slate-500
+  dark:focus:border-cyan-400
+  dark:focus:ring-cyan-400/20
+"
+
                   placeholder="Enter complete street address, landmark, and building details"
                 />
               </div>
@@ -926,12 +1041,14 @@ export default function AddWashroomForm() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
               {/* MEN'S SECTION */}
-              <div className="bg-slate-50/50 dark:bg-slate-800/20 border border-slate-100 dark:border-slate-800 rounded-2xl p-6 transition-all hover:shadow-md">
+              <div className="bg-slate-50/50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-700 rounded-2xl p-6 transition-all hover:shadow-md">
                 <div className="flex items-center gap-3 mb-6 border-b border-slate-100 pb-4">
                   <div className="h-8 w-8 bg-white rounded-lg shadow-sm border border-slate-100 flex items-center justify-center">
                     <FaPerson className="text-cyan-600 text-lg" />
                   </div>
-                  <h3 className="text-xs font-black text-slate-700 uppercase tracking-widest">
+                  <h3 className="  text-xs font-bold uppercase tracking-widest
+  text-slate-700
+  dark:text-slate-200">
                     Men&apos;s Facilities
                   </h3>
                 </div>
@@ -939,7 +1056,8 @@ export default function AddWashroomForm() {
                   {["wc", "indian", "urinals", "shower", "basin"].map(
                     (field) => (
                       <div key={field} className="mb-0">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 ml-1 block">
+                        <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400
+ uppercase tracking-wider mb-1.5 ml-1 block">
                           {field}
                         </label>
                         <input
@@ -961,7 +1079,18 @@ export default function AddWashroomForm() {
                               updateUsageCategory("men", field, 0);
                             }
                           }}
-                          className="w-full pl-4 py-2 rounded-xl border border-slate-200 bg-white text-sm focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 outline-none transition-all"
+                          className="
+  w-full pl-4 py-2 rounded-xl text-sm outline-none transition-all
+  border border-slate-200 bg-white text-slate-800
+  focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500
+
+  dark:bg-slate-900
+  dark:border-slate-700
+  dark:text-slate-100
+  dark:placeholder-slate-500
+  dark:focus:border-cyan-400
+  dark:focus:ring-cyan-400/20
+"
                           placeholder="0"
                         />
                       </div>
@@ -971,7 +1100,15 @@ export default function AddWashroomForm() {
               </div>
 
               {/* WOMEN'S SECTION */}
-              <div className="bg-rose-50/30 dark:bg-rose-900/5 border border-rose-100/50 rounded-2xl p-6 transition-all hover:shadow-md">
+              <div className="
+                    bg-rose-50/30
+                 dark:bg-rose-900/10
+                   border border-rose-100/50
+                       dark:border-rose-800/40
+                       rounded-2xl p-6
+                       transition-all hover:shadow-md
+                     ">
+
                 <div className="flex items-center gap-3 mb-6 border-b border-rose-100/50 pb-4">
                   <div className="h-8 w-8 bg-white rounded-lg shadow-sm border border-rose-100 flex items-center justify-center">
                     <FaPersonDress className="text-rose-500 text-lg" />
@@ -1006,7 +1143,18 @@ export default function AddWashroomForm() {
                               updateUsageCategory("women", field, 0);
                             }
                           }}
-                          className="w-full pl-4 py-2 rounded-xl border border-rose-200 bg-white text-sm focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 outline-none transition-all"
+                          className="
+  w-full pl-4 py-2 rounded-xl text-sm outline-none transition-all
+  border border-rose-200 bg-white text-slate-800
+  focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500
+
+  dark:bg-slate-900
+  dark:border-rose-800
+  dark:text-slate-100
+  dark:placeholder-slate-500
+  dark:focus:border-rose-400
+  dark:focus:ring-rose-400/20
+"
                         />
 
                       </div>
@@ -1108,15 +1256,21 @@ export default function AddWashroomForm() {
             {/* Manual Coordinate Input Section - ENHANCED */}
             <div className="space-y-4 mt-6">
               <div className="flex items-center gap-2 mb-3">
-                <MapPin size={14} className="text-cyan-500" />
-                <p className="text-[11px] font-black text-slate-600 uppercase tracking-wider">
+                <MapPin size={14} className="text-cyan-500 dark:text-cyan-400" />
+                <p className="
+  text-[11px] font-semibold uppercase tracking-wider
+  text-slate-600
+  dark:text-slate-200
+">
+
                   Manual Coordinates
                 </p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 block">
+                  <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400
+ uppercase tracking-wider mb-2 block">
                     Latitude
                   </label>
                   <input
@@ -1127,9 +1281,23 @@ export default function AddWashroomForm() {
                       handleCoordinateChange("latitude", e.target.value)
                     }
                     placeholder="21.145800"
-                    className="w-full px-3 py-2.5 bg-white border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-mono text-slate-700 dark:text-slate-300 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 transition-all outline-none"
+                    className="
+  w-full px-3 py-2.5 rounded-xl text-sm font-mono
+  bg-white border border-slate-200 text-slate-700
+  focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10
+  transition-all outline-none
+
+  dark:bg-slate-800
+  dark:border-slate-700
+  dark:text-slate-200
+  dark:placeholder-slate-500
+  dark:focus:border-cyan-400
+  dark:focus:ring-cyan-400/20
+"
+
                   />
-                  <p className="text-[9px] text-slate-400 mt-1 ml-1">
+                  <p className="text-[9px] text-slate-400 dark:text-slate-500
+ mt-1 ml-1">
                     Range: -90 to 90
                   </p>
                 </div>
@@ -1146,9 +1314,23 @@ export default function AddWashroomForm() {
                       handleCoordinateChange("longitude", e.target.value)
                     }
                     placeholder="79.088200"
-                    className="w-full px-3 py-2.5 bg-white border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-mono text-slate-700 dark:text-slate-300 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 transition-all outline-none"
+                    className="
+  w-full px-3 py-2.5 rounded-xl text-sm font-mono
+  bg-white border border-slate-200 text-slate-700
+  focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10
+  transition-all outline-none
+
+  dark:bg-slate-800
+  dark:border-slate-700
+  dark:text-slate-200
+  dark:placeholder-slate-500
+  dark:focus:border-cyan-400
+  dark:focus:ring-cyan-400/20
+"
+
                   />
-                  <p className="text-[9px] text-slate-400 mt-1 ml-1">
+                  <p className="text-[9px] text-slate-400 dark:text-slate-500
+ mt-1 ml-1">
                     Range: -180 to 180
                   </p>
                 </div>
@@ -1158,7 +1340,15 @@ export default function AddWashroomForm() {
               <button
                 type="button"
                 onClick={handleApplyCoordinates}
-                className="w-full mt-2 px-4 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:brightness-110 transition-all shadow-sm active:scale-[0.98] flex items-center justify-center gap-2"
+                className="
+  w-full mt-2 px-4 py-2.5 rounded-xl
+  bg-gradient-to-r from-cyan-500 to-blue-500
+  text-white text-xs font-semibold uppercase tracking-widest
+  hover:brightness-110 transition-all
+  shadow-sm active:scale-[0.98]
+  flex items-center justify-center gap-2
+"
+
               >
                 <MapPin size={14} />
                 Update Map Location
@@ -1212,10 +1402,19 @@ export default function AddWashroomForm() {
                 <HiOutlineCloudUpload className="text-cyan-600 text-xl" />
               </div>
               <div className="text-left">
-                <h2 className="text-sm font-black text-slate-800 uppercase tracking-[0.2em] leading-none">
+                <h2 className="
+    text-sm font-bold uppercase tracking-[0.18em] leading-none
+    text-slate-800
+    dark:text-slate-100
+  ">
                   Location Images
                 </h2>
-                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1.5 opacity-70">
+
+                <p className="
+    text-[10px] font-semibold uppercase tracking-widest mt-1.5
+    text-slate-500
+    dark:text-slate-400
+  ">
                   Visual Verification Archive
                 </p>
               </div>
@@ -1276,13 +1475,23 @@ export default function AddWashroomForm() {
                   <Users className="text-cyan-600 text-xl" />
                 </div>
                 <div className="text-left">
-                  <h2 className="text-sm font-black text-slate-800 uppercase tracking-[0.2em] leading-none">
+                  <h2 className="
+  text-sm font-semibold uppercase tracking-[0.18em] leading-none
+  text-slate-800
+  dark:text-slate-100
+">
+
                     Assign Cleaners{" "}
                     <span className="text-[10px] opacity-50 ml-1">
                       (Optional)
                     </span>
                   </h2>
-                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1.5 opacity-70">
+                  <p className="
+  text-[10px] font-medium uppercase tracking-widest mt-1.5
+  text-slate-500
+  dark:text-slate-400
+">
+
                     Personnel Mapping Architecture
                   </p>
                 </div>
@@ -1297,7 +1506,17 @@ export default function AddWashroomForm() {
                   onClick={() =>
                     setIsCleanerDropdownOpen(!isCleanerDropdownOpen)
                   }
-                  className="w-full text-left pl-4 pr-10 py-3 rounded-xl border border-slate-200 bg-white text-sm focus:border-cyan-500 flex justify-between items-center"
+                  className="
+  w-full text-left pl-4 pr-10 py-3 rounded-xl text-sm
+  border border-slate-200 bg-white text-slate-700
+  focus:border-cyan-500 flex justify-between items-center transition
+
+  dark:bg-slate-800
+  dark:border-slate-700
+  dark:text-slate-200
+  dark:focus:border-cyan-400
+"
+
                 >
                   <span
                     className={
@@ -1310,14 +1529,32 @@ export default function AddWashroomForm() {
                       ? `${selectedCleaners.length} Staff Selected`
                       : "Select available cleaners"}
                   </span>
-                  <ChevronDown size={16} className="text-slate-400" />
+                  <ChevronDown size={16} className="text-slate-400 dark:text-slate-500" />
                 </button>
 
                 {isCleanerDropdownOpen && (
-                  <div className="absolute z-10 w-full mt-2 bg-white border border-slate-100 rounded-xl shadow-xl max-h-60 overflow-y-auto p-2">
-                    <div className="sticky top-0 bg-white p-2 border-b border-slate-100 mb-2">
+                  <div className="
+  absolute z-10 w-full mt-2 rounded-xl shadow-xl
+  max-h-60 overflow-y-auto p-2
+  bg-white border border-slate-200
+  dark:bg-slate-800 dark:border-slate-700
+">
+                    <div className="
+  sticky top-0 z-10 p-2 mb-2
+  bg-white border-b border-slate-200
+  dark:bg-slate-800
+  dark:border-slate-700
+">
+
                       <input
-                        className="w-full p-2 text-xs border border-slate-200 rounded-lg bg-slate-50"
+                        className="
+  w-full p-2 text-xs rounded-lg transition
+  border border-slate-200 bg-slate-50 text-slate-700
+  dark:bg-slate-900
+  dark:border-slate-700
+  dark:text-slate-200
+"
+
                         placeholder="Search staff..."
                         value={cleanerSearchTerm}
                         onChange={(e) => setCleanerSearchTerm(e.target.value)}
@@ -1331,7 +1568,7 @@ export default function AddWashroomForm() {
                       filteredCleaners.map((cleaner) => (
                         <div
                           key={cleaner.id}
-                          className="flex items-center gap-2 p-2 hover:bg-slate-50 rounded-lg cursor-pointer"
+                          className="flex items-center gap-2 p-2 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-lg cursor-pointer"
                           onClick={() => {
                             setSelectedCleaners((prev) =>
                               prev.some((c) => c.id === cleaner.id)
@@ -1349,10 +1586,12 @@ export default function AddWashroomForm() {
                             className="rounded text-cyan-500 focus:ring-0"
                           />
                           <div>
-                            <p className="text-xs font-bold text-slate-700">
+                            <p className="text-xs font-bold text-slate-700 dark:text-slate-200
+">
                               {cleaner.name}
                             </p>
-                            <p className="text-[10px] text-slate-400">
+                            <p className="text-[10px] text-slate-400 dark:text-slate-400
+">
                               {cleaner.email}
                             </p>
                           </div>
@@ -1390,15 +1629,25 @@ export default function AddWashroomForm() {
 
           {/* 7. ADDITIONAL FEATURES (From JSON Schema) */}
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6">
-            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
+            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-b border-slate-200 dark:border-slate-700
+">
               <div className="h-10 w-10 rounded-xl bg-cyan-400/5 flex items-center justify-center border border-cyan-500/10">
                 <CheckCircle2 className="text-cyan-500/70 text-xl" />
               </div>
               <div className="text-left">
-                <h2 className="text-sm font-black text-slate-800 uppercase tracking-[0.2em] leading-none">
+                <h2 className="
+  text-sm font-semibold uppercase tracking-[0.18em] leading-none
+  text-slate-800
+  dark:text-slate-100
+">
+
                   Additional Features
                 </h2>
-                <p className="text-[10px] font-normal text-slate-400 uppercase tracking-widest mt-1.5">
+                <p className="
+  text-[10px] font-medium uppercase tracking-widest mt-1.5
+  text-slate-500
+  dark:text-slate-400
+">
                   Operational Feature Mapping
                 </p>
               </div>
@@ -1408,7 +1657,13 @@ export default function AddWashroomForm() {
               {FEATURE_CONFIG.map((item) => (
                 <label
                   key={item.key}
-                  className="flex items-start gap-4 group cursor-pointer p-2 rounded-xl hover:bg-slate-50/50 transition-colors"
+                  className="
+  flex items-start gap-4 group cursor-pointer p-3 rounded-xl
+  transition-colors
+  hover:bg-slate-50/70
+  dark:hover:bg-slate-800/60
+"
+
                 >
                   <div className="relative flex items-center mt-0.5">
                     <input

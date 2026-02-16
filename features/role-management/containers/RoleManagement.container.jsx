@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { usePermissions } from "@/shared/hooks/usePermission";
 import { MODULES } from "@/shared/constants/permissions";
-// import RolesApi from "@/features/roles/api/roles.api";
-import RolesApi from "@/features/roles/api/roles.api";
+
+import { useGetAllRoles, useDeleteRole } from "@/features/roles/queries/roles.queries.js";
 
 import RoleHeader from "@/features/role-management/components/RoleHeader";
 import RoleSearch from "@/features/role-management/components/RoleSearch";
@@ -19,56 +19,67 @@ const RoleManagementContainer = () => {
   const router = useRouter();
   const { canView, canAdd, canUpdate, canDelete } = usePermissions();
 
-  const [roles, setRoles] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [deleteModal, setDeleteModal] = useState({ open: false, role: null });
-  const [deleting, setDeleting] = useState(false);
+
+  /* ===============================
+     PERMISSION CHECK
+  ================================ */
 
   useEffect(() => {
     if (!canView(MODULES.ROLE_MANAGEMENT)) {
       toast.error("You do not have permission");
       router.push("/dashboard");
-      return;
     }
-    fetchRoles();
-  }, []);
+  }, [canView, router]);
 
-  const fetchRoles = async () => {
-    setLoading(true);
-    try {
-      const res = await RolesApi.getAllRoles();
-      if (res.success) setRoles(res.data.roles);
-      else toast.error("Failed to load roles");
-    } catch (e) {
-      toast.error("Failed to load roles");
-    } finally {
-      setLoading(false);
-    }
-  };
+  /* ===============================
+     FETCH ROLES (TanStack)
+  ================================ */
 
-  const handleDelete = async () => {
+  const { data: roles = [], isLoading, isError, error } = useGetAllRoles();
+
+  /* ===============================
+     DELETE ROLE (TanStack)
+  ================================ */
+
+  const { mutate: deleteRole, isPending: deleting } = useDeleteRole();
+
+  const handleDelete = () => {
     if (!deleteModal.role) return;
-    setDeleting(true);
-    try {
-      const res = await RolesApi.delete(deleteModal.role.id);
-      if (res.success) {
+
+    deleteRole(deleteModal.role.id, {
+      onSuccess: () => {
         toast.success("Role deleted");
-        fetchRoles();
         setDeleteModal({ open: false, role: null });
-      } else {
-        toast.error("Delete failed");
-      }
-    } finally {
-      setDeleting(false);
-    }
+      },
+      onError: (err) => {
+        toast.error(err.message || "Delete failed");
+      },
+    });
   };
 
-  const filteredRoles = roles.filter((r) =>
-    r.name.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
+  /* ===============================
+     ERROR HANDLING
+  ================================ */
 
-  if (loading) {
+  useEffect(() => {
+    if (isError) {
+      toast.error(error?.message || "Failed to load roles");
+    }
+  }, [isError, error]);
+
+  /* ===============================
+     SEARCH FILTER
+  ================================ */
+
+  const filteredRoles = useMemo(() => {
+    return roles.filter((r) =>
+      r.name.toLowerCase().includes(searchQuery.toLowerCase()),
+    );
+  }, [roles, searchQuery]);
+
+  if (isLoading) {
     return <Loader message="Loading roles..." />;
   }
 

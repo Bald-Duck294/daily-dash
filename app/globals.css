@@ -300,6 +300,21 @@
   --facility-muted-bg: #f8fafc;
   --facility-muted-text: #64748b;
 
+    /* Actions — VIEW */
+  --facility-action-view-bg: rgba(59, 130, 246, 0.08);
+  --facility-action-view-text: #2563eb;
+  --facility-action-view-hover: rgba(59, 130, 246, 0.16);
+
+  /* Actions — EDIT */
+  --facility-action-edit-bg: rgba(16, 185, 129, 0.08);
+  --facility-action-edit-text: #059669;
+  --facility-action-edit-hover: rgba(16, 185, 129, 0.16);
+
+  /* Actions — DELETE */
+  --facility-action-delete-bg: rgba(244, 63, 94, 0.08);
+  --facility-action-delete-text: #e11d48;
+  --facility-action-delete-hover: rgba(244, 63, 94, 0.16);
+
   /* ===============================
    REPORTS PAGE – LIGHT MODE
    =============================== */
@@ -760,6 +775,21 @@ html[data-theme="dark"] {
   /* Muted */
   --facility-muted-bg: rgba(255, 255, 255, 0.04);
   --facility-muted-text: #94a3b8;
+
+   /* Actions — VIEW */
+  --facility-action-view-bg: rgba(59, 130, 246, 0.15);
+  --facility-action-view-text: #60a5fa;
+  --facility-action-view-hover: rgba(59, 130, 246, 0.28);
+
+  /* Actions — EDIT */
+  --facility-action-edit-bg: rgba(16, 185, 129, 0.15);
+  --facility-action-edit-text: #34d399;
+  --facility-action-edit-hover: rgba(16, 185, 129, 0.28);
+
+  /* Actions — DELETE */
+  --facility-action-delete-bg: rgba(244, 63, 94, 0.15);
+  --facility-action-delete-text: #fb7185;
+  --facility-action-delete-hover: rgba(244, 63, 94, 0.28);
 
   /* ===============================
    REPORTS PAGE – DARK MODE

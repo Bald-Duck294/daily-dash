@@ -287,6 +287,29 @@ export function getSuperadminCompanyMenu(companyId) {
       ],
     },
     {
+      icon: Building2,
+      label: "Shifts",
+      hasDropdown: true,
+      key: "Shifts",
+      children: [
+        {
+          icon: List,
+          label: "View List",
+          href: `/shifts?companyId=${companyId}`,
+        },
+        {
+          icon: PlusCircle,
+          label: "Add shift",
+          href: `/shifts/add?companyId=${companyId}`,
+        },
+        {
+          icon: PlusCircle,
+          label: "Shift Management",
+          href: `/shifts/assignment?companyId=${companyId}`,
+        },
+      ],
+    },
+    {
       icon: MapPin,
       label: "Locate On Map",
       href: `/locations?companyId=${companyId}`,
@@ -457,6 +480,31 @@ export function getAdminMenu(companyId) {
         },
       ],
     },
+
+    {
+      icon: Building2,
+      label: "Shifts",
+      hasDropdown: true,
+      key: "Shifts",
+      children: [
+        {
+          icon: List,
+          label: "View List",
+          href: `/shifts?companyId=${companyId}`,
+        },
+        {
+          icon: PlusCircle,
+          label: "Add shift",
+          href: `/shifts/add?companyId=${companyId}`,
+        },
+        {
+          icon: PlusCircle,
+          label: "Shift Management",
+          href: `/shifts/assignment?companyId=${companyId}`,
+        },
+      ],
+    },
+    
     {
       icon: MapPin,
       label: "Locate On Map",

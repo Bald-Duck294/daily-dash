@@ -107,112 +107,217 @@ export default function ProfileSettingsPage() {
       .toUpperCase() || "U";
 
   return (
-    <div className="min-h-screen bg-[var(--dashboard-bg)] px-4 py-8 sm:px-6">
-      <div className="max-w-4xl mx-auto space-y-8">
+    <div className="min-h-screen bg-[var(--dashboard-bg)] px-4 py-10 sm:px-6">
+      <div className="max-w-4xl mx-auto space-y-10">
 
         {/* ================= PROFILE CARD ================= */}
-        <section className="bg-[var(--card-bg)] border border-[var(--card-border)] rounded-[var(--radius)] shadow-[var(--card-shadow)] overflow-hidden">
-          <div className="px-6 py-4 border-b border-[var(--card-border)] bg-[var(--muted)]">
-            <h1 className="text-base font-semibold text-[var(--foreground)]">
+        <section className="
+      bg-[var(--card-bg)]
+      border border-[var(--card-border)]
+      rounded-2xl
+      shadow-lg
+      overflow-hidden
+    ">
+          <div className="
+        px-6 py-5
+        border-b border-[var(--card-border)]
+        bg-[var(--muted)]
+      ">
+            <h1 className="text-lg font-semibold text-[var(--foreground)]">
               Profile
             </h1>
-            <p className="text-sm text-[var(--muted-foreground)]">
+            <p className="text-sm text-[var(--muted-foreground)] mt-1">
               Personal information & account overview
             </p>
           </div>
 
-          <div className="p-6 flex flex-col sm:flex-row gap-6 items-center sm:items-start">
-            <div className="w-28 h-28 rounded-full bg-[var(--primary)] text-[var(--primary-foreground)] flex items-center justify-center text-2xl font-black shadow-md">
+          <div className="p-8 flex flex-col sm:flex-row gap-8 items-center sm:items-start">
+
+            {/* Avatar */}
+            <div className="
+          w-32 h-32
+          rounded-full
+          bg-gradient-to-br from-[var(--primary)] to-indigo-500
+          text-white
+          flex items-center justify-center
+          text-3xl font-black
+          shadow-xl
+        ">
               {initials}
             </div>
 
-            <div className="text-center sm:text-left space-y-1">
-              <h2 className="text-xl font-semibold text-[var(--foreground)]">
+            {/* Info */}
+            <div className="text-center sm:text-left space-y-3">
+              <h2 className="text-2xl font-semibold text-[var(--foreground)]">
                 {user.name}
               </h2>
-              <p className="text-sm text-red-500 font-bold">
+
+              <span className="
+            inline-block
+            text-xs
+            px-3 py-1
+            rounded-full
+            bg-red-100
+            text-red-600
+            font-semibold
+          ">
                 {userRole}
-              </p>
-              <p className="text-sm text-[var(--muted-foreground)]">
-                {user.email}
-              </p>
-              <p className="text-sm text-[var(--muted-foreground)]">
-                {user.phone || "—"}
-              </p>
+              </span>
+
+              <div className="pt-3 space-y-1 text-sm text-[var(--muted-foreground)]">
+                <p>{user.email}</p>
+                <p>{user.phone || "—"}</p>
+              </div>
             </div>
+
           </div>
         </section>
 
+
         {/* ================= SECURITY ================= */}
-        <section className="bg-[var(--card-bg)] border border-[var(--card-border)] rounded-[var(--radius)] shadow-[var(--card-shadow)] overflow-hidden">
-          <div className="px-6 py-4 border-b border-[var(--card-border)] bg-[var(--muted)]">
-            <h2 className="text-base font-semibold text-[var(--foreground)]">
+        <section className="
+      bg-[var(--card-bg)]
+      border border-[var(--card-border)]
+      rounded-2xl
+      shadow-lg
+      overflow-hidden
+    ">
+          <div className="
+        px-6 py-5
+        border-b border-[var(--card-border)]
+        bg-[var(--muted)]
+      ">
+            <h2 className="text-lg font-semibold text-[var(--foreground)]">
               Security
             </h2>
-            <p className="text-sm text-[var(--muted-foreground)]">
+            <p className="text-sm text-[var(--muted-foreground)] mt-1">
               Update your account password
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="p-6 max-w-md space-y-4">
+          <form onSubmit={handleSubmit} className="p-8 max-w-md space-y-6">
 
             {error && (
-              <div className="text-sm text-red-500 font-medium">
+              <div className="
+            rounded-lg
+            bg-red-50
+            border border-red-200
+            text-red-600
+            text-sm
+            px-4 py-3
+          ">
                 {error}
               </div>
             )}
 
             {success && (
-              <div className="text-sm text-green-600 font-medium">
+              <div className="
+            rounded-lg
+            bg-green-50
+            border border-green-200
+            text-green-600
+            text-sm
+            px-4 py-3
+          ">
                 {success}
               </div>
             )}
 
-            <div>
-              <label className="block text-sm font-medium mb-1">
+            {/* Current Password */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-[var(--foreground)]">
                 Current Password
               </label>
               <input
                 type="password"
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
-                className="w-full bg-[var(--input)] border border-[var(--border)] rounded-[var(--radius)] px-3 py-2 text-sm focus:ring-2 focus:ring-[var(--primary)] focus:outline-none"
+                className="
+              w-full
+              bg-[var(--input)]
+              border border-[var(--border)]
+              rounded-xl
+              px-4 py-3
+              text-sm
+              transition
+              focus:ring-2 focus:ring-[var(--primary)]
+              focus:border-[var(--primary)]
+              outline-none
+            "
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium mb-1">
+            {/* New Password */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-[var(--foreground)]">
                 New Password
               </label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-[var(--input)] border border-[var(--border)] rounded-[var(--radius)] px-3 py-2 text-sm focus:ring-2 focus:ring-[var(--primary)] focus:outline-none"
+                className="
+              w-full
+              bg-[var(--input)]
+              border border-[var(--border)]
+              rounded-xl
+              px-4 py-3
+              text-sm
+              transition
+              focus:ring-2 focus:ring-[var(--primary)]
+              focus:border-[var(--primary)]
+              outline-none
+            "
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium mb-1">
+            {/* Confirm Password */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-[var(--foreground)]">
                 Confirm Password
               </label>
               <input
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full bg-[var(--input)] border border-[var(--border)] rounded-[var(--radius)] px-3 py-2 text-sm focus:ring-2 focus:ring-[var(--primary)] focus:outline-none"
+                className="
+              w-full
+              bg-[var(--input)]
+              border border-[var(--border)]
+              rounded-xl
+              px-4 py-3
+              text-sm
+              transition
+              focus:ring-2 focus:ring-[var(--primary)]
+              focus:border-[var(--primary)]
+              outline-none
+            "
               />
             </div>
 
-            <div className="pt-2 flex justify-end">
+            {/* Submit */}
+            <div className="pt-4 flex justify-end">
               <button
                 type="submit"
                 disabled={loading}
-                className="bg-[var(--primary)] disabled:opacity-60 text-[var(--primary-foreground)] rounded-[var(--radius)] px-6 py-2.5 text-sm font-semibold hover:opacity-90 transition"
+                className="
+              bg-gradient-to-r
+              from-[var(--primary)]
+              to-indigo-500
+              text-white
+              rounded-xl
+              px-6 py-3
+              text-sm font-semibold
+              shadow-md
+              transition
+              hover:opacity-90
+              disabled:opacity-60
+            "
               >
                 {loading ? "Updating..." : "Update Password"}
               </button>
             </div>
+
           </form>
         </section>
 

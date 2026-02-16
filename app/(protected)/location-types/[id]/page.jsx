@@ -12,7 +12,7 @@ import {
 
 import { useRequirePermission } from "@/shared/hooks/useRequirePermission";
 import { MODULES } from "@/shared/constants/permissions";
-
+import TreeView from "@/features/locationTypes/components/TreeView";
 import { ArrowLeft, Pencil, ChevronDown, Loader2, Network } from "lucide-react";
 
 export default function EditLocationTypePage() {
@@ -99,33 +99,64 @@ export default function EditLocationTypePage() {
     <div className="min-h-screen bg-background p-6">
       <div className="mx-auto max-w-7xl space-y-6">
         {/* ===== HEADER ===== */}
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => router.back()}
-            className="rounded-md p-2 hover:bg-muted"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </button>
+        <div className="w-full">
+          <div className="
+    rounded-2xl border border-slate-200 dark:border-slate-800
+    bg-white dark:bg-slate-900
+    p-4 sm:p-5
+    shadow-sm
+  ">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
 
-          <div className="flex-1 rounded-2xl border border-border bg-background p-5 shadow-sm flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                <Pencil className="h-5 w-5 text-primary" />
+              {/* Left Section */}
+              <div className="flex items-start gap-3">
+                <div className="
+          h-9 w-9 sm:h-10 sm:w-10
+          rounded-xl
+          bg-orange-500/10
+          flex items-center justify-center
+        ">
+                  <Pencil className="h-4 w-4 sm:h-5 sm:w-5 text-orange-500" />
+                </div>
+
+                <div>
+                  <h1 className="
+            text-base sm:text-lg font-semibold
+            text-slate-900 dark:text-slate-100
+          ">
+                    Edit Zone Type
+                  </h1>
+
+                  <p className="
+            text-[10px] sm:text-xs
+            uppercase tracking-widest
+            text-slate-500 dark:text-slate-400
+            mt-1
+          ">
+                    Configuration Portal • Workspace Management
+                  </p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-lg font-semibold">Edit Zone Type</h1>
-                <p className="text-xs uppercase text-muted-foreground">
-                  Configuration Portal • Workspace Management
-                </p>
-              </div>
+
+              {/* Right Section */}
+              <button
+                onClick={() => router.push("/location-types")}
+                className="
+          w-full sm:w-auto
+          text-sm font-medium
+          rounded-xl
+          border border-orange-400
+          text-orange-500
+          px-4 py-2
+          transition-all
+          hover:bg-orange-50
+          dark:hover:bg-orange-500/10
+        "
+              >
+                ← Back to List
+              </button>
+
             </div>
-
-            <button
-              onClick={() => router.push("/location-types")}
-              className="rounded-lg border border-orange-400 px-4 py-2 text-sm font-medium text-orange-500 hover:bg-orange-50"
-            >
-              ← Back to List
-            </button>
           </div>
         </div>
 
@@ -138,28 +169,54 @@ export default function EditLocationTypePage() {
 
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
               {/* Zone Name */}
-              <div>
-                <label className="text-xs font-semibold uppercase text-orange-500">
-                  Zone Type Name *
+              <div className="space-y-2">
+                <label className="text-[11px] font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">
+                  Zone Type Name <span className="text-rose-500">*</span>
                 </label>
+
                 <input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="mt-2 w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:ring-2 focus:ring-orange-400"
+                  className="
+      w-full rounded-xl px-4 py-3 text-sm
+      border border-slate-300 bg-white text-slate-800
+      transition-all outline-none
+      focus:ring-2 focus:ring-orange-400/20 focus:border-orange-500
+
+      dark:bg-slate-800
+      dark:border-slate-700
+      dark:text-slate-200
+      dark:focus:ring-orange-400/20
+      dark:focus:border-orange-400
+    "
                 />
               </div>
 
-              {/* Parent */}
-              <div>
-                <label className="text-xs font-semibold uppercase text-orange-500">
-                  Parent Type (Optional)
+              {/* Parent Type */}
+              <div className="space-y-2">
+                <label className="text-[11px] font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">
+                  Parent Type
+                  <span className="ml-1 text-slate-400 dark:text-slate-500 normal-case font-normal">
+                    (Optional)
+                  </span>
                 </label>
 
-                <div className="relative mt-2">
+                <div className="relative">
                   <select
                     value={parentId}
                     onChange={(e) => setParentId(e.target.value)}
-                    className="w-full appearance-none rounded-xl border border-border bg-background px-4 py-3 text-sm focus:ring-2 focus:ring-orange-400"
+                    className="
+        w-full appearance-none rounded-xl px-4 py-3 text-sm
+        border border-slate-300 bg-white text-slate-800
+        transition-all outline-none
+        focus:ring-2 focus:ring-orange-400/20 focus:border-orange-500
+
+        dark:bg-slate-800
+        dark:border-slate-700
+        dark:text-slate-200
+        dark:focus:ring-orange-400/20
+        dark:focus:border-orange-400
+      "
                   >
                     <option value="">No Parent (Top Level)</option>
                     {types
@@ -170,7 +227,13 @@ export default function EditLocationTypePage() {
                         </option>
                       ))}
                   </select>
-                  <ChevronDown className="absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+
+                  <ChevronDown
+                    className="
+        absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2
+        text-slate-400 dark:text-slate-500 pointer-events-none
+      "
+                  />
                 </div>
               </div>
 
@@ -211,28 +274,14 @@ export default function EditLocationTypePage() {
             </div>
 
             {/* Simple preview */}
-            <div className="space-y-3">
-              <div className="rounded-xl border border-border px-4 py-2 text-sm font-medium">
-                {current.name}
-                <span className="ml-2 text-xs text-muted-foreground">
-                  #{current.id}
-                </span>
-              </div>
+            <div className="p-2">
+              <TreeView
+                types={types}
 
-              {types
-                .filter((t) => t.parent_id === current.id)
-                .map((child) => (
-                  <div
-                    key={child.id}
-                    className="ml-4 rounded-xl bg-emerald-50 px-4 py-2 text-sm"
-                  >
-                    {child.name}
-                    <span className="ml-2 text-xs text-muted-foreground">
-                      #{child.id}
-                    </span>
-                  </div>
-                ))}
+                flag={true}          // read-only mode
+              />
             </div>
+
           </div>
         </div>
       </div>

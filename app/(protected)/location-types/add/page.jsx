@@ -38,28 +38,78 @@ export default function AddLocationTypesPage() {
         <div className="mx-auto max-w-7xl space-y-6">
 
           {/* ===== PAGE HEADER ===== */}
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => history.back()}
-              className="rounded-md p-2 hover:bg-muted"
+          <div className="w-full">
+            <div
+              className="
+      rounded-2xl
+      border border-slate-200 dark:border-slate-800
+      bg-white dark:bg-slate-900
+      px-4 sm:px-6
+      py-4 sm:py-5
+      shadow-sm
+    "
             >
-              <ArrowLeft className="h-5 w-5" />
-            </button>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
 
-            <div className="flex-1 rounded-2xl border border-border bg-background px-6 py-4 shadow-sm">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <Layers className="h-5 w-5 text-primary" />
+                {/* LEFT SIDE */}
+                <div className="flex items-start gap-3">
+
+                  {/* Icon */}
+                  <div
+                    className="
+            h-9 w-9 sm:h-10 sm:w-10
+            rounded-xl
+            bg-indigo-500/10
+            flex items-center justify-center
+          "
+                  >
+                    <Layers className="h-4 w-4 sm:h-5 sm:w-5 text-indigo-500" />
+                  </div>
+
+                  {/* Text */}
+                  <div>
+                    <h1
+                      className="
+              text-base sm:text-lg
+              font-semibold
+              text-slate-900 dark:text-slate-100
+            "
+                    >
+                      Add New Zone Type
+                    </h1>
+
+                    <p
+                      className="
+              mt-1
+              text-[10px] sm:text-xs
+              uppercase tracking-widest
+              text-slate-500 dark:text-slate-400
+            "
+                    >
+                      Configure Workspace Architecture
+                    </p>
+                  </div>
                 </div>
 
-                <div>
-                  <h1 className="text-lg font-semibold">
-                    Add New Zone Type
-                  </h1>
-                  <p className="text-xs uppercase text-muted-foreground">
-                    Configure Workspace Architecture
-                  </p>
-                </div>
+                {/* RIGHT SIDE - Back Button */}
+                <button
+                  onClick={() => router.push("/location-types")}
+                  className="
+          self-start sm:self-auto
+          rounded-lg
+          border border-orange-400
+          px-4 py-2
+          text-xs sm:text-sm
+          font-medium
+          text-orange-500
+          transition-all
+          hover:bg-orange-50
+          dark:hover:bg-orange-500/10
+        "
+                >
+                  ← Back to List
+                </button>
+
               </div>
             </div>
           </div>
@@ -109,7 +159,7 @@ export default function AddLocationTypesPage() {
               <div className="p-6">
                 <TreeView
                   types={types}
-                   onUpdate={refetch}
+                  onUpdate={refetch}
                   flag={true}
                 />
               </div>

@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import toast from "react-hot-toast";
 
-import { UsersApi } from "@/features/users/users.api";
 import { useRequirePermission } from "@/shared/hooks/useRequirePermission";
 import { usePermissions } from "@/shared/hooks/usePermission";
 import { MODULES } from "@/shared/constants/permissions";
+
+import { useGetUsersByRole } from "@/features/users/users.queries";
 
 import RoleHeader from "@/features/roles/components/RoleHeader";
 import RoleTable from "@/features/roles/components/RoleTable";
@@ -26,41 +27,51 @@ export default function RolesListContainer({ role }) {
 
   const roleId = ROLE_ID_MAP[role];
   const { canAdd, canView, canUpdate, canDelete } = usePermissions();
-
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
+  /* ===============================
+     TANSTACK FETCH
+  ================================ */
+
+  const {
+    data: users = [],
+    isLoading,
+    isError,
+    error,
+  } = useGetUsersByRole(roleId);
+
+  /* ===============================
+     ERROR HANDLING (SAFE)
+  ================================ */
+
   useEffect(() => {
-    if (!roleId) return;
+    if (isError) {
+      toast.error(error?.message || "Failed to fetch users");
+    }
+  }, [isError, error]);
 
-    const fetchUsers = async () => {
-      try {
-        const res = await UsersApi.getAllUsers();
-        const roleUsers = res.data.filter(u => u.role_id === roleId);
-        setUsers(roleUsers);
-      } catch {
-        toast.error("Failed to fetch users");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUsers();
-  }, [roleId]);
+  /* ===============================
+     SEARCH FILTER
+  ================================ */
 
   const filteredUsers = useMemo(() => {
     if (!search) return users;
+
     const q = search.toLowerCase();
+
     return users.filter(
-      u =>
+      (u) =>
         u.name?.toLowerCase().includes(q) ||
         u.email?.toLowerCase().includes(q) ||
         u.phone?.includes(q)
     );
   }, [users, search]);
 
-  if (loading) return <RoleLoading />;
+  /* ===============================
+     LOADING STATE
+  ================================ */
+
+  if (isLoading) return <RoleLoading />;
 
   return (
     <>
@@ -72,7 +83,10 @@ export default function RolesListContainer({ role }) {
       />
 
       {filteredUsers.length === 0 ? (
-        <RoleEmptyState role={role} canAdd={canAdd(MODULES.USERS)} />
+        <RoleEmptyState
+          role={role}
+          canAdd={canAdd(MODULES.USERS)}
+        />
       ) : (
         <RoleTable
           users={filteredUsers}
