@@ -162,6 +162,7 @@ const EditLocationPage = () => {
     facility_companiesId: null,
     type_id: null,
     no_of_photos: null,
+    is_public: false,
     options: {},
     usage_category: {
       men: { wc: 0, indian: 0, urinals: 0, shower: 0, basin: 0 },
@@ -250,6 +251,7 @@ const EditLocationPage = () => {
             pincode: data.pincode || "",
             no_of_photos: data.no_of_photos,
             options: data.options || {},
+            is_public: data.is_public ?? false,
             facility_companiesId: data.facility_companiesId,
             type_id: data.type_id,
             usage_category: data.usage_category || {
@@ -654,7 +656,7 @@ const EditLocationPage = () => {
                 {/* Facility Type */}
                 <div className="space-y-2">
                   <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider block ml-1">
-                  Location Hirarchy
+                    Location Hirarchy
                   </label>
                   <div className="h-11">
                     <LocationTypeSelect
@@ -719,7 +721,55 @@ const EditLocationPage = () => {
 
 
                 </div>
+                <div className="space-y-2">
+                  <label className="text-[11px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-wider block ml-1">
+                    Toilet Visibility
+                  </label>
 
+                  <div className="flex items-center gap-3 h-11 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/30 dark:bg-slate-800/30">
+
+                    <span
+                      className={`text-xs font-bold transition-colors ${formData.is_public
+                        ? "text-cyan-600 dark:text-cyan-400"
+                        : "text-slate-400"
+                        }`}
+                    >
+                      Public
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          is_public: !prev.is_public,
+                        }))
+                      }
+                      className={`relative w-11 h-6 rounded-full transition-colors border ${formData.is_public
+                        ? "bg-cyan-500/90 border-cyan-500"
+                        : "bg-slate-300 dark:bg-slate-600 border-slate-300 dark:border-slate-600"
+                        }`}
+                    >
+                      <span
+                        className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white dark:bg-slate-100 shadow-sm transition-transform ${formData.is_public ? "translate-x-5" : ""
+                          }`}
+                      />
+                    </button>
+
+                    <span
+                      className={`text-xs font-bold transition-colors ${!formData.is_public
+                        ? "text-rose-500 dark:text-rose-400"
+                        : "text-slate-400"
+                        }`}
+                    >
+                      Private
+                    </span>
+                  </div>
+
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500 ml-1 leading-tight">
+                    Private toilets are restricted to the assigned facility company
+                  </p>
+                </div>
 
                 {/* Photo Count */}
                 {/* <div className="space-y-2">

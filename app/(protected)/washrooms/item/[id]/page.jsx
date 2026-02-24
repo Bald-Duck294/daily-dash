@@ -1666,7 +1666,7 @@ const SingleLocation = () => {
                       key={review.id}
                       onClick={() =>
                         router.push(
-                          `/cleaner-review/${review.id}?companyId=${finalCompanyId}`,
+                          `/cleaners/${review.id}?companyId=${finalCompanyId}`,
                         )
                       }
                       className="

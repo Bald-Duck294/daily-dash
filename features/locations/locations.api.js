@@ -210,6 +210,7 @@ export const LocationsApi = {
         "longitude",
         "address",
         "pincode",
+        "is_public",
         "state",
         "city",
         "dist",
@@ -232,8 +233,8 @@ export const LocationsApi = {
           } else if (key === "latitude" || key === "longitude") {
             const numValue = parseFloat(data[key]);
             valueToAppend = !isNaN(numValue) ? numValue.toString() : null;
-          } else if (key === "status") {
-            valueToAppend = data[key].toString(); // Convert boolean to string
+          } else if (key === "status" || key === "is_public") {
+            valueToAppend = data[key] ? "true" : "false";
           }
 
           if (valueToAppend !== null && valueToAppend !== undefined) {

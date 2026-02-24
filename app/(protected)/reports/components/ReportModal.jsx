@@ -111,7 +111,7 @@ export default function ReportModal({ reportType, data, metadata, onClose }) {
       <div className="w-full max-w-7xl h-screen overflow-y-auto py-8 px-4">
         <div className="relative bg-white rounded-2xl shadow-2xl">
           {/* ✅ Enhanced Sticky Header */}
-          <div className="sticky top-0 z-10 bg-gradient-to-r from-white to-slate-50 border-b border-slate-200 px-6 py-4 rounded-t-2xl">
+          <div className="bg-gradient-to-r from-white to-slate-50 border-b border-slate-200 px-6 py-4 rounded-t-2xl">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
               {/* Left Section */}
               <div className="flex-1">

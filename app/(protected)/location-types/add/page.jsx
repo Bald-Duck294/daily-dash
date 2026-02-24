@@ -8,7 +8,7 @@ import CreateForm from "@/features/locationTypes/components/CreateForm";
 import TreeView from "@/features/locationTypes/components/TreeView";
 import { useLocationTypes } from "@/features/locationTypes/locationTypes.queries";
 import { useCompanyId } from "@/providers/CompanyProvider";
-
+import {useRouter} from "next/navigation"
 import { useRequirePermission } from "@/shared/hooks/useRequirePermission";
 import { MODULES } from "@/shared/constants/permissions";
 
@@ -22,7 +22,7 @@ export default function AddLocationTypesPage() {
   useRequirePermission(MODULES.LOCATION_TYPES, { action: "add" });
 
   const { companyId } = useCompanyId();
-
+const router =useRouter();
 
   const {
     data: types = [],

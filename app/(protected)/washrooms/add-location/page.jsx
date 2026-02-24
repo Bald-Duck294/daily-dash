@@ -192,7 +192,7 @@ export default function AddWashroomForm() {
     parent_id: null,
     type_id: null,
     facility_company_id: null,
-    is_public: true,
+    is_public: false,
     latitude: 21.1458, // Default to Nagpur as per screenshot
     longitude: 79.0882,
     address: "",
