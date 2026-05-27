@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback, useRef } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import {
   GoogleMap,
   useLoadScript,
@@ -8,10 +8,11 @@ import {
   InfoWindow,
 } from "@react-google-maps/api";
 import { Loader2, Search, X } from "lucide-react";
-import locationsApi from "@/features/locations/locations.api";
-// import { useCompanyId } from "@/lib/providers/CompanyProvider";
 import { useRouter } from "next/navigation";
 import { useCompanyId } from "@/providers/CompanyProvider";
+
+// Adjust this import path to match where your query hooks are stored
+import { useGetAllLocations } from "@/features/locations/locations.queries"; 
 
 const mapContainerStyle = {
   width: "100%",
@@ -29,58 +30,33 @@ const MapView = () => {
   });
 
   const router = useRouter();
-  const [locations, setLocations] = useState([]);
+  const { companyId } = useCompanyId();
+
+  // Fetch data using TanStack Query
+  const { data: locations = [], isLoading } = useGetAllLocations(companyId);
+
+  // Local UI State
   const [selected, setSelected] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [filtered, setFiltered] = useState([]);
   const [center, setCenter] = useState(defaultCenter);
   const [showDropdown, setShowDropdown] = useState(false);
+  
   const mapRef = useRef(null);
   const searchRef = useRef(null);
 
-  const { companyId, hasCompanyContext } = useCompanyId();
-
-  console.log(companyId, "companyIdZ");
-  const fetchLocations = useCallback(async () => {
-    setLoading(true);
-
-    const res = await locationsApi.getAllLocations(companyId);
-    console.log(res, "response locations");
-    if (res.success) {
-      setLocations(res.data);
-      setFiltered(res.data);
-    } else {
-      console.error(res.error);
-    }
-    setLoading(false);
-  }, [companyId]);
-
-  useEffect(() => {
-    if (!companyId || companyId === "null" || companyId === null) {
-      console.log("Skipping fetch - companyId not ready:", companyId);
-      setLoading(false);
-      return;
-    }
-
-    fetchLocations();
-  }, [fetchLocations, companyId]);
+  // Derived state for filtering (Replaces the separate `filtered` useState)
+  const filtered = useMemo(() => {
+    if (!search.trim()) return locations;
+    return locations.filter((loc) =>
+      loc.name.toLowerCase().includes(search.toLowerCase())
+    );
+  }, [locations, search]);
 
   // Handle search input changes
   const handleInputChange = (e) => {
     const value = e.target.value;
     setSearch(value);
-
-    if (value.trim() === "") {
-      setFiltered(locations);
-      setShowDropdown(false);
-    } else {
-      const matches = locations.filter((loc) =>
-        loc.name.toLowerCase().includes(value.toLowerCase()),
-      );
-      setFiltered(matches);
-      setShowDropdown(matches.length > 0);
-    }
+    setShowDropdown(value.trim() !== "");
   };
 
   // Handle location selection from dropdown
@@ -103,7 +79,6 @@ const MapView = () => {
   // Clear search
   const handleClearSearch = () => {
     setSearch("");
-    setFiltered(locations);
     setShowDropdown(false);
     setSelected(null);
   };
@@ -194,7 +169,7 @@ const MapView = () => {
         {/* No Results Message */}
         {showDropdown && filtered.length === 0 && search && (
           <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg p-4 text-center text-gray-500">
-            No toilets found matching "{search}"
+            No toilets found matching &quot;{search}&quot;
           </div>
         )}
       </div>
@@ -204,7 +179,7 @@ const MapView = () => {
         Showing {filtered.length} of {locations.length} locations
       </div>
 
-      {loading ? (
+      {isLoading ? (
         <div className="flex justify-center items-center h-96">
           <Loader2 className="animate-spin" />
         </div>

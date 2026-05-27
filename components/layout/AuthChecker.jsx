@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import { useEffect, useState } from "react";
@@ -53,22 +54,22 @@ export default function AuthChecker({ children }) {
   }, [isAuthenticated, pathname, router, isPublicRoute, isReady, user]);
 
   // Show loading while initializing
-  if (!isReady) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-slate-100">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
-      </div>
-    );
-  }
+  // if (!isReady) {
+  //   return (
+  //     <div className="flex items-center justify-center min-h-screen bg-slate-100">
+  //       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+  //     </div>
+  //   );
+  // }
 
-  // Show loading while redirecting unauthenticated users
-  if (!isAuthenticated && !isPublicRoute) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-slate-100">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
-      </div>
-    );
-  }
+  // // Show loading while redirecting unauthenticated users
+  // if (!isAuthenticated && !isPublicRoute) {
+  //   return (
+  //     <div className="flex items-center justify-center min-h-screen bg-slate-100">
+  //       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+  //     </div>
+  //   );
+  // }
 
   return <>{children}</>;
 }

@@ -155,7 +155,7 @@ export default function LoginPage() {
 
           {/* Title */}
           <h1 className="text-center text-xl font-semibold text-[var(--foreground)]">
-            SAFAI PORTAL
+            SAAFAI PORTAL
           </h1>
           <p className="mt-1 text-center text-sm text-[var(--muted-foreground)]">
             Initialize an encrypted session to manage your workspace.

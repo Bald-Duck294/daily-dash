@@ -1002,7 +1002,7 @@
 // }
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react"; // Notice: useEffect is gone!
 import {
   FileText,
   Filter,
@@ -1020,13 +1020,22 @@ import {
   ArrowRight,
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
-import ReportsApi from "@/features/reports/reports.api";
-import ReportModal from "./components/ReportModal"; // Your existing modal
 import { useSelector } from "react-redux";
+import { useMutation } from "@tanstack/react-query";
+
+import ReportsApi from "@/features/reports/reports.api";
+import ReportModal from "./components/ReportModal";
 import { useCompanyId } from "@/providers/CompanyProvider";
 import { usePermissions } from "@/shared/hooks/usePermission";
 import { useRequirePermission } from "@/shared/hooks/useRequirePermission";
 import { MODULES } from "@/shared/constants/permissions";
+
+// Import your custom TanStack hooks
+import {
+  useGetAvailableZones,
+  useGetLocationsForReport,
+  useGetCleanersForReport,
+} from "@/features/reports/reports.queries";
 
 const REPORT_TYPES = [
   {
@@ -1069,119 +1078,34 @@ const getTodayDate = () => {
   return `${year}-${month}-${day}`;
 };
 
-// --- Helper Components for the new UI ---
-
+// --- Helper Component ---
 const NoDataModal = ({ isOpen, onClose, filters }) => {
   if (!isOpen) return null;
   return (
-    <div
-      className="
-    fixed inset-0
-    flex items-center justify-center
-    z-50 p-4
-    bg-black/50 backdrop-blur-sm
-  "
-    >
-      <div
-        className="
-      max-w-md w-full
-      rounded-2xl
-      animate-in fade-in zoom-in duration-200
-      bg-[var(--surface)]
-      border border-[var(--border)]
-      shadow-[var(--card-shadow)]
-    "
-      >
-        {/* Header */}
-        <div
-          className="
-        flex items-center justify-between
-        p-6
-        border-b border-[var(--border)]
-      "
-        >
+    <div className="fixed inset-0 flex items-center justify-center z-50 p-4 bg-black/50 backdrop-blur-sm">
+      <div className="max-w-md w-full rounded-2xl animate-in fade-in zoom-in duration-200 bg-[var(--surface)] border border-[var(--border)] shadow-[var(--card-shadow)]">
+        <div className="flex items-center justify-between p-6 border-b border-[var(--border)]">
           <div className="flex items-center gap-3">
-            <div
-              className="
-            p-2 rounded-xl
-            bg-[var(--accent-yellow)]
-          "
-            >
+            <div className="p-2 rounded-xl bg-[var(--accent-yellow)]">
               <AlertCircle className="w-6 h-6 text-[var(--washroom-primary)]" />
             </div>
-            <h2 className="text-lg font-bold text-[var(--foreground)]">
-              No Data Found
-            </h2>
+            <h2 className="text-lg font-bold text-[var(--foreground)]">No Data Found</h2>
           </div>
-
-          <button
-            onClick={onClose}
-            className="
-          p-2 rounded-full
-          transition-colors
-          hover:bg-[var(--muted)]
-        "
-          >
+          <button onClick={onClose} className="p-2 rounded-full transition-colors hover:bg-[var(--muted)]">
             <X className="w-5 h-5 text-[var(--muted-foreground)]" />
           </button>
         </div>
-
-        {/* Body */}
         <div className="p-6">
-          <p className="text-sm mb-4 text-[var(--muted-foreground)]">
-            No records found for the selected filters.
-          </p>
-
-          <div
-            className="
-          rounded-xl p-4 mb-4
-          bg-[var(--muted)]
-          border border-[var(--border)]
-        "
-          >
-            <p
-              className="
-            text-[10px] mb-2
-            uppercase tracking-widest font-bold
-            text-[var(--muted-foreground)]
-          "
-            >
-              Current Filters
-            </p>
-
+          <p className="text-sm mb-4 text-[var(--muted-foreground)]">No records found for the selected filters.</p>
+          <div className="rounded-xl p-4 mb-4 bg-[var(--muted)] border border-[var(--border)]">
+            <p className="text-[10px] mb-2 uppercase tracking-widest font-bold text-[var(--muted-foreground)]">Current Filters</p>
             <div className="space-y-1 text-sm text-[var(--foreground)]">
-              {filters.dateRange && (
-                <p>
-                  <span className="font-semibold">Date:</span>{" "}
-                  {filters.dateRange}
-                </p>
-              )}
-              {filters.location && (
-                <p>
-                  <span className="font-semibold">Location:</span>{" "}
-                  {filters.location}
-                </p>
-              )}
-              {filters.cleaner && (
-                <p>
-                  <span className="font-semibold">Cleaner:</span>{" "}
-                  {filters.cleaner}
-                </p>
-              )}
+              {filters.dateRange && <p><span className="font-semibold">Date:</span> {filters.dateRange}</p>}
+              {filters.location && <p><span className="font-semibold">Location:</span> {filters.location}</p>}
+              {filters.cleaner && <p><span className="font-semibold">Cleaner:</span> {filters.cleaner}</p>}
             </div>
           </div>
-
-          <button
-            onClick={onClose}
-            className="
-          w-full py-3 rounded-xl
-          font-bold text-sm
-          transition-all
-          bg-[var(--primary)]
-          text-[var(--primary-foreground)]
-          hover:opacity-90
-        "
-          >
+          <button onClick={onClose} className="w-full py-3 rounded-xl font-bold text-sm transition-all bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-90">
             Adjust Filters
           </button>
         </div>
@@ -1198,21 +1122,12 @@ export default function ReportsPage() {
 
   const { companyId } = useCompanyId();
   const user = useSelector((state) => state.auth.user);
-  const userRoleId = user?.role_id;
-  const isPermitted = userRoleId === 1 || userRoleId === 2;
+  const isPermitted = user?.role_id === 1 || user?.role_id === 2;
 
   const todayDate = getTodayDate();
 
   // State Management
   const [selectedReportType, setSelectedReportType] = useState("daily_task");
-
-  // Filters
-  const [zones, setZones] = useState([]);
-  const [locations, setLocations] = useState([]);
-  const [cleaners, setCleaners] = useState([]);
-  const [loadingLocations, setLoadingLocations] = useState(false);
-  const [loadingCleaners, setLoadingCleaners] = useState(false);
-
   const [selectedZone, setSelectedZone] = useState("");
   const [selectedLocation, setSelectedLocation] = useState("");
   const [selectedCleaner, setSelectedCleaner] = useState("");
@@ -1224,175 +1139,87 @@ export default function ReportsPage() {
   // Data & Modal States
   const [reportData, setReportData] = useState([]);
   const [reportMetadata, setReportMetadata] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [showNoDataModal, setShowNoDataModal] = useState(false);
 
-  // Flag for zone permission logic
-  const [flag] = useState(true);
+  /* =====================================================
+     TANSTACK QUERIES (Automatic Fetching)
+  ===================================================== */
+  const { data: zones = [] } = useGetAvailableZones(companyId);
 
-  // --- Effects (Data Fetching) ---
-  useEffect(() => {
-    if (companyId) {
-      fetchZones();
-      fetchLocations();
-      fetchCleaners();
+  // Reacts instantly when `selectedZone` changes
+  const { data: locations = [], isFetching: loadingLocations } = useGetLocationsForReport(
+    companyId,
+    selectedZone
+  );
+
+  // Reacts instantly when `selectedLocation` changes
+  const { data: cleaners = [], isFetching: loadingCleaners } = useGetCleanersForReport(
+    companyId,
+    selectedLocation
+  );
+
+  /* =====================================================
+     EVENT HANDLERS (Replaces useEffect state watching)
+  ===================================================== */
+
+  const handleReportTypeChange = (value) => {
+    setSelectedReportType(value);
+    // Reset all filters when changing report type
+    setSelectedZone("");
+    setSelectedLocation("");
+    setSelectedCleaner("");
+    setStartDate(todayDate);
+    setEndDate(todayDate);
+    setStatusFilter("all");
+  };
+
+  const handleZoneChange = (e) => {
+    setSelectedZone(e.target.value);
+    // Automatically clear child dropdowns so they don't hold stale data
+    setSelectedLocation(""); 
+    setSelectedCleaner("");
+  };
+
+  const handleLocationChange = (e) => {
+    setSelectedLocation(e.target.value);
+    // Automatically clear child dropdowns
+    setSelectedCleaner("");
+  };
+
+  const handleStartDateChange = (e) => {
+    const newDate = e.target.value;
+    if (newDate > todayDate) return toast.error("Start date cannot be in the future");
+    
+    setStartDate(newDate);
+
+    // Enforce logic directly in handler instead of useEffect
+    if (endDate && newDate > endDate) {
+      setEndDate(newDate); 
     }
-  }, [companyId]);
 
-  useEffect(() => {
-    if (companyId && selectedZone) {
-      fetchLocationsByZone(selectedZone);
-      setSelectedLocation("");
-      setSelectedCleaner("");
-    } else if (companyId && !selectedZone) {
-      fetchLocations();
-    }
-  }, [selectedZone, companyId]);
-
-  useEffect(() => {
-    if (companyId && selectedLocation) {
-      fetchCleanersByLocation(selectedLocation);
-      setSelectedCleaner("");
-    } else if (companyId && !selectedLocation && !selectedZone) {
-      fetchCleaners();
-    }
-  }, [selectedLocation, companyId]);
-
-  useEffect(() => {
     if (selectedReportType === "washroom_hygiene_trend") {
-      const maxAllowedEndDate = getMaxEndDate(startDate);
-      if (!endDate || endDate > maxAllowedEndDate) {
-        setEndDate(maxAllowedEndDate);
+      const maxAllowed = getMaxEndDate(newDate);
+      if (!endDate || endDate > maxAllowed) {
+        setEndDate(maxAllowed);
         toast.success("End date set to max allowed (31 days)");
       }
     }
-  }, [selectedReportType, startDate]);
-
-  // --- API Functions ---
-  const fetchZones = async () => {
-    try {
-      const response = await ReportsApi.getAvailableZones(companyId);
-      if (response.success) setZones(response.data);
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  const fetchLocations = async () => {
-    setLoadingLocations(true);
-    try {
-      const response = await ReportsApi.getLocationsForReport(companyId);
-      if (response.success) setLocations(response.data);
-    } catch (error) {
-      toast.error("Failed to load locations");
-    } finally {
-      setLoadingLocations(false);
-    }
-  };
-
-  const fetchLocationsByZone = async (zoneId) => {
-    setLoadingLocations(true);
-    try {
-      const response = await ReportsApi.getLocationsForReport(
-        companyId,
-        zoneId,
-      );
-      if (response.success) setLocations(response.data);
-      else setLocations([]);
-    } catch (error) {
-      setLocations([]);
-    } finally {
-      setLoadingLocations(false);
-    }
-  };
-
-  const fetchCleaners = async () => {
-    setLoadingCleaners(true);
-    try {
-      const response = await ReportsApi.getCleanersForReport(companyId);
-      if (response.success) setCleaners(response.data);
-    } catch (error) {
-      toast.error("Failed to load cleaners");
-    } finally {
-      setLoadingCleaners(false);
-    }
-  };
-
-  const fetchCleanersByLocation = async (locationId) => {
-    setLoadingCleaners(true);
-    try {
-      const response = await ReportsApi.getCleanersForReport(
-        companyId,
-        locationId,
-      );
-      if (response.success) setCleaners(response.data);
-      else setCleaners([]);
-    } catch (error) {
-      setCleaners([]);
-    } finally {
-      setLoadingCleaners(false);
-    }
-  };
-
-  // --- Helper Logic ---
-  const getMaxEndDate = (startDate) => {
-    if (!startDate) return new Date().toISOString().split("T")[0];
-    const maxDate = new Date(startDate);
-    maxDate.setDate(maxDate.getDate() + 31);
-    const today = new Date();
-    return maxDate > today
-      ? today.toISOString().split("T")[0]
-      : maxDate.toISOString().split("T")[0];
-  };
-
-  const generateReportName = (defaultReportType) => {
-    const isSingleDate = startDate === endDate;
-    let name = defaultReportType || "Report";
-    // (Logic preserved from original, simplified for brevity in this snippet)
-    return name;
-  };
-
-  const getCurrentFilters = () => ({
-    zone: selectedZone ? zones.find((z) => z.id === selectedZone)?.name : null,
-    location: selectedLocation
-      ? locations.find((l) => l.id === selectedLocation)?.display_name
-      : null,
-    cleaner: selectedCleaner
-      ? cleaners.find((c) => c.id === selectedCleaner)?.name
-      : null,
-    dateRange: `${startDate || "Start"} to ${endDate || "End"}`,
-    status: statusFilter !== "all" ? statusFilter : null,
-  });
-
-  // --- Handlers ---
-  const handleStartDateChange = (e) => {
-    const newDate = e.target.value;
-    if (newDate > todayDate)
-      return toast.error("Start date cannot be in the future");
-    setStartDate(newDate);
-    // Logic for end date adjustments preserved
-    if (endDate && newDate > endDate) setEndDate(newDate);
   };
 
   const handleEndDateChange = (e) => {
     const newDate = e.target.value;
-    if (newDate > todayDate)
-      return toast.error("End date cannot be in the future");
-    if (startDate && newDate < startDate)
-      return toast.error("End date cannot be before start date");
+    if (newDate > todayDate) return toast.error("End date cannot be in the future");
+    if (startDate && newDate < startDate) return toast.error("End date cannot be before start date");
     setEndDate(newDate);
   };
 
   const handleDetailedReportDateChange = (e) => {
     const newDate = e.target.value;
-
     if (newDate > todayDate) {
       setDetailedReportDate(todayDate);
-      toast.error("Date cannot be in the future");
-      return;
+      return toast.error("Date cannot be in the future");
     }
-
     setDetailedReportDate(newDate);
   };
 
@@ -1403,571 +1230,239 @@ export default function ReportsPage() {
     setStartDate(todayDate);
     setEndDate(todayDate);
     setStatusFilter("all");
-    if (companyId) {
-      fetchLocations();
-      fetchCleaners();
-    }
   };
 
-  // --- Generate Report Function (Preserved) ---
-  const generateReport = async () => {
+  // --- Helper Logic ---
+  const getMaxEndDate = (start) => {
+    if (!start) return new Date().toISOString().split("T")[0];
+    const maxDate = new Date(start);
+    maxDate.setDate(maxDate.getDate() + 31);
+    const today = new Date();
+    return maxDate > today ? today.toISOString().split("T")[0] : maxDate.toISOString().split("T")[0];
+  };
+
+  const getCurrentFilters = () => ({
+    zone: selectedZone ? zones.find((z) => z.id === selectedZone)?.name : null,
+    location: selectedLocation ? locations.find((l) => l.id === selectedLocation)?.display_name : null,
+    cleaner: selectedCleaner ? cleaners.find((c) => c.id === selectedCleaner)?.name : null,
+    dateRange: `${startDate || "Start"} to ${endDate || "End"}`,
+  });
+
+  /* =====================================================
+     TANSTACK MUTATION (For manual actions like button clicks)
+  ===================================================== */
+  // Note: We use useMutation here because generating a report is an explicit 
+  // user ACTION (like submitting a form), not an automatic data sync.
+  const reportMutation = useMutation({
+    mutationFn: async ({ endpoint, params }) => {
+      const response = await ReportsApi.getReport(endpoint, params);
+      if (!response.success && response.status !== "success") {
+        throw new Error(response.error || "Failed to generate report");
+      }
+      return response;
+    },
+    onSuccess: (response, variables) => {
+      if (!response.data || response.data.length === 0) {
+        setShowNoDataModal(true);
+      } else {
+        const defaultReportType = response.metadata?.report_type || variables.label;
+        setReportData(response.data);
+        setReportMetadata({
+          ...response.metadata,
+          report_type: defaultReportType,
+          dynamic_report_name: defaultReportType,
+        });
+        setShowModal(true);
+        toast.success("Report generated successfully!");
+      }
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to generate report");
+    },
+  });
+
+  const triggerGenerateReport = () => {
     if (!canViewReports) return toast.error("You don't have permission");
     if (!companyId) return toast.error("Company ID is required");
 
-    setIsLoading(true);
-    try {
-      const selectedReport = REPORT_TYPES.find(
-        (r) => r.value === selectedReportType,
-      );
-      let effectiveStartDate = startDate || todayDate;
-      let effectiveEndDate = endDate || todayDate;
+    const selectedReport = REPORT_TYPES.find((r) => r.value === selectedReportType);
+    let params = { company_id: companyId, start_date: startDate, end_date: endDate };
 
-      let params = {
-        company_id: companyId,
-        start_date: effectiveStartDate,
-        end_date: effectiveEndDate,
-      };
-
-      // Construct Params based on Report Type
-      if (selectedReportType === "daily_task") {
-        params = {
-          ...params,
-          ...(selectedLocation && { location_id: selectedLocation }),
-          ...(selectedCleaner && { cleaner_id: selectedCleaner }),
-          ...(selectedZone && { type_id: selectedZone }),
-          ...(statusFilter !== "all" && { status_filter: statusFilter }),
-        };
-      } else if (selectedReportType === "zone_wise") {
-        params = { ...params, ...(selectedZone && { type_id: selectedZone }) };
-      } else if (selectedReportType === "washroom_report") {
-        params = {
-          ...params,
-          ...(selectedLocation && { location_id: selectedLocation }),
-          ...(statusFilter !== "all" && { status_filter: statusFilter }),
-        };
-      } else if (selectedReportType === "cleaner_report") {
-        params = {
-          ...params,
-          ...(selectedCleaner && { cleaner_id: selectedCleaner }),
-          ...(selectedLocation && { location_id: selectedLocation }),
-          ...(statusFilter !== "all" && { status_filter: statusFilter }),
-        };
-      } else if (selectedReportType === "detailed_cleaning") {
-        params = {
-          company_id: companyId,
-          ...(detailedReportDate && {
-            detailed_report_date: detailedReportDate,
-          }),
-          ...(selectedCleaner && { cleaner_id: selectedCleaner }),
-          ...(statusFilter !== "all" && { status_filter: statusFilter }),
-          ...(selectedLocation && { location_id: selectedLocation }),
-        };
-      }
-
-      const response = await ReportsApi.getReport(
-        selectedReport.endpoint,
-        params,
-      );
-
-      if (response.success || response.status === "success") {
-        if (!response.data || response.data.length === 0) {
-          setShowNoDataModal(true);
-        } else {
-          const defaultReportType =
-            response.metadata?.report_type || selectedReport.label;
-          const reportName = generateReportName(defaultReportType);
-          const enhancedMetadata = {
-            ...response.metadata,
-            report_type: reportName,
-            dynamic_report_name: reportName,
-          };
-
-          setReportData(response.data);
-          setReportMetadata(enhancedMetadata);
-          setShowModal(true); // ✅ Triggers your existing ReportModal
-          toast.success("Report generated successfully!");
-        }
-      } else {
-        toast.error(response.error || "Failed to generate report");
-      }
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to generate report");
-    } finally {
-      setIsLoading(false);
+    if (selectedReportType === "daily_task") {
+      params = { ...params, ...(selectedLocation && { location_id: selectedLocation }), ...(selectedCleaner && { cleaner_id: selectedCleaner }), ...(selectedZone && { type_id: selectedZone }), ...(statusFilter !== "all" && { status_filter: statusFilter }) };
+    } else if (selectedReportType === "zone_wise") {
+      params = { ...params, ...(selectedZone && { type_id: selectedZone }) };
+    } else if (selectedReportType === "washroom_report") {
+      params = { ...params, ...(selectedLocation && { location_id: selectedLocation }), ...(statusFilter !== "all" && { status_filter: statusFilter }) };
+    } else if (selectedReportType === "cleaner_report") {
+      params = { ...params, ...(selectedCleaner && { cleaner_id: selectedCleaner }), ...(selectedLocation && { location_id: selectedLocation }), ...(statusFilter !== "all" && { status_filter: statusFilter }) };
+    } else if (selectedReportType === "detailed_cleaning") {
+      params = { company_id: companyId, ...(detailedReportDate && { detailed_report_date: detailedReportDate }), ...(selectedCleaner && { cleaner_id: selectedCleaner }), ...(statusFilter !== "all" && { status_filter: statusFilter }), ...(selectedLocation && { location_id: selectedLocation }) };
     }
+
+    reportMutation.mutate({ endpoint: selectedReport.endpoint, params, label: selectedReport.label });
   };
 
   return (
     <>
       <Toaster position="top-right" />
-
-      <div
-        className="
-    min-h-screen
-    p-4 md:p-8
-    font-sans
-    bg-[var(--background)]
-  "
-      >
-
+      <div className="min-h-screen p-4 md:p-8 font-sans bg-[var(--background)]">
         <div className="max-w-[1400px] mx-auto space-y-6">
-          {/* Page Header */}
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-4">
-              <div
-                className="
-        p-3 rounded-xl
-        bg-[var(--report-surface)]
-        border border-[var(--report-border)]
-        shadow-[var(--report-shadow)]
-      "
-              >
-                <FileText className="w-6 h-6 text-[var(--primary)]" />
-              </div>
-
-              <div>
-                <h1 className="text-2xl font-bold text-[var(--report-title)]">
-                  ANALYTICS REPORTS
-                </h1>
-                <p className="text-sm font-medium mt-1 text-[var(--report-subtitle)]">
-                  Select a module and configure parameters to generate insights
-                </p>
-              </div>
+          {/* Header */}
+          <div className="flex items-center gap-4 mb-8">
+            <div className="p-3 rounded-xl bg-[var(--report-surface)] border border-[var(--report-border)] shadow-[var(--report-shadow)]">
+              <FileText className="w-6 h-6 text-[var(--primary)]" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-[var(--report-title)]">ANALYTICS REPORTS</h1>
+              <p className="text-sm font-medium mt-1 text-[var(--report-subtitle)]">Select a module and configure parameters</p>
             </div>
           </div>
 
-
-          {/* Main Grid Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* LEFT COLUMN: Sidebar Selection */}
+            {/* Sidebar */}
             <div className="lg:col-span-4 xl:col-span-3">
-              <div
-                className="
-      rounded-2xl p-2 sticky top-6
-      bg-[var(--report-surface)]
-      border border-[var(--report-border)]
-      shadow-[var(--report-shadow)]
-    "
-              >
+              <div className="rounded-2xl p-2 sticky top-6 bg-[var(--report-surface)] border border-[var(--report-border)] shadow-[var(--report-shadow)]">
                 <div className="flex items-center gap-2 px-4 py-3 mb-2">
                   <Filter size={16} className="text-[var(--report-subtitle)]" />
-                  <span className="text-[11px] font-black uppercase tracking-widest text-[var(--report-subtitle)]">
-                    Report Modules
-                  </span>
+                  <span className="text-[11px] font-black uppercase tracking-widest text-[var(--report-subtitle)]">Report Modules</span>
                 </div>
-
                 <div className="space-y-1">
-                  {REPORT_TYPES.map((report) => {
-                    const isActive = selectedReportType === report.value;
-
-                    return (
-                      <button
-                        key={report.value}
-                        onClick={() => {
-                          setSelectedReportType(report.value);
-                          handleReset();
-                        }}
-                        className={`
-              w-full px-4 py-4 rounded-xl border transition-all
-              flex items-center justify-between text-left outline-none
-              ${isActive
-                            ? `
-                    bg-[var(--report-sidebar-active-bg)]
-                    border-[var(--report-sidebar-active-border)]
-                    text-[var(--report-sidebar-active-text)]
-                    shadow-[var(--report-shadow)]
-                  `
-                            : `
-                    bg-transparent
-                    border-transparent
-                    text-[var(--foreground)]
-                    hover:bg-[var(--report-sidebar-hover)]
-                  `
-                          }
-            `}
-                      >
-                        <span className="text-xs font-bold tracking-tight">
-                          {report.label}
-                        </span>
-
-                        {isActive ? (
-                          <Check
-                            size={16}
-                            className="text-[var(--report-sidebar-active-text)]"
-                          />
-                        ) : (
-                          <ChevronRight
-                            size={16}
-                            className="
-                  text-[var(--muted-foreground)]
-                  opacity-0 group-hover:opacity-100
-                  transition-opacity
-                "
-                          />
-                        )}
-                      </button>
-                    );
-                  })}
+                  {REPORT_TYPES.map((report) => (
+                    <button
+                      key={report.value}
+                      onClick={() => handleReportTypeChange(report.value)}
+                      className={`w-full px-4 py-4 rounded-xl border transition-all flex items-center justify-between text-left outline-none ${
+                        selectedReportType === report.value
+                          ? `bg-[var(--report-sidebar-active-bg)] border-[var(--report-sidebar-active-border)] text-[var(--report-sidebar-active-text)] shadow-[var(--report-shadow)]`
+                          : `bg-transparent border-transparent text-[var(--foreground)] hover:bg-[var(--report-sidebar-hover)]`
+                      }`}
+                    >
+                      <span className="text-xs font-bold tracking-tight">{report.label}</span>
+                      {selectedReportType === report.value ? <Check size={16} className="text-[var(--report-sidebar-active-text)]" /> : <ChevronRight size={16} className="text-[var(--muted-foreground)] opacity-0 group-hover:opacity-100 transition-opacity" />}
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>
 
-
-            {/* RIGHT COLUMN: Configuration Card */}
+            {/* Config Card */}
             <div className="lg:col-span-8 xl:col-span-9">
-              <div
-                className="
-      h-full p-6 md:p-8 rounded-2xl
-      bg-[var(--report-surface)]
-      border border-[var(--report-border)]
-      shadow-[var(--report-shadow)]
-    "
-              >
-                {/* Config Header */}
-                <div
-                  className="
-        flex items-center gap-3 mb-8 pb-6
-        border-b border-[var(--report-divider)]
-      "
-                >
+              <div className="h-full p-6 md:p-8 rounded-2xl bg-[var(--report-surface)] border border-[var(--report-border)] shadow-[var(--report-shadow)]">
+                <div className="flex items-center gap-3 mb-8 pb-6 border-b border-[var(--report-divider)]">
                   <div className="p-2 rounded-lg bg-[var(--muted)]">
                     <Settings2 size={20} className="text-[var(--primary)]" />
                   </div>
                   <div>
                     <h2 className="text-sm font-black uppercase text-[var(--report-title)]">
-                      Configure{" "}
-                      {
-                        REPORT_TYPES.find((r) => r.value === selectedReportType)?.label
-                      }
+                      Configure {REPORT_TYPES.find((r) => r.value === selectedReportType)?.label}
                     </h2>
-                    <p className="text-[10px] font-bold uppercase tracking-widest mt-0.5 text-[var(--report-subtitle)]">
-                      Define your filters
-                    </p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest mt-0.5 text-[var(--report-subtitle)]">Define your filters</p>
                   </div>
                 </div>
 
-                {/* Filters Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 mb-8">
-
-                  {/* Zone Selection */}
-                  {flag &&
-                    (selectedReportType === "daily_task" ||
-                      selectedReportType === "detailed_cleaning" ||
-                      selectedReportType === "zone_wise") &&
-                    isPermitted && (
-                      <div className="space-y-2">
-                        <label className="text-[11px] font-bold uppercase tracking-wide flex items-center gap-2 text-[var(--report-subtitle)]">
-                          <MapPin size={14} className="text-[var(--primary)]" /> Zone
-                        </label>
-                        <div className="relative">
-                          <select
-                            value={selectedZone}
-                            onChange={(e) => setSelectedZone(e.target.value)}
-                            className="
-                  w-full px-4 py-3 text-sm font-medium rounded-xl
-                  bg-[var(--report-input-bg)]
-                  border border-[var(--report-input-border)]
-                  text-[var(--report-input-text)]
-                  focus:border-[var(--report-input-focus)]
-                  outline-none appearance-none transition-all
-                "
-                          >
-                            <option value="">All Zones</option>
-                            {zones.map((z) => (
-                              <option key={z.id} value={z.id}>
-                                {z.name}
-                              </option>
-                            ))}
-                          </select>
-                          <ChevronDown
-                            size={16}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--report-input-placeholder)] pointer-events-none"
-                          />
-                        </div>
+                  {/* Zone */}
+                  {["daily_task", "detailed_cleaning", "zone_wise"].includes(selectedReportType) && isPermitted && (
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold uppercase tracking-wide flex items-center gap-2 text-[var(--report-subtitle)]"><MapPin size={14} className="text-[var(--primary)]" /> Zone</label>
+                      <div className="relative">
+                        <select value={selectedZone} onChange={handleZoneChange} className="w-full px-4 py-3 text-sm font-medium rounded-xl bg-[var(--report-input-bg)] border border-[var(--report-input-border)] text-[var(--report-input-text)] focus:border-[var(--report-input-focus)] outline-none appearance-none transition-all">
+                          <option value="">All Zones</option>
+                          {zones.map((z) => <option key={z.id} value={z.id}>{z.name}</option>)}
+                        </select>
+                        <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--report-input-placeholder)] pointer-events-none" />
                       </div>
-                    )}
+                    </div>
+                  )}
 
-                  {/* Location Selection */}
-                  {[
-                    "daily_task",
-                    "detailed_cleaning",
-                    "washroom_report",
-                    "cleaner_report",
-                  ].includes(selectedReportType) && (
-                      <div className="space-y-2">
-                        <label className="text-[11px] font-bold uppercase tracking-wide flex items-center gap-2 text-[var(--report-subtitle)]">
-                          <MapPin size={14} className="text-[var(--primary)]" />
-                          Location
-                          {loadingLocations && (
-                            <Loader2 size={12} className="animate-spin ml-2" />
-                          )}
-                        </label>
-                        <div className="relative">
-                          <select
-                            value={selectedLocation}
-                            onChange={(e) => setSelectedLocation(e.target.value)}
-                            disabled={loadingLocations}
-                            className="
-                w-full px-4 py-3 text-sm font-medium rounded-xl
-                bg-[var(--report-input-bg)]
-                border border-[var(--report-input-border)]
-                text-[var(--report-input-text)]
-                focus:border-[var(--report-input-focus)]
-                outline-none appearance-none transition-all
-                disabled:opacity-60
-              "
-                          >
-                            <option value="">
-                              {loadingLocations ? "Loading..." : "All Locations"}
-                            </option>
-                            {locations.map((l) => (
-                              <option key={l.id} value={l.id}>
-                                {l.display_name}
-                              </option>
-                            ))}
-                          </select>
-                          <ChevronDown
-                            size={16}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--report-input-placeholder)] pointer-events-none"
-                          />
-                        </div>
-                      </div>
-                    )}
-
-                  {/* Cleaner Selection */}
-                  {[
-                    "daily_task",
-                    "cleaner_report",
-                    "detailed_cleaning",
-                  ].includes(selectedReportType) && (
-                      <div className="space-y-2">
-                        <label className="text-[11px] font-bold uppercase tracking-wide flex items-center gap-2 text-[var(--report-subtitle)]">
-                          <Users size={14} className="text-[var(--primary)]" />
-                          Cleaner
-                          {loadingCleaners && (
-                            <Loader2 size={12} className="animate-spin ml-2" />
-                          )}
-                        </label>
-                        <div className="relative">
-                          <select
-                            value={selectedCleaner}
-                            onChange={(e) => setSelectedCleaner(e.target.value)}
-                            disabled={loadingCleaners}
-                            className="
-                w-full px-4 py-3 text-sm font-medium rounded-xl
-                bg-[var(--report-input-bg)]
-                border border-[var(--report-input-border)]
-                text-[var(--report-input-text)]
-                focus:border-[var(--report-input-focus)]
-                outline-none appearance-none transition-all
-                disabled:opacity-60
-              "
-                          >
-                            <option value="">
-                              {loadingCleaners ? "Loading..." : "All Cleaners"}
-                            </option>
-                            {cleaners.map((c) => (
-                              <option key={c.id} value={c.id}>
-                                {c.name}
-                              </option>
-                            ))}
-                          </select>
-                          <ChevronDown
-                            size={16}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--report-input-placeholder)] pointer-events-none"
-                          />
-                        </div>
-                      </div>
-                    )}
-
-                  {/* Status Selection */}
-                  {[
-                    "daily_task",
-                    "washroom_report",
-                    "cleaner_report",
-                    "detailed_cleaning",
-                  ].includes(selectedReportType) && (
-                      <div className="space-y-2">
-                        <label className="text-[11px] font-bold uppercase tracking-wide flex items-center gap-2 text-[var(--report-subtitle)]">
-                          <Activity size={14} className="text-[var(--primary)]" />
-                          Status
-                        </label>
-                        <div className="relative">
-                          <select
-                            value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value)}
-                            className="
-                w-full px-4 py-3 text-sm font-medium rounded-xl
-                bg-[var(--report-input-bg)]
-                border border-[var(--report-input-border)]
-                text-[var(--report-input-text)]
-                focus:border-[var(--report-input-focus)]
-                outline-none appearance-none transition-all
-              "
-                          >
-                            <option value="all">All Status</option>
-                            <option value="completed">Completed</option>
-                            <option value="ongoing">Ongoing</option>
-                          </select>
-                          <ChevronDown
-                            size={16}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--report-input-placeholder)] pointer-events-none"
-                          />
-                        </div>
-                      </div>
-                    )}
-
-                  {/* Date Pickers */}
-                  {selectedReportType === "detailed_cleaning" ? (
+                  {/* Location */}
+                  {["daily_task", "detailed_cleaning", "washroom_report", "cleaner_report"].includes(selectedReportType) && (
                     <div className="space-y-2">
                       <label className="text-[11px] font-bold uppercase tracking-wide flex items-center gap-2 text-[var(--report-subtitle)]">
-                        <Calendar size={14} className="text-[var(--primary)]" />
-                        Select Date
+                        <MapPin size={14} className="text-[var(--primary)]" /> Location {loadingLocations && <Loader2 size={12} className="animate-spin ml-2" />}
                       </label>
-                      <input
-                        type="date"
-                        value={detailedReportDate}
-                        max={todayDate}
-                        onChange={handleDetailedReportDateChange}
-                        className="
-              w-full px-4 py-3 text-sm font-medium rounded-xl
-              bg-[var(--report-input-bg)]
-              border border-[var(--report-input-border)]
-              text-[var(--report-input-text)]
-              focus:border-[var(--report-input-focus)]
-              outline-none transition-all
-            "
-                      />
+                      <div className="relative">
+                        <select value={selectedLocation} onChange={handleLocationChange} disabled={loadingLocations} className="w-full px-4 py-3 text-sm font-medium rounded-xl bg-[var(--report-input-bg)] border border-[var(--report-input-border)] text-[var(--report-input-text)] focus:border-[var(--report-input-focus)] outline-none appearance-none transition-all disabled:opacity-60">
+                          <option value="">{loadingLocations ? "Loading..." : "All Locations"}</option>
+                          {locations.map((l) => <option key={l.id} value={l.id}>{l.display_name}</option>)}
+                        </select>
+                        <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--report-input-placeholder)] pointer-events-none" />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Cleaner */}
+                  {["daily_task", "cleaner_report", "detailed_cleaning"].includes(selectedReportType) && (
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold uppercase tracking-wide flex items-center gap-2 text-[var(--report-subtitle)]">
+                        <Users size={14} className="text-[var(--primary)]" /> Cleaner {loadingCleaners && <Loader2 size={12} className="animate-spin ml-2" />}
+                      </label>
+                      <div className="relative">
+                        <select value={selectedCleaner} onChange={(e) => setSelectedCleaner(e.target.value)} disabled={loadingCleaners} className="w-full px-4 py-3 text-sm font-medium rounded-xl bg-[var(--report-input-bg)] border border-[var(--report-input-border)] text-[var(--report-input-text)] focus:border-[var(--report-input-focus)] outline-none appearance-none transition-all disabled:opacity-60">
+                          <option value="">{loadingCleaners ? "Loading..." : "All Cleaners"}</option>
+                          {cleaners.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                        </select>
+                        <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--report-input-placeholder)] pointer-events-none" />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Status */}
+                  {["daily_task", "washroom_report", "cleaner_report", "detailed_cleaning"].includes(selectedReportType) && (
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold uppercase tracking-wide flex items-center gap-2 text-[var(--report-subtitle)]"><Activity size={14} className="text-[var(--primary)]" /> Status</label>
+                      <div className="relative">
+                        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="w-full px-4 py-3 text-sm font-medium rounded-xl bg-[var(--report-input-bg)] border border-[var(--report-input-border)] text-[var(--report-input-text)] focus:border-[var(--report-input-focus)] outline-none appearance-none transition-all">
+                          <option value="all">All Status</option>
+                          <option value="completed">Completed</option>
+                          <option value="ongoing">Ongoing</option>
+                        </select>
+                        <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--report-input-placeholder)] pointer-events-none" />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Dates */}
+                  {selectedReportType === "detailed_cleaning" ? (
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold uppercase tracking-wide flex items-center gap-2 text-[var(--report-subtitle)]"><Calendar size={14} className="text-[var(--primary)]" /> Select Date</label>
+                      <input type="date" value={detailedReportDate} max={todayDate} onChange={handleDetailedReportDateChange} className="w-full px-4 py-3 text-sm font-medium rounded-xl bg-[var(--report-input-bg)] border border-[var(--report-input-border)] text-[var(--report-input-text)] focus:border-[var(--report-input-focus)] outline-none transition-all" />
                     </div>
                   ) : (
                     <>
                       <div className="space-y-2">
-                        <label className="text-[11px] font-bold uppercase tracking-wide flex items-center gap-2 text-[var(--report-subtitle)]">
-                          <Calendar size={14} className="text-[var(--primary)]" />
-                          Start Date
-                        </label>
-                        <input
-                          type="date"
-                          value={startDate}
-                          max={endDate || todayDate}
-                          onChange={handleStartDateChange}
-                          className="
-                w-full px-4 py-3 text-sm font-medium rounded-xl
-                bg-[var(--report-input-bg)]
-                border border-[var(--report-input-border)]
-                text-[var(--report-input-text)]
-                focus:border-[var(--report-input-focus)]
-                outline-none transition-all
-              "
-                        />
+                        <label className="text-[11px] font-bold uppercase tracking-wide flex items-center gap-2 text-[var(--report-subtitle)]"><Calendar size={14} className="text-[var(--primary)]" /> Start Date</label>
+                        <input type="date" value={startDate} max={endDate || todayDate} onChange={handleStartDateChange} className="w-full px-4 py-3 text-sm font-medium rounded-xl bg-[var(--report-input-bg)] border border-[var(--report-input-border)] text-[var(--report-input-text)] focus:border-[var(--report-input-focus)] outline-none transition-all" />
                       </div>
-
                       <div className="space-y-2">
-                        <label className="text-[11px] font-bold uppercase tracking-wide flex items-center gap-2 text-[var(--report-subtitle)]">
-                          <Calendar size={14} className="text-[var(--primary)]" />
-                          End Date
-                        </label>
-                        <input
-                          type="date"
-                          value={endDate}
-                          min={startDate}
-                          max={
-                            selectedReportType === "washroom_hygiene_trend"
-                              ? getMaxEndDate(startDate)
-                              : todayDate
-                          }
-                          onChange={handleEndDateChange}
-                          className="
-                w-full px-4 py-3 text-sm font-medium rounded-xl
-                bg-[var(--report-input-bg)]
-                border border-[var(--report-input-border)]
-                text-[var(--report-input-text)]
-                focus:border-[var(--report-input-focus)]
-                outline-none transition-all
-              "
-                        />
+                        <label className="text-[11px] font-bold uppercase tracking-wide flex items-center gap-2 text-[var(--report-subtitle)]"><Calendar size={14} className="text-[var(--primary)]" /> End Date</label>
+                        <input type="date" value={endDate} min={startDate} max={selectedReportType === "washroom_hygiene_trend" ? getMaxEndDate(startDate) : todayDate} onChange={handleEndDateChange} className="w-full px-4 py-3 text-sm font-medium rounded-xl bg-[var(--report-input-bg)] border border-[var(--report-input-border)] text-[var(--report-input-text)] focus:border-[var(--report-input-focus)] outline-none transition-all" />
                       </div>
                     </>
                   )}
                 </div>
 
-                {/* Footer Buttons */}
-                <div
-                  className="
-        flex justify-end gap-3 pt-6
-        border-t border-[var(--report-divider)]
-      "
-                >
-                  <button
-                    onClick={handleReset}
-                    className="
-          px-6 py-3 rounded-xl
-          border border-[var(--report-btn-secondary-border)]
-          bg-[var(--report-btn-secondary-bg)]
-          text-[var(--report-btn-secondary-text)]
-          font-bold text-[11px] uppercase tracking-widest
-          hover:bg-[var(--muted)]
-          transition-all
-        "
-                  >
+                {/* Buttons */}
+                <div className="flex justify-end gap-3 pt-6 border-t border-[var(--report-divider)]">
+                  <button onClick={handleReset} className="px-6 py-3 rounded-xl border border-[var(--report-btn-secondary-border)] bg-[var(--report-btn-secondary-bg)] text-[var(--report-btn-secondary-text)] font-bold text-[11px] uppercase tracking-widest hover:bg-[var(--muted)] transition-all">
                     Reset Filters
                   </button>
-
-                  <button
-                    onClick={generateReport}
-                    disabled={isLoading || !canViewReports}
-                    style={{
-                      backgroundImage: "var(--report-btn-primary-bg)",
-                    }}
-                    className="
-    px-8 py-3 rounded-xl
-    text-[var(--report-btn-primary-text)]
-    font-bold text-[11px] uppercase tracking-widest
-    shadow-[var(--report-shadow)]
-    transition-all
-    flex items-center gap-2
-    disabled:opacity-50 disabled:cursor-not-allowed
-  "
-                    onMouseEnter={(e) =>
-                    (e.currentTarget.style.backgroundImage =
-                      "var(--report-btn-primary-hover-bg)")
-                    }
-                    onMouseLeave={(e) =>
-                    (e.currentTarget.style.backgroundImage =
-                      "var(--report-btn-primary-bg)")
-                    }
-                  >
-                    {isLoading ? (
-                      <Loader2 size={16} className="animate-spin" />
-                    ) : (
-                      <ArrowRight size={16} />
-                    )}
-                    {isLoading ? "Generating..." : "Generate Report"}
+                  <button onClick={triggerGenerateReport} disabled={reportMutation.isPending || !canViewReports} style={{ backgroundImage: "var(--report-btn-primary-bg)" }} className="px-8 py-3 rounded-xl text-[var(--report-btn-primary-text)] font-bold text-[11px] uppercase tracking-widest shadow-[var(--report-shadow)] transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                    {reportMutation.isPending ? <Loader2 size={16} className="animate-spin" /> : <ArrowRight size={16} />}
+                    {reportMutation.isPending ? "Generating..." : "Generate Report"}
                   </button>
                 </div>
               </div>
             </div>
-
           </div>
         </div>
       </div>
 
-      {/* --- MODALS (Preserved Logic) --- */}
-      <NoDataModal
-        isOpen={showNoDataModal}
-        onClose={() => setShowNoDataModal(false)}
-        filters={getCurrentFilters()}
-      />
+      <NoDataModal isOpen={showNoDataModal} onClose={() => setShowNoDataModal(false)} filters={getCurrentFilters()} />
 
-      {/* Existing Report Modal is triggered here */}
       {showModal && reportData && reportMetadata && (
-        <ReportModal
-          reportType={selectedReportType}
-          data={reportData}
-          metadata={reportMetadata}
-          onClose={() => setShowModal(false)}
-        />
+        <ReportModal reportType={selectedReportType} data={reportData} metadata={reportMetadata} onClose={() => setShowModal(false)} />
       )}
     </>
   );

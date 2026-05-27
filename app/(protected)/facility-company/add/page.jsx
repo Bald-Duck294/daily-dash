@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
@@ -10,21 +11,20 @@ import {
   Mail,
   MapPin,
   FileText,
-  Calendar,
   Save,
   X,
-  Search,
-  ChevronDown,
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import Loader from "@/components/ui/Loader";
 import { State, City } from "country-state-city";
 
-import FacilityCompanyApi from "@/features/facilityCompany/facilityCompany.api";
 import { useCompanyId } from "@/providers/CompanyProvider";
 import { usePermissions } from "@/shared/hooks/usePermission";
 import { useRequirePermission } from "@/shared/hooks/useRequirePermission";
 import { MODULES } from "@/shared/constants/permissions";
+
+// Import your custom TanStack Query hook
+import { useCreateFacilityCompany } from "@/features/facilityCompany/facilityCompany.queries";
 
 export default function AddFacilityCompanyPage() {
   useRequirePermission(MODULES.FACILITY_COMPANIES);
@@ -34,7 +34,9 @@ export default function AddFacilityCompanyPage() {
 
   const router = useRouter();
   const { companyId } = useCompanyId();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // --- TANSTACK MUTATION ---
+  const createMutation = useCreateFacilityCompany();
 
   // --- DROPDOWN STATE ---
   const [availableStates, setAvailableStates] = useState([]);
@@ -86,6 +88,7 @@ export default function AddFacilityCompanyPage() {
       router.push(`/facility-company?companyId=${companyId}`);
     }
   };
+
   // --- CLICK OUTSIDE ---
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -167,13 +170,12 @@ export default function AddFacilityCompanyPage() {
   };
 
   // --- SUBMIT ---
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     if (!canAddFacility) return toast.error("Permission denied");
     if (!validateForm()) return toast.error("Please fix errors");
     if (!companyId) return toast.error("Company ID missing");
 
-    setIsSubmitting(true);
     const submitData = {
       ...formData,
       company_id: companyId,
@@ -182,29 +184,34 @@ export default function AddFacilityCompanyPage() {
       contract_end_date: formData.contract_end_date || null,
     };
 
-    const result = await FacilityCompanyApi.create(submitData);
-    if (result.success) {
-      toast.success("Facility company added!");
-      setTimeout(
-        () => router.push(`/facility-company?companyId=${companyId}`),
-        1000,
-      );
-    } else {
-      toast.error(result.error || "Failed to add");
-      setIsSubmitting(false);
-    }
+    createMutation.mutate(submitData, {
+      onSuccess: () => {
+        toast.success("Facility company added!");
+        setTimeout(
+          () => router.push(`/facility-company?companyId=${companyId}`),
+          1000,
+        );
+      },
+      onError: (error) => {
+        toast.error(error.message || "Failed to add company");
+      },
+    });
   };
+
+  // Helper classes for standardizing the input fields (fixes dark mode)
+  const baseInputClasses =
+    "w-full h-11 px-4 rounded-xl border text-sm outline-none transition-all bg-slate-50 dark:bg-slate-800/80 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 disabled:opacity-60 disabled:cursor-not-allowed";
 
   return (
     <>
       <Toaster position="top-right" />
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-6 flex justify-center pb-20">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-6 flex justify-center pb-20">
         <div className="w-full max-w-5xl space-y-6">
           {/* HEADER */}
           <div className="flex items-center gap-4">
             <button
               onClick={() => router.back()}
-              className="p-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors shadow-sm text-slate-500"
+              className="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-sm text-slate-500 dark:text-slate-400"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
@@ -217,7 +224,7 @@ export default function AddFacilityCompanyPage() {
             {/* 1. BASIC INFO CARD */}
             <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6">
               <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
-                <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center border border-blue-100 text-blue-600">
+                <div className="h-10 w-10 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center border border-blue-100 dark:border-blue-500/20 text-blue-600 dark:text-blue-400">
                   <Building2 size={20} strokeWidth={2.5} />
                 </div>
                 <div>
@@ -232,14 +239,18 @@ export default function AddFacilityCompanyPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="md:col-span-2 space-y-2">
-                  <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider block ml-1">
+                  <label className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider block ml-1">
                     Company Name <span className="text-rose-500">*</span>
                   </label>
                   <input
                     name="name"
                     value={formData.name}
                     onChange={handleChange}
-                    className={`w-full h-11 px-4 rounded-xl border bg-slate-50/50 text-sm focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none ${errors.name ? "border-rose-300 bg-rose-50/50" : "border-slate-200"}`}
+                    className={`${baseInputClasses} focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 dark:focus:border-blue-400 ${
+                      errors.name
+                        ? "border-rose-300 dark:border-rose-500/50 bg-rose-50 dark:bg-rose-500/10"
+                        : "border-slate-200 dark:border-slate-700/80"
+                    }`}
                     placeholder="Enter company legal name"
                   />
                   {errors.name && (
@@ -250,7 +261,7 @@ export default function AddFacilityCompanyPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider block ml-1">
+                  <label className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider block ml-1">
                     Email Address
                   </label>
                   <div className="relative">
@@ -260,14 +271,14 @@ export default function AddFacilityCompanyPage() {
                       type="email"
                       value={formData.email}
                       onChange={handleChange}
-                      className="w-full h-11 pl-10 pr-4 rounded-xl border border-slate-200 bg-slate-50/50 text-sm focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none"
+                      className={`${baseInputClasses} pl-10 border-slate-200 dark:border-slate-700/80 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 dark:focus:border-blue-400`}
                       placeholder="company@example.com"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider block ml-1">
+                  <label className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider block ml-1">
                     Phone Number <span className="text-rose-500">*</span>
                   </label>
                   <div className="relative">
@@ -278,7 +289,11 @@ export default function AddFacilityCompanyPage() {
                       maxLength="10"
                       value={formData.phone}
                       onChange={handleChange}
-                      className={`w-full h-11 pl-10 pr-4 rounded-xl border bg-slate-50/50 text-sm focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none ${errors.phone ? "border-rose-300" : "border-slate-200"}`}
+                      className={`${baseInputClasses} pl-10 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 dark:focus:border-blue-400 ${
+                        errors.phone
+                          ? "border-rose-300 dark:border-rose-500/50 bg-rose-50 dark:bg-rose-500/10"
+                          : "border-slate-200 dark:border-slate-700/80"
+                      }`}
                       placeholder="10-digit number"
                     />
                   </div>
@@ -294,7 +309,7 @@ export default function AddFacilityCompanyPage() {
             {/* 2. CONTACT PERSON CARD */}
             <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6">
               <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
-                <div className="h-10 w-10 rounded-xl bg-purple-50 flex items-center justify-center border border-purple-100 text-purple-600">
+                <div className="h-10 w-10 rounded-xl bg-purple-50 dark:bg-purple-500/10 flex items-center justify-center border border-purple-100 dark:border-purple-500/20 text-purple-600 dark:text-purple-400">
                   <User size={20} strokeWidth={2.5} />
                 </div>
                 <div>
@@ -309,20 +324,24 @@ export default function AddFacilityCompanyPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="md:col-span-2 space-y-2">
-                  <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider block ml-1">
+                  <label className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider block ml-1">
                     Full Name <span className="text-rose-500">*</span>
                   </label>
                   <input
                     name="contact_person_name"
                     value={formData.contact_person_name}
                     onChange={handleChange}
-                    className={`w-full h-11 px-4 rounded-xl border bg-slate-50/50 text-sm focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 transition-all outline-none ${errors.contact_person_name ? "border-rose-300" : "border-slate-200"}`}
+                    className={`${baseInputClasses} focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 dark:focus:border-purple-400 ${
+                      errors.contact_person_name
+                        ? "border-rose-300 dark:border-rose-500/50 bg-rose-50 dark:bg-rose-500/10"
+                        : "border-slate-200 dark:border-slate-700/80"
+                    }`}
                     placeholder="Enter representative name"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider block ml-1">
+                  <label className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider block ml-1">
                     Contact Phone
                   </label>
                   <div className="relative">
@@ -333,14 +352,14 @@ export default function AddFacilityCompanyPage() {
                       maxLength="10"
                       value={formData.contact_person_phone}
                       onChange={handleChange}
-                      className="w-full h-11 pl-10 pr-4 rounded-xl border border-slate-200 bg-slate-50/50 text-sm focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 transition-all outline-none"
+                      className={`${baseInputClasses} pl-10 border-slate-200 dark:border-slate-700/80 focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 dark:focus:border-purple-400`}
                       placeholder="Personal number"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider block ml-1">
+                  <label className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider block ml-1">
                     Contact Email
                   </label>
                   <div className="relative">
@@ -350,7 +369,7 @@ export default function AddFacilityCompanyPage() {
                       type="email"
                       value={formData.contact_person_email}
                       onChange={handleChange}
-                      className="w-full h-11 pl-10 pr-4 rounded-xl border border-slate-200 bg-slate-50/50 text-sm focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 transition-all outline-none"
+                      className={`${baseInputClasses} pl-10 border-slate-200 dark:border-slate-700/80 focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 dark:focus:border-purple-400`}
                       placeholder="Personal email"
                     />
                   </div>
@@ -361,7 +380,7 @@ export default function AddFacilityCompanyPage() {
             {/* 3. ADDRESS CARD */}
             <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6">
               <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
-                <div className="h-10 w-10 rounded-xl bg-orange-50 flex items-center justify-center border border-orange-100 text-orange-600">
+                <div className="h-10 w-10 rounded-xl bg-orange-50 dark:bg-orange-500/10 flex items-center justify-center border border-orange-100 dark:border-orange-500/20 text-orange-600 dark:text-orange-400">
                   <MapPin size={20} strokeWidth={2.5} />
                 </div>
                 <div>
@@ -377,7 +396,7 @@ export default function AddFacilityCompanyPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* STATE DROPDOWN */}
                 <div className="space-y-2" ref={stateRef}>
-                  <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider block ml-1">
+                  <label className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider block ml-1">
                     State <span className="text-rose-500">*</span>
                   </label>
                   <div className="relative">
@@ -390,17 +409,21 @@ export default function AddFacilityCompanyPage() {
                           setFormData((p) => ({ ...p, state: "", city: "" }));
                       }}
                       onFocus={() => setShowStateDropdown(true)}
-                      className={`w-full h-11 px-4 rounded-xl border bg-slate-50/50 text-sm focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 transition-all outline-none ${errors.state ? "border-rose-300" : "border-slate-200"}`}
+                      className={`${baseInputClasses} focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 dark:focus:border-orange-400 ${
+                        errors.state
+                          ? "border-rose-300 dark:border-rose-500/50 bg-rose-50 dark:bg-rose-500/10"
+                          : "border-slate-200 dark:border-slate-700/80"
+                      }`}
                       placeholder="Search State"
                     />
                     {showStateDropdown && filteredStates.length > 0 && (
-                      <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-60 overflow-y-auto">
+                      <div className="absolute z-10 w-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl max-h-60 overflow-y-auto">
                         {filteredStates.map((state) => (
                           <button
                             key={state}
                             type="button"
                             onClick={() => handleStateSelect(state)}
-                            className="w-full text-left px-4 py-2.5 text-sm hover:bg-orange-50 transition-colors"
+                            className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-orange-50 dark:hover:bg-slate-700 transition-colors"
                           >
                             {state}
                           </button>
@@ -412,7 +435,7 @@ export default function AddFacilityCompanyPage() {
 
                 {/* CITY DROPDOWN */}
                 <div className="space-y-2" ref={cityRef}>
-                  <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider block ml-1">
+                  <label className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider block ml-1">
                     City <span className="text-rose-500">*</span>
                   </label>
                   <div className="relative">
@@ -426,19 +449,23 @@ export default function AddFacilityCompanyPage() {
                         formData.state && setShowCityDropdown(true)
                       }
                       disabled={!formData.state}
-                      className={`w-full h-11 px-4 rounded-xl border bg-slate-50/50 text-sm focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 transition-all outline-none ${errors.city ? "border-rose-300" : "border-slate-200"} ${!formData.state ? "cursor-not-allowed opacity-60" : ""}`}
+                      className={`${baseInputClasses} focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 dark:focus:border-orange-400 ${
+                        errors.city
+                          ? "border-rose-300 dark:border-rose-500/50 bg-rose-50 dark:bg-rose-500/10"
+                          : "border-slate-200 dark:border-slate-700/80"
+                      }`}
                       placeholder={
                         formData.state ? "Search City" : "Select State First"
                       }
                     />
                     {showCityDropdown && filteredCities.length > 0 && (
-                      <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-60 overflow-y-auto">
+                      <div className="absolute z-10 w-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl max-h-60 overflow-y-auto">
                         {filteredCities.map((city) => (
                           <button
                             key={city}
                             type="button"
                             onClick={() => handleCitySelect(city)}
-                            className="w-full text-left px-4 py-2.5 text-sm hover:bg-orange-50 transition-colors"
+                            className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-orange-50 dark:hover:bg-slate-700 transition-colors"
                           >
                             {city}
                           </button>
@@ -449,7 +476,7 @@ export default function AddFacilityCompanyPage() {
                 </div>
 
                 <div className="md:col-span-2 space-y-2">
-                  <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider block ml-1">
+                  <label className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider block ml-1">
                     Full Address
                   </label>
                   <textarea
@@ -457,13 +484,13 @@ export default function AddFacilityCompanyPage() {
                     value={formData.address}
                     onChange={handleChange}
                     rows={3}
-                    className="w-full p-4 rounded-xl border border-slate-200 bg-slate-50/50 text-sm focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 transition-all outline-none resize-none"
+                    className={`w-full p-4 rounded-xl border text-sm outline-none resize-none transition-all bg-slate-50 dark:bg-slate-800/80 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 border-slate-200 dark:border-slate-700/80 focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 dark:focus:border-orange-400`}
                     placeholder="Street, Building, Area..."
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider block ml-1">
+                  <label className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider block ml-1">
                     Pincode <span className="text-rose-500">*</span>
                   </label>
                   <input
@@ -471,7 +498,11 @@ export default function AddFacilityCompanyPage() {
                     maxLength="6"
                     value={formData.pincode}
                     onChange={handleChange}
-                    className={`w-full h-11 px-4 rounded-xl border bg-slate-50/50 text-sm focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 transition-all outline-none ${errors.pincode ? "border-rose-300" : "border-slate-200"}`}
+                    className={`${baseInputClasses} focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 dark:focus:border-orange-400 ${
+                      errors.pincode
+                        ? "border-rose-300 dark:border-rose-500/50 bg-rose-50 dark:bg-rose-500/10"
+                        : "border-slate-200 dark:border-slate-700/80"
+                    }`}
                     placeholder="000000"
                   />
                 </div>
@@ -481,7 +512,7 @@ export default function AddFacilityCompanyPage() {
             {/* 4. BUSINESS & CONTRACT CARD */}
             <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6">
               <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
-                <div className="h-10 w-10 rounded-xl bg-teal-50 flex items-center justify-center border border-teal-100 text-teal-600">
+                <div className="h-10 w-10 rounded-xl bg-teal-50 dark:bg-teal-500/10 flex items-center justify-center border border-teal-100 dark:border-teal-500/20 text-teal-600 dark:text-teal-400">
                   <FileText size={20} strokeWidth={2.5} />
                 </div>
                 <div>
@@ -496,20 +527,20 @@ export default function AddFacilityCompanyPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-2">
-                  <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider block ml-1">
+                  <label className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider block ml-1">
                     GST / Reg Number
                   </label>
                   <input
                     name="registration_number"
                     value={formData.registration_number}
                     onChange={handleChange}
-                    className="w-full h-11 px-4 rounded-xl border border-slate-200 bg-slate-50/50 text-sm focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 transition-all outline-none"
+                    className={`${baseInputClasses} border-slate-200 dark:border-slate-700/80 focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 dark:focus:border-teal-400`}
                     placeholder="GSTIN12345"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider block ml-1">
+                  <label className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider block ml-1">
                     PAN Number
                   </label>
                   <input
@@ -517,13 +548,17 @@ export default function AddFacilityCompanyPage() {
                     value={formData.pan_number}
                     onChange={handleChange}
                     maxLength="10"
-                    className={`w-full h-11 px-4 rounded-xl border bg-slate-50/50 text-sm focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 transition-all outline-none ${errors.pan_number ? "border-rose-300" : "border-slate-200"}`}
+                    className={`${baseInputClasses} focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 dark:focus:border-teal-400 ${
+                      errors.pan_number
+                        ? "border-rose-300 dark:border-rose-500/50 bg-rose-50 dark:bg-rose-500/10"
+                        : "border-slate-200 dark:border-slate-700/80"
+                    }`}
                     placeholder="ABCDE1234F"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider block ml-1">
+                  <label className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider block ml-1">
                     License Expiry
                   </label>
                   <input
@@ -531,12 +566,12 @@ export default function AddFacilityCompanyPage() {
                     type="date"
                     value={formData.license_expiry_date}
                     onChange={handleChange}
-                    className="w-full h-11 px-4 rounded-xl border border-slate-200 bg-slate-50/50 text-sm focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 transition-all outline-none"
+                    className={`${baseInputClasses} border-slate-200 dark:border-slate-700/80 focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 dark:focus:border-teal-400`}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider block ml-1">
+                  <label className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider block ml-1">
                     Contract Start
                   </label>
                   <input
@@ -544,12 +579,12 @@ export default function AddFacilityCompanyPage() {
                     type="date"
                     value={formData.contract_start_date}
                     onChange={handleChange}
-                    className="w-full h-11 px-4 rounded-xl border border-slate-200 bg-slate-50/50 text-sm focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 transition-all outline-none"
+                    className={`${baseInputClasses} border-slate-200 dark:border-slate-700/80 focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 dark:focus:border-teal-400`}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider block ml-1">
+                  <label className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider block ml-1">
                     Contract End
                   </label>
                   <input
@@ -557,12 +592,12 @@ export default function AddFacilityCompanyPage() {
                     type="date"
                     value={formData.contract_end_date}
                     onChange={handleChange}
-                    className="w-full h-11 px-4 rounded-xl border border-slate-200 bg-slate-50/50 text-sm focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 transition-all outline-none"
+                    className={`${baseInputClasses} border-slate-200 dark:border-slate-700/80 focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 dark:focus:border-teal-400`}
                   />
                 </div>
 
                 <div className="md:col-span-3 space-y-2">
-                  <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider block ml-1">
+                  <label className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider block ml-1">
                     Notes / Description
                   </label>
                   <textarea
@@ -570,7 +605,7 @@ export default function AddFacilityCompanyPage() {
                     value={formData.description}
                     onChange={handleChange}
                     rows={2}
-                    className="w-full p-4 rounded-xl border border-slate-200 bg-slate-50/50 text-sm focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 transition-all outline-none resize-none"
+                    className={`w-full p-4 rounded-xl border text-sm outline-none resize-none transition-all bg-slate-50 dark:bg-slate-800/80 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 border-slate-200 dark:border-slate-700/80 focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 dark:focus:border-teal-400`}
                     placeholder="Additional notes about the contract or company..."
                   />
                 </div>
@@ -582,22 +617,22 @@ export default function AddFacilityCompanyPage() {
               <button
                 type="button"
                 onClick={handleCancel}
-                disabled={isSubmitting}
-                className="px-6 py-3 rounded-xl border border-slate-200 text-slate-500 text-xs font-black uppercase tracking-widest hover:bg-slate-50 transition-all active:scale-95"
+                disabled={createMutation.isPending}
+                className="px-6 py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 text-xs font-black uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                disabled={isSubmitting || !canAddFacility}
-                className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl shadow-lg shadow-blue-200 font-bold text-xs uppercase tracking-widest hover:brightness-110 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={createMutation.isPending || !canAddFacility}
+                className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl shadow-lg shadow-blue-200 dark:shadow-none font-bold text-xs uppercase tracking-widest hover:brightness-110 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isSubmitting ? (
+                {createMutation.isPending ? (
                   <Loader size={16} className="animate-spin" />
                 ) : (
                   <Save size={16} />
                 )}
-                {isSubmitting ? "Saving..." : "Save Company"}
+                {createMutation.isPending ? "Saving..." : "Save Company"}
               </button>
             </div>
           </form>
