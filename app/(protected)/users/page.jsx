@@ -1633,12 +1633,23 @@
 
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo,useRef  } from "react";
 import { useSelector } from "react-redux";
 import toast, { Toaster } from "react-hot-toast";
 import {
-  Plus, Edit, Trash2, Users, Search, Eye, Shield,
-  UserCog, HardHat, MapPin, Building2, LayoutGrid, List,
+  Plus,
+  Edit,
+  Trash2,
+  Users,
+  Search,
+  Eye,
+  Shield,
+  UserCog,
+  HardHat,
+  MapPin,
+  Building2,
+  LayoutGrid,
+  List,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -1658,7 +1669,8 @@ const ROLE_HIERARCHY = {
     level: 2,
     icon: Shield,
     color: "blue",
-    activeClass: "bg-gradient-to-br from-blue-500 to-blue-600 border-blue-600 text-white shadow-blue-200",
+    activeClass:
+      "bg-gradient-to-br from-blue-500 to-blue-600 border-blue-600 text-white shadow-blue-200",
     iconColor: "text-blue-100",
   },
   3: {
@@ -1666,7 +1678,8 @@ const ROLE_HIERARCHY = {
     level: 4,
     icon: UserCog,
     color: "teal",
-    activeClass: "bg-gradient-to-br from-teal-500 to-teal-600 border-teal-600 text-white shadow-teal-200",
+    activeClass:
+      "bg-gradient-to-br from-teal-500 to-teal-600 border-teal-600 text-white shadow-teal-200",
     iconColor: "text-teal-100",
   },
   5: {
@@ -1674,7 +1687,8 @@ const ROLE_HIERARCHY = {
     level: 5,
     icon: HardHat,
     color: "orange",
-    activeClass: "bg-gradient-to-br from-orange-500 to-orange-600 border-orange-600 text-white shadow-orange-200",
+    activeClass:
+      "bg-gradient-to-br from-orange-500 to-orange-600 border-orange-600 text-white shadow-orange-200",
     iconColor: "text-orange-100",
   },
   6: {
@@ -1682,7 +1696,8 @@ const ROLE_HIERARCHY = {
     level: 3,
     icon: MapPin,
     color: "purple",
-    activeClass: "bg-gradient-to-br from-purple-500 to-purple-600 border-purple-600 text-white shadow-purple-200",
+    activeClass:
+      "bg-gradient-to-br from-purple-500 to-purple-600 border-purple-600 text-white shadow-purple-200",
     iconColor: "text-purple-100",
   },
   7: {
@@ -1690,7 +1705,8 @@ const ROLE_HIERARCHY = {
     level: 4,
     icon: Users,
     color: "cyan",
-    activeClass: "bg-gradient-to-br from-cyan-500 to-cyan-600 border-cyan-600 text-white shadow-cyan-200",
+    activeClass:
+      "bg-gradient-to-br from-cyan-500 to-cyan-600 border-cyan-600 text-white shadow-cyan-200",
     iconColor: "text-cyan-100",
   },
   8: {
@@ -1698,7 +1714,8 @@ const ROLE_HIERARCHY = {
     level: 3,
     icon: Building2,
     color: "indigo",
-    activeClass: "bg-gradient-to-br from-indigo-500 to-indigo-600 border-indigo-600 text-white shadow-indigo-200",
+    activeClass:
+      "bg-gradient-to-br from-indigo-500 to-indigo-600 border-indigo-600 text-white shadow-indigo-200",
     iconColor: "text-indigo-100",
   },
 };
@@ -1738,8 +1755,10 @@ export default function UsersPage() {
   const router = useRouter();
   const currentUser = useSelector((state) => state.auth.user);
   const currentUserRoleId = parseInt(currentUser?.role_id || 4);
-
-  // --- LOCAL STATE (UI & Filters) ---
+  
+  // --- STATE ---
+  const [currentPage, setCurrentPage] = useState(1);
+  const [limit, setLimit] = useState(15); // Added limit state for packet size
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRole, setSelectedRole] = useState("all");
   const [viewMode, setViewMode] = useState("table");
@@ -1753,78 +1772,49 @@ export default function UsersPage() {
     }
   }, []);
 
-  // --- TANSTACK QUERIES & MUTATIONS ---
-  const { data: rawUsersData = [], isLoading } = useGetAllUsers(
-    { companyId },
+  // --- QUERIES ---
+  const { data, isLoading } = useGetAllUsers(
+    {
+      companyId,
+      roleId: selectedRole !== "all" ? selectedRole : null,
+      page: currentPage,
+      limit: limit, // Passed limit into the query
+      search: searchTerm
+    },
     { enabled: !!companyId }
   );
 
+  const users = data?.data || [];
+  // Updated to use the new meta fields from backend (totalCount, totalPages, currentPage)
+  const pagination = data?.meta || { totalPages: 1, currentPage: 1, totalCount: 0 };
+ 
   const deleteUserMutation = useDeleteUser();
+ const [cachedRoleCounts, setCachedRoleCounts] = useState({});
 
-  // --- DERIVED STATE (Replaces useEffect filtering) ---
-  const filterUsersByRole = useCallback((allUsers) => {
-    if (!currentUser || !currentUser.role_id) return allUsers;
-
-    return allUsers.filter((user) => {
-      const userRoleId = parseInt(user.role_id || user.role?.id, 10);
-      if (userRoleId === 1 || userRoleId === 4) return false;
-      if (!ROLE_HIERARCHY[userRoleId]) return false;
-      if (currentUserRoleId === 1) return true;
-      if (currentUserRoleId === 2) return true;
-
-      const userRoleLevel = ROLE_HIERARCHY[userRoleId]?.level || 999;
-      const currentUserRoleLevel = ROLE_HIERARCHY[currentUserRoleId]?.level || 999;
-      return userRoleLevel > currentUserRoleLevel;
-    });
-  }, [currentUser, currentUserRoleId]);
-
-  const filterUsersBySearch = useCallback((allUsers, term) => {
-    if (!term) return allUsers;
-    return allUsers.filter(
-      (user) =>
-        user.name.toLowerCase().includes(term.toLowerCase()) ||
-        (user.email && user.email.toLowerCase().includes(term.toLowerCase())) ||
-        (user.phone && user.phone.includes(term)),
-    );
-  }, []);
-
-  // Base list of users permitted for the current user to see
-  const baseUsers = useMemo(() => {
-    if (!rawUsersData) return [];
-    return filterUsersByRole(rawUsersData);
-  }, [rawUsersData, filterUsersByRole]);
-
-  // Final list of users after search and role filtering
-  const filteredUsers = useMemo(() => {
-    let filtered = [...baseUsers];
-
-    if (selectedRole !== "all") {
-      filtered = filtered.filter(
-        (u) => parseInt(u.role_id || u.role?.id) === parseInt(selectedRole)
-      );
+  // Update the memory bank safely OUTSIDE the render cycle
+  useEffect(() => {
+    if (data?.roleCounts) {
+      setCachedRoleCounts(data.roleCounts);
     }
+  }, [data?.roleCounts]);
 
-    return filterUsersBySearch(filtered, searchTerm);
-  }, [baseUsers, selectedRole, searchTerm, filterUsersBySearch]);
 
-  // Role Statistics based on the base users
-  const stats = useMemo(() => {
-    const s = {};
-    Object.keys(ROLE_HIERARCHY).forEach((roleId) => {
-      s[roleId] = baseUsers.filter(
-        (u) => parseInt(u.role_id || u.role?.id) === parseInt(roleId)
-      ).length;
-    });
-    return s;
-  }, [baseUsers]);
+  const roleCounts = data?.roleCounts || cachedRoleCounts;
 
-  // --- UI Helpers ---
+  // Calculate global total
+  const globalTotalUsers = useMemo(() => {
+    return Object.values(roleCounts).reduce((sum, count) => sum + count, 0);
+  }, [roleCounts]);
 
+  // --- UI HELPERS ---
   const canManageUser = (targetUser) => {
     if (currentUserRoleId === 1) return true;
-    const targetUserRoleId = parseInt(targetUser.role_id || targetUser.role?.id || 4);
+    const targetUserRoleId = parseInt(
+      targetUser.role_id || targetUser.role?.id || 4,
+    );
     const targetUserRoleLevel = ROLE_HIERARCHY[targetUserRoleId]?.level || 999;
-    const currentUserRoleLevel = ROLE_HIERARCHY[currentUserRoleId]?.level || 999;
+    const currentUserRoleLevel =
+      ROLE_HIERARCHY[currentUserRoleId]?.level || 999;
     return targetUserRoleLevel > currentUserRoleLevel;
   };
 
@@ -1844,10 +1834,7 @@ export default function UsersPage() {
       cyan: "text-cyan-700 dark:text-cyan-300 bg-cyan-50 dark:bg-cyan-900/30 border-cyan-200 dark:border-cyan-700",
     };
     const color = ROLE_HIERARCHY[roleId]?.color || "gray";
-    return (
-      colorMap[color] ||
-      "text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-600"
-    );
+    return colorMap[color] || "text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-600";
   };
 
   const performDelete = async (id) => {
@@ -1873,17 +1860,14 @@ export default function UsersPage() {
           </p>
           <div className="flex gap-4">
             <button
-              onClick={() => {
-                toast.dismiss(t.id);
-                performDelete(user.id);
-              }}
-              className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all"
+              onClick={() => { toast.dismiss(t.id); performDelete(user.id); }}
+              className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition-all"
             >
               Delete
             </button>
             <button
               onClick={() => toast.dismiss(t.id)}
-              className="px-4 py-2 text-sm font-medium text-slate-700 bg-slate-200 dark:bg-slate-700 dark:text-slate-200 rounded-md hover:bg-slate-300 dark:hover:bg-slate-600 transition-all"
+              className="px-4 py-2 text-sm font-medium text-slate-700 bg-slate-200 dark:bg-slate-700 dark:text-slate-200 rounded-md hover:bg-slate-300 transition-all"
             >
               Cancel
             </button>
@@ -1895,10 +1879,8 @@ export default function UsersPage() {
   };
 
   // --- Render Components ---
-
   const UserCard = ({ user }) => (
     <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-5 hover:shadow-md transition-all duration-300 group cursor-pointer relative overflow-hidden">
-      {/* Top Line Hover Effect */}
       <div className="absolute top-0 left-0 w-full h-1 bg-orange-500 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
 
       <div className="flex justify-between items-start mb-4">
@@ -1907,43 +1889,29 @@ export default function UsersPage() {
             {user.name.charAt(0).toUpperCase()}
           </div>
           <div>
-            <h3 className="font-bold text-slate-900 dark:text-white text-base leading-tight">
-              {user.name}
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              ID: #{user.id}
-            </p>
+            <h3 className="font-bold text-slate-900 dark:text-white text-base leading-tight">{user.name}</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">ID: #{user.id}</p>
           </div>
         </div>
-
-        {/* Role Badge */}
-        <span
-          className={`inline-flex px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded border ${getRoleColorClass(user)}`}
-        >
+        <span className={`inline-flex px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded border ${getRoleColorClass(user)}`}>
           {getRoleDisplayName(user)}
         </span>
       </div>
 
       <div className="space-y-2 mb-5">
         <div className="text-sm text-slate-600 dark:text-slate-300 flex items-center gap-2">
-          <div className="w-8 text-xs font-semibold uppercase text-slate-400">
-            Email
-          </div>
+          <div className="w-8 text-xs font-semibold uppercase text-slate-400">Email</div>
           <span className="truncate">{user.email || "N/A"}</span>
         </div>
         <div className="text-sm text-slate-600 dark:text-slate-300 flex items-center gap-2">
-          <div className="w-8 text-xs font-semibold uppercase text-slate-400">
-            Phone
-          </div>
+          <div className="w-8 text-xs font-semibold uppercase text-slate-400">Phone</div>
           <span>{user.phone || "N/A"}</span>
         </div>
       </div>
 
       <div className="flex gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
         <button
-          onClick={() =>
-            router.push(`/users/view/${user.id}?companyId=${companyId}`)
-          }
+          onClick={() => router.push(`/users/view/${user.id}?companyId=${companyId}`)}
           className="flex-1 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-medium text-xs hover:bg-orange-50 dark:hover:bg-orange-900/20 hover:text-orange-600 dark:hover:text-orange-400 transition-colors flex items-center justify-center gap-2"
         >
           <Eye size={14} /> View
@@ -1953,10 +1921,8 @@ export default function UsersPage() {
           <div className="flex gap-2">
             {canEditUser && (
               <button
-                onClick={() =>
-                  router.push(`/users/${user.id}/edit?companyId=${companyId}`)
-                }
-                className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 transition-colors"
+                onClick={() => router.push(`/users/${user.id}/edit?companyId=${companyId}`)}
+                className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-blue-50 hover:text-blue-600 transition-colors"
                 title="Edit"
               >
                 <Edit size={16} />
@@ -1965,7 +1931,7 @@ export default function UsersPage() {
             {canDeleteUser && (
               <button
                 onClick={() => handleDelete(user)}
-                className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 transition-colors"
+                className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-red-50 hover:text-red-600 transition-colors"
                 title="Delete"
               >
                 <Trash2 size={16} />
@@ -1980,20 +1946,21 @@ export default function UsersPage() {
   return (
     <>
       <Toaster position="top-center" reverseOrder={false} />
-      <div className="min-h-screen bg-slate-50 dark:bg-[#0B0E14] transition-colors duration-300 p-4 sm:p-6 md:p-8">
-        <div className="max-w-7xl mx-auto">
+      <div className="min-h-screen  transition-colors duration-300 p-4 sm:p-6 md:p-8">
+        <div className="max-w-7xl mx-auto md:mt-[-40px] ">
           {/* Header Card */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 mb-8">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
-              <div className="flex items-center gap-5">
-                <div className="w-14 h-14 bg-orange-50 dark:bg-orange-900/20 rounded-2xl flex items-center justify-center border border-orange-100 dark:border-orange-800/50">
-                  <Shield className="w-7 h-7 text-orange-600 dark:text-orange-500" />
+        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-4 mb-5 ">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div className="flex items-center gap-4">
+                {/* Reduced icon container from w-14/h-14 to w-10/h-10 */}
+                <div className="w-10 h-10 bg-orange-50 dark:bg-orange-900/20 rounded-xl flex items-center justify-center border border-orange-100 dark:border-orange-800/50">
+                  <Shield className="w-5 h-5 text-orange-600 dark:text-orange-500" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                  <h1 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
                     USER MANAGEMENT
                   </h1>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 font-medium mt-1">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
                     Manage roles, permissions, and staff access
                   </p>
                 </div>
@@ -2002,74 +1969,65 @@ export default function UsersPage() {
                 {canAddUser && (
                   <a
                     href={`/users/add?companyId=${companyId}`}
-                    className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-xl font-bold text-sm shadow-lg shadow-orange-500/20 hover:shadow-orange-500/30 transition-all duration-200 active:scale-95"
+                    // Reduced padding (px-4 py-2) and text size (text-xs)
+                    className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-lg font-bold text-xs shadow-md transition-all active:scale-95"
                   >
-                    <Plus size={18} strokeWidth={3} />
-                    ADD NEW USER
+                    <Plus size={16} strokeWidth={3} /> ADD NEW USER
                   </a>
                 )}
-
                 <a
                   href={`/userMapping?companyId=${companyId}`}
-                  className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-xl font-bold text-sm shadow-lg shadow-orange-500/20 hover:shadow-orange-500/30 transition-all duration-200 active:scale-95"
+                  // Reduced padding (px-4 py-2) and text size (text-xs)
+                  className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-lg font-bold text-xs shadow-md transition-all active:scale-95"
                 >
-                  <Plus size={18} strokeWidth={3} />
-                  Assign
+                  <Plus size={16} strokeWidth={3} /> Assign
                 </a>
               </div>
             </div>
           </div>
 
-          {/* Stats Cards Row */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3 mb-8">
-            {/* Total Users Card */}
+          {/* Stats Cards Row (Compact) */}
+          {/* Reduced bottom margin (mb-5) and gap (gap-2) */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2 mb-5">
             <button
-              onClick={() => setSelectedRole("all")}
-              className={`group relative overflow-hidden rounded-2xl p-4 transition-all duration-300 cursor-pointer text-left border ${selectedRole === "all"
-                ? "bg-slate-800 dark:bg-slate-700 border-slate-700 text-white shadow-md ring-2 ring-slate-700 dark:ring-slate-600"
-                : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:border-orange-400 dark:hover:border-orange-500 hover:shadow-sm"
+              onClick={() => { setSelectedRole("all"); setCurrentPage(1); }}
+              // Reduced inner padding (p-3)
+              className={`group relative overflow-hidden rounded-xl p-3 transition-all duration-300 cursor-pointer text-left border ${selectedRole === "all"
+                ? "bg-slate-800 dark:bg-slate-700 border-slate-700 text-white shadow-sm ring-1 ring-slate-700 dark:ring-slate-600"
+                : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:border-orange-400"
                 }`}
             >
-              <div className="flex justify-between items-start mb-2">
-                <Users
-                  className={`w-5 h-5 ${selectedRole === "all" ? "text-orange-400" : "text-slate-400"}`}
-                />
-                {selectedRole === "all" && (
-                  <div className="h-2 w-2 rounded-full bg-orange-400" />
-                )}
+              <div className="flex justify-between items-start mb-1">
+                <Users className={`w-4 h-4 ${selectedRole === "all" ? "text-orange-400" : "text-slate-400"}`} />
+                {selectedRole === "all" && <div className="h-1.5 w-1.5 rounded-full bg-orange-400" />}
               </div>
-              <p className="text-2xl font-black">{baseUsers.length}</p>
-              <p className="text-[10px] font-bold uppercase tracking-wider opacity-70">
-                Total Users
-              </p>
+              {/* Reduced text size (text-xl) */}
+              <p className="text-xl font-black leading-none mt-1">{globalTotalUsers}</p>
+              <p className="text-[9px] font-bold uppercase tracking-wider opacity-70 mt-1">Total Users</p>
             </button>
 
-            {/* Dynamic Role Cards */}
             {Object.entries(ROLE_HIERARCHY).map(([roleId, roleData]) => {
-              if ((stats[roleId] || 0) === 0) return null;
               const Icon = roleData.icon;
               const isSelected = selectedRole === roleId;
+              const count = roleCounts[roleId] || 0;
 
               const activeClasses = isSelected
-                ? `${roleData.activeClass} dark:bg-slate-700 dark:border-slate-600 dark:text-white dark:from-transparent dark:to-transparent`
-                : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:border-slate-400 dark:hover:border-slate-600 hover:shadow-sm";
+                ? `${roleData.activeClass} dark:bg-slate-700 dark:border-slate-600`
+                : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:border-orange-400";
 
               return (
                 <button
                   key={roleId}
-                  onClick={() => setSelectedRole(isSelected ? "all" : roleId)}
-                  className={`group relative overflow-hidden rounded-2xl p-4 transition-all duration-300 cursor-pointer text-left border ${activeClasses}`}
+                  onClick={() => { setSelectedRole(isSelected ? "all" : roleId); setCurrentPage(1); }}
+                  // Reduced inner padding (p-3)
+                  className={`group relative overflow-hidden rounded-xl p-3 transition-all duration-300 text-left border ${activeClasses}`}
                 >
-                  <div className="flex justify-between items-start mb-2">
-                    <Icon
-                      className={`w-5 h-5 ${isSelected ? "text-white dark:text-orange-400" : "text-slate-400"}`}
-                    />
-                    {isSelected && (
-                      <div className="h-2 w-2 rounded-full bg-white/40 dark:bg-orange-400" />
-                    )}
+                  <div className="flex justify-between items-start mb-1">
+                    <Icon className={`w-4 h-4 ${isSelected ? "text-white" : "text-slate-400"}`} />
                   </div>
-                  <p className="text-2xl font-black">{stats[roleId]}</p>
-                  <p className="text-[10px] font-bold uppercase tracking-wider opacity-90 truncate">
+                  {/* Reduced text size (text-xl) */}
+                  <p className="text-xl font-black leading-none mt-1">{count}</p>
+                  <p className="text-[9px] font-bold uppercase tracking-wider truncate mt-1">
                     {roleData.name}
                   </p>
                 </button>
@@ -2085,30 +2043,21 @@ export default function UsersPage() {
                 type="text"
                 placeholder="Search by name, email or phone..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                 className="w-full pl-12 pr-4 py-3.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
               />
             </div>
 
-            {/* View Toggle */}
             <div className="flex p-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shrink-0">
               <button
                 onClick={() => setViewMode("table")}
-                className={`p-2.5 rounded-lg transition-all ${viewMode === "table"
-                  ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm"
-                  : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
-                  } hidden md:block`}
-                title="List View"
+                className={`p-2.5 rounded-lg transition-all ${viewMode === "table" ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white" : "text-slate-400"} hidden md:block`}
               >
                 <List size={20} />
               </button>
               <button
                 onClick={() => setViewMode("grid")}
-                className={`p-2.5 rounded-lg transition-all ${viewMode === "grid"
-                  ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm"
-                  : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
-                  }`}
-                title="Grid View"
+                className={`p-2.5 rounded-lg transition-all ${viewMode === "grid" ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white" : "text-slate-400"}`}
               >
                 <LayoutGrid size={20} />
               </button>
@@ -2117,100 +2066,67 @@ export default function UsersPage() {
 
           {/* Content Area */}
           {isLoading ? (
-            <div
-              className={`grid gap-4 ${viewMode === "grid" ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" : "grid-cols-1"}`}
-            >
+            <div className={`grid gap-4 ${viewMode === "grid" ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" : "grid-cols-1"}`}>
               {viewMode === "grid" ? (
-                Array.from({ length: 8 }).map((_, i) => (
-                  <CardSkeleton key={i} />
-                ))
+                Array.from({ length: 8 }).map((_, i) => <CardSkeleton key={i} />)
               ) : (
                 <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
                   <table className="w-full">
                     <tbody>
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <TableRowSkeleton key={i} />
-                      ))}
+                      {Array.from({ length: 5 }).map((_, i) => <TableRowSkeleton key={i} />)}
                     </tbody>
                   </table>
                 </div>
               )}
             </div>
-          ) : filteredUsers.length > 0 ? (
+          ) : users.length > 0 ? (
             <>
-              {/* Grid View (Visible on Mobile OR when toggled) */}
-              <div
-                className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 ${viewMode === "table" ? "hidden md:hidden" : ""}`}
-              >
-                {filteredUsers.map((user) => (
+              {/* Grid View */}
+              <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 ${viewMode === "table" ? "hidden md:hidden" : ""}`}>
+                {users.map((user) => (
                   <UserCard key={user.id} user={user} />
                 ))}
               </div>
 
-              {/* Table View (Desktop Only) */}
+              {/* Table View */}
               {viewMode === "table" && (
                 <div className="hidden md:block bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
                   <table className="w-full">
                     <thead>
                       <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 text-left">
-                        <th className="p-5 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                          Staff Member
-                        </th>
-                        <th className="p-5 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                          Contact Info
-                        </th>
-                        <th className="p-5 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                          Permission Level
-                        </th>
-                        <th className="p-5 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right">
-                          Actions
-                        </th>
+                        <th className="p-5 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Staff Member</th>
+                        <th className="p-5 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Contact Info</th>
+                        <th className="p-5 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Permission Level</th>
+                        <th className="p-5 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                      {filteredUsers.map((user) => (
-                        <tr
-                          key={user.id}
-                          className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group"
-                        >
+                      {users.map((user) => (
+                        <tr key={user.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
                           <td className="p-5">
                             <div className="flex items-center gap-4">
                               <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-300 font-bold text-sm border border-slate-200 dark:border-slate-700">
-                                {user.name.charAt(0).toUpperCase()}
+                                {(user?.name?.[0] || "U").toUpperCase()}
                               </div>
                               <div>
-                                <div className="font-bold text-slate-900 dark:text-slate-100">
-                                  {user.name}
-                                </div>
-                                <div className="text-xs text-slate-500 dark:text-slate-500">
-                                  ID: #{user.id}
-                                </div>
+                                <div className="font-bold text-slate-900 dark:text-slate-100">{user.name}</div>
+                                <div className="text-xs text-slate-500">ID: #{user.id}</div>
                               </div>
                             </div>
                           </td>
                           <td className="p-5">
-                            <div className="text-sm text-slate-700 dark:text-slate-300 font-medium">
-                              {user.email || "N/A"}
-                            </div>
-                            <div className="text-xs text-slate-500 dark:text-slate-500 mt-0.5">
-                              {user.phone || "N/A"}
-                            </div>
+                            <div className="text-sm text-slate-700 dark:text-slate-300 font-medium">{user.email || "N/A"}</div>
+                            <div className="text-xs text-slate-500 mt-0.5">{user.phone || "N/A"}</div>
                           </td>
                           <td className="p-5">
-                            <span
-                              className={`inline-flex px-3 py-1 text-xs font-bold uppercase tracking-wide rounded border ${getRoleColorClass(user)}`}
-                            >
+                            <span className={`inline-flex px-3 py-1 text-xs font-bold uppercase tracking-wide rounded border ${getRoleColorClass(user)}`}>
                               {getRoleDisplayName(user)}
                             </span>
                           </td>
                           <td className="p-5 text-right">
                             <div className="flex justify-end gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
                               <button
-                                onClick={() =>
-                                  router.push(
-                                    `/users/view/${user.id}?companyId=${companyId}`,
-                                  )
-                                }
+                                onClick={() => router.push(`/users/view/${user.id}?companyId=${companyId}`)}
                                 className="p-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-orange-500 hover:border-orange-200 transition-all shadow-sm"
                               >
                                 <Eye size={16} />
@@ -2219,11 +2135,7 @@ export default function UsersPage() {
                                 <>
                                   {canEditUser && (
                                     <button
-                                      onClick={() =>
-                                        router.push(
-                                          `/users/${user.id}/edit?companyId=${companyId}`,
-                                        )
-                                      }
+                                      onClick={() => router.push(`/users/${user.id}/edit?companyId=${companyId}`)}
                                       className="p-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm"
                                     >
                                       <Edit size={16} />
@@ -2262,20 +2174,59 @@ export default function UsersPage() {
             </div>
           )}
 
-          {/* Footer Count */}
-          {!isLoading && filteredUsers.length > 0 && (
-            <div className="mt-6 text-center text-sm text-slate-500 dark:text-slate-400 font-medium">
-              Showing{" "}
-              <span className="text-slate-900 dark:text-white font-bold">
-                {filteredUsers.length}
-              </span>{" "}
-              of{" "}
-              <span className="text-slate-900 dark:text-white font-bold">
-                {baseUsers.length}
-              </span>{" "}
-              staff members
+          {/* DYNAMIC PAGINATION FOOTER */}
+          {pagination?.totalCount > 0 && (
+            <div className="flex flex-col md:flex-row justify-between items-center mt-6 p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 gap-4">
+              
+              {/* Dropdown for Items Per Page */}
+              <div className="w-full md:w-auto flex items-center gap-2">
+                <span className="text-xs font-bold uppercase text-slate-500 whitespace-nowrap">
+                  Items:
+                </span>
+                <select
+                  value={limit}
+                  onChange={(e) => {
+                    setLimit(Number(e.target.value));
+                    setCurrentPage(1); // Reset to page 1 on limit change
+                  }}
+                  className="w-full md:w-auto px-3 py-2 rounded-lg text-sm font-semibold outline-none cursor-pointer border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:border-orange-500 transition-all"
+                >
+                  <option value={15}>15</option>
+                  <option value={30}>30</option>
+                  <option value={50}>50</option>
+                </select>
+              </div>
+
+              {/* Status Text */}
+              <div className="text-center text-sm text-slate-500 dark:text-slate-400 font-medium">
+                Showing <span className="text-slate-900 dark:text-white font-bold">{users.length}</span> of <span className="text-slate-900 dark:text-white font-bold">{pagination.totalCount}</span> staff
+              </div>
+
+              {/* Next/Prev Controls */}
+              <div className="w-full md:w-auto flex items-center justify-center flex-wrap gap-2 md:gap-4">
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2 rounded-lg font-bold text-xs uppercase tracking-wider disabled:opacity-30 transition-all bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                >
+                  Previous
+                </button>
+
+                <span className="text-xs font-bold uppercase tracking-widest text-slate-500 whitespace-nowrap px-2">
+                  Page {currentPage} of {pagination.totalPages}
+                </span>
+
+                <button
+                  onClick={() => setCurrentPage((p) => (p < pagination.totalPages ? p + 1 : p))}
+                  disabled={currentPage >= pagination.totalPages || pagination.totalPages === 0}
+                  className="px-4 py-2 rounded-lg font-bold text-xs uppercase tracking-wider disabled:opacity-30 transition-all bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                >
+                  Next
+                </button>
+              </div>
             </div>
           )}
+
         </div>
       </div>
     </>

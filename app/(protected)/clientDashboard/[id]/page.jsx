@@ -766,7 +766,7 @@ const HighlightsCard = ({ locations, onViewAll }) => {
 
   return (
     <CardShell
-      title="Lowest Performing Washrooms"
+      title="Highest Performing Washrooms"
       subtitle="Today's Performance"
       icon={<Sparkles size={20} />}
       headerRight={

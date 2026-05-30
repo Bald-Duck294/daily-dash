@@ -1410,7 +1410,7 @@
 
 "use client";
 
-import React, { useEffect, useState, useRef, useMemo } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import toast, { Toaster } from "react-hot-toast";
 import { Country, State, City } from "country-state-city";
@@ -1421,10 +1421,9 @@ import { usePermissions } from "@/shared/hooks/usePermission";
 import { useRequirePermission } from "@/shared/hooks/useRequirePermission";
 import { MODULES } from "@/shared/constants/permissions";
 
-// API (TanStack Query Hooks)
+// API (TanStack Query Hooks) - Removed useGetAllLocations
 import { 
   useLocationById, 
-  useGetAllLocations, 
   useUpdateLocation, 
   useDeleteLocationImage 
 } from "@/features/locations/locations.queries"; // Adjust path as needed
@@ -1443,8 +1442,7 @@ import LocationTypeSelect from "../../../add-location/components/LocationTypeSel
 import {
   Building2, MapPin, Factory, ArrowLeft, Users,
   User, User2, VenusAndMars, Baby, CheckCircle2,
-  X, Image as ImageIcon, Info, ChevronLeft,
-  ChevronRight, Save, Trash2, AlertCircle,
+  X, Image as ImageIcon, Info, Save, Trash2, AlertCircle,
 } from "lucide-react";
 import { FaPerson, FaPersonDress } from "react-icons/fa6";
 import { MdShower } from "react-icons/md";
@@ -1484,11 +1482,6 @@ const EditLocationPage = () => {
     error: locationError 
   } = useLocationById(params.id, finalCompanyId);
 
-  const { 
-    data: allLocations = [], 
-    isLoading: isAllLocationsLoading 
-  } = useGetAllLocations(finalCompanyId);
-
   const { data: featuresResult } = useToiletFeaturesByName("Toilet_Features");
   const { data: facilityCompaniesRes } = useFacilityCompanies(finalCompanyId);
   const { data: locationTypesResult = [] } = useLocationTypes(finalCompanyId);
@@ -1503,7 +1496,6 @@ const EditLocationPage = () => {
 
   // --- STATE ---
   const [saving, setSaving] = useState(false);
-  const [navigationLoading, setNavigationLoading] = useState(false);
   const [toiletFeatures, setToiletFeatures] = useState({});
 
   // Locations & Address
@@ -1620,36 +1612,6 @@ const EditLocationPage = () => {
   }, []);
 
   // --- HANDLERS ---
-
-  // Navigation
-  const getCurrentLocationIndex = () => allLocations.findIndex((loc) => loc.id === params.id);
-  
-  const navigationInfo = useMemo(() => {
-    const currentIndex = getCurrentLocationIndex();
-    return {
-      currentIndex,
-      hasPrevious: currentIndex > 0,
-      hasNext: currentIndex < allLocations.length - 1,
-      previousName: currentIndex > 0 ? allLocations[currentIndex - 1]?.name : null,
-      nextName: currentIndex < allLocations.length - 1 ? allLocations[currentIndex + 1]?.name : null,
-    };
-  }, [allLocations, params.id]);
-
-  const handlePrevious = () => {
-    if (navigationInfo.hasPrevious) {
-      setNavigationLoading(true);
-      const prevLocation = allLocations[navigationInfo.currentIndex - 1];
-      router.push(`/washrooms/item/${prevLocation.id}/edit?companyId=${finalCompanyId}`);
-    }
-  };
-
-  const handleNext = () => {
-    if (navigationInfo.hasNext) {
-      setNavigationLoading(true);
-      const nextLocation = allLocations[navigationInfo.currentIndex + 1];
-      router.push(`/washrooms/item/${nextLocation.id}/edit?companyId=${finalCompanyId}`);
-    }
-  };
 
   // Inputs
   const handleInputChange = (field, value) => {
@@ -1822,7 +1784,7 @@ const EditLocationPage = () => {
   };
 
   // --- RENDER HELPERS ---
-  const isPageLoading = isLocationLoading || isAllLocationsLoading || navigationLoading;
+  const isPageLoading = isLocationLoading;
 
   if (isPageLoading)
     return (
@@ -1843,7 +1805,7 @@ const EditLocationPage = () => {
       <Toaster position="top-right" />
       <div className="max-w-7xl mx-auto space-y-8 pb-10 p-6 bg-slate-50 dark:bg-slate-900 min-h-screen">
         {/* --- HEADER --- */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row items-center justify-start gap-4">
           <button
             onClick={() => router.push(`/washrooms?companyId=${finalCompanyId}`)}
             className="flex items-center p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full text-slate-600 dark:text-slate-300 transition-colors"
@@ -1853,32 +1815,9 @@ const EditLocationPage = () => {
               Back to Listings
             </span>
           </button>
-
-          {/* Navigation Controls */}
-          <div className="flex items-center gap-2 bg-white dark:bg-slate-800 rounded-xl p-1 shadow-sm border border-slate-200 dark:border-slate-700">
-            <button
-              onClick={handlePrevious}
-              disabled={!navigationInfo.hasPrevious}
-              className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed"
-              title={navigationInfo.previousName || "No previous"}
-            >
-              <ChevronLeft size={18} />
-            </button>
-            <span className="px-3 text-xs font-bold text-slate-500 uppercase tracking-widest">
-              {navigationInfo.currentIndex + 1} / {allLocations.length}
-            </span>
-            <button
-              onClick={handleNext}
-              disabled={!navigationInfo.hasNext}
-              className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed"
-              title={navigationInfo.nextName || "No next"}
-            >
-              <ChevronRight size={18} />
-            </button>
-          </div>
         </div>
 
-        <div className="w-full">
+        <div className="w-full mt-2">
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
             Edit Washroom
           </h1>
@@ -1913,7 +1852,7 @@ const EditLocationPage = () => {
                   <div className="relative flex items-center h-11">
                     <Building2 className="absolute left-4 text-slate-400" size={16} />
                     <input
-                      value={formData.name}
+                      value={formData.name || ""}
                       onChange={(e) => handleInputChange("name", e.target.value)}
                       className="w-full h-full pl-11 pr-4 rounded-xl border border-slate-200 bg-slate-50/30 text-sm focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/5 transition-all outline-none"
                       placeholder="Enter washroom name"
@@ -1929,7 +1868,7 @@ const EditLocationPage = () => {
                   <div className="h-11">
                     <LocationTypeSelect
                       types={locationTypes}
-                      selectedType={formData.type_id}
+                      selectedType={formData.type_id || ""}
                       setSelectedType={(id) => handleInputChange("type_id", id)}
                       className="w-full"
                     />
@@ -1944,7 +1883,7 @@ const EditLocationPage = () => {
                   <div className="relative flex items-center h-11">
                     <MapPin className="absolute left-4 text-slate-400" size={16} />
                     <input
-                      value={formData.address}
+                      value={formData.address || ""}
                       onChange={(e) => handleInputChange("address", e.target.value)}
                       className="w-full h-full pl-11 pr-4 rounded-xl border border-slate-200 bg-slate-50/30 text-sm focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/5 transition-all outline-none"
                       placeholder="Enter full address"
@@ -2023,7 +1962,7 @@ const EditLocationPage = () => {
                   <div className="h-11">
                     <SearchableSelect
                       options={availableStates}
-                      value={formData.state}
+                      value={formData.state || ""}
                       onChange={(value) => handleInputChange("state", value)}
                       placeholder="Select state"
                       className="w-full h-full"
@@ -2036,7 +1975,7 @@ const EditLocationPage = () => {
                   <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider block ml-1">District</label>
                   <div className="relative flex items-center h-11">
                     <input
-                      value={formData.dist}
+                      value={formData.dist || ""}
                       onChange={(e) => handleInputChange("dist", e.target.value)}
                       className="w-full h-full px-4 rounded-xl border border-slate-200 bg-slate-50/30 text-sm focus:border-cyan-500 transition-all outline-none"
                       placeholder="Enter district"
@@ -2050,7 +1989,7 @@ const EditLocationPage = () => {
                   <div className="h-11">
                     <SearchableSelect
                       options={availableCities}
-                      value={formData.city}
+                      value={formData.city || ""}
                       onChange={(value) => handleInputChange("city", value)}
                       placeholder="Select city"
                       className="w-full h-full"
@@ -2065,7 +2004,7 @@ const EditLocationPage = () => {
                     <input
                       type="text"
                       maxLength={6}
-                      value={formData.pincode}
+                      value={formData.pincode || ""}
                       onChange={(e) => handleInputChange("pincode", e.target.value)}
                       className="w-full h-full px-4 rounded-xl border border-slate-200 bg-slate-50/30 text-sm focus:border-cyan-500 transition-all outline-none"
                       placeholder="000000"
@@ -2077,7 +2016,7 @@ const EditLocationPage = () => {
                 <div className="col-span-1 md:col-span-2 space-y-2">
                   <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider block ml-1">Full Address</label>
                   <textarea
-                    value={formData.address}
+                    value={formData.address || ""}
                     onChange={(e) => handleInputChange("address", e.target.value)}
                     rows={3}
                     className="w-full p-4 rounded-xl border border-slate-200 bg-slate-50/30 text-sm focus:border-cyan-500 transition-all outline-none resize-none"
@@ -2197,7 +2136,7 @@ const EditLocationPage = () => {
                     <div className="relative flex items-center">
                       <input
                         type="checkbox"
-                        checked={formData.options.genderAccess?.includes(item.value)}
+                        checked={formData.options.genderAccess?.includes(item.value) || false }
                         onChange={() => handleGenderAccessChange(item.value)}
                         className="w-4 h-4 rounded border border-slate-200 text-cyan-500 focus:ring-0 cursor-pointer accent-cyan-500"
                       />
@@ -2260,7 +2199,7 @@ const EditLocationPage = () => {
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 block">Latitude</label>
                     <input
                       type="number" step="0.000001"
-                      value={formData.latitude}
+                      value={formData.latitude ?? ""}
                       onChange={(e) => handleInputChange("latitude", e.target.value)}
                       placeholder="21.145800"
                       className="w-full px-3 py-2.5 bg-white border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-mono text-slate-700 dark:text-slate-300 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 transition-all outline-none"
@@ -2271,7 +2210,7 @@ const EditLocationPage = () => {
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 block">Longitude</label>
                     <input
                       type="number" step="0.000001"
-                      value={formData.longitude}
+                      value={formData.longitude ?? ""}
                       onChange={(e) => handleInputChange("longitude", e.target.value)}
                       placeholder="79.088200"
                       className="w-full px-3 py-2.5 bg-white border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-mono text-slate-700 dark:text-slate-300 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 transition-all outline-none"

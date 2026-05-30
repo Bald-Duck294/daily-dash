@@ -2132,14 +2132,13 @@ import { useRequirePermission } from "@/shared/hooks/useRequirePermission";
 import { MODULES } from "@/shared/constants/permissions";
 
 // TanStack Query Hooks
-import { useGetAllUsers } from "@/features/users/users.queries";
-import { useGetAllLocations } from "@/features/locations/locations.queries";
 import {
   useAssignmentsByCleanerId,
   useCreateAssignment,
 } from "@/features/assignments/assignments.queries";
+// ✅ IMPORTED NEW USER DROPDOWN HOOK HERE
+import { useDropdownLocations, useDropdownUsers } from "@/features/dropdownList/dropdownlist.query";
 import { useGetAllRoles } from "@/features/roles/queries/roles.queries";
-
 import {
   User,
   MapPin,
@@ -2182,6 +2181,7 @@ const AddAssignmentPage = () => {
   const userDropdownRef = useRef(null);
   const locationDropdownRef = useRef(null);
   const router = useRouter();
+  
   const ROLE_HIERARCHY = {
     1: { name: "Superadmin", level: 1 },
     2: { name: "Admin", level: 2 },
@@ -2191,14 +2191,28 @@ const AddAssignmentPage = () => {
     7: { name: "Facility Supv", level: 4 },
     5: { name: "Cleaner", level: 5 },
   };
+
   // --- TANSTACK QUERIES ---
-  const { data: allUsers = [], isLoading: isLoadingUsers } = useGetAllUsers(
-    { companyId },
-    { enabled: !!companyId },
-  );
-  const { data: allLocations = [], isLoading: isLoadingLocations } =
-    useGetAllLocations(companyId);
+  
+  // ✅ REPLACED HEAVY USER QUERY WITH LIGHTWEIGHT DROPDOWN QUERY
+  const { data: usersResponse = [], isLoading: isLoadingUsers } = useDropdownUsers(companyId);
+
+  // Safely extract the array and map the new `role_name` back to `role.name` so the UI doesn't break
+  const allUsersRaw = Array.isArray(usersResponse) ? usersResponse : (usersResponse?.data || []);
+  const allUsers = allUsersRaw.map(u => ({
+    ...u,
+    role: { name: u.role_name || u.role?.name } 
+  }));
+
+  const { data: locationsResponse = [], isLoading: isLoadingLocations } = useDropdownLocations(companyId);
+
+  // Safely extract the array
+  const allLocations = Array.isArray(locationsResponse)
+    ? locationsResponse
+    : (locationsResponse?.data || []);
+    
   const { data: allRoles = [], isLoading: isLoadingRoles } = useGetAllRoles();
+  
   // Only runs when singleUser has a value
   const {
     data: singleUserAssignmentsData = [],
@@ -2212,6 +2226,7 @@ const AddAssignmentPage = () => {
   const isDataLoading = isLoadingUsers || isLoadingLocations || isLoadingRoles;
   const currentUserRoleId = parseInt(loggedInUser?.role_id);
   const currentUserRole = ROLE_HIERARCHY[currentUserRoleId] || { level: 99 };
+  
   const assignableUsers = useMemo(() => {
     return allUsers.filter((u) => {
       const uRoleId = parseInt(u.role_id);
@@ -2322,7 +2337,7 @@ const AddAssignmentPage = () => {
       ) {
         setIsLocationDropdownOpen(false);
       }
-    };
+    }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
@@ -2892,7 +2907,7 @@ const AddAssignmentPage = () => {
                             : "Click to select users..."
                           : singleUser
                             ? assignableUsers.find((u) => u.id === singleUser)
-                                ?.name || "Select a user..."
+                              ?.name || "Select a user..."
                             : "Select a user..."
                       }
                       placeholder={

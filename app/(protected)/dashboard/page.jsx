@@ -231,13 +231,11 @@
 
 "use client";
 
-import React, { useMemo } from "react";
+import React from "react";
 import { useRouter } from "next/navigation";
-import {
-  useCompaniesCount, 
-} from "@/features/companies/queries/companies.queries";
-// ✅ Import the TanStack query hook for users
-import { useGetAllUsers } from "@/features/users/users.queries";
+import { useCompaniesCount } from "@/features/companies/queries/companies.queries";
+// ✅ Import the new hook for accurate counts
+import { useUsersCount } from "@/features/users/users.queries"; 
 import {
   Building,
   Shield,
@@ -249,7 +247,6 @@ import {
 
 function StatCard({ label, value, href, loading, accent, icon: Icon }) {
   const router = useRouter();
-
   return (
     <button
       disabled={loading || !href}
@@ -258,57 +255,27 @@ function StatCard({ label, value, href, loading, accent, icon: Icon }) {
     >
       <div
         className="relative rounded-2xl p-6 border transition-all duration-300 transform hover:scale-105"
-        style={{
-          background: accent,
-          borderColor: "var(--card-border)",
-          boxShadow: "var(--card-shadow)",
-        }}
+        style={{ background: accent, borderColor: "var(--card-border)", boxShadow: "var(--card-shadow)" }}
       >
-        {/* Top row */}
         <div className="flex items-start justify-between mb-4">
-          <div
-            className="p-3 rounded-xl shadow-sm transition-transform duration-300 group-hover:scale-110"
-            style={{
-              backgroundColor: "var(--card-icon-bg)",
-              color: "var(--card-icon-fg)",
-            }}
-          >
+          <div className="p-3 rounded-xl shadow-sm transition-transform duration-300 group-hover:scale-110" style={{ backgroundColor: "var(--card-icon-bg)", color: "var(--card-icon-fg)" }}>
             <Icon size={24} />
           </div>
         </div>
 
-        {/* Content */}
         {loading ? (
           <div className="space-y-2 animate-pulse">
             <div className="h-4 w-24 rounded bg-black/10 dark:bg-white/10" />
             <div className="h-8 w-16 rounded bg-black/10 dark:bg-white/10" />
-            <div className="h-3 w-28 rounded bg-black/10 dark:bg-white/10" />
           </div>
         ) : (
           <>
-            <p
-              className="text-sm font-medium mb-1"
-              style={{ color: "var(--card-label)" }}
-            >
-              {label}
-            </p>
-
+            <p className="text-sm font-medium mb-1" style={{ color: "var(--card-label)" }}>{label}</p>
             <div className="flex items-baseline gap-2">
-              <p
-                className="text-3xl font-bold"
-                style={{ color: "var(--card-value)" }}
-              >
-                {value}
-              </p>
+              <p className="text-3xl font-bold" style={{ color: "var(--card-value)" }}>{value}</p>
               <TrendingUp size={16} style={{ color: "var(--trend-up)" }} />
             </div>
-
-            <p
-              className="text-xs mt-1"
-              style={{ color: "var(--muted-foreground)" }}
-            >
-              Updated just now
-            </p>
+            <p className="text-xs mt-1" style={{ color: "var(--muted-foreground)" }}>Updated just now</p>
           </>
         )}
       </div>
@@ -318,91 +285,35 @@ function StatCard({ label, value, href, loading, accent, icon: Icon }) {
 
 export default function DashboardPage() {
   // 1. Fetch Companies Count
-  const { data: companiesCountData, isLoading: companiesCountLoading } =
-    useCompaniesCount();
+  const { data: companiesCountData, isLoading: companiesLoading } = useCompaniesCount();
 
-  // 2. Fetch All Users via TanStack Query
-  const { data: allUsers = [], isLoading: usersLoading } = useGetAllUsers();
+  // 2. Fetch Accurate User Counts per role
+  const { data: superAdminData, isLoading: saLoading } = useUsersCount(1); // Role ID 1
+  const { data: adminData, isLoading: adminLoading } = useUsersCount(2);    // Role ID 2
+  const { data: supervisorData, isLoading: supLoading } = useUsersCount(3); // Role ID 3
+  const { data: cleanerData, isLoading: cleanerLoading } = useUsersCount(5); // Role ID 5
 
-  // 3. Process User Counts Efficiently
-  // useMemo prevents recalculating counts unless the raw users array changes
-  const usersCounts = useMemo(() => {
-    return {
-      superadmin: allUsers.filter((u) => u.role_id === 1).length,
-      admin: allUsers.filter((u) => u.role_id === 2).length,
-      supervisor: allUsers.filter((u) => u.role_id === 3).length,
-      cleaner: allUsers.filter((u) => u.role_id === 5).length,
-    };
-  }, [allUsers]);
-
-  // Combined Loading State for the cards
-  const isLoading = companiesCountLoading || usersLoading;
+  // Combined Loading State
+  const isLoading = companiesLoading || saLoading || adminLoading || supLoading || cleanerLoading;
 
   const cards = [
-    {
-      label: "Organizations",
-      value: companiesCountData?.totalCount || 0,
-      href: "/companies",
-      accent: "var(--accent-blue)",
-      icon: Building,
-    },
-    {
-      label: "Super Admins",
-      value: usersCounts.superadmin,
-      href: "/roles/superadmin",
-      accent: "var(--accent-purple)",
-      icon: Shield,
-    },
-    {
-      label: "Admins",
-      value: usersCounts.admin,
-      href: "/roles/admin",
-      accent: "var(--accent-green)",
-      icon: UserCog,
-    },
-    {
-      label: "Supervisors",
-      value: usersCounts.supervisor,
-      href: "/roles/supervisor",
-      accent: "var(--accent-yellow)",
-      icon: UserCheck,
-    },
-    {
-      label: "Cleaners",
-      value: usersCounts.cleaner,
-      href: "/roles/cleaner",
-      accent: "var(--accent-pink)",
-      icon: Users,
-    },
+    { label: "Organizations", value: companiesCountData?.totalCount || 0, href: "/companies", accent: "var(--accent-blue)", icon: Building },
+    { label: "Super Admins", value: superAdminData?.totalCount || 0, href: "/roles/superadmin", accent: "var(--accent-purple)", icon: Shield },
+    { label: "Admins", value: adminData?.totalCount || 0, href: "/roles/admin", accent: "var(--accent-green)", icon: UserCog },
+    { label: "Supervisors", value: supervisorData?.totalCount || 0, href: "/roles/supervisor", accent: "var(--accent-yellow)", icon: UserCheck },
+    { label: "Cleaners", value: cleanerData?.totalCount || 0, href: "/roles/cleaner", accent: "var(--accent-pink)", icon: Users },
   ];
 
   return (
-    <div className="space-y-6 sm:space-y-8 rounded-3xl p-4 sm:p-6 lg:p-8 bg-[var(--background)] relative">
-      {/* Page Header */}
-      <div>
-        <h1 className="text-xl font-semibold text-[var(--foreground)]">
-          Dashboard Overview
-        </h1>
-        <p className="mt-1 text-sm text-[var(--sidebar-muted)]">
-          High-level snapshot of system activity
-        </p>
-      </div>
-
-      {/* Stats Grid */}
+    <div className="space-y-6 sm:space-y-8 rounded-3xl p-4 sm:p-6 lg:p-8 bg-[var(--background)] relative md:mt-[-30px]">
       <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
         {cards.map((card) => (
           <StatCard key={card.label} {...card} loading={isLoading} />
         ))}
       </div>
 
-      {/* Company Statistics */}
       <section className="rounded-xl border border-[var(--sidebar-border)] bg-[var(--background)] p-4 sm:p-6">
-        <h2 className="text-lg font-semibold text-[var(--foreground)]">
-          Company Statistics
-        </h2>
-        <p className="mt-1 text-sm text-[var(--sidebar-muted)]">
-          Detailed analytics and trends will appear here.
-        </p>
+        <h2 className="text-lg font-semibold text-[var(--foreground)]">Company Statistics</h2>
         <div className="mt-4 h-32 flex items-center justify-center rounded-lg border border-dashed border-[var(--sidebar-border)] text-sm text-[var(--sidebar-muted)]">
           Coming soon
         </div>

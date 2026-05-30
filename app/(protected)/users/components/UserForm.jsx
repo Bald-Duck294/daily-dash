@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -6,7 +5,6 @@ import { useCompanyId } from "@/providers/CompanyProvider";
 import { useSelector } from "react-redux";
 // TanStack Query Hooks
 import { useGetAllRoles } from "@/features/roles/queries/roles.queries"; 
-import { useGetAllLocations } from "@/features/locations/locations.queries"; 
 import { useCompany } from "@/features/companies/queries/companies.queries"; 
 
 export default function UserForm({
@@ -14,23 +12,20 @@ export default function UserForm({
   onSubmit,
   isEditing = false,
   canSubmit = true,
+  locations = [],           // ✅ Now receiving locations from parent
+  isLoadingLocations = false // ✅ Now receiving loading state from parent
 }) {
   const { companyId } = useCompanyId();
 
   // --- TANSTACK QUERIES ---
   const { data: companyData, isLoading: isLoadingCompany } = useCompany(companyId);
-  
-  // FIX 1: Do not use inline fallback `=[]` here, it breaks memoization
   const { data: allRoles, isLoading: isLoadingRoles } = useGetAllRoles({ enabled: !!companyId });
-  const { data: allLocations, isLoading: isLoadingLocations } = useGetAllLocations(companyId);
 
   // --- DERIVED STATE ---
   const isLoadingData = isLoadingCompany || isLoadingRoles || isLoadingLocations;
-  // Add this line to get the user
   const currentUser = useSelector((state) => state.auth.user);
-  // Handled the fallback safely inside the useMemo
+  
   const roles = useMemo(() => (allRoles || []).filter((role) => role.id !== 1), [allRoles]);
-  const locations = allLocations || [];
 
   // --- FORM STATE ---
   const [formData, setFormData] = useState({
@@ -44,15 +39,6 @@ export default function UserForm({
   });
 
   const [canAssignLocation, setCanAssignLocation] = useState(false);
-
-  // --- LOGIC HELPERS ---
-  const isFormValid = () => {
-    const hasName = formData.name.trim().length > 0;
-    const hasPhone = formData.phone.trim().length === 10;
-    const hasRole = formData.role_id !== "";
-    const hasPassword = isEditing || formData.password.trim().length >= 6;
-    return hasName && hasPhone && hasRole && hasPassword;
-  };
 
   // --- EFFECTS ---
   
@@ -75,34 +61,23 @@ export default function UserForm({
   }, [initialData, companyId]);
 
   // 2. Handle Location Assignment Visibility
-useEffect(() => {
-    // Check if the current user is a Superadmin (e.g., assuming role ID 1 is Superadmin)
-    // You can get this from your auth store/context if available
-    const isSuperadmin = currentUser?.role_id === 1; // Adjust 'currentUser' source as needed
+  useEffect(() => {
+    const isSuperadmin = currentUser?.role_id === 1;
 
     const selectedRole = roles.find(
       (r) => r.id.toString() === formData.role_id.toString(),
     );
     
-    // Logic: Superadmin can always assign, OR if the role is Admin/Supervisor
     const hasPermissionToAssign = 
       isSuperadmin || 
       (selectedRole && ["Admin", "Supervisor"].includes(selectedRole.name));
     
-    if (hasPermissionToAssign) {
-      setCanAssignLocation(true);
-    } else {
-      setCanAssignLocation(false);
-      if (formData.location_ids.length > 0) {
-        setFormData((prev) => ({ ...prev, location_ids: [] }));
-      }
-    }
-  }, [formData.role_id, formData.location_ids.length, roles, currentUser]);
+    setCanAssignLocation(hasPermissionToAssign);
+  }, [formData.role_id, roles, currentUser]);
 
   // --- EVENT HANDLERS ---
   const handleChange = (e) => {
     const { name, value } = e.target;
-
     if (name === "phone") {
       const numericValue = value.replace(/\D/g, "");
       setFormData((prev) => ({ ...prev, [name]: numericValue }));
@@ -113,33 +88,32 @@ useEffect(() => {
 
   const handleLocationChange = (e) => {
     const { value, checked } = e.target;
-    const locId = value;
     setFormData((prev) => ({
       ...prev,
       location_ids: checked
-        ? [...prev.location_ids, locId]
-        : prev.location_ids.filter((id) => id !== locId),
+        ? [...prev.location_ids, value]
+        : prev.location_ids.filter((id) => id !== value),
     }));
+  };
+
+  const isFormValid = () => {
+    const hasName = formData.name.trim().length > 0;
+    const hasPhone = formData.phone.trim().length === 10;
+    const hasRole = formData.role_id !== "";
+    const hasPassword = isEditing || formData.password.trim().length >= 6;
+    return hasName && hasPhone && hasRole && hasPassword;
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
-    if (!companyId) {
-      alert("Company context not available");
-      return;
-    }
-
     const dataToSend = {
       ...formData,
       company_id: companyId,
       role_id: formData.role_id ? parseInt(formData.role_id) : null,
     };
-
     onSubmit(dataToSend);
   };
 
-  // --- CSS CLASSES ---
   const inputClass = "w-full px-4 py-2.5 text-sm rounded-lg outline-none transition-all";
   const labelClass = "block text-xs font-semibold mb-2 uppercase tracking-wide";
 
@@ -392,18 +366,16 @@ useEffect(() => {
               border: "1px solid var(--user-form-border)",
             }}
           >
-            {isLoadingData ? (
+            {isLoadingLocations ? ( 
               <p className="text-sm" style={{ color: "var(--user-form-subtext)" }}>
                 Loading locations...
               </p>
-            ) : locations.length > 0 ? (
+            ) : locations.length > 0 ? ( 
               locations.map((loc) => (
                 <label
                   key={loc.id}
                   className="flex items-center gap-3 cursor-pointer p-2 rounded transition-colors"
                   style={{ color: "var(--user-form-text)" }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = "var(--user-form-muted-bg)")}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                 >
                   <input
                     type="checkbox"
@@ -414,70 +386,34 @@ useEffect(() => {
                     className="h-4 w-4 rounded"
                     style={{ accentColor: "var(--user-form-success)" }}
                   />
-                  <span className="text-sm font-medium">
-                    {loc.name}
-                    {loc.address && (
-                      <span
-                        className="text-xs ml-2 font-normal"
-                        style={{ color: "var(--user-form-subtext)" }}
-                      >
-                        {loc.address}
-                      </span>
-                    )}
-                  </span>
+                  <span className="text-sm font-medium">{loc.name}</span>
                 </label>
               ))
             ) : (
               <p className="text-sm" style={{ color: "var(--user-form-subtext)" }}>
-                No locations available. Create locations first to assign them.
+                No locations available.
               </p>
             )}
           </div>
-
-          {formData.location_ids.length > 0 && (
-            <p
-              className="text-xs mt-2 font-medium"
-              style={{ color: "var(--user-form-success)" }}
-            >
-              ✓ {formData.location_ids.length} location(s) selected
-            </p>
-          )}
         </div>
       )}
 
       {/* Action Buttons */}
-      <div
-        className="flex justify-end gap-3 pt-6"
-        style={{ borderTop: "1px solid var(--user-form-border)" }}
-      >
+     <div className="flex justify-end gap-3 pt-6 border-t border-[var(--user-form-border)]">
         <button
           type="button"
           onClick={() => window.history.back()}
-          className="cursor-pointer px-6 py-2.5 text-sm font-semibold rounded-lg transition-colors flex items-center gap-2"
-          style={{
-            background: "var(--user-form-cancel-bg)",
-            border: "1px solid var(--user-form-cancel-border)",
-            color: "var(--user-form-cancel-text)",
-          }}
+          className="cursor-pointer px-6 py-2.5 text-sm font-semibold rounded-lg"
+          style={{ background: "var(--user-form-cancel-bg)", color: "var(--user-form-cancel-text)" }}
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
           CANCEL
         </button>
-
         <button
           type="submit"
           disabled={isLoadingData || !isFormValid() || !canSubmit}
-          className="cursor-pointer px-6 py-2.5 text-sm font-semibold rounded-lg transition-all shadow-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-          style={{
-            background: "var(--user-form-submit-bg)",
-            color: "var(--user-form-submit-text)",
-          }}
+          className="cursor-pointer px-6 py-2.5 text-sm font-semibold rounded-lg disabled:opacity-50"
+          style={{ background: "var(--user-form-submit-bg)", color: "var(--user-form-submit-text)" }}
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-          </svg>
           {isEditing ? "SAVE CHANGES" : "CREATE USER"}
         </button>
       </div>

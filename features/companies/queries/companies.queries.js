@@ -97,7 +97,11 @@ export function useDeleteCompany() {
       return response.data;
     },
     onSuccess: () => {
+      // 1. Refetch the active page of data to remove the row from the table
       queryClient.invalidateQueries({ queryKey: ["companies"] });
+      
+      // 2. Refetch the total count so your pagination math stays accurate
+      queryClient.invalidateQueries({ queryKey: ["companies", "count"] }); 
     },
   });
 }

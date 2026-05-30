@@ -364,31 +364,25 @@ const Header = ({ pageTitle }) => {
   // Function to get header title - EITHER company name OR dashboard
   const getHeaderTitle = () => {
     // Only show loading/company if we have a valid ID
-    if (companyId && companyId !== "null") {
-      if (loadingCompany) {
+ if (companyId && companyId !== "null") {
+      // Show skeleton if it's explicitly loading OR if we don't have the company data yet
+      if (loadingCompany || !company) {
         return (
           <>
-            <Building className="w-4 h-4 sm:w-5 sm:h-5 text-slate-600 animate-pulse flex-shrink-0" />
-            <span className="truncate">Loading...</span>
+            <Building className="w-4 h-4 sm:w-5 sm:h-5 text-slate-300 dark:text-slate-600 animate-pulse flex-shrink-0 ml-[15px]" />
+            {/* Sleek skeleton bar instead of "Loading..." text */}
+            <div className="h-4 sm:h-5 bg-slate-200 dark:bg-slate-700/50 rounded w-24 sm:w-32 animate-pulse" />
           </>
         );
       }
 
-      if (company) {
-        return (
-          <>
-            <Building className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 text-cyan-600 ml-[15px]" />
-            <span className="truncate block min-w-0" title={company.name}>
-              {company.name}
-            </span>
-          </>
-        );
-      }
-
+      // Final loaded state
       return (
         <>
-          <Building className="w-4 h-4 sm:w-5 sm:h-5 text-slate-600 flex-shrink-0" />
-          <span className="truncate">Loading...</span>
+          <Building className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 text-cyan-600 ml-[15px]" />
+          <span className="truncate block min-w-0" title={company.name}>
+            {company.name}
+          </span>
         </>
       );
     }

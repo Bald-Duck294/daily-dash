@@ -2,15 +2,52 @@ import axiosInstance from "@/shared/api/axios.instance";
 
 export const LocationsApi = {
   // Get all locations
+  // getAllLocations: async (
+  //   company_id,
+  //   includeUnavailable = false,
+  //   facilityCompanyId = null,
+  // ) => {
+  //   // console.log("in get all locations", company_id);
+  //   // options = {} add this in the parametere if the options becomes more
+  //   // const { includeUnavailable = false, type_id = null } = options; this is how to acesses it
+
+  //   const params = { company_id };
+
+  //   if (includeUnavailable) {
+  //     params.include_unavailable = true;
+  //   }
+
+  //   if (facilityCompanyId) {
+  //     params.facilityCompanyId = facilityCompanyId;
+  //   }
+  //   // if (type_id) {
+  //   //   params.type_id = type_id;
+  //   // }
+
+  //   // console.log(params, "from get all locs");
+  //   try {
+  //     const response = await axiosInstance.get(`/locations`, { params });
+  //     // console.log(response.data, "data22");
+  //     return {
+  //       success: true,
+  //       data: response.data,
+  //     };
+  //   } catch (error) {
+  //     console.error("Error fetching locations:", error);
+  //     return {
+  //       success: false,
+  //       error: error.message,
+  //     };
+  //   }
+  // },
+
   getAllLocations: async (
     company_id,
     includeUnavailable = false,
     facilityCompanyId = null,
+    page = 1,    // Add page parameter
+    limit = 15   // Add limit parameter
   ) => {
-    // console.log("in get all locations", company_id);
-    // options = {} add this in the parametere if the options becomes more
-    // const { includeUnavailable = false, type_id = null } = options; this is how to acesses it
-
     const params = { company_id };
 
     if (includeUnavailable) {
@@ -20,14 +57,14 @@ export const LocationsApi = {
     if (facilityCompanyId) {
       params.facilityCompanyId = facilityCompanyId;
     }
-    // if (type_id) {
-    //   params.type_id = type_id;
-    // }
+    
+    // --- ADD PAGINATION PARAMS FOR AXIOS ---
+    if (page) params.page = page;
+    if (limit) params.limit = limit;
+    // ---------------------------------------
 
-    // console.log(params, "from get all locs");
     try {
       const response = await axiosInstance.get(`/locations`, { params });
-      // console.log(response.data, "data22");
       return {
         success: true,
         data: response.data,
@@ -40,6 +77,11 @@ export const LocationsApi = {
       };
     }
   },
+  getMapLocations: async (companyId) => {
+  // Use a dedicated map route
+  const response = await axiosInstance.get(`/locations/map?company_id=${companyId}`);
+  return response.data;
+},
 
   // Enhanced method to fetch zones with different grouping options
   fetchZonesWithToilets: async (options = {}) => {

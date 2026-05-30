@@ -22,15 +22,61 @@ export const locationKeys = {
 ===================================================== */
 
 // 1. Get All Locations
-export const useGetAllLocations = (company_id, includeUnavailable = false, facilityCompanyId = null) => {
+// export const useGetAllLocations = (company_id, includeUnavailable = false, facilityCompanyId = null) => {
+//   return useQuery({
+//     queryKey: locationKeys.list({ company_id, includeUnavailable, facilityCompanyId }),
+//     queryFn: async () => {
+//       const response = await LocationsApi.getAllLocations(company_id, includeUnavailable, facilityCompanyId);
+//       if (!response.success) throw new Error(response.error || "Failed to fetch locations");
+//       return response.data;
+//     },
+//     enabled: !!company_id && company_id !== "null", // Only run if company_id exists
+//     staleTime: 5 * 60 * 1000,
+//   });
+// };
+
+export const useGetAllLocations = (
+  company_id, 
+  includeUnavailable = false, 
+  facilityCompanyId = null,
+  page = 1,       // Add page parameter
+  limit = 15      // Add limit parameter
+) => {
   return useQuery({
-    queryKey: locationKeys.list({ company_id, includeUnavailable, facilityCompanyId }),
+    // --- IMPORTANT: ADD PAGE AND LIMIT TO QUERY KEY ---
+    queryKey: locationKeys.list({ company_id, includeUnavailable, facilityCompanyId, page, limit }),
+    
     queryFn: async () => {
-      const response = await LocationsApi.getAllLocations(company_id, includeUnavailable, facilityCompanyId);
+      // --- PASS THE NEW PARAMS TO THE API FUNCTION ---
+      const response = await LocationsApi.getAllLocations(
+        company_id, 
+        includeUnavailable, 
+        facilityCompanyId, 
+        page, 
+        limit
+      );
+      
       if (!response.success) throw new Error(response.error || "Failed to fetch locations");
       return response.data;
     },
     enabled: !!company_id && company_id !== "null", // Only run if company_id exists
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
+export const useMapLocations = (companyId) => {
+  return useQuery({
+    queryKey: ["map-locations", companyId],
+    queryFn: async () => {
+      // Fetch the raw response from your backend
+      const response = await LocationsApi.getMapLocations(companyId);
+      
+      // CRITICAL: Ensure we return only the array
+      // If your API returns { success: true, data: [...] }, return response.data
+      // If it returns just an array, return response
+      return Array.isArray(response) ? response : (response?.data || []);
+    },
+    enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
   });
 };

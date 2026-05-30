@@ -2,9 +2,9 @@ import axiosInstance from "@/shared/api/axios.instance.js";
 
 export const UsersApi = {
   // Get all users with optional filters
-  getAllUsers: async (companyId = null, roleId = null) => {
+ getAllUsers: async (companyId = null, roleId = null, page = 1, limit = 10) => {
     try {
-      const params = {};
+      const params = { page, limit };
       if (companyId) params.companyId = companyId;
       if (roleId) params.roleId = roleId;
 
@@ -12,7 +12,8 @@ export const UsersApi = {
 
       return {
         success: true,
-        data: response.data,
+        data: response.data.data,     // The array of users
+        pagination: response.data.meta, // The pagination/meta object
       };
     } catch (error) {
       console.error("Error fetching users:", error);
@@ -23,29 +24,82 @@ export const UsersApi = {
     }
   },
 
-  // TEMP: client-side role filtering (backend should do this later)
-  getUsersByRole: async (roleId, companyId = null) => {
+getAllclientUsers: async ({ companyId = null, roleId = null, page = 1, limit = 15, search = "" }) => {
+    const params = { page, limit }; 
+    
+    if (companyId) params.companyId = companyId;
+    if (roleId && roleId !== "all") params.roleId = roleId;
+    if (search) params.search = search;
+
+    const response = await axiosInstance.get("/users/client", { params });
+    
+    // This now returns the full payload: { data, roleCounts, meta }
+    return response.data; 
+  },
+
+  getUsersCount: async (roleId = null, companyId = null) => {
     try {
-      const response = await UsersApi.getAllUsers(companyId);
+      const params = {};
+      if (roleId) params.roleId = roleId;
+      if (companyId) params.companyId = companyId;
 
-      if (!response.success) return response;
-
-      const filteredUsers = (response.data || []).filter(
-        (user) => user.role_id === roleId,
-      );
+      const response = await axiosInstance.get("/users/count", { params });
 
       return {
         success: true,
-        data: filteredUsers,
+        totalCount: response.data.totalCount, // Returning the integer directly
       };
     } catch (error) {
-      console.error("Error fetching users by role:", error);
+      console.error("Error fetching user count:", error);
       return {
         success: false,
-        error: error.message,
+        error: error.response?.data?.message || error.message,
       };
     }
   },
+  // TEMP: client-side role filtering (backend should do this later)
+  // getUsersByRole: async (roleId, companyId = null) => {
+  //   try {
+  //     const response = await UsersApi.getAllUsers(companyId);
+
+  //     if (!response.success) return response;
+
+  //     const filteredUsers = (response.data || []).filter(
+  //       (user) => user.role_id === roleId,
+  //     );
+
+  //     return {
+  //       success: true,
+  //       data: filteredUsers,
+  //     };
+  //   } catch (error) {
+  //     console.error("Error fetching users by role:", error);
+  //     return {
+  //       success: false,
+  //       error: error.message,
+  //     };
+  //   }
+  // },
+  getUsersByRole: async (roleId, companyId = null, page = 1, limit = 10) => {
+  try {
+    const params = { page, limit, roleId };
+    if (companyId) params.companyId = companyId;
+
+    const response = await axiosInstance.get("/users", { params });
+
+    return {
+      success: true,
+      data: response.data.data,      // Matches getAllUsers structure
+      pagination: response.data.meta, // Matches getAllUsers structure
+    };
+  } catch (error) {
+    console.error("Error fetching users by role:", error);
+    return {
+      success: false,
+      error: error.response?.data?.message || error.message,
+    };
+  }
+},
 
   getUserById: async (id) => {
     try {
@@ -118,8 +172,7 @@ export const UsersApi = {
     }
   },
 
-
-    changePassword: async (payload) => {
+  changePassword: async (payload) => {
     try {
       /**
        * payload = {

@@ -76,9 +76,15 @@ export default function AddWashroomForm() {
   const locationTypes = Array.isArray(locationTypesRes?.data) ? locationTypesRes.data : (Array.isArray(locationTypesRes) ? locationTypesRes : []);
 
   // Fetch cleaners (Role ID 5)
-  const { data: usersData } = useGetUsersByRole(5, companyId);
-  // Double-checking role filter on the client side just to be safe
-  const allCleaners = (usersData || []).filter((u) => parseInt(u.role_id || u.role?.id) === 5);
+const { data: usersData } = useGetUsersByRole(5, companyId);
+
+// Safely extract the array regardless of how the API wraps it
+const safeUsersArray = Array.isArray(usersData?.data) 
+  ? usersData.data 
+  : (Array.isArray(usersData) ? usersData : []);
+
+// Double-checking role filter on the client side just to be safe
+const allCleaners = safeUsersArray.filter((u) => parseInt(u.role_id || u.role?.id) === 5);
 
   // Trigger cache for configurations
   useToiletFeaturesById(8); 

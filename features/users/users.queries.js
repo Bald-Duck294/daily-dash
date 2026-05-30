@@ -18,17 +18,33 @@ export const usersKeys = {
    GET ALL USERS (with optional filters)
 ===================================================== */
 
+
+
 export const useGetAllUsers = (
-  { companyId = null, roleId = null } = {},
+  {
+    companyId = null,
+    roleId = null,
+    page = 1,
+    limit = 15,
+    search = "",
+  } = {},
   options = {},
 ) => {
   return useQuery({
-    queryKey: usersKeys.list({ companyId, roleId }),
+    queryKey: ["users", { companyId, roleId, page, limit, search }],
+    
     queryFn: async () => {
-      const res = await UsersApi.getAllUsers(companyId, roleId);
-      if (!res.success) throw new Error(res.error);
-      return res.data;
+      const res = await UsersApi.getAllclientUsers({
+        companyId,
+        roleId,
+        page,
+        limit,
+        search,
+      });
+
+      return res;
     },
+    
     ...options,
   });
 };
@@ -37,19 +53,49 @@ export const useGetAllUsers = (
    GET USERS BY ROLE (backend filtered preferred)
 ===================================================== */
 
-export const useGetUsersByRole = (roleId, companyId = null, options = {}) => {
+// export const useGetUsersByRole = (roleId, companyId = null, options = {}) => {
+//   return useQuery({
+//     queryKey: ["users", { roleId, companyId }],
+//     queryFn: async () => {
+//       const res = await UsersApi.getAllUsers(companyId, roleId);
+//       if (!res.success) throw new Error(res.error);
+//       return res.data;
+//     },
+//     enabled: !!roleId,
+//     ...options,
+//   });
+// };
+
+export const useGetUsersByRole = (roleId, companyId = null, page = 1, limit = 10, options = {}) => {
   return useQuery({
-    queryKey: ["users", { roleId, companyId }],
+    queryKey: ["users", { roleId, companyId, page, limit }],
     queryFn: async () => {
-      const res = await UsersApi.getAllUsers(companyId, roleId);
+      // ✅ Now using the correct method name defined in UsersApi
+      const res = await UsersApi.getUsersByRole(roleId, companyId, page, limit);
       if (!res.success) throw new Error(res.error);
-      return res.data;
+      
+      // ✅ Now returns the consistent structure { data, pagination }
+      return res; 
     },
     enabled: !!roleId,
     ...options,
   });
 };
 
+export const useUsersCount = (roleId = null, companyId = null, options = {}) => {
+  return useQuery({
+    // Caching based on parameters ensures you get the right count for the right role/company
+    queryKey: ["users", "count", { roleId, companyId }],
+    queryFn: async () => {
+      const res = await UsersApi.getUsersCount(roleId, companyId);
+      if (!res.success) throw new Error(res.error);
+      return res; // Returns { success: true, totalCount: X }
+    },
+    // Optional: Keep the count fresh for 1 minute
+    staleTime: 60 * 1000, 
+    ...options,
+  });
+};
 /* =====================================================
    GET USER BY ID
 ===================================================== */

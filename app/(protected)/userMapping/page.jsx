@@ -4,12 +4,24 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import Link from "next/link";
 import toast, { Toaster } from "react-hot-toast";
 import {
-  Search, UserCheck, MapPin, Trash2, Plus, Shield,
-  Activity, Calendar, Settings, ChevronDown, User,
-  Users, CheckCircle, AlertCircle,
+  Search,
+  UserCheck,
+  MapPin,
+  Trash2,
+  Plus,
+  Shield,
+  Activity,
+  Calendar,
+  Settings,
+  ChevronDown,
+  User,
+  Users,
+  CheckCircle,
+  AlertCircle,
+  ArrowLeft,
 } from "lucide-react";
 import Loader from "@/components/ui/Loader";
-
+import ScrollToTop from "@/components/ui/ScrollToTop";
 // Providers & Hooks
 import { useCompanyId } from "@/providers/CompanyProvider";
 import { usePermissions } from "@/shared/hooks/usePermission";
@@ -17,10 +29,10 @@ import { useRequirePermission } from "@/shared/hooks/useRequirePermission";
 import { MODULES } from "@/shared/constants/permissions";
 
 // TanStack Query Hooks
-import { 
-  useGetAllAssignments, 
-  useDeleteAssignment, 
-  useUpdateAssignment 
+import {
+  useGetAllAssignments,
+  useDeleteAssignment,
+  useUpdateAssignment,
 } from "@/features/assignments/assignments.queries";
 
 export default function AssignmentListPage() {
@@ -30,23 +42,34 @@ export default function AssignmentListPage() {
   const canEditAssignment = canUpdate(MODULES.ASSIGNMENTS);
   const canDeleteAssignment = canDelete(MODULES.ASSIGNMENTS);
 
+  // --- PAGINATION STATE ---
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(15);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [roleFilter, setRoleFilter] = useState("all");
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const [showRoleDropdown, setShowRoleDropdown] = useState(false);
-  
-  // FIXED: Added state to track which item is being deleted
-  const [deletingId, setDeletingId] = useState(null); 
-  
+  const [deletingId, setDeletingId] = useState(null);
+
   const statusDropdownRef = useRef(null);
   const roleDropdownRef = useRef(null);
   const { companyId } = useCompanyId();
 
   // --- QUERIES & MUTATIONS ---
-  const { data: assignments = [], isLoading } = useGetAllAssignments(companyId);
+  const { data: responsePayload, isLoading } = useGetAllAssignments(
+    companyId,
+    null,
+    page,
+    limit,
+  );
   const deleteMutation = useDeleteAssignment();
   const updateMutation = useUpdateAssignment();
+
+  // Data extraction
+  const assignments = responsePayload?.data || [];
+  const pagination = responsePayload?.pagination || { total: 0, last_page: 1 };
 
   // --- FILTERS & MEMOS ---
   const filteredAssignments = useMemo(() => {
@@ -61,23 +84,31 @@ export default function AssignmentListPage() {
       });
     }
 
-    if (statusFilter !== "all") filtered = filtered.filter((a) => a.status === statusFilter);
-    if (roleFilter !== "all") filtered = filtered.filter((a) => a.role?.name?.toLowerCase() === roleFilter.toLowerCase());
+    if (statusFilter !== "all")
+      filtered = filtered.filter((a) => a.status === statusFilter);
+    if (roleFilter !== "all")
+      filtered = filtered.filter(
+        (a) => a.role?.name?.toLowerCase() === roleFilter.toLowerCase(),
+      );
 
     return filtered;
   }, [assignments, searchQuery, statusFilter, roleFilter]);
 
-  const uniqueRoles = useMemo(() => [...new Set(assignments.map((a) => a.role?.name).filter(Boolean))], [assignments]);
-  
-  const statusCounts = useMemo(() => ({
-    all: assignments.length,
-    assigned: assignments.filter((a) => a.status === "assigned").length,
-    unassigned: assignments.filter((a) => a.status === "unassigned").length,
-  }), [assignments]);
+  const uniqueRoles = useMemo(
+    () => [...new Set(assignments.map((a) => a.role?.name).filter(Boolean))],
+    [assignments],
+  );
+
+  const statusCounts = useMemo(
+    () => ({
+      all: pagination.total || 0, // Using total from pagination for accuracy
+      assigned: assignments.filter((a) => a.status === "assigned").length,
+      unassigned: assignments.filter((a) => a.status === "unassigned").length,
+    }),
+    [assignments, pagination.total],
+  );
 
   // --- HANDLERS ---
-  
-  // FIXED: Added missing getInitials helper function
   const getInitials = (name) => {
     if (!name) return "U";
     return name
@@ -90,12 +121,16 @@ export default function AssignmentListPage() {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (statusDropdownRef.current && !statusDropdownRef.current.contains(event.target)) {
+      if (
+        statusDropdownRef.current &&
+        !statusDropdownRef.current.contains(event.target)
+      )
         setShowStatusDropdown(false);
-      }
-      if (roleDropdownRef.current && !roleDropdownRef.current.contains(event.target)) {
+      if (
+        roleDropdownRef.current &&
+        !roleDropdownRef.current.contains(event.target)
+      )
         setShowRoleDropdown(false);
-      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -105,27 +140,27 @@ export default function AssignmentListPage() {
     if (!canDeleteAssignment) return toast.error("Permission denied");
     if (!confirm("Are you sure you want to delete this assignment?")) return;
 
-    setDeletingId(id); // Set loading state for specific button
+    setDeletingId(id);
     try {
       await deleteMutation.mutateAsync(id);
       toast.success("Assignment deleted!");
     } catch (error) {
       toast.error(error.message || "Failed to delete");
     } finally {
-      setDeletingId(null); // Clear loading state
+      setDeletingId(null);
     }
   };
 
   const handleStatusToggle = async (assignment) => {
     if (!canEditAssignment) return toast.error("Permission denied");
-
-    const newStatus = assignment.status === "assigned" ? "unassigned" : "assigned";
+    const newStatus =
+      assignment.status === "assigned" ? "unassigned" : "assigned";
     if (!confirm(`Change status to "${newStatus}"?`)) return;
 
     try {
       await updateMutation.mutateAsync({
         id: assignment.id,
-        data: { ...assignment, status: newStatus }
+        data: { ...assignment, status: newStatus },
       });
       toast.success(`Status updated to ${newStatus}`);
     } catch (error) {
@@ -150,48 +185,47 @@ export default function AssignmentListPage() {
 
   return (
     <div
+    id="scroll-container"
       className="min-h-screen p-6"
       style={{
         background: "var(--assignment-bg)",
       }}
     >
-
       <Toaster position="top-right" />
-
-      <div className="max-w-[1400px] mx-auto space-y-8">
-        {/* === HEADER === */}
+<ScrollToTop />
+      <div className="max-w-[1400px] mx-auto space-y-8 ">
+        {/* --- HEADER --- */}
         <div
-          className="rounded-2xl p-6 flex flex-col md:flex-row justify-between items-center gap-4"
+          className="rounded-xl p-4 flex flex-col md:flex-row justify-between items-center gap-3 md:mt-[-30px]"
           style={{
             background: "var(--assignment-surface)",
             border: "1px solid var(--assignment-border)",
             boxShadow: "var(--assignment-shadow)",
           }}
         >
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <div
-              className="w-12 h-12 rounded-2xl flex items-center justify-center"
+              className="w-10 h-10 rounded-xl flex items-center justify-center"
               style={{
                 background: "var(--assignment-accent-bg)",
                 border: "1px solid var(--assignment-accent-border)",
               }}
             >
               <UserCheck
-                className="w-6 h-6"
+                className="w-5 h-5"
                 style={{ color: "var(--assignment-accent-text)" }}
               />
             </div>
 
             <div>
               <h1
-                className="text-xl font-black uppercase tracking-wide"
+                className="text-lg font-black uppercase tracking-wide"
                 style={{ color: "var(--assignment-title)" }}
               >
                 Cleaner Assignments
               </h1>
-
               <p
-                className="text-[11px] font-bold uppercase tracking-widest mt-1"
+                className="text-[10px] font-bold uppercase tracking-widest"
                 style={{ color: "var(--assignment-subtitle)" }}
               >
                 System Personnel Mapping Registry
@@ -202,179 +236,95 @@ export default function AssignmentListPage() {
           {canAddAssignment && (
             <Link
               href={`/userMapping/add?companyId=${companyId}`}
-              className="flex items-center gap-2 px-6 py-3 rounded-xl transition-all active:scale-95 font-bold text-sm uppercase tracking-wider"
+              className="flex items-center gap-2 px-5 py-2 rounded-lg transition-all active:scale-95 font-bold text-xs uppercase tracking-wider"
               style={{
                 background: "var(--assignment-primary-bg)",
                 color: "var(--assignment-primary-text)",
                 boxShadow: "var(--assignment-primary-shadow)",
               }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background =
-                  "var(--assignment-primary-hover-bg)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background =
-                  "var(--assignment-primary-bg)";
-              }}
             >
-              <Plus className="w-4 h-4" />
-              Add Cleaner
+              <Plus className="w-3.5 h-3.5" /> Add Cleaner
             </Link>
           )}
         </div>
 
-
-        {/* === REDESIGNED STATS CARDS === */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          {/* Total Staff Card */}
-          <div
-            className="rounded-2xl p-6 flex items-center justify-between group transition-all relative overflow-hidden"
-            style={{
-              background: "var(--assignment-surface)",
-              border: "1px solid var(--assignment-border)",
-              boxShadow: "var(--assignment-shadow)",
-            }}
-          >
-            {/* Side Accent */}
+        {/* --- REDESIGNED COMPACT STATS CARDS --- */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:mt-[-15px]">
+          {/* Helper function to generate cards */}
+          {[
+            {
+              title: "Total Staff",
+              value: statusCounts.all,
+              icon: Users,
+              accent: "var(--assignment-accent-text)",
+              bg: "var(--assignment-accent-bg)",
+            },
+            {
+              title: "Assigned",
+              value: statusCounts.assigned,
+              icon: CheckCircle,
+              accent: "var(--assignment-success-dot)",
+              bg: "rgba(34, 197, 94, 0.12)",
+            },
+            {
+              title: "Unassigned",
+              value: statusCounts.unassigned,
+              icon: AlertCircle,
+              accent: "var(--assignment-warning-text)",
+              bg: "var(--assignment-warning-bg)",
+            },
+          ].map((card, i) => (
             <div
-              className="absolute left-0 top-0 w-1 h-full"
-              style={{ background: "var(--assignment-accent-text)" }}
-            />
-
-            <div>
-              <p
-                className="text-[10px] font-bold uppercase tracking-widest mb-1"
-                style={{ color: "var(--assignment-subtitle)" }}
-              >
-                Total Staff
-              </p>
-
-              <h3
-                className="text-3xl font-black"
-                style={{ color: "var(--assignment-title)" }}
-              >
-                {statusCounts.all}
-              </h3>
-            </div>
-
-            <div
-              className="w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110"
+              key={i}
+              className="rounded-xl p-4 flex items-center justify-between group transition-all relative overflow-hidden"
               style={{
-                background: "var(--assignment-accent-bg)",
-                border: "1px solid var(--assignment-accent-border)",
+                background: "var(--assignment-surface)",
+                border: "1px solid var(--assignment-border)",
+                boxShadow: "var(--assignment-shadow)",
               }}
             >
-              <Users
-                className="w-6 h-6"
-                style={{ color: "var(--assignment-accent-text)" }}
+              <div
+                className="absolute left-0 top-0 w-1 h-full"
+                style={{ background: card.accent }}
               />
-            </div>
-          </div>
 
+              <div>
+                <p
+                  className="text-[9px] font-bold uppercase tracking-widest mb-0.5"
+                  style={{ color: "var(--assignment-subtitle)" }}
+                >
+                  {card.title}
+                </p>
+                <h3
+                  className="text-2xl font-black"
+                  style={{ color: "var(--assignment-title)" }}
+                >
+                  {card.value}
+                </h3>
+              </div>
 
-          {/* Assigned Card */}
-          <div
-            className="rounded-2xl p-6 flex items-center justify-between group transition-all relative overflow-hidden"
-            style={{
-              background: "var(--assignment-surface)",
-              border: "1px solid var(--assignment-border)",
-              boxShadow: "var(--assignment-shadow)",
-            }}
-          >
-            {/* Side Accent */}
-            <div
-              className="absolute left-0 top-0 w-1 h-full"
-              style={{ background: "var(--assignment-success-dot)" }}
-            />
-
-            <div>
-              <p
-                className="text-[10px] font-bold uppercase tracking-widest mb-1"
-                style={{ color: "var(--assignment-subtitle)" }}
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center"
+                style={{
+                  background: card.bg,
+                  border: `1px solid ${card.accent}40`,
+                }}
               >
-                Assigned
-              </p>
-
-              <h3
-                className="text-3xl font-black"
-                style={{ color: "var(--assignment-title)" }}
-              >
-                {statusCounts.assigned}
-              </h3>
+                <card.icon className="w-5 h-5" style={{ color: card.accent }} />
+              </div>
             </div>
-
-            <div
-              className="w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110"
-              style={{
-                background: "rgba(34, 197, 94, 0.12)",
-                border: "1px solid rgba(34, 197, 94, 0.35)",
-              }}
-            >
-              <CheckCircle
-                className="w-6 h-6"
-                style={{ color: "var(--assignment-success-dot)" }}
-              />
-            </div>
-          </div>
-
-
-          {/* Unassigned Card */}
-          <div
-            className="rounded-2xl p-6 flex items-center justify-between group transition-all relative overflow-hidden"
-            style={{
-              background: "var(--assignment-surface)",
-              border: "1px solid var(--assignment-border)",
-              boxShadow: "var(--assignment-shadow)",
-            }}
-          >
-            {/* Side Accent */}
-            <div
-              className="absolute left-0 top-0 w-1 h-full"
-              style={{ background: "var(--assignment-warning-text)" }}
-            />
-
-            <div>
-              <p
-                className="text-[10px] font-bold uppercase tracking-widest mb-1"
-                style={{ color: "var(--assignment-subtitle)" }}
-              >
-                Unassigned
-              </p>
-
-              <h3
-                className="text-3xl font-black"
-                style={{ color: "var(--assignment-title)" }}
-              >
-                {statusCounts.unassigned}
-              </h3>
-            </div>
-
-            <div
-              className="w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110"
-              style={{
-                background: "var(--assignment-warning-bg)",
-                border: "1px solid var(--assignment-warning-border)",
-              }}
-            >
-              <AlertCircle
-                className="w-6 h-6"
-                style={{ color: "var(--assignment-warning-text)" }}
-              />
-            </div>
-          </div>
-
+          ))}
         </div>
 
         {/* === MAIN TABLE UI === */}
         <div
-          className="rounded-2xl overflow-hidden"
+          className="rounded-2xl overflow-hidden md:mt-[-15px]"
           style={{
             background: "var(--assignment-surface)",
             border: "1px solid var(--assignment-border)",
             boxShadow: "var(--assignment-shadow)",
           }}
         >
-
           {/* Search Bar Row */}
           <div
             className="p-5"
@@ -422,6 +372,9 @@ export default function AssignmentListPage() {
                   }}
                   className="text-left"
                 >
+                  <th className="px-6 py-4 text-[10px] font-extrabold uppercase tracking-wider text-center">
+                    #
+                  </th>
                   <th className="px-6 py-4 text-[10px] font-extrabold uppercase tracking-wider">
                     <div className="flex items-center gap-2">
                       <User className="w-3.5 h-3.5" />
@@ -435,7 +388,6 @@ export default function AssignmentListPage() {
                       Location
                     </div>
                   </th>
-
 
                   {/* Role Filter Header */}
                   <th
@@ -491,7 +443,6 @@ export default function AssignmentListPage() {
                       </div>
                     )}
                   </th>
-
 
                   {/* Status Filter Header */}
                   <th
@@ -556,7 +507,6 @@ export default function AssignmentListPage() {
                     )}
                   </th>
 
-
                   <th
                     className="px-6 py-4 text-[10px] font-extrabold uppercase tracking-wider"
                     style={{ color: "var(--assignment-subtitle)" }}
@@ -582,7 +532,6 @@ export default function AssignmentListPage() {
                       Action
                     </div>
                   </th>
-
                 </tr>
               </thead>
               <tbody
@@ -591,7 +540,7 @@ export default function AssignmentListPage() {
                 }}
               >
                 {filteredAssignments.length > 0 ? (
-                  filteredAssignments.map((assignment) => (
+                  filteredAssignments.map((assignment, index) => (
                     <tr
                       key={assignment.id}
                       className="transition-colors group"
@@ -603,6 +552,19 @@ export default function AssignmentListPage() {
                         e.currentTarget.style.background = "transparent";
                       }}
                     >
+                      <td className="px-6 py-4">
+                        <div
+                          className="w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-black uppercase"
+                          style={{
+                            background: "var(--assignment-chip-bg)",
+                            border: "1px solid var(--assignment-chip-border)",
+                            color: "var(--assignment-subtitle)",
+                          }}
+                        >
+                          {/* Sequential math: (page - 1) * limit + current_index + 1 */}
+                          {index + 1 + (page - 1) * limit}
+                        </div>
+                      </td>
                       {/* Cleaner */}
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
@@ -663,17 +625,21 @@ export default function AssignmentListPage() {
                         <button
                           onClick={() => handleStatusToggle(assignment)}
                           disabled={!canEditAssignment}
-                          className={`inline-block px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider transition-transform active:scale-95 ${canEditAssignment ? "cursor-pointer" : "cursor-default"
-                            }`}
+                          className={`inline-block px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider transition-transform active:scale-95 ${
+                            canEditAssignment
+                              ? "cursor-pointer"
+                              : "cursor-default"
+                          }`}
                           style={{
                             background:
                               assignment.status === "assigned"
                                 ? "var(--assignment-accent-bg)"
                                 : "var(--assignment-warning-bg)",
-                            border: `1px solid ${assignment.status === "assigned"
-                              ? "var(--assignment-accent-border)"
-                              : "var(--assignment-warning-border)"
-                              }`,
+                            border: `1px solid ${
+                              assignment.status === "assigned"
+                                ? "var(--assignment-accent-border)"
+                                : "var(--assignment-warning-border)"
+                            }`,
                             color:
                               assignment.status === "assigned"
                                 ? "var(--assignment-accent-text)"
@@ -691,7 +657,9 @@ export default function AssignmentListPage() {
                           style={{ color: "var(--assignment-subtitle)" }}
                         >
                           {assignment.assigned_on
-                            ? new Date(assignment.assigned_on).toLocaleDateString()
+                            ? new Date(
+                                assignment.assigned_on,
+                              ).toLocaleDateString()
                             : "-"}
                         </p>
                       </td>
@@ -705,7 +673,8 @@ export default function AssignmentListPage() {
                             className="w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-sm ml-auto"
                             style={{
                               background: "var(--assignment-warning-bg)",
-                              border: "1px solid var(--assignment-warning-border)",
+                              border:
+                                "1px solid var(--assignment-warning-border)",
                               color: "var(--assignment-warning-text)",
                             }}
                           >
@@ -743,7 +712,6 @@ export default function AssignmentListPage() {
                   </tr>
                 )}
               </tbody>
-
             </table>
           </div>
 
@@ -762,7 +730,9 @@ export default function AssignmentListPage() {
                 {/* Header */}
                 <div
                   className="flex items-center justify-between pb-3"
-                  style={{ borderBottom: "1px solid var(--assignment-divider)" }}
+                  style={{
+                    borderBottom: "1px solid var(--assignment-divider)",
+                  }}
                 >
                   <div className="flex items-center gap-3">
                     <div
@@ -869,10 +839,11 @@ export default function AssignmentListPage() {
                         assignment.status === "assigned"
                           ? "var(--assignment-accent-bg)"
                           : "var(--assignment-warning-bg)",
-                      border: `1px solid ${assignment.status === "assigned"
-                        ? "var(--assignment-accent-border)"
-                        : "var(--assignment-warning-border)"
-                        }`,
+                      border: `1px solid ${
+                        assignment.status === "assigned"
+                          ? "var(--assignment-accent-border)"
+                          : "var(--assignment-warning-border)"
+                      }`,
                       color:
                         assignment.status === "assigned"
                           ? "var(--assignment-accent-text)"
@@ -886,55 +857,66 @@ export default function AssignmentListPage() {
             ))}
           </div>
 
-
           {/* Pagination / Footer */}
           <div
-            className="px-6 py-4 flex items-center justify-between text-xs font-bold uppercase tracking-wide"
+            className="flex flex-col md:flex-row justify-between items-center mt-6 p-4 rounded-2xl gap-4"
             style={{
-              borderTop: "1px solid var(--assignment-divider)",
-              background: "var(--assignment-accent-bg)",
-              color: "var(--assignment-subtitle)",
+              background: "var(--assignment-surface)",
+              border: "1px solid var(--assignment-border)",
             }}
           >
-            <span>
-              Showing {filteredAssignments.length} of {assignments.length} Entries
-            </span>
-
-            <div className="flex gap-1">
-              <button
-                disabled
-                className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors disabled:opacity-50"
-                style={{
-                  background: "var(--assignment-surface)",
-                  border: "1px solid var(--assignment-border)",
-                  color: "var(--assignment-subtitle)",
+            {/* Items Per Page Dropdown */}
+            <div className="w-full md:w-auto flex items-center gap-2">
+              <span className="text-xs font-bold uppercase text-slate-500 whitespace-nowrap">
+                Items:
+              </span>
+              <select
+                value={limit}
+                onChange={(e) => {
+                  setLimit(Number(e.target.value));
+                  setPage(1);
                 }}
+                className="w-full md:w-auto px-3 py-2 rounded-lg text-sm font-semibold outline-none cursor-pointer border border-transparent focus:border-slate-300 transition-all"
+                style={{ background: "var(--assignment-input-bg)" }}
               >
-                <ChevronDown
-                  className="w-4 h-4 rotate-90"
-                  style={{ color: "var(--assignment-subtitle)" }}
-                />
+                <option value={15}>15</option>
+                <option value={30}>30</option>
+                <option value={50}>50</option>
+              </select>
+            </div>
+
+            {/* Navigation Buttons */}
+            <div className="w-full md:w-auto flex items-center justify-center flex-wrap gap-2 md:gap-4">
+              <button
+                onClick={() => setPage((p) => Math.max(p - 1, 1))}
+                disabled={page === 1}
+                className="px-4 py-2 rounded-lg font-bold text-xs uppercase tracking-wider disabled:opacity-30 transition-all hover:bg-slate-100"
+                style={{ border: "1px solid var(--assignment-border)" }}
+              >
+                Previous
               </button>
 
+              <span className="text-xs font-bold uppercase tracking-widest text-slate-500 whitespace-nowrap px-2">
+                Page {page} of {pagination.last_page}
+              </span>
+
               <button
-                disabled
-                className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors disabled:opacity-50"
-                style={{
-                  background: "var(--assignment-surface)",
-                  border: "1px solid var(--assignment-border)",
-                  color: "var(--assignment-subtitle)",
-                }}
+                onClick={() =>
+                  setPage((p) => (p < pagination.last_page ? p + 1 : p))
+                }
+                disabled={
+                  page >= pagination.last_page || pagination.last_page === 0
+                }
+                className="px-4 py-2 rounded-lg font-bold text-xs uppercase tracking-wider disabled:opacity-30 transition-all hover:bg-slate-100"
+                style={{ border: "1px solid var(--assignment-border)" }}
               >
-                <ChevronDown
-                  className="w-4 h-4 -rotate-90"
-                  style={{ color: "var(--assignment-subtitle)" }}
-                />
+                Next
               </button>
             </div>
           </div>
-
         </div>
       </div>
+      
     </div>
   );
 }

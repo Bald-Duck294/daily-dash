@@ -35,7 +35,7 @@ import {
 } from "react";
 import { useSelector } from "react-redux";
 import { usePathname } from "next/navigation";
-
+import { Loader2, Building } from "lucide-react";
 const STORAGE_KEY = "saaf_selected_company_id";
 
 const CompanyContext = createContext({
@@ -43,6 +43,18 @@ const CompanyContext = createContext({
   hasCompanyContext: false,
   setCompanyId: () => {},
 });
+
+const FullScreenLoader = () => (
+  <div className="min-h-screen w-full flex flex-col items-center justify-center bg-slate-50 dark:bg-[#0B0E14]">
+    <div className="w-16 h-16 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 flex items-center justify-center mb-4">
+      <Building className="w-8 h-8 text-orange-500 animate-pulse" />
+    </div>
+    <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
+      <Loader2 className="w-4 h-4 animate-spin" />
+      <span className="text-sm font-semibold tracking-wide uppercase">Initializing Workspace...</span>
+    </div>
+  </div>
+);
 
 function CompanyProviderImpl({ children }) {
   const { user } = useSelector((state) => state.auth);
@@ -118,7 +130,7 @@ function CompanyProviderImpl({ children }) {
 // Export the wrapper component with Suspense
 export function CompanyProvider({ children }) {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+   <Suspense fallback={<FullScreenLoader />}>
       <CompanyProviderImpl>{children}</CompanyProviderImpl>
     </Suspense>
   );

@@ -8,7 +8,7 @@ export default function CompaniesToolbar({
   companies,
 }) {
   return (
-    <div className="flex flex-wrap gap-3 mb-4 justify-between">
+    <div className="flex flex-col sm:flex-row items-center gap-3 justify-end w-full md:w-auto">
       <input
         value={search}
         onChange={(e) => onSearch(e.target.value)}

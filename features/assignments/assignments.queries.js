@@ -19,16 +19,33 @@ export const assignmentKeys = {
 ===================================================== */
 
 // 1. Get All Assignments
-export const useGetAllAssignments = (companyId, roleId) => {
+// export const useGetAllAssignments = (companyId, roleId) => {
+//   return useQuery({
+//     queryKey: assignmentKeys.list(companyId, roleId),
+//     queryFn: async () => {
+//       const response = await AssignmentsApi.getAllAssignments(companyId, roleId);
+//       if (!response.success) throw new Error(response.error || "Failed to fetch assignments");
+//      return Array.isArray(response.data) ? response.data : (response.data?.data || []);
+//     },
+//     enabled: !!companyId, // Only run if companyId exists
+//     staleTime: 5 * 60 * 1000, // 5 minutes
+//   });
+// };
+
+
+export const useGetAllAssignments = (companyId, roleId, page = 1, limit = 15) => {
   return useQuery({
-    queryKey: assignmentKeys.list(companyId, roleId),
+    // Add page and limit to the query key array to trigger refetches automatically
+    queryKey: [...(Array.isArray(assignmentKeys.list(companyId, roleId)) ? assignmentKeys.list(companyId, roleId) : [assignmentKeys.list(companyId, roleId)]), page, limit],
     queryFn: async () => {
-      const response = await AssignmentsApi.getAllAssignments(companyId, roleId);
+      const response = await AssignmentsApi.getAllAssignments(companyId, roleId, page, limit);
       if (!response.success) throw new Error(response.error || "Failed to fetch assignments");
-     return Array.isArray(response.data) ? response.data : (response.data?.data || []);
+      
+      // Return the entire payload { data, pagination, message, status }
+      return response.data;
     },
-    enabled: !!companyId, // Only run if companyId exists
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    enabled: !!companyId, 
+    staleTime: 5 * 60 * 1000, 
   });
 };
 

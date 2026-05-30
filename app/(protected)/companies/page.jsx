@@ -170,6 +170,7 @@
 
 /* eslint-disable react-hooks/exhaustive-deps */
 
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
 import { useState, useMemo } from "react";
@@ -181,6 +182,7 @@ import { useCompanyId } from "@/providers/CompanyProvider";
 
 import {
   useCompanies,
+  useCompaniesCount,
   useDeleteCompany,
   useToggleCompanyStatus,
 } from "@/features/companies/queries/companies.queries";
@@ -197,25 +199,32 @@ export default function CompaniesPage() {
   /* ---------------- UI STATE ---------------- */
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-  const PAGE_SIZE = 10;
+  const PAGE_SIZE = 6;
 
-  /* ---------------- QUERY WITH PAGINATION ---------------- */
-  const { data, isLoading, isError, isFetching } = useCompanies(
-    page,
-    PAGE_SIZE,
-  );
+  /* ---------------- QUERIES WITH PAGINATION ---------------- */
+  const {
+    data,
+    isLoading: isCompaniesLoading,
+    isError,
+    isFetching,
+  } = useCompanies(page, PAGE_SIZE);
 
-  console.log(data, "Data");
+  const { data: countData, isLoading: isCountLoading } = useCompaniesCount();
 
-  // Extract companies and pagination from response
+  // Extract companies from response
   const companies = data?.data ?? [];
-  const pagination = data?.pagination ?? null;
+
+  // Extract count and calculate pagination locally
+  const totalCount = countData?.totalCount ?? 0;
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE) || 1;
+  const hasNextPage = page < totalPages;
+  const hasPrevPage = page > 1;
 
   const deleteCompany = useDeleteCompany();
   const toggleStatus = useToggleCompanyStatus();
 
   /* ---------------- CLIENT-SIDE SEARCH FILTER ---------------- */
-  // Note: For large datasets, move search to backend
+  // Note: This currently only searches the active page.
   const filteredCompanies = useMemo(() => {
     if (!search) return companies;
     const q = search.toLowerCase();
@@ -226,7 +235,6 @@ export default function CompaniesPage() {
     );
   }, [companies, search]);
 
-  console.log(filteredCompanies, "filtered companies");
   /* ---------------- HANDLERS ---------------- */
   const handleDelete = (id) => deleteCompany.mutate(id);
 
@@ -234,7 +242,6 @@ export default function CompaniesPage() {
     toggleStatus.mutate({ id, status: !status });
 
   const handleViewCompany = (id) => {
-    console.log("ROW CLICKED, ID:", id);
     setCompanyId(String(id));
     router.push(`/clientDashboard/${id}`);
   };
@@ -245,7 +252,7 @@ export default function CompaniesPage() {
   };
 
   /* ---------------- LOADING & ERROR STATES ---------------- */
-  if (isLoading) {
+  if (isCompaniesLoading || isCountLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader size="large" message="Loading organizations..." />
@@ -266,15 +273,17 @@ export default function CompaniesPage() {
     <>
       <Toaster position="top-center" />
 
-      <div className="min-h-screen p-4 sm:p-6 bg-[var(--background)]">
-        <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
-          <CompaniesHeader />
+      <div className="min-h-screen  sm:p-6 bg-[var(--background)]">
+        <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6 md:mt-[-35px]">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <CompaniesHeader />
 
-          <CompaniesToolbar
-            search={search}
-            onSearch={setSearch}
-            companies={filteredCompanies}
-          />
+            <CompaniesToolbar
+              search={search}
+              onSearch={setSearch}
+              companies={filteredCompanies}
+            />
+          </div>
 
           {/* Loading Overlay for Page Changes */}
           {isFetching && (
@@ -306,7 +315,7 @@ export default function CompaniesPage() {
           )}
 
           {/* Desktop Table - Hidden on mobile */}
-          <div className="hidden lg:block">
+          <div className="hidden lg:block md:mt-[-20px]">
             <CompaniesTable
               companies={filteredCompanies}
               onDelete={handleDelete}
@@ -326,21 +335,21 @@ export default function CompaniesPage() {
           </div>
 
           {/* Enhanced Pagination Controls */}
-          {pagination && pagination.totalPages > 1 && (
+          {totalPages > 1 && (
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-[var(--sidebar-border)]">
               {/* Page Info */}
               <div className="text-sm text-[var(--sidebar-muted)] text-center sm:text-left">
                 <span className="font-medium text-[var(--sidebar-foreground)]">
-                  Page {pagination.currentPage}
+                  Page {page}
                 </span>
                 <span className="mx-1">of</span>
                 <span className="font-medium text-[var(--sidebar-foreground)]">
-                  {pagination.totalPages}
+                  {totalPages}
                 </span>
                 <span className="mx-2">•</span>
                 <span>
-                  {pagination.totalCount} total{" "}
-                  {pagination.totalCount === 1 ? "company" : "companies"}
+                  {totalCount} total{" "}
+                  {totalCount === 1 ? "company" : "companies"}
                 </span>
               </div>
 
@@ -349,7 +358,7 @@ export default function CompaniesPage() {
                 {/* First Page Button */}
                 <button
                   onClick={() => handlePageChange(1)}
-                  disabled={!pagination.hasPrevPage || isFetching}
+                  disabled={!hasPrevPage || isFetching}
                   className="
                     hidden sm:flex items-center justify-center
                     w-9 h-9 rounded-md
@@ -382,7 +391,7 @@ export default function CompaniesPage() {
                 {/* Previous Button */}
                 <button
                   onClick={() => handlePageChange(page - 1)}
-                  disabled={!pagination.hasPrevPage || isFetching}
+                  disabled={!hasPrevPage || isFetching}
                   className="
                     flex items-center justify-center gap-2
                     px-4 py-2 rounded-md
@@ -415,10 +424,7 @@ export default function CompaniesPage() {
 
                 {/* Page Numbers */}
                 <div className="flex items-center gap-1">
-                  {getPageNumbers(
-                    pagination.currentPage,
-                    pagination.totalPages,
-                  ).map((pageNum, idx) => {
+                  {getPageNumbers(page, totalPages).map((pageNum, idx) => {
                     if (pageNum === "...") {
                       return (
                         <span
@@ -439,7 +445,7 @@ export default function CompaniesPage() {
                           w-9 h-9 rounded-md font-medium text-sm
                           transition-all duration-200
                           ${
-                            pageNum === pagination.currentPage
+                            pageNum === page
                               ? "bg-[var(--sidebar-accent)] text-[var(--sidebar-accent-foreground)] border-2 border-[var(--sidebar-border)] shadow-sm"
                               : "bg-[var(--card)] text-[var(--sidebar-foreground)] border border-[var(--sidebar-border)] hover:bg-[var(--sidebar-hover)]"
                           }
@@ -455,7 +461,7 @@ export default function CompaniesPage() {
                 {/* Next Button */}
                 <button
                   onClick={() => handlePageChange(page + 1)}
-                  disabled={!pagination.hasNextPage || isFetching}
+                  disabled={!hasNextPage || isFetching}
                   className="
                     flex items-center justify-center gap-2
                     px-4 py-2 rounded-md
@@ -488,8 +494,8 @@ export default function CompaniesPage() {
 
                 {/* Last Page Button */}
                 <button
-                  onClick={() => handlePageChange(pagination.totalPages)}
-                  disabled={!pagination.hasNextPage || isFetching}
+                  onClick={() => handlePageChange(totalPages)}
+                  disabled={!hasNextPage || isFetching}
                   className="
                     hidden sm:flex items-center justify-center
                     w-9 h-9 rounded-md

@@ -10,8 +10,10 @@ import { usePermissions } from "@/shared/hooks/usePermission";
 import { useRequirePermission } from "@/shared/hooks/useRequirePermission";
 import { MODULES } from "@/shared/constants/permissions";
 
-// Import the TanStack Query hook
-import { useCreateUser } from "@/features/users/users.queries"; // Adjust import path as needed
+// TanStack Query hooks
+import { useCreateUser } from "@/features/users/users.queries";
+// ✅ IMPORT THE OPTIMIZED DROPDOWN HOOK
+import { useDropdownLocations } from "@/features/dropdownList/dropdownlist.query"; 
 
 export default function AddUserPage() {
   const router = useRouter();
@@ -24,6 +26,14 @@ export default function AddUserPage() {
 
   // Initialize the mutation
   const createUserMutation = useCreateUser();
+
+  // ✅ FETCH LOCATIONS FOR THE FORM DROPDOWN
+  const { data: locationsResponse = [], isLoading: isLoadingLocations } = useDropdownLocations(companyId);
+
+  // Safely extract the array to pass to the form
+  const availableLocations = Array.isArray(locationsResponse)
+    ? locationsResponse
+    : (locationsResponse?.data || []);
 
   const handleAddUser = async (formData) => {
     const toastId = toast.loading("Creating user...");
@@ -62,7 +72,7 @@ export default function AddUserPage() {
             <ArrowLeft size={20} />
           </button>
 
-          {/* Card with mint green header */}
+          {/* Card with header */}
           <div
             className="rounded-2xl overflow-hidden"
             style={{
@@ -114,10 +124,12 @@ export default function AddUserPage() {
 
             {/* Form */}
             <div className="p-6 sm:p-8">
-              {/* Optional: pass mutation pending state to disable form while submitting */}
+              {/* ✅ PASS LOCATIONS AND LOADING STATE DOWN AS PROPS */}
               <UserForm 
                 onSubmit={handleAddUser} 
                 canSubmit={canAddUser && !createUserMutation.isPending} 
+                locations={availableLocations}
+                isLoadingLocations={isLoadingLocations}
               />
             </div>
           </div>
