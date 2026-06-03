@@ -95,9 +95,14 @@ const allCleaners = safeUsersArray.filter((u) => parseInt(u.role_id || u.role?.i
 
   // --- STATE MANAGEMENT ---
   // Images
-  const [images, setImages] = useState([]);
-  const [previewImages, setPreviewImages] = useState([]);
-  const fileInputRef = useRef(null);
+  // const [images, setImages] = useState([]);
+  // const [previewImages, setPreviewImages] = useState([]);
+  // const fileInputRef = useRef(null);
+
+  const [coverImage, setCoverImage] = useState(null);
+  const [otherImages, setOtherImages] = useState([]);
+  const coverInputRef = useRef(null);
+  const otherInputRef = useRef(null);
 
   // Cleaners
   const [selectedCleaners, setSelectedCleaners] = useState([]);
@@ -286,32 +291,81 @@ const allCleaners = safeUsersArray.filter((u) => parseInt(u.role_id || u.role?.i
   };
 
   // Image Handlers
-  const handleFileSelect = (e) => {
+  // const handleFileSelect = (e) => {
+  //   const files = Array.from(e.target.files);
+  //   if (files.length === 0) return;
+
+  //   const validFiles = files.filter(
+  //     (file) => file.type.startsWith("image/") && file.size <= 5 * 1024 * 1024,
+  //   );
+
+  //   if (validFiles.length > 0) {
+  //     setImages((prev) => [...prev, ...validFiles]);
+  //     const newPreviews = validFiles.map((file) => ({
+  //       file,
+  //       url: URL.createObjectURL(file),
+  //       name: file.name,
+  //     }));
+  //     setPreviewImages((prev) => [...prev, ...newPreviews]);
+  //   } else {
+  //     toast.error("Some files were invalid (Max 5MB, Images only)");
+  //   }
+  //   if (fileInputRef.current) fileInputRef.current.value = "";
+  // };
+
+  // const removeImage = (index) => {
+  //   URL.revokeObjectURL(previewImages[index].url);
+  //   setImages((prev) => prev.filter((_, i) => i !== index));
+  //   setPreviewImages((prev) => prev.filter((_, i) => i !== index));
+  // };
+
+  const handleCoverImageSelect = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.type.startsWith("image/") && file.size <= 5 * 1024 * 1024) {
+      if (coverImage) URL.revokeObjectURL(coverImage.url);
+
+      setCoverImage({
+        file,
+        url: URL.createObjectURL(file),
+        name: file.name,
+      });
+    } else {
+      toast.error("Invalid file. Must be an image under 5MB.");
+    }
+    if (coverInputRef.current) coverInputRef.current.value = "";
+  };
+
+  const handleOtherImagesSelect = (e) => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
 
     const validFiles = files.filter(
-      (file) => file.type.startsWith("image/") && file.size <= 5 * 1024 * 1024,
+      (file) => file.type.startsWith("image/") && file.size <= 5 * 1024 * 1024
     );
 
     if (validFiles.length > 0) {
-      setImages((prev) => [...prev, ...validFiles]);
       const newPreviews = validFiles.map((file) => ({
         file,
         url: URL.createObjectURL(file),
         name: file.name,
       }));
-      setPreviewImages((prev) => [...prev, ...newPreviews]);
+      setOtherImages((prev) => [...prev, ...newPreviews]);
     } else {
       toast.error("Some files were invalid (Max 5MB, Images only)");
     }
-    if (fileInputRef.current) fileInputRef.current.value = "";
+    if (otherInputRef.current) otherInputRef.current.value = "";
   };
 
-  const removeImage = (index) => {
-    URL.revokeObjectURL(previewImages[index].url);
-    setImages((prev) => prev.filter((_, i) => i !== index));
-    setPreviewImages((prev) => prev.filter((_, i) => i !== index));
+  const removeCoverImage = () => {
+    if (coverImage) URL.revokeObjectURL(coverImage.url);
+    setCoverImage(null);
+  };
+
+  const removeOtherImage = (index) => {
+    URL.revokeObjectURL(otherImages[index].url);
+    setOtherImages((prev) => prev.filter((_, i) => i !== index));
   };
 
   // Submit Handler
@@ -363,11 +417,15 @@ const allCleaners = safeUsersArray.filter((u) => parseInt(u.role_id || u.role?.i
       usage_category: normalizedUsage,
     };
 
+    const combinedImages = [];
+    if (coverImage) combinedImages.push(coverImage.file);
+    otherImages.forEach(img => combinedImages.push(img.file));
+
     try {
       const locationRes = await createLocationMutation.mutateAsync({
         data: normalizedForm,
         companyId,
-        images
+        images: combinedImages,
       });
 
       const createdId = locationRes?.data?.id || locationRes?.id;
@@ -399,6 +457,14 @@ const allCleaners = safeUsersArray.filter((u) => parseInt(u.role_id || u.role?.i
   const filteredCleaners = allCleaners.filter((c) =>
     c.name?.toLowerCase().includes(cleanerSearchTerm.toLowerCase()),
   );
+
+const combinedPreviews = [];
+  if (coverImage) {
+    combinedPreviews.push({ ...coverImage, isCover: true, originalIndex: 0 });
+  }
+  otherImages.forEach((img, index) => {
+    combinedPreviews.push({ ...img, isCover: false, originalIndex: index });
+  });
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-10 p-6 bg-slate-50 dark:bg-slate-900 min-h-screen">
@@ -885,7 +951,7 @@ const allCleaners = safeUsersArray.filter((u) => parseInt(u.role_id || u.role?.i
           </div>
 
           {/* 5. LOCATION IMAGES */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6">
+          {/* <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6">
             <div className="flex items-center gap-3 mb-2">
               <div className="h-10 w-10 rounded-xl bg-cyan-400/10 flex items-center justify-center border border-cyan-500/10 shadow-sm">
                 <HiOutlineCloudUpload className="text-cyan-600 text-xl" />
@@ -938,6 +1004,119 @@ const allCleaners = safeUsersArray.filter((u) => parseInt(u.role_id || u.role?.i
                     </button>
                   </div>
                 ))}
+              </div>
+            )}
+          </div> */}
+
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6">
+            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
+              <div className="h-10 w-10 rounded-xl bg-cyan-400/10 flex items-center justify-center border border-cyan-500/10 shadow-sm">
+                <HiOutlineCloudUpload className="text-cyan-600 text-xl" />
+              </div>
+              <div className="text-left">
+                <h2 className="text-sm font-bold uppercase tracking-[0.18em] leading-none text-slate-800 dark:text-slate-100">
+                  Location Images
+                </h2>
+                <p className="text-[10px] font-semibold uppercase tracking-widest mt-1.5 text-slate-500 dark:text-slate-400">
+                  Visual Verification Archive
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Cover Image Uploader */}
+              <div className="col-span-1 space-y-3">
+                <label className="text-[11px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-wider block ml-1">
+                  Cover Image <span className="text-rose-500">*</span>
+                </label>
+                
+                {!coverImage ? (
+                  <div className="group relative border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center bg-slate-50/50 hover:bg-cyan-400/5 hover:border-cyan-500/30 transition-all duration-300 h-40 flex flex-col justify-center items-center">
+                    <ImageIcon size={24} className="text-cyan-600 mb-2" />
+                    <p className="text-[10px] font-bold text-slate-500 uppercase">Primary Photo</p>
+                    <input
+                      ref={coverInputRef}
+                      type="file"
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      accept="image/*"
+                      onChange={handleCoverImageSelect}
+                    />
+                  </div>
+                ) : (
+                  <div className="relative group h-40 w-full rounded-2xl overflow-hidden border border-slate-200">
+                    <img src={coverImage.url} alt="Cover preview" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <button
+                        onClick={removeCoverImage}
+                        className="bg-rose-500 text-white rounded-full p-2 hover:bg-rose-600 transition-colors"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                    <div className="absolute bottom-2 left-2 bg-black/60 text-white text-[9px] px-2 py-1 rounded font-bold uppercase tracking-wider">
+                      Cover
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Additional Images Uploader */}
+              <div className="col-span-1 md:col-span-2 space-y-3">
+                <label className="text-[11px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-wider block ml-1">
+                  Additional Photos
+                </label>
+                
+                <div className="group relative border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center bg-slate-50/50 hover:bg-cyan-400/5 hover:border-cyan-500/30 transition-all duration-300 h-40 flex flex-col justify-center items-center">
+                  <HiOutlineCloudUpload size={24} className="text-cyan-600 mb-2" />
+                  <p className="text-[10px] font-bold text-slate-500 uppercase">Upload Gallery Photos</p>
+                  <p className="text-[9px] text-slate-400 mt-1">Select multiple files</p>
+                  <input
+                    ref={otherInputRef}
+                    type="file"
+                    multiple
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    accept="image/*"
+                    onChange={handleOtherImagesSelect}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* --- UNIFIED PREVIEW SECTION --- */}
+            {combinedPreviews.length > 0 && (
+              <div className="mt-6 pt-6 border-t border-slate-100 dark:border-slate-800">
+                <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">
+                  Image Previews ({combinedPreviews.length})
+                </h3>
+                
+                <div className="grid grid-cols-4 sm:grid-cols-6 gap-3">
+                  {combinedPreviews.map((preview, index) => (
+                    <div key={index} className="relative group rounded-xl overflow-hidden border border-slate-200 aspect-square">
+                      <img 
+                        src={preview.url} 
+                        alt={`Preview ${index}`} 
+                        className="w-full h-full object-cover" 
+                      />
+                      
+                      {/* Cover Badge Indicator */}
+                      {preview.isCover && (
+                        <div className="absolute bottom-0 left-0 right-0 bg-black/60 backdrop-blur-sm p-1 text-center">
+                          <span className="text-[9px] font-bold text-white uppercase tracking-widest">
+                            Cover
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Dynamic Delete Button */}
+                      <button
+                        onClick={() => preview.isCover ? removeCoverImage() : removeOtherImage(preview.originalIndex)}
+                        className="absolute -top-2 -right-2 bg-rose-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 group-hover:top-1 group-hover:right-1 transition-all shadow-sm"
+                      >
+                        <X size={12} strokeWidth={3} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
