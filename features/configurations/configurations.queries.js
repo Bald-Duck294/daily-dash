@@ -1,32 +1,114 @@
-import { useQuery } from '@tanstack/react-query';
-// Adjust this import based on where your API functions are stored
-import { fetchToiletFeaturesByName, fetchToiletFeaturesById } from '@/features/configurations/configurations.api'; 
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { ConfigurationsApi } from "@/features/configurations/configurations.api";
 
-// 1. Define a Query Key Factory to keep your cache keys organized
-export const toiletFeatureKeys = {
-  all: ['toiletFeatures'],
-  byName: (name) => [...toiletFeatureKeys.all, 'name', name],
-  byId: (id) => [...toiletFeatureKeys.all, 'id', id],
+export const configKeys = {
+  all: ["configurations"],
+  modules: () => [...configKeys.all, "modules"],
+  byName: (name, companyId) => [...configKeys.all, "name", name, { companyId }],
+  schema: (companyId) => [...configKeys.all, "schema", { companyId }],
+  templates: (name) => [...configKeys.all, "templates", name],
+  detail: (id) => [...configKeys.all, "detail", id],
 };
-
-// 2. Hook for fetching by Name
-export const useToiletFeaturesByName = (name) => {
+// console.log(configKeys, "config keys0");
+export const useDynamicModules = () => {
   return useQuery({
-    queryKey: toiletFeatureKeys.byName(name),
-    queryFn: () => fetchToiletFeaturesByName(name),
-    // The query will not execute until the `name` exists
-    enabled: !!name, 
-    // Optional: Add staleTime if you don't want it to refetch immediately on window focus
-    // staleTime: 5 * 60 * 1000, // 5 minutes
+    queryKey: configKeys.modules(),
+    queryFn: async () => {
+      const response = await ConfigurationsApi.getDynamicModules();
+      if (!response.success) throw new Error(response.error);
+      return response.data;
+    },
+    staleTime: 10 * 60 * 1000, // 10 minutes
   });
 };
 
-// 3. Hook for fetching by ID
-export const useToiletFeaturesById = (id) => {
+export const useConfigByName = (name, companyId) => {
+  console.log(name, companyId, "fetching config by name and company");
   return useQuery({
-    queryKey: toiletFeatureKeys.byId(id),
-    queryFn: () => fetchToiletFeaturesById(id),
-    // The query will not execute until the `id` exists
+    queryKey: configKeys.byName(name, companyId),
+    queryFn: async () => {
+      const response = await ConfigurationsApi.getConfigByName(name, companyId);
+      if (!response.success) throw new Error(response.error);
+      return response; // returns { data, isNew }
+    },
+    enabled: !!name,
+  });
+};
+
+export const useUpdateConfigByName = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ name, payload, companyId }) => {
+      const response = await ConfigurationsApi.updateConfigByName(
+        name,
+        payload,
+        companyId,
+      );
+      if (!response.success) throw new Error(response.error);
+      return response;
+    },
+    onSuccess: (data, variables) => {
+      // ✅ FIXED: Using fuzzy matching to invalidate all variations (with or without companyId)
+      queryClient.invalidateQueries({
+        queryKey: [...configKeys.all, "name", variables.name],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [...configKeys.all, "templates", variables.name],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [...configKeys.all, "schema"],
+      });
+    },
+  });
+};
+
+export const useTemplatesByName = (name) => {
+  return useQuery({
+    queryKey: configKeys.templates(name),
+    queryFn: async () => {
+      const response = await ConfigurationsApi.getTemplatesByName(name);
+      if (!response.success) throw new Error(response.error);
+      return response.data;
+    },
+    enabled: !!name,
+  });
+};
+
+export const useConfigById = (id) => {
+  return useQuery({
+    queryKey: configKeys.detail(id),
+    queryFn: async () => {
+      const response = await ConfigurationsApi.getConfigById(id);
+      if (!response.success) throw new Error(response.error);
+      return response.data;
+    },
     enabled: !!id,
+  });
+};
+
+export const useLocationSchema = (companyId) => {
+  return useQuery({
+    queryKey: configKeys.schema(companyId),
+    queryFn: async () => {
+      const response = await ConfigurationsApi.getLocationSchema(companyId);
+      if (!response.success) throw new Error(response.error);
+      return response.data;
+    },
+  });
+};
+
+export const useDeleteConfig = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id) => {
+      const response = await ConfigurationsApi.deleteConfigById(id);
+      if (!response.success) throw new Error(response.error);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: configKeys.all });
+    },
   });
 };
