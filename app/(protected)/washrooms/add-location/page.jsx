@@ -8,13 +8,29 @@ import { usePermissions } from "@/shared/hooks/usePermission";
 import { useRequirePermission } from "@/shared/hooks/useRequirePermission";
 import { MODULES } from "@/shared/constants/permissions";
 import {
-  Building2, MapPin, Factory, ArrowLeft, Users,
-  User, User2, VenusAndMars, Baby, CheckCircle2,
-  Wind, Shield, Package, UserCheck, Clock,
-  CreditCard, X, Image as ImageIcon, ChevronDown, Info,
+  Building2,
+  MapPin,
+  Factory,
+  ArrowLeft,
+  Users,
+  User,
+  User2,
+  VenusAndMars,
+  Baby,
+  CheckCircle2,
+  Wind,
+  Shield,
+  Package,
+  UserCheck,
+  Clock,
+  CreditCard,
+  X,
+  Image as ImageIcon,
+  ChevronDown,
+  Info,
 } from "lucide-react";
-import { FaPerson, FaPersonDress } from "react-icons/fa6";
-import { MdShower } from "react-icons/md";
+import { FaPerson, FaPersonDress, FaWheelchair } from "react-icons/fa6";
+import { MdShower, MdFamilyRestroom } from "react-icons/md";
 import { HiOutlineCloudUpload } from "react-icons/hi";
 import toast from "react-hot-toast";
 import { State, City } from "country-state-city";
@@ -26,31 +42,99 @@ import GoogleMapPicker from "./components/GoogleMapPicker";
 import SearchableSelect from "./components/SearchableSelect";
 
 // API & TanStack Hooks
-import { useCreateLocation } from "@/features/locations/locations.queries"; // Adjust path as needed
-import { useFacilityCompanies } from "@/features/facilityCompany/facilityCompany.queries"; // Adjust path as needed
-import { useLocationTypes } from "@/features/locationTypes/locationTypes.queries"; // Adjust path as needed
-import { useToiletFeaturesById } from "@/features/configurations/configurations.queries"; // Adjust path as needed
-import { useCreateAssignmentsForLocation } from "@/features/assignments/assignments.queries"; // Adjust path as needed
-import { useGetUsersByRole } from "@/features/users/users.queries"; // Adjust path as needed
+import { useCreateLocation } from "@/features/locations/locations.queries";
+import { useFacilityCompanies } from "@/features/facilityCompany/facilityCompany.queries";
+import { useLocationTypes } from "@/features/locationTypes/locationTypes.queries";
+import { useCreateAssignmentsForLocation } from "@/features/assignments/assignments.queries";
+import { useGetUsersByRole } from "@/features/users/users.queries";
 
-// --- CONFIGURATION OBJECT ---
+// ✅ NEW: Import Dynamic Schema Hook
+import { useLocationSchema } from "@/features/configurations/configurations.queries";
+import Loader from "@/components/ui/Loader";
+
+// --- CONFIGURATION OBJECT (Will be dynamic in Phase 2) ---
 const FEATURE_CONFIG = [
-  { key: "isPaid", label: "Paid Entry Required", category: "Access", icon: <CreditCard size={14} /> },
-  { key: "isHandicapAccessible", label: "Wheelchair Accessible", category: "Accessibility", icon: <Users size={14} /> },
-  { key: "isStrictlyForHandicap", label: "Strictly for Disabled Users", category: "Accessibility", icon: <Shield size={14} /> },
-  { key: "hasBabyChangingStation", label: "Baby Changing Station", category: "Family Features", icon: <Baby size={14} /> },
-  { key: "hasSanitaryProducts", label: "Sanitary Products", category: "Amenities", icon: <Package size={14} /> },
-  { key: "hasAttendant", label: "Attendant Present", category: "Service", icon: <UserCheck size={14} /> },
-  { key: "is24Hours", label: "24/7 Availability", category: "Access", icon: <Clock size={14} /> },
-  { key: "hasHandDryer", label: "Hand Dryer Available", category: "Amenities", icon: <Wind size={14} /> },
+  {
+    key: "isPaid",
+    label: "Paid Entry Required",
+    category: "Access",
+    icon: <CreditCard size={14} />,
+  },
+  {
+    key: "isHandicapAccessible",
+    label: "Wheelchair Accessible",
+    category: "Accessibility",
+    icon: <Users size={14} />,
+  },
+  {
+    key: "isStrictlyForHandicap",
+    label: "Strictly for Disabled Users",
+    category: "Accessibility",
+    icon: <Shield size={14} />,
+  },
+  {
+    key: "hasBabyChangingStation",
+    label: "Baby Changing Station",
+    category: "Family Features",
+    icon: <Baby size={14} />,
+  },
+  {
+    key: "hasSanitaryProducts",
+    label: "Sanitary Products",
+    category: "Amenities",
+    icon: <Package size={14} />,
+  },
+  {
+    key: "hasAttendant",
+    label: "Attendant Present",
+    category: "Service",
+    icon: <UserCheck size={14} />,
+  },
+  {
+    key: "is24Hours",
+    label: "24/7 Availability",
+    category: "Access",
+    icon: <Clock size={14} />,
+  },
+  {
+    key: "hasHandDryer",
+    label: "Hand Dryer Available",
+    category: "Amenities",
+    icon: <Wind size={14} />,
+  },
 ];
 
 const GENDER_OPTIONS = [
-  { label: "Male", value: "male", category: "Access", icon: <User size={14} /> },
-  { label: "Female", value: "female", category: "Access", icon: <User2 size={14} /> },
-  { label: "Unisex / All Genders", value: "unisex", category: "Access", icon: <VenusAndMars size={14} /> },
-  { label: "Family Room", value: "family", category: "Family Features", icon: <Baby size={14} /> },
-  { label: "Children Only", value: "children", category: "Access", icon: <Baby size={14} /> },
+  {
+    label: "Male",
+    value: "male",
+    category: "Access",
+    icon: <User size={14} />,
+  },
+  {
+    label: "Female",
+    value: "female",
+    category: "Access",
+    icon: <User2 size={14} />,
+  },
+  {
+    label: "Unisex / All Genders",
+    value: "unisex",
+    category: "Access",
+    icon: <VenusAndMars size={14} />,
+  },
+  {
+    label: "Family Room",
+    value: "family",
+    category: "Family Features",
+    icon: <Baby size={14} />,
+  },
+  {
+    label: "Children Only",
+    value: "children",
+    category: "Access",
+    icon: <Baby size={14} />,
+  },
 ];
 
 const validatePincode = (pincode) => {
@@ -59,8 +143,54 @@ const validatePincode = (pincode) => {
   return regex.test(pincode);
 };
 
+// Dynamic theme colors for generated usage categories
+const CATEGORY_THEMES = [
+  {
+    bg: "bg-cyan-50/50 dark:bg-cyan-900/20",
+    border: "border-cyan-100 dark:border-cyan-800",
+    textPrimary: "text-cyan-700 dark:text-cyan-400",
+    textSecondary: "text-cyan-500",
+    iconBg: "bg-white dark:bg-cyan-950",
+    inputFocus: "focus:border-cyan-500 focus:ring-cyan-500/10",
+  },
+  {
+    bg: "bg-rose-50/30 dark:bg-rose-900/10",
+    border: "border-rose-100/50 dark:border-rose-800/40",
+    textPrimary: "text-rose-700 dark:text-rose-400",
+    textSecondary: "text-rose-500",
+    iconBg: "bg-white dark:bg-rose-950",
+    inputFocus: "focus:border-rose-500 focus:ring-rose-500/10",
+  },
+  {
+    bg: "bg-amber-50/30 dark:bg-amber-900/10",
+    border: "border-amber-100/50 dark:border-amber-800/40",
+    textPrimary: "text-amber-700 dark:text-amber-400",
+    textSecondary: "text-amber-500",
+    iconBg: "bg-white dark:bg-amber-950",
+    inputFocus: "focus:border-amber-500 focus:ring-amber-500/10",
+  },
+  {
+    bg: "bg-emerald-50/30 dark:bg-emerald-900/10",
+    border: "border-emerald-100/50 dark:border-emerald-800/40",
+    textPrimary: "text-emerald-700 dark:text-emerald-400",
+    textSecondary: "text-emerald-500",
+    iconBg: "bg-white dark:bg-emerald-950",
+    inputFocus: "focus:border-emerald-500 focus:ring-emerald-500/10",
+  },
+];
+
+// Helper to assign icons based on machine keys
+const getCategoryIcon = (id, className) => {
+  if (id.includes("men") && !id.includes("women"))
+    return <FaPerson className={className} />;
+  if (id.includes("women")) return <FaPersonDress className={className} />;
+  if (id.includes("handicap") || id.includes("disable"))
+    return <FaWheelchair className={className} />;
+  if (id.includes("family")) return <MdFamilyRestroom className={className} />;
+  return <Users className={className} />;
+};
+
 export default function AddWashroomForm() {
-  // --- PERMISSIONS & HOOKS ---
   useRequirePermission(MODULES.LOCATIONS);
   const { canAdd } = usePermissions();
   const canAddLocation = canAdd(MODULES.LOCATIONS);
@@ -68,64 +198,61 @@ export default function AddWashroomForm() {
   const { companyId } = useCompanyId();
   const router = useRouter();
 
-  // --- TANSTACK QUERIES ---
+  // Queries
   const { data: facilityCompaniesRes } = useFacilityCompanies(companyId);
   const facilityCompanies = facilityCompaniesRes?.data || [];
 
   const { data: locationTypesRes } = useLocationTypes(companyId);
-  const locationTypes = Array.isArray(locationTypesRes?.data) ? locationTypesRes.data : (Array.isArray(locationTypesRes) ? locationTypesRes : []);
+  const locationTypes = Array.isArray(locationTypesRes?.data)
+    ? locationTypesRes.data
+    : Array.isArray(locationTypesRes)
+      ? locationTypesRes
+      : [];
 
-  // Fetch cleaners (Role ID 5)
-const { data: usersData } = useGetUsersByRole(5, companyId);
+  const { data: usersData } = useGetUsersByRole(5, companyId);
+  const safeUsersArray = Array.isArray(usersData?.data)
+    ? usersData.data
+    : Array.isArray(usersData)
+      ? usersData
+      : [];
+  const allCleaners = safeUsersArray.filter(
+    (u) => parseInt(u.role_id || u.role?.id) === 5,
+  );
 
-// Safely extract the array regardless of how the API wraps it
-const safeUsersArray = Array.isArray(usersData?.data) 
-  ? usersData.data 
-  : (Array.isArray(usersData) ? usersData : []);
+  // ✅ NEW: Fetch Dynamic Schema
+  const { data: locationSchema, isLoading: isLoadingSchema } =
+    useLocationSchema(companyId);
 
-// Double-checking role filter on the client side just to be safe
-const allCleaners = safeUsersArray.filter((u) => parseInt(u.role_id || u.role?.id) === 5);
-
-  // Trigger cache for configurations
-  useToiletFeaturesById(8); 
-
-  // --- TANSTACK MUTATIONS ---
+  // Mutations
   const createLocationMutation = useCreateLocation();
   const createAssignmentsMutation = useCreateAssignmentsForLocation();
 
-  // --- STATE MANAGEMENT ---
-  // Images
-  // const [images, setImages] = useState([]);
-  // const [previewImages, setPreviewImages] = useState([]);
-  // const fileInputRef = useRef(null);
-
+  // State Management
   const [coverImage, setCoverImage] = useState(null);
   const [otherImages, setOtherImages] = useState([]);
   const coverInputRef = useRef(null);
   const otherInputRef = useRef(null);
 
-  // Cleaners
   const [selectedCleaners, setSelectedCleaners] = useState([]);
   const [cleanerSearchTerm, setCleanerSearchTerm] = useState("");
   const [isCleanerDropdownOpen, setIsCleanerDropdownOpen] = useState(false);
   const cleanerDropdownRef = useRef(null);
 
-  // Location Data
   const [availableStates, setAvailableStates] = useState([]);
   const [availableCities, setAvailableCities] = useState([]);
-
-  // Status
   const [pincodeError, setPincodeError] = useState("");
-  const [manualCoords, setManualCoords] = useState({ latitude: "21.1458", longitude: "79.0882" });
+  const [manualCoords, setManualCoords] = useState({
+    latitude: "21.1458",
+    longitude: "79.0882",
+  });
 
-  // Form State
   const [form, setForm] = useState({
     name: "",
     parent_id: null,
     type_id: null,
     facility_company_id: null,
     is_public: false,
-    latitude: 21.1458, // Default to Nagpur
+    latitude: 21.1458,
     longitude: 79.0882,
     address: "",
     pincode: "",
@@ -135,37 +262,70 @@ const allCleaners = safeUsersArray.filter((u) => parseInt(u.role_id || u.role?.i
     status: true,
     no_of_photos: null,
     options: { genderAccess: [] },
-    usage_category: {
-      men: { wc: 0, indian: 0, urinals: 0, shower: 0, basin: 0 },
-      women: { wc: 0, indian: 0, urinals: 0, shower: 0, basin: 0 },
-    },
+    usage_category: {}, // Starts empty, filled by schema
     schedule: {
       mode: "TWENTY_FOUR_HOURS",
-      opens_at: "", closes_at: "", overnight: false,
+      opens_at: "",
+      closes_at: "",
+      overnight: false,
       days: {
         monday: { open: false, opens_at: "", closes_at: "", overnight: false },
         tuesday: { open: false, opens_at: "", closes_at: "", overnight: false },
-        wednesday: { open: false, opens_at: "", closes_at: "", overnight: false },
-        thursday: { open: false, opens_at: "", closes_at: "", overnight: false },
+        wednesday: {
+          open: false,
+          opens_at: "",
+          closes_at: "",
+          overnight: false,
+        },
+        thursday: {
+          open: false,
+          opens_at: "",
+          closes_at: "",
+          overnight: false,
+        },
         friday: { open: false, opens_at: "", closes_at: "", overnight: false },
-        saturday: { open: false, opens_at: "", closes_at: "", overnight: false },
+        saturday: {
+          open: false,
+          opens_at: "",
+          closes_at: "",
+          overnight: false,
+        },
         sunday: { open: false, opens_at: "", closes_at: "", overnight: false },
       },
     },
   });
 
-  // --- INITIAL DATA LOADING ---
+  // ✅ Initialize usage_category from dynamic schema
+  useEffect(() => {
+    if (locationSchema?.usageCategories) {
+      const initialUsage = {};
+      locationSchema.usageCategories.forEach((category) => {
+        initialUsage[category.id] = {};
+        category.entities.forEach((entity) => {
+          initialUsage[category.id][entity.id] = entity.defaultValue || 0;
+        });
+      });
+      // Only set if not already populated to avoid wiping out user data on re-renders
+      setForm((prev) => {
+        if (Object.keys(prev.usage_category).length === 0) {
+          return { ...prev, usage_category: initialUsage };
+        }
+        return prev;
+      });
+    }
+  }, [locationSchema]);
+
   useEffect(() => {
     const indiaStates = State.getStatesOfCountry("IN");
     setAvailableStates(indiaStates.map((s) => s.name));
   }, []);
 
-  // --- HANDLERS ---
-
-  // Cleaners Dropdown Close
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (cleanerDropdownRef.current && !cleanerDropdownRef.current.contains(event.target)) {
+      if (
+        cleanerDropdownRef.current &&
+        !cleanerDropdownRef.current.contains(event.target)
+      ) {
         setIsCleanerDropdownOpen(false);
       }
     };
@@ -181,18 +341,12 @@ const allCleaners = safeUsersArray.filter((u) => parseInt(u.role_id || u.role?.i
     const lat = parseFloat(manualCoords.latitude);
     const lng = parseFloat(manualCoords.longitude);
 
-    if (isNaN(lat) || isNaN(lng)) {
-      toast.error("Invalid coordinates. Please enter valid numbers.");
-      return;
-    }
-    if (lat < -90 || lat > 90) {
-      toast.error("Latitude must be between -90 and 90");
-      return;
-    }
-    if (lng < -180 || lng > 180) {
-      toast.error("Longitude must be between -180 and 180");
-      return;
-    }
+    if (isNaN(lat) || isNaN(lng))
+      return toast.error("Invalid coordinates. Please enter valid numbers.");
+    if (lat < -90 || lat > 90)
+      return toast.error("Latitude must be between -90 and 90");
+    if (lng < -180 || lng > 180)
+      return toast.error("Longitude must be between -180 and 180");
 
     handleChange("latitude", lat);
     handleChange("longitude", lng);
@@ -210,13 +364,19 @@ const allCleaners = safeUsersArray.filter((u) => parseInt(u.role_id || u.role?.i
         const result = data.results[0];
         const addressComponents = result.address_components;
 
-        let state = "", city = "", pincode = "", district = "";
+        let state = "",
+          city = "",
+          pincode = "",
+          district = "";
 
         addressComponents.forEach((component) => {
-          if (component.types.includes("administrative_area_level_1")) state = component.long_name;
+          if (component.types.includes("administrative_area_level_1"))
+            state = component.long_name;
           if (component.types.includes("locality")) city = component.long_name;
-          if (component.types.includes("administrative_area_level_3")) district = component.long_name;
-          if (component.types.includes("postal_code")) pincode = component.long_name;
+          if (component.types.includes("administrative_area_level_3"))
+            district = component.long_name;
+          if (component.types.includes("postal_code"))
+            pincode = component.long_name;
         });
 
         handleChange("address", result.formatted_address);
@@ -229,7 +389,6 @@ const allCleaners = safeUsersArray.filter((u) => parseInt(u.role_id || u.role?.i
       }
       return false;
     } catch (error) {
-      console.error("Reverse geocoding error:", error);
       return false;
     }
   };
@@ -259,7 +418,9 @@ const allCleaners = safeUsersArray.filter((u) => parseInt(u.role_id || u.role?.i
     }
 
     if (key === "pincode") {
-      setPincodeError(value && !validatePincode(value) ? "Invalid pincode" : "");
+      setPincodeError(
+        value && !validatePincode(value) ? "Invalid pincode" : "",
+      );
     }
   };
 
@@ -280,44 +441,18 @@ const allCleaners = safeUsersArray.filter((u) => parseInt(u.role_id || u.role?.i
     });
   };
 
-  const updateUsageCategory = (gender, field, value) => {
+  const updateUsageCategory = (categoryId, fieldId, value) => {
     setForm((prev) => ({
       ...prev,
       usage_category: {
         ...prev.usage_category,
-        [gender]: { ...prev.usage_category[gender], [field]: value },
+        [categoryId]: {
+          ...(prev.usage_category[categoryId] || {}),
+          [fieldId]: value,
+        },
       },
     }));
   };
-
-  // Image Handlers
-  // const handleFileSelect = (e) => {
-  //   const files = Array.from(e.target.files);
-  //   if (files.length === 0) return;
-
-  //   const validFiles = files.filter(
-  //     (file) => file.type.startsWith("image/") && file.size <= 5 * 1024 * 1024,
-  //   );
-
-  //   if (validFiles.length > 0) {
-  //     setImages((prev) => [...prev, ...validFiles]);
-  //     const newPreviews = validFiles.map((file) => ({
-  //       file,
-  //       url: URL.createObjectURL(file),
-  //       name: file.name,
-  //     }));
-  //     setPreviewImages((prev) => [...prev, ...newPreviews]);
-  //   } else {
-  //     toast.error("Some files were invalid (Max 5MB, Images only)");
-  //   }
-  //   if (fileInputRef.current) fileInputRef.current.value = "";
-  // };
-
-  // const removeImage = (index) => {
-  //   URL.revokeObjectURL(previewImages[index].url);
-  //   setImages((prev) => prev.filter((_, i) => i !== index));
-  //   setPreviewImages((prev) => prev.filter((_, i) => i !== index));
-  // };
 
   const handleCoverImageSelect = (e) => {
     const file = e.target.files[0];
@@ -325,12 +460,7 @@ const allCleaners = safeUsersArray.filter((u) => parseInt(u.role_id || u.role?.i
 
     if (file.type.startsWith("image/") && file.size <= 5 * 1024 * 1024) {
       if (coverImage) URL.revokeObjectURL(coverImage.url);
-
-      setCoverImage({
-        file,
-        url: URL.createObjectURL(file),
-        name: file.name,
-      });
+      setCoverImage({ file, url: URL.createObjectURL(file), name: file.name });
     } else {
       toast.error("Invalid file. Must be an image under 5MB.");
     }
@@ -342,7 +472,7 @@ const allCleaners = safeUsersArray.filter((u) => parseInt(u.role_id || u.role?.i
     if (files.length === 0) return;
 
     const validFiles = files.filter(
-      (file) => file.type.startsWith("image/") && file.size <= 5 * 1024 * 1024
+      (file) => file.type.startsWith("image/") && file.size <= 5 * 1024 * 1024,
     );
 
     if (validFiles.length > 0) {
@@ -368,11 +498,9 @@ const allCleaners = safeUsersArray.filter((u) => parseInt(u.role_id || u.role?.i
     setOtherImages((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // Submit Handler
   const handleSubmit = async () => {
     if (!form.name || !form.type_id) {
-      toast.error("Please fill in required fields (Name, Type)");
-      return;
+      return toast.error("Please fill in required fields (Name, Type)");
     }
 
     const to12HourFormat = (time24) => {
@@ -406,10 +534,16 @@ const allCleaners = safeUsersArray.filter((u) => parseInt(u.role_id || u.role?.i
       });
     }
 
-    const normalizedUsage = {
-      men: Object.fromEntries(Object.entries(form.usage_category.men).map(([k, v]) => [k, Number(v || 0)])),
-      women: Object.fromEntries(Object.entries(form.usage_category.women).map(([k, v]) => [k, Number(v || 0)])),
-    };
+    // ✅ NEW: Dynamic Normalization
+    const normalizedUsage = {};
+    Object.keys(form.usage_category).forEach((catId) => {
+      normalizedUsage[catId] = Object.fromEntries(
+        Object.entries(form.usage_category[catId] || {}).map(([k, v]) => [
+          k,
+          Number(v || 0),
+        ]),
+      );
+    });
 
     const normalizedForm = {
       ...form,
@@ -419,7 +553,7 @@ const allCleaners = safeUsersArray.filter((u) => parseInt(u.role_id || u.role?.i
 
     const combinedImages = [];
     if (coverImage) combinedImages.push(coverImage.file);
-    otherImages.forEach(img => combinedImages.push(img.file));
+    otherImages.forEach((img) => combinedImages.push(img.file));
 
     try {
       const locationRes = await createLocationMutation.mutateAsync({
@@ -438,37 +572,35 @@ const allCleaners = safeUsersArray.filter((u) => parseInt(u.role_id || u.role?.i
           company_id: companyId,
           role_id: 5,
         });
-        toast.success(`Washroom added & ${selectedCleaners.length} cleaners assigned`);
+        toast.success(
+          `Washroom added & ${selectedCleaners.length} cleaners assigned`,
+        );
       } else {
         toast.success("Washroom added successfully");
       }
 
       setTimeout(() => router.push(`/washrooms?companyId=${companyId}`), 1000);
-
     } catch (error) {
-      console.error(error);
       toast.error(error.message || "Submission failed");
     }
   };
 
-  const isSubmitting = createLocationMutation.isPending || createAssignmentsMutation.isPending;
-
-  // Filter Cleaners
+  const isSubmitting =
+    createLocationMutation.isPending || createAssignmentsMutation.isPending;
   const filteredCleaners = allCleaners.filter((c) =>
     c.name?.toLowerCase().includes(cleanerSearchTerm.toLowerCase()),
   );
 
-const combinedPreviews = [];
-  if (coverImage) {
+  const combinedPreviews = [];
+  if (coverImage)
     combinedPreviews.push({ ...coverImage, isCover: true, originalIndex: 0 });
-  }
-  otherImages.forEach((img, index) => {
-    combinedPreviews.push({ ...img, isCover: false, originalIndex: index });
-  });
+  otherImages.forEach((img, index) =>
+    combinedPreviews.push({ ...img, isCover: false, originalIndex: index }),
+  );
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-10 p-6 bg-slate-50 dark:bg-slate-900 min-h-screen">
-      {/* --- HEADER --- */}
+      {/* HEADER */}
       <div className="w-full bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-8 py-6">
         <div className="flex items-center gap-4">
           <button
@@ -488,7 +620,6 @@ const combinedPreviews = [];
         </div>
       </div>
 
-      {/* --- MAIN GRID LAYOUT --- */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
         {/* === LEFT COLUMN === */}
         <div className="space-y-8">
@@ -496,7 +627,11 @@ const combinedPreviews = [];
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6">
             <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
               <div className="h-10 w-10 rounded-xl bg-cyan-400/10 flex items-center justify-center border border-cyan-500/10 shadow-sm">
-                <Building2 size={20} className="text-cyan-600 dark:text-cyan-400" strokeWidth={2.5} />
+                <Building2
+                  size={20}
+                  className="text-cyan-600 dark:text-cyan-400"
+                  strokeWidth={2.5}
+                />
               </div>
               <div>
                 <h2 className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-[0.15em] leading-none">
@@ -509,13 +644,15 @@ const combinedPreviews = [];
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
-              {/* Name */}
               <div className="space-y-2">
                 <label className="text-[11px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-wider block ml-1">
                   Washroom Name <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative flex items-center h-11">
-                  <Building2 className="absolute left-4 text-slate-400 dark:text-slate-400" size={16} />
+                  <Building2
+                    className="absolute left-4 text-slate-400 dark:text-slate-400"
+                    size={16}
+                  />
                   <input
                     value={form.name}
                     onChange={(e) => handleChange("name", e.target.value)}
@@ -525,7 +662,6 @@ const combinedPreviews = [];
                 </div>
               </div>
 
-              {/* Location Type */}
               <div className="space-y-2">
                 <label className="text-[11px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-wider block ml-1">
                   Location Hierarchy <span className="text-rose-500">*</span>
@@ -540,13 +676,15 @@ const combinedPreviews = [];
                 </div>
               </div>
 
-              {/* Address/Location */}
               <div className="space-y-2 col-span-1 md:col-span-2">
                 <label className="text-[11px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-wider block ml-1">
                   Location (Address)
                 </label>
                 <div className="relative flex items-center h-11">
-                  <MapPin className="absolute left-4 text-slate-400 dark:text-slate-400" size={16} />
+                  <MapPin
+                    className="absolute left-4 text-slate-400 dark:text-slate-400"
+                    size={16}
+                  />
                   <input
                     value={form.address}
                     onChange={(e) => handleChange("address", e.target.value)}
@@ -556,58 +694,78 @@ const combinedPreviews = [];
                 </div>
               </div>
 
-              {/* Facility Company */}
               <div className="space-y-2">
                 <label className="text-[11px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-wider block ml-1">
                   Facility Company
                 </label>
                 <div className="relative flex items-center h-11">
-                  <Factory className="absolute left-4 text-slate-400 dark:text-slate-400" size={16} />
+                  <Factory
+                    className="absolute left-4 text-slate-400 dark:text-slate-400"
+                    size={16}
+                  />
                   <select
                     value={form.facility_company_id || ""}
-                    onChange={(e) => handleChange("facility_company_id", e.target.value)}
+                    onChange={(e) =>
+                      handleChange("facility_company_id", e.target.value)
+                    }
                     className="w-full h-full pl-11 pr-4 rounded-xl text-sm transition-all outline-none border border-slate-200 bg-white text-slate-700 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:placeholder-slate-500 dark:focus:border-cyan-400 dark:focus:ring-cyan-400/20"
                   >
                     <option value="">Select Provider</option>
                     {facilityCompanies.map((fc) => (
-                      <option key={fc.id} value={fc.id}>{fc.name}</option>
+                      <option key={fc.id} value={fc.id}>
+                        {fc.name}
+                      </option>
                     ))}
                   </select>
                 </div>
               </div>
 
-              {/* Public / Private Toggle */}
               <div className="space-y-2">
                 <label className="text-[11px] font-black text-slate-600 dark:text-slate-300 dark:text-slate-400 uppercase tracking-wider block ml-1">
                   Toilet Visibility
                 </label>
                 <div className="flex items-center gap-3 h-11 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/30 dark:bg-slate-800/30">
-                  <span className={`text-xs font-bold transition-colors ${form.is_public ? "text-cyan-600 dark:text-cyan-400" : "text-slate-400"}`}>
+                  <span
+                    className={`text-xs font-bold transition-colors ${form.is_public ? "text-cyan-600 dark:text-cyan-400" : "text-slate-400"}`}
+                  >
                     Public
                   </span>
                   <button
                     type="button"
-                    onClick={() => setForm((prev) => ({ ...prev, is_public: !prev.is_public }))}
+                    onClick={() =>
+                      setForm((prev) => ({
+                        ...prev,
+                        is_public: !prev.is_public,
+                      }))
+                    }
                     className={`relative w-11 h-6 rounded-full transition-colors border ${form.is_public ? "bg-cyan-500/90 border-cyan-500" : "bg-slate-300 dark:bg-slate-600 border-slate-300 dark:border-slate-600"}`}
                   >
-                    <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white dark:bg-slate-100 shadow-sm transition-transform ${form.is_public ? "translate-x-5" : ""}`} />
+                    <span
+                      className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white dark:bg-slate-100 shadow-sm transition-transform ${form.is_public ? "translate-x-5" : ""}`}
+                    />
                   </button>
-                  <span className={`text-xs font-bold transition-colors ${!form.is_public ? "text-rose-500 dark:text-rose-400" : "text-slate-400"}`}>
+                  <span
+                    className={`text-xs font-bold transition-colors ${!form.is_public ? "text-rose-500 dark:text-rose-400" : "text-slate-400"}`}
+                  >
                     Private
                   </span>
                 </div>
                 <p className="text-[10px] text-slate-400 dark:text-slate-500 ml-1 leading-tight">
-                  Private toilets are restricted to the assigned facility company
+                  Private toilets are restricted to the assigned facility
+                  company
                 </p>
               </div>
             </div>
           </div>
 
-          {/* 1.5 LOCATION INFORMATION CARD */}
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6">
             <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
               <div className="h-10 w-10 rounded-xl bg-cyan-400/10 flex items-center justify-center border border-cyan-500/10 shadow-sm">
-                <MapPin size={20} className="text-cyan-600 dark:text-cyan-400" strokeWidth={2.5} />
+                <MapPin
+                  size={20}
+                  className="text-cyan-600 dark:text-cyan-400"
+                  strokeWidth={2.5}
+                />
               </div>
               <div>
                 <h2 className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-[0.15em] leading-none">
@@ -620,7 +778,6 @@ const combinedPreviews = [];
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
-              {/* State */}
               <div className="space-y-2">
                 <label className="text-[11px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-wider block ml-1">
                   State
@@ -630,14 +787,12 @@ const combinedPreviews = [];
                     options={availableStates}
                     value={form.state}
                     onChange={(value) => handleChange("state", value)}
-                    placeholder="Select or type state"
+                    placeholder="Select state"
                     allowCustom={true}
                     className="w-full h-full"
                   />
                 </div>
               </div>
-
-              {/* District */}
               <div className="space-y-2">
                 <label className="text-[11px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-wider block ml-1">
                   District
@@ -647,12 +802,10 @@ const combinedPreviews = [];
                     value={form.dist}
                     onChange={(e) => handleChange("dist", e.target.value)}
                     className="w-full h-full px-4 rounded-xl text-sm transition-all outline-none border border-slate-200 bg-white text-slate-700 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:placeholder-slate-500 dark:focus:border-cyan-400 dark:focus:ring-cyan-400/20"
-                    placeholder="Enter district name"
+                    placeholder="District name"
                   />
                 </div>
               </div>
-
-              {/* City */}
               <div className="space-y-2">
                 <label className="text-[11px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-wider block ml-1">
                   City
@@ -662,14 +815,12 @@ const combinedPreviews = [];
                     options={availableCities}
                     value={form.city}
                     onChange={(value) => handleChange("city", value)}
-                    placeholder="Select or type city"
+                    placeholder="Select city"
                     allowCustom={true}
                     className="w-full h-full"
                   />
                 </div>
               </div>
-
-              {/* Pincode */}
               <div className="space-y-2">
                 <label className="text-[11px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-wider block ml-1">
                   Pincode
@@ -680,30 +831,20 @@ const combinedPreviews = [];
                     maxLength={6}
                     value={form.pincode}
                     onChange={(e) => handleChange("pincode", e.target.value)}
-                    className={`w-full h-full px-4 rounded-xl text-sm transition-all outline-none border bg-white text-slate-700 focus:ring-4 focus:ring-cyan-500/10 dark:bg-slate-800 dark:text-slate-200 dark:placeholder-slate-500 dark:focus:ring-cyan-400/20 ${pincodeError ? "border-rose-500 dark:border-rose-500 focus:border-rose-500" : "border-slate-200 dark:border-slate-700 focus:border-cyan-500 dark:focus:border-cyan-400"}`}
+                    className={`w-full h-full px-4 rounded-xl text-sm transition-all outline-none border bg-white text-slate-700 focus:ring-4 focus:ring-cyan-500/10 dark:bg-slate-800 dark:text-slate-200 dark:placeholder-slate-500 dark:focus:ring-cyan-400/20 ${pincodeError ? "border-rose-500 focus:border-rose-500" : "border-slate-200 dark:border-slate-700 focus:border-cyan-500"}`}
                     placeholder="000000"
                   />
                 </div>
-                {pincodeError && <p className="text-[10px] font-bold text-rose-500 ml-1">{pincodeError}</p>}
-              </div>
-
-              {/* Full Address */}
-              <div className="col-span-1 md:col-span-2 space-y-2">
-                <label className="text-[11px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-wider block ml-1">
-                  Full Address
-                </label>
-                <textarea
-                  value={form.address}
-                  onChange={(e) => handleChange("address", e.target.value)}
-                  rows={3}
-                  className="w-full h-full px-4 py-3 rounded-xl text-sm transition-all outline-none border border-slate-200 bg-white text-slate-700 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:placeholder-slate-500 dark:focus:border-cyan-400 dark:focus:ring-cyan-400/20"
-                  placeholder="Enter complete street address, landmark, and building details"
-                />
+                {pincodeError && (
+                  <p className="text-[10px] font-bold text-rose-500 ml-1">
+                    {pincodeError}
+                  </p>
+                )}
               </div>
             </div>
           </div>
 
-          {/* 2. USAGE CATEGORY CARD */}
+          {/* 2. DYNAMIC USAGE CATEGORY CARD */}
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6">
             <div className="flex items-center gap-3 mb-2">
               <div className="h-10 w-10 rounded-xl bg-cyan-400/10 flex items-center justify-center border border-cyan-500/10 shadow-sm">
@@ -719,83 +860,95 @@ const combinedPreviews = [];
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-              {/* MEN'S SECTION */}
-              <div className="bg-slate-50/50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-700 rounded-2xl p-6 transition-all hover:shadow-md">
-                <div className="flex items-center gap-3 mb-6 border-b border-slate-100 pb-4">
-                  <div className="h-8 w-8 bg-white rounded-lg shadow-sm border border-slate-100 flex items-center justify-center">
-                    <FaPerson className="text-cyan-600 text-lg" />
-                  </div>
-                  <h3 className="text-xs font-bold uppercase tracking-widest text-slate-700 dark:text-slate-200">
-                    Men&apos;s Facilities
-                  </h3>
-                </div>
-                <div className="grid grid-cols-1 gap-4">
-                  {["wc", "indian", "urinals", "shower", "basin"].map((field) => (
-                    <div key={field} className="mb-0">
-                      <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5 ml-1 block">
-                        {field}
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        step="1"
-                        value={form.usage_category.men[field] ?? ""}
-                        onChange={(e) => {
-                          const raw = e.target.value;
-                          if (raw === "") updateUsageCategory("men", field, "");
-                          else updateUsageCategory("men", field, Number(raw));
-                        }}
-                        onBlur={() => {
-                          if (form.usage_category.men[field] === "") updateUsageCategory("men", field, 0);
-                        }}
-                        className="w-full pl-4 py-2 rounded-xl text-sm outline-none transition-all border border-slate-200 bg-white text-slate-800 focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:border-cyan-400 dark:focus:ring-cyan-400/20"
-                        placeholder="0"
-                      />
-                    </div>
-                  ))}
-                </div>
+            {isLoadingSchema ? (
+              <div className="p-8 flex justify-center">
+                <Loader size="small" message="Loading Schema..." />
               </div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                {locationSchema?.usageCategories?.map((category, index) => {
+                  const theme = CATEGORY_THEMES[index % CATEGORY_THEMES.length];
 
-              {/* WOMEN'S SECTION */}
-              <div className="bg-rose-50/30 dark:bg-rose-900/10 border border-rose-100/50 dark:border-rose-800/40 rounded-2xl p-6 transition-all hover:shadow-md">
-                <div className="flex items-center gap-3 mb-6 border-b border-rose-100/50 pb-4">
-                  <div className="h-8 w-8 bg-white rounded-lg shadow-sm border border-rose-100 flex items-center justify-center">
-                    <FaPersonDress className="text-rose-500 text-lg" />
-                  </div>
-                  <h3 className="text-xs font-black text-rose-700 uppercase tracking-widest">
-                    Women&apos;s Facilities
-                  </h3>
-                </div>
-                <div className="grid grid-cols-1 gap-4">
-                  {["wc", "indian", "urinals", "shower", "basin"].map((field) => (
-                    <div key={field} className="mb-0">
-                      <label className="text-[10px] font-bold text-rose-300 uppercase tracking-wider mb-1.5 ml-1 block">
-                        {field}
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        step="1"
-                        value={form.usage_category.women[field] ?? ""}
-                        onChange={(e) => {
-                          const raw = e.target.value;
-                          if (raw === "") updateUsageCategory("women", field, "");
-                          else updateUsageCategory("women", field, Number(raw));
-                        }}
-                        onBlur={() => {
-                          if (form.usage_category.women[field] === "") updateUsageCategory("women", field, 0);
-                        }}
-                        className="w-full pl-4 py-2 rounded-xl text-sm outline-none transition-all border border-rose-200 bg-white text-slate-800 focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 dark:bg-slate-900 dark:border-rose-800 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:border-rose-400 dark:focus:ring-rose-400/20"
-                      />
+                  return (
+                    <div
+                      key={category.id}
+                      className={`${theme.bg} border ${theme.border} rounded-2xl p-6 transition-all hover:shadow-md`}
+                    >
+                      <div
+                        className={`flex items-center gap-3 mb-6 border-b ${theme.border} pb-4`}
+                      >
+                        <div
+                          className={`h-8 w-8 ${theme.iconBg} rounded-lg shadow-sm border ${theme.border} flex items-center justify-center`}
+                        >
+                          {getCategoryIcon(
+                            category.id,
+                            `text-lg ${theme.textSecondary}`,
+                          )}
+                        </div>
+                        <h3
+                          className={`text-xs font-black uppercase tracking-widest ${theme.textPrimary}`}
+                        >
+                          {category.label} Facilities
+                        </h3>
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-4">
+                        {category.entities.map((entity) => (
+                          <div key={entity.id} className="mb-0">
+                            <label
+                              className={`text-[10px] font-bold uppercase tracking-wider mb-1.5 ml-1 block ${theme.textSecondary}`}
+                            >
+                              {entity.label}
+                            </label>
+                            <input
+                              type="number"
+                              min="0"
+                              step="1"
+                              value={
+                                form.usage_category?.[category.id]?.[
+                                  entity.id
+                                ] ?? ""
+                              }
+                              onChange={(e) => {
+                                const raw = e.target.value;
+                                updateUsageCategory(
+                                  category.id,
+                                  entity.id,
+                                  raw === "" ? "" : Number(raw),
+                                );
+                              }}
+                              onBlur={() => {
+                                if (
+                                  form.usage_category?.[category.id]?.[
+                                    entity.id
+                                  ] === ""
+                                ) {
+                                  updateUsageCategory(
+                                    category.id,
+                                    entity.id,
+                                    0,
+                                  );
+                                }
+                              }}
+                              className={`w-full pl-4 py-2 rounded-xl text-sm outline-none transition-all border bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 placeholder-slate-500 dark:border-slate-700 focus:ring-4 ${theme.inputFocus}`}
+                              placeholder="0"
+                            />
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  ))}
-                </div>
+                  );
+                })}
+                {(!locationSchema?.usageCategories ||
+                  locationSchema.usageCategories.length === 0) && (
+                  <p className="text-xs text-slate-500 col-span-2 text-center p-4">
+                    No usage categories configured.
+                  </p>
+                )}
               </div>
-            </div>
+            )}
           </div>
 
-          {/* 3. AVAILABLE FOR GENDER */}
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6">
             <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
               <div className="h-10 w-10 rounded-xl bg-cyan-400/5 flex items-center justify-center border border-cyan-500/10">
@@ -812,7 +965,10 @@ const combinedPreviews = [];
             </div>
             <div className="space-y-2">
               {GENDER_OPTIONS.map((item) => (
-                <label key={item.value} className="flex items-center gap-4 group cursor-pointer p-2 rounded-xl hover:bg-slate-50/50 transition-colors">
+                <label
+                  key={item.value}
+                  className="flex items-center gap-4 group cursor-pointer p-2 rounded-xl hover:bg-slate-50/50 transition-colors"
+                >
                   <div className="relative flex items-center">
                     <input
                       type="checkbox"
@@ -841,13 +997,14 @@ const combinedPreviews = [];
 
           <AvailabilityCard
             schedule={form.schedule}
-            setSchedule={(updatedSchedule) => setForm((prev) => ({ ...prev, schedule: updatedSchedule }))}
+            setSchedule={(updatedSchedule) =>
+              setForm((prev) => ({ ...prev, schedule: updatedSchedule }))
+            }
           />
         </div>
 
         {/* === RIGHT COLUMN === */}
         <div className="space-y-8">
-          {/* 4. PIN LOCATION (Map) */}
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6">
             <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
               <div className="h-10 w-10 rounded-xl bg-cyan-400/10 flex items-center justify-center border border-cyan-500/10 shadow-sm">
@@ -873,7 +1030,10 @@ const combinedPreviews = [];
 
             <div className="space-y-4 mt-6">
               <div className="flex items-center gap-2 mb-3">
-                <MapPin size={14} className="text-cyan-500 dark:text-cyan-400" />
+                <MapPin
+                  size={14}
+                  className="text-cyan-500 dark:text-cyan-400"
+                />
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-200">
                   Manual Coordinates
                 </p>
@@ -888,13 +1048,13 @@ const combinedPreviews = [];
                     type="number"
                     step="0.000001"
                     value={manualCoords.latitude}
-                    onChange={(e) => handleCoordinateChange("latitude", e.target.value)}
+                    onChange={(e) =>
+                      handleCoordinateChange("latitude", e.target.value)
+                    }
                     placeholder="21.145800"
                     className="w-full px-3 py-2.5 rounded-xl text-sm font-mono bg-white border border-slate-200 text-slate-700 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 transition-all outline-none dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:placeholder-slate-500 dark:focus:border-cyan-400 dark:focus:ring-cyan-400/20"
                   />
-                  <p className="text-[9px] text-slate-400 dark:text-slate-500 mt-1 ml-1">Range: -90 to 90</p>
                 </div>
-
                 <div>
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 block">
                     Longitude
@@ -903,11 +1063,12 @@ const combinedPreviews = [];
                     type="number"
                     step="0.000001"
                     value={manualCoords.longitude}
-                    onChange={(e) => handleCoordinateChange("longitude", e.target.value)}
+                    onChange={(e) =>
+                      handleCoordinateChange("longitude", e.target.value)
+                    }
                     placeholder="79.088200"
                     className="w-full px-3 py-2.5 rounded-xl text-sm font-mono bg-white border border-slate-200 text-slate-700 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 transition-all outline-none dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:placeholder-slate-500 dark:focus:border-cyan-400 dark:focus:ring-cyan-400/20"
                   />
-                  <p className="text-[9px] text-slate-400 dark:text-slate-500 mt-1 ml-1">Range: -180 to 180</p>
                 </div>
               </div>
 
@@ -916,97 +1077,10 @@ const combinedPreviews = [];
                 onClick={handleApplyCoordinates}
                 className="w-full mt-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 text-white text-xs font-semibold uppercase tracking-widest hover:brightness-110 transition-all shadow-sm active:scale-[0.98] flex items-center justify-center gap-2"
               >
-                <MapPin size={14} />
-                Update Map Location
+                <MapPin size={14} /> Update Map Location
               </button>
             </div>
-
-            <div className="grid grid-cols-2 gap-4 mt-6 p-4 bg-gradient-to-r from-cyan-50/50 to-blue-50/50 dark:from-cyan-900/10 dark:to-blue-900/10 rounded-xl border border-cyan-100/50 dark:border-cyan-800/50">
-              <div>
-                <label className="text-[10px] font-bold text-cyan-600 dark:text-cyan-400 uppercase tracking-wider mb-1 block">
-                  Current Latitude
-                </label>
-                <div className="px-3 py-2 bg-white dark:bg-slate-800 border border-cyan-200/50 dark:border-cyan-700/50 rounded-lg text-sm font-mono font-bold text-cyan-700 dark:text-cyan-300 shadow-sm">
-                  {Number(form.latitude).toFixed(6)}
-                </div>
-              </div>
-              <div>
-                <label className="text-[10px] font-bold text-cyan-600 dark:text-cyan-400 uppercase tracking-wider mb-1 block">
-                  Current Longitude
-                </label>
-                <div className="px-3 py-2 bg-white dark:bg-slate-800 border border-cyan-200/50 dark:border-cyan-700/50 rounded-lg text-sm font-mono font-bold text-cyan-700 dark:text-cyan-300 shadow-sm">
-                  {Number(form.longitude).toFixed(6)}
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-6 flex items-start gap-3 p-4 bg-slate-50/50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 rounded-xl">
-              <Info size={14} className="text-cyan-500 shrink-0 mt-0.5" />
-              <div className="text-[10px] font-medium text-slate-500 dark:text-slate-400 leading-relaxed text-left space-y-1">
-                <p><span className="font-black text-cyan-600">Option 1:</span> Drag the map marker to update coordinates automatically</p>
-                <p><span className="font-black text-cyan-600">Option 2:</span> Enter lat/long manually and click &quot;Update Map Location&quot;</p>
-                <p className="text-amber-600 dark:text-amber-400 font-bold">Address fields will auto-fill when you pin a location on the map</p>
-              </div>
-            </div>
           </div>
-
-          {/* 5. LOCATION IMAGES */}
-          {/* <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="h-10 w-10 rounded-xl bg-cyan-400/10 flex items-center justify-center border border-cyan-500/10 shadow-sm">
-                <HiOutlineCloudUpload className="text-cyan-600 text-xl" />
-              </div>
-              <div className="text-left">
-                <h2 className="text-sm font-bold uppercase tracking-[0.18em] leading-none text-slate-800 dark:text-slate-100">
-                  Location Images
-                </h2>
-                <p className="text-[10px] font-semibold uppercase tracking-widest mt-1.5 text-slate-500 dark:text-slate-400">
-                  Visual Verification Archive
-                </p>
-              </div>
-            </div>
-
-            <div className="group relative border-2 border-dashed border-slate-200 rounded-[24px] p-8 text-center bg-slate-50/50 hover:bg-cyan-400/5 hover:border-cyan-500/30 transition-all duration-300 mt-6">
-              <div className="flex flex-col items-center">
-                <div className="mb-5 p-5 rounded-full bg-white shadow-sm border border-slate-100 text-cyan-600 group-hover:scale-110 transition-transform duration-300">
-                  <ImageIcon size={32} strokeWidth={1.5} />
-                </div>
-                <p className="text-xs font-black text-slate-700 uppercase tracking-widest mb-1">
-                  Drag or Drop images here
-                </p>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mb-6">
-                  Supports JPG, PNG (Max 5MB each)
-                </p>
-                <div className="bg-slate-900 text-white px-8 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest pointer-events-none">
-                  Choose Images
-                </div>
-              </div>
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                accept="image/*"
-                onChange={handleFileSelect}
-              />
-            </div>
-
-            {previewImages.length > 0 && (
-              <div className="grid grid-cols-4 gap-2 mt-4">
-                {previewImages.map((preview, index) => (
-                  <div key={index} className="relative group">
-                    <img src={preview.url} alt="preview" className="w-full h-16 object-cover rounded-lg" />
-                    <button
-                      onClick={() => removeImage(index)}
-                      className="absolute -top-1 -right-1 bg-rose-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-all"
-                    >
-                      <X size={12} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div> */}
 
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6">
             <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
@@ -1024,16 +1098,16 @@ const combinedPreviews = [];
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Cover Image Uploader */}
               <div className="col-span-1 space-y-3">
                 <label className="text-[11px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-wider block ml-1">
                   Cover Image <span className="text-rose-500">*</span>
                 </label>
-                
                 {!coverImage ? (
                   <div className="group relative border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center bg-slate-50/50 hover:bg-cyan-400/5 hover:border-cyan-500/30 transition-all duration-300 h-40 flex flex-col justify-center items-center">
                     <ImageIcon size={24} className="text-cyan-600 mb-2" />
-                    <p className="text-[10px] font-bold text-slate-500 uppercase">Primary Photo</p>
+                    <p className="text-[10px] font-bold text-slate-500 uppercase">
+                      Primary Photo
+                    </p>
                     <input
                       ref={coverInputRef}
                       type="file"
@@ -1044,7 +1118,11 @@ const combinedPreviews = [];
                   </div>
                 ) : (
                   <div className="relative group h-40 w-full rounded-2xl overflow-hidden border border-slate-200">
-                    <img src={coverImage.url} alt="Cover preview" className="w-full h-full object-cover" />
+                    <img
+                      src={coverImage.url}
+                      alt="Cover"
+                      className="w-full h-full object-cover"
+                    />
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                       <button
                         onClick={removeCoverImage}
@@ -1053,23 +1131,22 @@ const combinedPreviews = [];
                         <X size={16} />
                       </button>
                     </div>
-                    <div className="absolute bottom-2 left-2 bg-black/60 text-white text-[9px] px-2 py-1 rounded font-bold uppercase tracking-wider">
-                      Cover
-                    </div>
                   </div>
                 )}
               </div>
 
-              {/* Additional Images Uploader */}
               <div className="col-span-1 md:col-span-2 space-y-3">
                 <label className="text-[11px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-wider block ml-1">
                   Additional Photos
                 </label>
-                
                 <div className="group relative border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center bg-slate-50/50 hover:bg-cyan-400/5 hover:border-cyan-500/30 transition-all duration-300 h-40 flex flex-col justify-center items-center">
-                  <HiOutlineCloudUpload size={24} className="text-cyan-600 mb-2" />
-                  <p className="text-[10px] font-bold text-slate-500 uppercase">Upload Gallery Photos</p>
-                  <p className="text-[9px] text-slate-400 mt-1">Select multiple files</p>
+                  <HiOutlineCloudUpload
+                    size={24}
+                    className="text-cyan-600 mb-2"
+                  />
+                  <p className="text-[10px] font-bold text-slate-500 uppercase">
+                    Upload Gallery Photos
+                  </p>
                   <input
                     ref={otherInputRef}
                     type="file"
@@ -1082,23 +1159,22 @@ const combinedPreviews = [];
               </div>
             </div>
 
-            {/* --- UNIFIED PREVIEW SECTION --- */}
             {combinedPreviews.length > 0 && (
               <div className="mt-6 pt-6 border-t border-slate-100 dark:border-slate-800">
                 <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">
                   Image Previews ({combinedPreviews.length})
                 </h3>
-                
                 <div className="grid grid-cols-4 sm:grid-cols-6 gap-3">
                   {combinedPreviews.map((preview, index) => (
-                    <div key={index} className="relative group rounded-xl overflow-hidden border border-slate-200 aspect-square">
-                      <img 
-                        src={preview.url} 
-                        alt={`Preview ${index}`} 
-                        className="w-full h-full object-cover" 
+                    <div
+                      key={index}
+                      className="relative group rounded-xl overflow-hidden border border-slate-200 aspect-square"
+                    >
+                      <img
+                        src={preview.url}
+                        alt={`Preview ${index}`}
+                        className="w-full h-full object-cover"
                       />
-                      
-                      {/* Cover Badge Indicator */}
                       {preview.isCover && (
                         <div className="absolute bottom-0 left-0 right-0 bg-black/60 backdrop-blur-sm p-1 text-center">
                           <span className="text-[9px] font-bold text-white uppercase tracking-widest">
@@ -1106,10 +1182,12 @@ const combinedPreviews = [];
                           </span>
                         </div>
                       )}
-
-                      {/* Dynamic Delete Button */}
                       <button
-                        onClick={() => preview.isCover ? removeCoverImage() : removeOtherImage(preview.originalIndex)}
+                        onClick={() =>
+                          preview.isCover
+                            ? removeCoverImage()
+                            : removeOtherImage(preview.originalIndex)
+                        }
                         className="absolute -top-2 -right-2 bg-rose-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 group-hover:top-1 group-hover:right-1 transition-all shadow-sm"
                       >
                         <X size={12} strokeWidth={3} />
@@ -1121,7 +1199,6 @@ const combinedPreviews = [];
             )}
           </div>
 
-          {/* 6. ASSIGN CLEANERS */}
           {canAssignCleaner && (
             <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6">
               <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
@@ -1130,63 +1207,78 @@ const combinedPreviews = [];
                 </div>
                 <div className="text-left">
                   <h2 className="text-sm font-semibold uppercase tracking-[0.18em] leading-none text-slate-800 dark:text-slate-100">
-                    Assign Cleaners <span className="text-[10px] opacity-50 ml-1">(Optional)</span>
+                    Assign Cleaners{" "}
+                    <span className="text-[10px] opacity-50 ml-1">
+                      (Optional)
+                    </span>
                   </h2>
-                  <p className="text-[10px] font-medium uppercase tracking-widest mt-1.5 text-slate-500 dark:text-slate-400">
-                    Personnel Mapping Architecture
-                  </p>
                 </div>
               </div>
 
               <div className="relative mb-6" ref={cleanerDropdownRef}>
-                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1 block">
-                  Staff Selection
-                </label>
                 <button
                   type="button"
-                  onClick={() => setIsCleanerDropdownOpen(!isCleanerDropdownOpen)}
-                  className="w-full text-left pl-4 pr-10 py-3 rounded-xl text-sm border border-slate-200 bg-white text-slate-700 focus:border-cyan-500 flex justify-between items-center transition dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:focus:border-cyan-400"
+                  onClick={() =>
+                    setIsCleanerDropdownOpen(!isCleanerDropdownOpen)
+                  }
+                  className="w-full text-left pl-4 pr-10 py-3 rounded-xl text-sm border border-slate-200 bg-white text-slate-700 flex justify-between items-center transition dark:bg-slate-800"
                 >
-                  <span className={selectedCleaners.length ? "text-slate-700" : "text-slate-400"}>
-                    {selectedCleaners.length > 0 ? `${selectedCleaners.length} Staff Selected` : "Select available cleaners"}
+                  <span
+                    className={
+                      selectedCleaners.length
+                        ? "text-slate-700"
+                        : "text-slate-400"
+                    }
+                  >
+                    {selectedCleaners.length > 0
+                      ? `${selectedCleaners.length} Staff Selected`
+                      : "Select available cleaners"}
                   </span>
-                  <ChevronDown size={16} className="text-slate-400 dark:text-slate-500" />
+                  <ChevronDown size={16} className="text-slate-400" />
                 </button>
 
                 {isCleanerDropdownOpen && (
-                  <div className="absolute z-10 w-full mt-2 rounded-xl shadow-xl max-h-60 overflow-y-auto p-2 bg-white border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
-                    <div className="sticky top-0 z-10 p-2 mb-2 bg-white border-b border-slate-200 dark:bg-slate-800 dark:border-slate-700">
+                  <div className="absolute z-10 w-full mt-2 rounded-xl shadow-xl max-h-60 overflow-y-auto p-2 bg-white border border-slate-200">
+                    <div className="sticky top-0 z-10 p-2 mb-2 bg-white border-b border-slate-200">
                       <input
-                        className="w-full p-2 text-xs rounded-lg transition border border-slate-200 bg-slate-50 text-slate-700 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-200"
+                        className="w-full p-2 text-xs rounded-lg border bg-slate-50"
                         placeholder="Search staff..."
                         value={cleanerSearchTerm}
                         onChange={(e) => setCleanerSearchTerm(e.target.value)}
                       />
                     </div>
                     {filteredCleaners.length === 0 ? (
-                      <div className="p-3 text-center text-xs text-slate-400">No cleaners found</div>
+                      <div className="p-3 text-center text-xs text-slate-400">
+                        No cleaners found
+                      </div>
                     ) : (
                       filteredCleaners.map((cleaner) => (
                         <div
                           key={cleaner.id}
-                          className="flex items-center gap-2 p-2 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-lg cursor-pointer"
-                          onClick={() => {
+                          className="flex items-center gap-2 p-2 hover:bg-slate-50 rounded-lg cursor-pointer"
+                          onClick={() =>
                             setSelectedCleaners((prev) =>
                               prev.some((c) => c.id === cleaner.id)
                                 ? prev.filter((c) => c.id !== cleaner.id)
                                 : [...prev, cleaner],
-                            );
-                          }}
+                            )
+                          }
                         >
                           <input
                             type="checkbox"
-                            checked={selectedCleaners.some((c) => c.id === cleaner.id)}
+                            checked={selectedCleaners.some(
+                              (c) => c.id === cleaner.id,
+                            )}
                             readOnly
-                            className="rounded text-cyan-500 focus:ring-0"
+                            className="rounded text-cyan-500"
                           />
                           <div>
-                            <p className="text-xs font-bold text-slate-700 dark:text-slate-200">{cleaner.name}</p>
-                            <p className="text-[10px] text-slate-400 dark:text-slate-400">{cleaner.email}</p>
+                            <p className="text-xs font-bold text-slate-700">
+                              {cleaner.name}
+                            </p>
+                            <p className="text-[10px] text-slate-400">
+                              {cleaner.email}
+                            </p>
                           </div>
                         </div>
                       ))
@@ -1194,27 +1286,9 @@ const combinedPreviews = [];
                   </div>
                 )}
               </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                {selectedCleaners.slice(0, 2).map((cleaner, i) => (
-                  <div key={cleaner.id} className="h-24 bg-cyan-50/30 border border-cyan-100 rounded-2xl flex flex-col items-center justify-center">
-                    <UserCheck className="h-5 w-5 text-cyan-600 mb-2" />
-                    <p className="text-[10px] font-black text-cyan-700 uppercase tracking-widest text-center px-2 truncate w-full">
-                      {cleaner.name}
-                    </p>
-                    <p className="text-[9px] text-cyan-500">Slot 0{i + 1}</p>
-                  </div>
-                ))}
-                {selectedCleaners.length < 2 && (
-                  <div className="h-24 bg-slate-50/50 border-2 border-dashed border-slate-100 rounded-2xl flex flex-col items-center justify-center">
-                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Empty Slot</p>
-                  </div>
-                )}
-              </div>
             </div>
           )}
 
-          {/* 7. ADDITIONAL FEATURES */}
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6">
             <div className="flex items-center gap-3 mb-6 pb-4 border-b border-b border-slate-200 dark:border-slate-700">
               <div className="h-10 w-10 rounded-xl bg-cyan-400/5 flex items-center justify-center border border-cyan-500/10">
@@ -1224,35 +1298,33 @@ const combinedPreviews = [];
                 <h2 className="text-sm font-semibold uppercase tracking-[0.18em] leading-none text-slate-800 dark:text-slate-100">
                   Additional Features
                 </h2>
-                <p className="text-[10px] font-medium uppercase tracking-widest mt-1.5 text-slate-500 dark:text-slate-400">
-                  Operational Feature Mapping
-                </p>
               </div>
             </div>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
               {FEATURE_CONFIG.map((item) => (
-                <label key={item.key} className="flex items-start gap-4 group cursor-pointer p-3 rounded-xl transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-800/60">
+                <label
+                  key={item.key}
+                  className="flex items-start gap-4 group cursor-pointer p-3 rounded-xl transition-colors hover:bg-slate-50/70"
+                >
                   <div className="relative flex items-center mt-0.5">
                     <input
                       type="checkbox"
                       checked={!!form.options[item.key]}
-                      onChange={(e) => handleOptionChange(item.key, e.target.checked)}
+                      onChange={(e) =>
+                        handleOptionChange(item.key, e.target.checked)
+                      }
                       className="w-4 h-4 rounded border border-slate-200 text-cyan-500 focus:ring-0 cursor-pointer accent-cyan-500"
                     />
                   </div>
                   <div className="flex flex-col">
                     <div className="flex items-center gap-2">
-                      <span className="text-slate-400 group-hover:text-cyan-500/70 transition-colors">
+                      <span className="text-slate-400 group-hover:text-cyan-500/70">
                         {item.icon}
                       </span>
-                      <span className="text-sm font-medium text-slate-500 group-hover:text-slate-600 transition-colors tracking-tight">
+                      <span className="text-sm font-medium text-slate-500">
                         {item.label}
                       </span>
                     </div>
-                    <span className="text-[10px] font-normal text-slate-400 lowercase tracking-tight mt-0.5">
-                      {item.category}
-                    </span>
                   </div>
                 </label>
               ))}
@@ -1261,21 +1333,19 @@ const combinedPreviews = [];
         </div>
       </div>
 
-      {/* --- FOOTER ACTIONS --- */}
       <div className="flex flex-wrap justify-end items-center gap-4 pt-6 border-t border-slate-200">
         <button
           type="button"
           onClick={() => router.back()}
           disabled={isSubmitting}
-          className="flex items-center gap-2 px-8 py-3 rounded-xl border border-slate-200 bg-white text-slate-500 text-xs font-black uppercase tracking-widest hover:bg-slate-50 transition-all active:scale-95 shadow-sm"
+          className="flex items-center gap-2 px-8 py-3 rounded-xl border bg-white text-slate-500 text-xs font-black uppercase hover:bg-slate-50 shadow-sm"
         >
           Cancel
         </button>
-
         <button
           onClick={handleSubmit}
           disabled={isSubmitting || !canAddLocation}
-          className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white px-10 py-3 rounded-xl text-sm font-bold shadow-lg hover:brightness-110 active:scale-95 transition-all uppercase tracking-wider disabled:opacity-70 disabled:cursor-not-allowed"
+          className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white px-10 py-3 rounded-xl text-sm font-bold shadow-lg hover:brightness-110 active:scale-95 uppercase"
         >
           {isSubmitting ? "Saving..." : "Add Washroom"}
         </button>

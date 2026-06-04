@@ -83,10 +83,15 @@ export const ConfigurationsApi = {
     }
   },
 
-  getTemplatesByName: async (name) => {
-    console.log(name, "getTemplates by name");
+  getTemplatesByName: async (name, companyId) => {
+    console.log(name, companyId, "getTemplates by name and company");
     try {
-      const response = await axiosInstance.get(`/configurations?name=${name}`);
+      const params = new URLSearchParams();
+      if (companyId) params.append("company_id", companyId);
+
+      const response = await axiosInstance.get(
+        `/configurations?name=${name}&${params.toString()}`,
+      );
       return { success: true, data: response.data.data };
     } catch (error) {
       return {

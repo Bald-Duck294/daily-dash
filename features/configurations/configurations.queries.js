@@ -6,7 +6,12 @@ export const configKeys = {
   modules: () => [...configKeys.all, "modules"],
   byName: (name, companyId) => [...configKeys.all, "name", name, { companyId }],
   schema: (companyId) => [...configKeys.all, "schema", { companyId }],
-  templates: (name) => [...configKeys.all, "templates", name],
+  templates: (name, companyId) => [
+    ...configKeys.all,
+    "templates",
+    name,
+    { companyId },
+  ],
   detail: (id) => [...configKeys.all, "detail", id],
 };
 // console.log(configKeys, "config keys0");
@@ -63,14 +68,17 @@ export const useUpdateConfigByName = () => {
   });
 };
 
-export const useTemplatesByName = (name) => {
+export const useTemplatesByName = (name, companyId) => {
   return useQuery({
-    queryKey: configKeys.templates(name),
+    queryKey: configKeys.templates(name, companyId),
     queryFn: async () => {
-      const response = await ConfigurationsApi.getTemplatesByName(name);
+      const response = await ConfigurationsApi.getTemplatesByName(
+        name,
+        companyId,
+      );
       if (!response.success) throw new Error(response.error);
       return response.data;
-    },
+    },  
     enabled: !!name,
   });
 };

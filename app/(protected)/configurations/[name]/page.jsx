@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   Globe,
@@ -26,16 +25,20 @@ export default function TemplateManager() {
   const configName = params.name;
   const { companyId } = useCompanyId();
 
-  const { data: allConfigs = [], isLoading } = useTemplatesByName(configName);
-  console.log(allConfigs, "alllConfigs");
+  // Optimized fetch: Only returns Global + This Company's Override
+  const { data: fetchedConfigs = [], isLoading } = useTemplatesByName(
+    configName,
+    companyId,
+  );
+
   const { mutateAsync: updateConfig, isPending: isCopying } =
     useUpdateConfigByName();
   const { mutateAsync: deleteConfig, isPending: isDeleting } =
     useDeleteConfig();
 
-  // Split configurations
-  const globalTemplates = allConfigs.filter((c) => c.company_id === null);
-  const companyOverrides = allConfigs.filter((c) => c.company_id !== null);
+  // Safe client-side split (No data leaks)
+  const globalTemplates = fetchedConfigs.filter((c) => c.company_id === null);
+  const companyOverrides = fetchedConfigs.filter((c) => c.company_id !== null);
 
   const handleCreateOverride = async (globalTemplate) => {
     if (!companyId) {
@@ -43,11 +46,7 @@ export default function TemplateManager() {
       return;
     }
 
-    // Check if override already exists
-    const exists = companyOverrides.find(
-      (c) => c.company_id === String(companyId),
-    );
-    if (exists) {
+    if (companyOverrides.length > 0) {
       toast.error("Company override already exists for this template.");
       return;
     }
@@ -87,10 +86,9 @@ export default function TemplateManager() {
 
   const ConfigCard = ({ config, isGlobal }) => (
     <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden transition-all hover:shadow-md">
-      {isGlobal && (
+      {isGlobal ? (
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-slate-400 to-slate-600" />
-      )}
-      {!isGlobal && (
+      ) : (
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-400 to-orange-500" />
       )}
 
