@@ -1103,11 +1103,19 @@ const PhotoModal = ({ photos, onClose }) => {
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
+  
+  // 1. Create a reference for the modal wrapper
+  const modalRef = useRef(null);
 
   useEffect(() => {
     setCurrentIndex(0);
     setZoomLevel(1);
     setPosition({ x: 0, y: 0 });
+    
+    // 2. Automatically focus the modal when it opens so keydowns register instantly
+    if (modalRef.current) {
+      modalRef.current.focus();
+    }
   }, [photos]);
 
   const minSwipeDistance = 50;
@@ -1251,12 +1259,13 @@ const PhotoModal = ({ photos, onClose }) => {
 
   return (
     <div
-      className="fixed inset-0 bg-black bg-opacity-95 flex items-center justify-center z-50"
+      ref={modalRef} // 3. Attach the ref here
+      className="fixed inset-0 bg-black bg-opacity-95 flex items-center justify-center z-50 focus:outline-none"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
       onKeyDown={handleKeyDown}
-      tabIndex={0}
+      tabIndex={-1} // 4. Change to -1 so it can be programmatically focused
     >
       <button
         onClick={onClose}
@@ -1281,8 +1290,7 @@ const PhotoModal = ({ photos, onClose }) => {
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
         style={{
-          cursor:
-            zoomLevel > 1 ? (isDragging ? "grabbing" : "grab") : "default",
+          cursor: zoomLevel > 1 ? (isDragging ? "grabbing" : "grab") : "default",
         }}
       >
         <img

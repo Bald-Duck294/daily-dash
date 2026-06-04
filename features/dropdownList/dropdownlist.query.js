@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import DropdownlistApi from "@/features/dropdownList/dropdownlist.api";
 
 export const useDropdownLocations = (company_id, type_id = null, facility_company_id = null) => {
@@ -15,7 +15,7 @@ export const useDropdownLocations = (company_id, type_id = null, facility_compan
         throw new Error(response.message || "Failed to fetch dropdown locations");
       }
       
-      return response.data; // The array of formatted {id, name} locations
+      return response.data; 
     },
     enabled: !!company_id, 
     staleTime: 5 * 60 * 1000, 
@@ -38,7 +38,19 @@ export const useDropdownUsers = (companyId, roleId = null, search = null) => {
       
       return response.data;
     },
-    enabled: !!companyId, // Only fetch if companyId is present
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    enabled: !!companyId, 
+    staleTime: 5 * 60 * 1000, 
+  });
+};
+
+export const useCompaniesDropdown = () => {
+  return useQuery({
+    queryKey: ["companies-dropdown"],
+    queryFn: async () => {
+      // ✅ FIXED: Changed PhotoApi to DropdownlistApi
+      const data = await DropdownlistApi.getCompaniesDropdown();
+      return data;
+    },
+    staleTime: 10 * 60 * 1000, 
   });
 };
