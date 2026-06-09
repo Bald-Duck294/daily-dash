@@ -4,7 +4,7 @@ export const AuthApi = {
   // REGISTER
   register: async (userData) => {
     try {
-      const response = await axiosInstance.post("/register", userData);
+      const response = await axiosInstance.post("/auth/register", userData);
 
       return {
         success: true,
@@ -21,7 +21,7 @@ export const AuthApi = {
   // LOGIN
   login: async (phone, password) => {
     try {
-      const response = await axiosInstance.post("/login", {
+      const response = await axiosInstance.post("/auth/login", {
         phone,
         password,
       });
