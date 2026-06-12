@@ -15,12 +15,14 @@ export const useDashboardCounts = (companyId, date) => {
 };
 
 // 2. Get top locations
-export const useDashboardTopLocations = (companyId, limit = 5, date) => {
+export const useDashboardAllLocations = (companyId, date) => {
   return useQuery({
-    queryKey: ['dashboard', 'topLocations', companyId, limit, date],
+    // Removed 'limit' from the query key array
+    queryKey: ['dashboard', 'allLocationsScores', companyId, date],
     queryFn: async () => {
-      const response = await DashboardApi.getTopLocations(companyId, limit, date);
-      if (!response.success) throw new Error(response.error || 'Failed to fetch top locations');
+      // Calling the updated API function
+      const response = await DashboardApi.getAllLocationsScores(companyId, date);
+      if (!response.success) throw new Error(response.error || 'Failed to fetch locations scores');
       return response.data;
     },
     enabled: !!companyId,

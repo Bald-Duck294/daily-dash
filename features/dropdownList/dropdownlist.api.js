@@ -48,9 +48,40 @@ export const DropdownlistApi = {
       return [];
     }
   },
- 
+
+  getCleanersForDropdown: async (companyId) => {
+    try {
+      // NOTE: Update this URL to match wherever you routed the new backend function!
+      const response = await axiosInstance.get("/dropdown-list/cleaners", {
+        params: { companyId },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching cleaners for dropdown:", error);
+      return { success: false, data: [] };
+    }
+  },
+
+ getZonesForDropdown: async (filters = {}) => {
+    const { company_id, type_id } = filters;
+
+    // axiosInstance automatically serializes this object into query parameters (e.g., ?company_id=1&type_id=2)
+    // It safely ignores keys that are undefined.
+    const response = await axiosInstance.get("/dropdown-list/zone", {
+      params: {
+        company_id,
+        type_id,
+      },
+    });
+
+    // Axios automatically parses the JSON response, so we just return .data
+    return response.data;
+  },
+
+  getRolesForDropdown: async () => {
+    const response = await axiosInstance.get("/dropdown-list/role");
+    return response.data;
+  },
 };
-
-
 
 export default DropdownlistApi;

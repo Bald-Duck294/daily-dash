@@ -547,42 +547,130 @@ const getChartColors = () => {
 };
 
 // 1. DYNAMIC WASHROOM CHART
+// export function WashroomCleanlinessChart({ data = [] }) {
+//   const [chartColors, setChartColors] = useState(getChartColors());
+
+//   useEffect(() => {
+//     const updateColors = () => setChartColors(getChartColors());
+//     updateColors();
+//     // Optional: Add observer if needed
+//   }, []);
+
+//   // Process Data
+//   const labels = data.map((item) => item.location_name);
+//   const avgScores = data.map((item) => item.average_score);
+//   const currentScores = data.map((item) => item.current_score);
+
+//   const chartData = {
+//     labels: labels.length > 0 ? labels : ["No Data"],
+//     datasets: [
+//       {
+//         label: "Current Score", // Teal (Primary focus)
+//         data: currentScores.length > 0 ? currentScores : [0],
+//         backgroundColor: "rgba(46, 196, 182, 0.6)",
+//         borderColor: "#2EC4B6",
+//         borderWidth: 2,
+//         borderRadius: 6,
+//         barPercentage: 0.6,
+//         categoryPercentage: 0.8,
+//       },
+//       {
+//         label: "Average Score", // Orange (Comparison)
+//         data: avgScores.length > 0 ? avgScores : [0],
+//         backgroundColor: "rgba(242, 153, 74, 0.4)",
+//         borderColor: "#F2994A",
+//         borderWidth: 2,
+//         borderRadius: 6,
+//         barPercentage: 0.6,
+//         categoryPercentage: 0.8,
+//       },
+//     ],
+//   };
+
+//   const options = {
+//     responsive: true,
+//     maintainAspectRatio: false,
+//     plugins: {
+//       legend: {
+//         position: "top",
+//         labels: {
+//           usePointStyle: true,
+//           pointStyle: "circle",
+//           color: chartColors.text,
+//         },
+//       },
+//       tooltip: {
+//         backgroundColor: "#fff",
+//         titleColor: "#1e293b",
+//         bodyColor: "#475569",
+//         borderColor: "#e2e8f0",
+//         borderWidth: 1,
+//         callbacks: { label: (c) => `${c.dataset.label}: ${c.raw}` },
+//       },
+//     },
+//     scales: {
+//       x: {
+//         grid: { display: false },
+//         ticks: {
+//           color: chartColors.text,
+//           autoSkip: false,
+//           maxRotation: 45,
+//           minRotation: 0,
+//         },
+//       },
+//       y: {
+//         grid: { color: chartColors.grid, borderDash: [4, 4] },
+//         ticks: { color: chartColors.text },
+//         max: 10,
+//       },
+//     },
+//   };
+
+//   return (
+//     <div className="w-full h-full p-2">
+//       <Bar data={chartData} options={options} />
+//     </div>
+//   );
+// }
+
+
+
+
 export function WashroomCleanlinessChart({ data = [] }) {
   const [chartColors, setChartColors] = useState(getChartColors());
 
   useEffect(() => {
     const updateColors = () => setChartColors(getChartColors());
     updateColors();
-    // Optional: Add observer if needed
   }, []);
 
   // Process Data
   const labels = data.map((item) => item.location_name);
-  const avgScores = data.map((item) => item.average_score);
-  const currentScores = data.map((item) => item.current_score);
+  const avgScores = data.map((item) => item.average_score); // Before
+  const currentScores = data.map((item) => item.current_score); // After
 
   const chartData = {
     labels: labels.length > 0 ? labels : ["No Data"],
     datasets: [
       {
-        label: "Current Score", // Teal (Primary focus)
-        data: currentScores.length > 0 ? currentScores : [0],
-        backgroundColor: "rgba(46, 196, 182, 0.6)",
-        borderColor: "#2EC4B6",
+        label: "Before Cleaning", // Orange
+        data: avgScores.length > 0 ? avgScores : [0],
+        backgroundColor: "rgba(251, 191, 143, 0.7)", 
+        borderColor: "#F8A25A",
         borderWidth: 2,
-        borderRadius: 6,
-        barPercentage: 0.6,
-        categoryPercentage: 0.8,
+        borderRadius: 4,
+        barPercentage: 0.5,
+        categoryPercentage: 0.7,
       },
       {
-        label: "Average Score", // Orange (Comparison)
-        data: avgScores.length > 0 ? avgScores : [0],
-        backgroundColor: "rgba(242, 153, 74, 0.4)",
-        borderColor: "#F2994A",
+        label: "After Cleaning", // Teal
+        data: currentScores.length > 0 ? currentScores : [0],
+        backgroundColor: "rgba(167, 230, 222, 0.7)",
+        borderColor: "#57C4B7",
         borderWidth: 2,
-        borderRadius: 6,
-        barPercentage: 0.6,
-        categoryPercentage: 0.8,
+        borderRadius: 4,
+        barPercentage: 0.5,
+        categoryPercentage: 0.7,
       },
     ],
   };
@@ -596,7 +684,8 @@ export function WashroomCleanlinessChart({ data = [] }) {
         labels: {
           usePointStyle: true,
           pointStyle: "circle",
-          color: chartColors.text,
+          color: "#94a3b8",
+          font: { size: 13 }
         },
       },
       tooltip: {
@@ -612,28 +701,125 @@ export function WashroomCleanlinessChart({ data = [] }) {
       x: {
         grid: { display: false },
         ticks: {
-          color: chartColors.text,
+          color: "#94a3b8",
           autoSkip: false,
-          maxRotation: 45,
+          maxRotation: 0,
           minRotation: 0,
         },
       },
       y: {
-        grid: { color: chartColors.grid, borderDash: [4, 4] },
-        ticks: { color: chartColors.text },
+        grid: { color: "#f1f5f9" },
+        ticks: { color: "#94a3b8", stepSize: 2 },
         max: 10,
+        min: 0,
       },
     },
   };
 
   return (
-    <div className="w-full h-full p-2">
+    <div className="w-full h-full">
       <Bar data={chartData} options={options} />
     </div>
   );
 }
 
 // 2. DYNAMIC CLEANER PERFORMANCE CHART
+// export function CleanerPerformanceChart({ data = [], todayCount = 0 }) {
+//   const [chartColors, setChartColors] = useState(getChartColors());
+//   const tooltipRef = useRef(null);
+
+//   useEffect(() => {
+//     const updateColors = () => setChartColors(getChartColors());
+//     updateColors();
+//   }, []);
+
+//   // Process Data
+//   // Expecting data: [{ date: "2024-02-01", label/day: "Mon", tasks/count: 12 }]
+//   const labels = data.map((d) => d.day || d.label);
+//   const taskCounts = data.map((d) => d.count || d.tasks);
+
+//   const chartData = {
+//     labels:
+//       labels.length > 0
+//         ? labels
+//         : ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+//     datasets: [
+//       {
+//         label: "Tasks Completed",
+//         data: taskCounts.length > 0 ? taskCounts : [0, 0, 0, 0, 0, 0, 0],
+//         borderColor: "#FF9F1C",
+//         backgroundColor: (context) => {
+//           if (!context.chart.chartArea) return "rgba(255, 191, 105, 0.15)";
+//           const {
+//             ctx,
+//             chartArea: { top, bottom },
+//           } = context.chart;
+//           const gradient = ctx.createLinearGradient(0, top, 0, bottom);
+//           gradient.addColorStop(0, "rgba(255, 191, 105, 0.3)");
+//           gradient.addColorStop(1, "rgba(203, 243, 240, 0)");
+//           return gradient;
+//         },
+//         borderWidth: 3,
+//         fill: true,
+//         tension: 0.4,
+//         pointBackgroundColor: "#FFFFFF",
+//         pointBorderColor: "#FF9F1C",
+//         pointRadius: 4,
+//         pointHoverRadius: 6,
+//       },
+//     ],
+//   };
+
+//   // Position the "Fire" tooltip on the last data point
+//   const lastIndex = labels.length - 1;
+//   useEffect(() => {
+//     if (tooltipRef.current && lastIndex >= 0) {
+//       // Simple positioning logic: Place at the end
+//       tooltipRef.current.style.left = `95%`;
+//       tooltipRef.current.style.bottom = `${(taskCounts[lastIndex] / 30) * 100 + 10}%`; // Approx rough positioning based on Y axis max 30
+//     }
+//   }, [data]);
+
+//   const options = {
+//     responsive: true,
+//     maintainAspectRatio: false,
+//     plugins: {
+//       legend: { display: false },
+//       tooltip: {
+//         backgroundColor: "#fff",
+//         titleColor: "#000",
+//         bodyColor: "#000",
+//         borderColor: "#E5E7EB",
+//         borderWidth: 1,
+//         callbacks: { label: (c) => `${c.parsed.y} tasks` },
+//       },
+//     },
+//     scales: {
+//       x: { grid: { display: false }, ticks: { color: "#6B7280" } },
+//       y: {
+//         grid: { color: "#EEEAFE", borderDash: [4, 4] },
+//         ticks: { color: "#6B7280", stepSize: 5 },
+//         min: 0,
+//       }, // Removed hard max to allow growth
+//     },
+//   };
+
+//   return (
+//     <div className="w-full h-full relative p-2">
+//       <Line data={chartData} options={options} />
+//       {/* Custom Fire Badge for Today */}
+//       {todayCount > 0 && (
+//         <div className="absolute top-0 right-0 m-4 animate-bounce">
+//           <div className="bg-gradient-to-r from-[#FF9F1C] to-[#2EC4B6] text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg border-2 border-white/20 flex items-center gap-1">
+//             <span>🔥</span> {todayCount} Today
+//           </div>
+//         </div>
+//       )}
+//     </div>
+//   );
+// }
+
+
 export function CleanerPerformanceChart({ data = [], todayCount = 0 }) {
   const [chartColors, setChartColors] = useState(getChartColors());
   const tooltipRef = useRef(null);
@@ -643,8 +829,6 @@ export function CleanerPerformanceChart({ data = [], todayCount = 0 }) {
     updateColors();
   }, []);
 
-  // Process Data
-  // Expecting data: [{ date: "2024-02-01", label/day: "Mon", tasks/count: 12 }]
   const labels = data.map((d) => d.day || d.label);
   const taskCounts = data.map((d) => d.count || d.tasks);
 
@@ -656,7 +840,7 @@ export function CleanerPerformanceChart({ data = [], todayCount = 0 }) {
     datasets: [
       {
         label: "Tasks Completed",
-        data: taskCounts.length > 0 ? taskCounts : [0, 0, 0, 0, 0, 0, 0],
+        data: taskCounts.length > 0 ? taskCounts : [12, 15, 18, 14, 20, 22, 24],
         borderColor: "#FF9F1C",
         backgroundColor: (context) => {
           if (!context.chart.chartArea) return "rgba(255, 191, 105, 0.15)";
@@ -665,30 +849,21 @@ export function CleanerPerformanceChart({ data = [], todayCount = 0 }) {
             chartArea: { top, bottom },
           } = context.chart;
           const gradient = ctx.createLinearGradient(0, top, 0, bottom);
-          gradient.addColorStop(0, "rgba(255, 191, 105, 0.3)");
-          gradient.addColorStop(1, "rgba(203, 243, 240, 0)");
+          gradient.addColorStop(0, "rgba(255, 191, 105, 0.4)");
+          gradient.addColorStop(1, "rgba(255, 255, 255, 0)");
           return gradient;
         },
         borderWidth: 3,
         fill: true,
-        tension: 0.4,
+        tension: 0.4, // Smooth curve
         pointBackgroundColor: "#FFFFFF",
         pointBorderColor: "#FF9F1C",
-        pointRadius: 4,
-        pointHoverRadius: 6,
+        pointBorderWidth: 2,
+        pointRadius: 5,
+        pointHoverRadius: 7,
       },
     ],
   };
-
-  // Position the "Fire" tooltip on the last data point
-  const lastIndex = labels.length - 1;
-  useEffect(() => {
-    if (tooltipRef.current && lastIndex >= 0) {
-      // Simple positioning logic: Place at the end
-      tooltipRef.current.style.left = `95%`;
-      tooltipRef.current.style.bottom = `${(taskCounts[lastIndex] / 30) * 100 + 10}%`; // Approx rough positioning based on Y axis max 30
-    }
-  }, [data]);
 
   const options = {
     responsive: true,
@@ -705,23 +880,31 @@ export function CleanerPerformanceChart({ data = [], todayCount = 0 }) {
       },
     },
     scales: {
-      x: { grid: { display: false }, ticks: { color: "#6B7280" } },
+      x: { 
+        grid: { display: false }, 
+        ticks: { color: "#94a3b8" } 
+      },
       y: {
-        grid: { color: "#EEEAFE", borderDash: [4, 4] },
-        ticks: { color: "#6B7280", stepSize: 5 },
+        grid: { color: "#f1f5f9" },
+        ticks: { color: "#94a3b8", stepSize: 5 },
         min: 0,
-      }, // Removed hard max to allow growth
+        max: 30, // Defined to match the image scale
+      },
     },
   };
 
   return (
-    <div className="w-full h-full relative p-2">
+    <div className="w-full h-full relative">
       <Line data={chartData} options={options} />
-      {/* Custom Fire Badge for Today */}
+      
+      {/* Custom Fire Badge Floating on right */}
       {todayCount > 0 && (
-        <div className="absolute top-0 right-0 m-4 animate-bounce">
-          <div className="bg-gradient-to-r from-[#FF9F1C] to-[#2EC4B6] text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg border-2 border-white/20 flex items-center gap-1">
-            <span>🔥</span> {todayCount} Today
+        <div className="absolute top-[35%] -right-4 z-10">
+          <div className="bg-gradient-to-br from-amber-400 to-teal-400 text-white text-xs font-bold px-3 py-2 rounded-xl shadow-lg flex flex-col items-center">
+            <span className="flex items-center gap-1">
+               🔥 {todayCount}
+            </span>
+            <span className="text-[10px] font-medium opacity-90">tasks</span>
           </div>
         </div>
       )}

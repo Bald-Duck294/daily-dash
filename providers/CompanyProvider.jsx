@@ -130,7 +130,7 @@ function CompanyProviderImpl({ children }) {
 // Export the wrapper component with Suspense
 export function CompanyProvider({ children }) {
   return (
-   <Suspense fallback={<FullScreenLoader />}>
+   <Suspense fallback={null}>
       <CompanyProviderImpl>{children}</CompanyProviderImpl>
     </Suspense>
   );

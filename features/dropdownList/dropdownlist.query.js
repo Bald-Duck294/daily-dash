@@ -54,3 +54,43 @@ export const useCompaniesDropdown = () => {
     staleTime: 10 * 60 * 1000, 
   });
 };
+
+export const useCleanersDropdown = (companyId) => {
+  return useQuery({
+    queryKey: ["cleanersDropdown", companyId],
+    queryFn: async () => {
+      const res = await DropdownlistApi.getCleanersForDropdown(companyId);
+      if (!res.success) throw new Error("Failed to fetch cleaners dropdown");
+      
+      // Return just the array of cleaner objects
+      return res.data; 
+    },
+    // Don't run the query until we actually have a company ID
+    enabled: companyId !== undefined && companyId !== null, 
+  });
+};
+
+export const useDropdownZones = (companyId) => {
+  return useQuery({
+    queryKey: ["zonesDropdown", companyId],
+    queryFn: async () => {
+      // ✅ Use the correct exported constant name
+      const response = await DropdownlistApi.getZonesForDropdown({ 
+        company_id: companyId 
+      });
+      return response;
+    },
+    enabled: !!companyId, 
+  });
+
+};
+
+export const useDropdownRoles = () => {
+  return useQuery({
+    queryKey: ["rolesDropdown"],
+    queryFn: async () => {
+      const response = await DropdownlistApi.getRolesForDropdown();
+      return response;
+    },
+  });
+};

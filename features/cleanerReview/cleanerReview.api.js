@@ -40,6 +40,43 @@ export const CleanerReviewApi = {
       };
     }
   },
+  getAllCleanerReview: async (params = {}, company_id) => {
+    // console.log('in get all cleaner review ', company_id)
+    try {
+      const queryParams = new URLSearchParams();
+
+      // console.log(queryParams, "query params ")
+      if (params.status) {
+        queryParams.append("status", params.status);
+      }
+      if (params.cleanerId) {
+        queryParams.append("cleaner_user_id", params.cleanerId);
+      }
+      if (params.date) {
+        queryParams.append("date", params.date);
+      }
+
+      if (company_id) {
+        queryParams.append("company_id", company_id);
+      }
+      // console.log(queryParams, "query params after response")
+
+      const response = await axiosInstance.get(
+        `/cleaner-reviews/paginated?${queryParams.toString()}`,
+      );
+
+      return {
+        success: true,
+        data: response.data,
+      };
+    } catch (error) {
+      console.error("Error fetching cleaner reviews:", error);
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message,
+      };
+    }
+  },
 
   getCleanerReviewsByCleanerId: async (cleanerUserId) => {
     try {

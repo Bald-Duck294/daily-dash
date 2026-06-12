@@ -24,14 +24,16 @@ export const DashboardApi = {
   },
 
   // 2. Get top locations
-  getTopLocations: async (companyId, limit = 5, date) => {
+getAllLocationsScores: async (companyId, date) => {
     try {
       const params = new URLSearchParams({
         companyId,
-        limit,
+        // Removed the limit parameter
         date: date || new Date().toISOString().split("T")[0],
       });
 
+      // Note: Update the endpoint URL here if you also changed your backend route name 
+      // (e.g., from '/dashboard/top-locations' to '/dashboard/all-locations')
       const response = await axiosInstance.get(
         `/dashboard/top-locations?${params.toString()}`,
       );
@@ -41,11 +43,10 @@ export const DashboardApi = {
         data: response.data.data,
       };
     } catch (error) {
-      console.error("Error fetching top locations:", error);
+      console.error("Error fetching all locations scores:", error);
       return { success: false, error: error.message };
     }
   },
-
   // 3. Get today's activities
   getActivities: async (companyId, limit = 10, date) => {
     try {
