@@ -2,24 +2,24 @@ import {
   LayoutDashboard,
   Building2,
   List,
-  FolderTree,
+
   FolderPlus,
   UserPlus,
   Users,
   UserCog,
+  UserCheck,
   PlusCircle,
-  Toilet,
-  ClipboardList,
+
   MapPin,
-  Building,
+ 
   MessageSquare,
   FileText,
   ShieldCheck,
   Award,
-  Settings,
+
   Layers3,
   BarChart3,
-  Map,
+
   ListChecks,
   Activity,
   Wrench,
@@ -326,6 +326,11 @@ export function getSuperadminCompanyMenu(companyId) {
       href: `/cleaners?companyId=${companyId}`,
     },
     {
+      icon: UserCheck,
+      label: "Attendance",
+      href: `/attendance?companyId=${companyId}`,
+    },
+    {
       icon: MessageSquare,
       label: "User Review",
       href: `/users/review?companyId=${companyId}`,
@@ -522,6 +527,11 @@ export function getAdminMenu(companyId) {
       href: `/cleaners?companyId=${companyId}`,
     },
     {
+      icon: UserCheck,
+      label: "Attendance",
+      href: `/attendance?companyId=${companyId}`,
+    },
+    {
       icon: MessageSquare,
       label: "User Review",
       href: `/users/review?companyId=${companyId}`,
@@ -661,6 +671,11 @@ export const getFullCompanyMenuTemplate = (companyId) => [
     requiredPermission: "cleaner_reviews.view",
     href: `/cleaners?companyId=${companyId}`,
   },
+  {
+      icon: UserCheck,
+      label: "Attendance",
+      href: `/attendance?companyId=${companyId}`,
+    },
   {
     icon: MessageSquare,
     label: "User Review",
