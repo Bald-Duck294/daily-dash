@@ -475,6 +475,21 @@ export default function CleanerReviewPage() {
   if (isError) {
     toast.error(error?.message || "Failed to load cleaner activity");
   }
+useEffect(() => {
+  const cleanerIdFromUrl = searchParams.get("cleanerId");
+  const dateFromUrl = searchParams.get("date");
+
+  if (cleanerIdFromUrl) {
+    setSelectedCleanerId(cleanerIdFromUrl);
+  }
+
+  if (dateFromUrl) {
+    setDatePreset("custom"); // Set to custom so it doesn't default to 'today'
+    setStartDate(dateFromUrl);
+    setEndDate(dateFromUrl);
+  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [searchParams]);
 
   /* ---------------- render ---------------- */
   return (

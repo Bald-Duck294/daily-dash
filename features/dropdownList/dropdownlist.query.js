@@ -69,7 +69,24 @@ export const useCleanersDropdown = (companyId) => {
     enabled: companyId !== undefined && companyId !== null, 
   });
 };
-
+export const useAssignedCleanersDropdown = (companyId, search = "") => {
+  return useQuery({
+    queryKey: ["assignedCleanersDropdown", companyId, search],
+    queryFn: async () => {
+      const res = await DropdownlistApi.getAssignedCleanersForDropdown(companyId, search);
+      
+      if (!res.success) {
+        throw new Error("Failed to fetch assigned cleaners dropdown");
+      }
+      
+      // Return just the array of formatted cleaner objects
+      return res.data; 
+    },
+    // Prevent the query from firing until a companyId is actually available
+    enabled: !!companyId, 
+    staleTime: 5 * 60 * 1000, // Cache the data for 5 minutes
+  });
+};
 export const useDropdownZones = (companyId) => {
   return useQuery({
     queryKey: ["zonesDropdown", companyId],

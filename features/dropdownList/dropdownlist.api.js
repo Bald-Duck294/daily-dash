@@ -61,7 +61,20 @@ export const DropdownlistApi = {
       return { success: false, data: [] };
     }
   },
-
+getAssignedCleanersForDropdown: async (companyId, search = "") => {
+    try {
+      const response = await axiosInstance.get("/dropdown-list/assigned-cleaners", {
+        params: { 
+          companyId,
+          search // Passing the optional search param as requested by the backend
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching assigned cleaners for dropdown:", error);
+      return { success: false, data: [] };
+    }
+  },
  getZonesForDropdown: async (filters = {}) => {
     const { company_id, type_id } = filters;
 
