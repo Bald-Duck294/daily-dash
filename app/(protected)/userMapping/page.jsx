@@ -590,7 +590,7 @@ export default function AssignmentListPage() {
                               className="text-[10px] font-medium"
                               style={{ color: "var(--assignment-subtitle)" }}
                             >
-                              {assignment.user?.email || "No email"}
+                              {assignment.user?.phone || "No phone"}
                             </p>
                           </div>
                         </div>
