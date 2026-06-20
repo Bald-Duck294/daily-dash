@@ -24,6 +24,8 @@ import {
   Activity,
   Wrench,
   AlertCircle,
+  cog,
+  Cog,
 } from "lucide-react";
 
 /* ---------------- SUPERADMIN (NO COMPANY) ---------------- */
@@ -117,7 +119,7 @@ export function getSuperadminMainMenu() {
       icon: AlertCircle,
       label: "Service Request",
       href: "/serviceRequest",
-    },  
+    },
   ];
 }
 /* ---------------- SUPERADMIN (INSIDE COMPANY) ---------------- */
@@ -326,6 +328,11 @@ export function getSuperadminCompanyMenu(companyId) {
       href: `/cleaners?companyId=${companyId}`,
     },
     {
+      icon: Cog,
+      label: "Dynamic Configuration",
+      href: `/configurations?companyId=${companyId}`,
+    },
+    {
       icon: MessageSquare,
       label: "User Review",
       href: `/users/review?companyId=${companyId}`,
@@ -522,6 +529,11 @@ export function getAdminMenu(companyId) {
       href: `/cleaners?companyId=${companyId}`,
     },
     {
+      icon: Cog,
+      label: "Dynamic Configuration",
+      href: `/configurations?companyId=${companyId}`,
+    },
+    {
       icon: MessageSquare,
       label: "User Review",
       href: `/users/review?companyId=${companyId}`,
@@ -660,6 +672,13 @@ export const getFullCompanyMenuTemplate = (companyId) => [
     simpleLabel: "Cleaner Activity",
     requiredPermission: "cleaner_reviews.view",
     href: `/cleaners?companyId=${companyId}`,
+  },
+  {
+    icon: Cog,
+    label: "Dynamic Configuration",
+    simpleLabel: "Dynamic Configuration",
+    requiredPermission: "configurations.view",
+    href: `/configurations?companyId=${companyId}`,
   },
   {
     icon: MessageSquare,

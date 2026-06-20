@@ -31,6 +31,7 @@ export default function TemplateManager() {
     companyId,
   );
 
+  console.log(fetchedConfigs, "fetch configs");
   const { mutateAsync: updateConfig, isPending: isCopying } =
     useUpdateConfigByName();
   const { mutateAsync: deleteConfig, isPending: isDeleting } =
@@ -64,6 +65,33 @@ export default function TemplateManager() {
       toast.success("Override created successfully.");
     } catch (error) {
       toast.error("Failed to create override.");
+    }
+  };
+
+  const handleCreateBlank = async () => {
+    if (!companyId) {
+      toast.error("No active company selected.");
+      return;
+    }
+
+    const blankState =
+      configName === "LOCATION_ADDITIONAL_FEATURES"
+        ? { type: "additional_features", version: 1, categories: [] }
+        : { type: "usage_category", version: 1, categories: [] };
+
+    try {
+      await updateConfig({
+        name: configName,
+        payload: {
+          description: blankState,
+          notes: "Created from scratch",
+          is_active: true,
+        },
+        companyId: companyId,
+      });
+      toast.success("Blank override created successfully.");
+    } catch (error) {
+      toast.error("Failed to create blank configuration.");
     }
   };
 
@@ -221,9 +249,18 @@ export default function TemplateManager() {
                 <p className="text-sm font-bold text-slate-600 dark:text-slate-400">
                   No active overrides for this company.
                 </p>
-                <p className="text-xs text-slate-400 mt-1">
-                  Copy a Global Template to create a custom version.
-                </p>
+                <div className="flex items-center justify-center gap-4 mt-4">
+                  <p className="text-xs text-slate-400">
+                    Copy a Global Template above, or
+                  </p>
+                  <button
+                    onClick={handleCreateBlank}
+                    disabled={isCopying}
+                    className="px-4 py-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 text-xs font-bold rounded-lg hover:bg-indigo-100 transition-colors"
+                  >
+                    Create From Scratch
+                  </button>
+                </div>  
               </div>
             )}
           </div>

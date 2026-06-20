@@ -13,21 +13,15 @@ import {
   Factory,
   ArrowLeft,
   Users,
-  User,
-  User2,
-  VenusAndMars,
-  Baby,
   CheckCircle2,
-  Wind,
-  Shield,
-  Package,
-  UserCheck,
-  Clock,
-  CreditCard,
   X,
   Image as ImageIcon,
   ChevronDown,
   Info,
+  Shield,
+  Star,
+  Baby,
+  ListChecks,
 } from "lucide-react";
 import { FaPerson, FaPersonDress, FaWheelchair } from "react-icons/fa6";
 import { MdShower, MdFamilyRestroom } from "react-icons/md";
@@ -48,94 +42,9 @@ import { useLocationTypes } from "@/features/locationTypes/locationTypes.queries
 import { useCreateAssignmentsForLocation } from "@/features/assignments/assignments.queries";
 import { useGetUsersByRole } from "@/features/users/users.queries";
 
-// ✅ NEW: Import Dynamic Schema Hook
+// Dynamic Schema Hook
 import { useLocationSchema } from "@/features/configurations/configurations.queries";
 import Loader from "@/components/ui/Loader";
-
-// --- CONFIGURATION OBJECT (Will be dynamic in Phase 2) ---
-const FEATURE_CONFIG = [
-  {
-    key: "isPaid",
-    label: "Paid Entry Required",
-    category: "Access",
-    icon: <CreditCard size={14} />,
-  },
-  {
-    key: "isHandicapAccessible",
-    label: "Wheelchair Accessible",
-    category: "Accessibility",
-    icon: <Users size={14} />,
-  },
-  {
-    key: "isStrictlyForHandicap",
-    label: "Strictly for Disabled Users",
-    category: "Accessibility",
-    icon: <Shield size={14} />,
-  },
-  {
-    key: "hasBabyChangingStation",
-    label: "Baby Changing Station",
-    category: "Family Features",
-    icon: <Baby size={14} />,
-  },
-  {
-    key: "hasSanitaryProducts",
-    label: "Sanitary Products",
-    category: "Amenities",
-    icon: <Package size={14} />,
-  },
-  {
-    key: "hasAttendant",
-    label: "Attendant Present",
-    category: "Service",
-    icon: <UserCheck size={14} />,
-  },
-  {
-    key: "is24Hours",
-    label: "24/7 Availability",
-    category: "Access",
-    icon: <Clock size={14} />,
-  },
-  {
-    key: "hasHandDryer",
-    label: "Hand Dryer Available",
-    category: "Amenities",
-    icon: <Wind size={14} />,
-  },
-];
-
-const GENDER_OPTIONS = [
-  {
-    label: "Male",
-    value: "male",
-    category: "Access",
-    icon: <User size={14} />,
-  },
-  {
-    label: "Female",
-    value: "female",
-    category: "Access",
-    icon: <User2 size={14} />,
-  },
-  {
-    label: "Unisex / All Genders",
-    value: "unisex",
-    category: "Access",
-    icon: <VenusAndMars size={14} />,
-  },
-  {
-    label: "Family Room",
-    value: "family",
-    category: "Family Features",
-    icon: <Baby size={14} />,
-  },
-  {
-    label: "Children Only",
-    value: "children",
-    category: "Access",
-    icon: <Baby size={14} />,
-  },
-];
 
 const validatePincode = (pincode) => {
   if (!pincode) return true;
@@ -187,6 +96,8 @@ const getCategoryIcon = (id, className) => {
   if (id.includes("handicap") || id.includes("disable"))
     return <FaWheelchair className={className} />;
   if (id.includes("family")) return <MdFamilyRestroom className={className} />;
+  if (id.includes("access")) return <Shield className={className} />;
+  if (id.includes("amenities")) return <Star className={className} />;
   return <Users className={className} />;
 };
 
@@ -219,7 +130,7 @@ export default function AddWashroomForm() {
     (u) => parseInt(u.role_id || u.role?.id) === 5,
   );
 
-  // ✅ NEW: Fetch Dynamic Schema
+  // Fetch Dynamic Schema (Provides both Usage Categories & Additional Features)
   const { data: locationSchema, isLoading: isLoadingSchema } =
     useLocationSchema(companyId);
 
@@ -261,8 +172,8 @@ export default function AddWashroomForm() {
     dist: "",
     status: true,
     no_of_photos: null,
-    options: { genderAccess: [] },
-    usage_category: {}, // Starts empty, filled by schema
+    options: {}, // Hydrated dynamically
+    usage_category: {}, // Hydrated dynamically
     schedule: {
       mode: "TWENTY_FOUR_HOURS",
       opens_at: "",
@@ -295,22 +206,48 @@ export default function AddWashroomForm() {
     },
   });
 
-  // ✅ Initialize usage_category from dynamic schema
+  // ✅ Initialize Dynamic Schemas (Usage Categories AND Additional Features)
   useEffect(() => {
-    if (locationSchema?.usageCategories) {
-      const initialUsage = {};
-      locationSchema.usageCategories.forEach((category) => {
-        initialUsage[category.id] = {};
-        category.entities.forEach((entity) => {
-          initialUsage[category.id][entity.id] = entity.defaultValue || 0;
-        });
-      });
-      // Only set if not already populated to avoid wiping out user data on re-renders
+    if (locationSchema) {
       setForm((prev) => {
-        if (Object.keys(prev.usage_category).length === 0) {
-          return { ...prev, usage_category: initialUsage };
+        let newState = { ...prev };
+        let hasChanges = false;
+
+        // 1. Init Usage Categories
+        if (
+          locationSchema.usageCategories &&
+          Object.keys(prev.usage_category).length === 0
+        ) {
+          const initialUsage = {};
+          locationSchema.usageCategories.forEach((category) => {
+            initialUsage[category.id] = {};
+            category.entities.forEach((entity) => {
+              initialUsage[category.id][entity.id] = entity.defaultValue || 0;
+            });
+          });
+          newState.usage_category = initialUsage;
+          hasChanges = true;
         }
-        return prev;
+
+        // 2. Init Additional Features (Options)
+        if (locationSchema.additionalFeatures) {
+          const initialOptions = { ...prev.options };
+          locationSchema.additionalFeatures.forEach((category) => {
+            category.fields.forEach((field) => {
+              if (initialOptions[field.key] === undefined) {
+                // Ensure multiselect defaults to array
+                initialOptions[field.key] =
+                  field.type === "multiselect"
+                    ? field.defaultValue || []
+                    : field.defaultValue;
+                hasChanges = true;
+              }
+            });
+          });
+          newState.options = initialOptions;
+        }
+
+        return hasChanges ? newState : prev;
       });
     }
   }, [locationSchema]);
@@ -332,6 +269,8 @@ export default function AddWashroomForm() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // --- Handlers ---
 
   const handleCoordinateChange = (field, value) => {
     setManualCoords((prev) => ({ ...prev, [field]: value }));
@@ -359,17 +298,13 @@ export default function AddWashroomForm() {
         `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`,
       );
       const data = await response.json();
-
       if (data.status === "OK" && data.results[0]) {
         const result = data.results[0];
-        const addressComponents = result.address_components;
-
         let state = "",
           city = "",
           pincode = "",
           district = "";
-
-        addressComponents.forEach((component) => {
+        result.address_components.forEach((component) => {
           if (component.types.includes("administrative_area_level_1"))
             state = component.long_name;
           if (component.types.includes("locality")) city = component.long_name;
@@ -378,13 +313,11 @@ export default function AddWashroomForm() {
           if (component.types.includes("postal_code"))
             pincode = component.long_name;
         });
-
         handleChange("address", result.formatted_address);
         if (state) handleChange("state", state);
         if (city) handleChange("city", city);
         if (district) handleChange("dist", district);
         if (pincode) handleChange("pincode", pincode);
-
         return true;
       }
       return false;
@@ -397,14 +330,12 @@ export default function AddWashroomForm() {
     handleChange("latitude", lat);
     handleChange("longitude", lng);
     setManualCoords({ latitude: lat.toString(), longitude: lng.toString() });
-
     const geocoded = await reverseGeocode(lat, lng);
     if (geocoded) toast.success("Location details auto-filled from map");
   };
 
   const handleChange = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
-
     if (key === "state") {
       const indiaStates = State.getStatesOfCountry("IN");
       const selectedState = indiaStates.find((s) => s.name === value);
@@ -416,29 +347,10 @@ export default function AddWashroomForm() {
       }
       setForm((prev) => ({ ...prev, city: "" }));
     }
-
-    if (key === "pincode") {
+    if (key === "pincode")
       setPincodeError(
         value && !validatePincode(value) ? "Invalid pincode" : "",
       );
-    }
-  };
-
-  const handleOptionChange = (key, value) => {
-    setForm((prev) => ({
-      ...prev,
-      options: { ...prev.options, [key]: value },
-    }));
-  };
-
-  const handleGenderAccessChange = (value) => {
-    setForm((prev) => {
-      const currentAccess = prev.options.genderAccess || [];
-      const newAccess = currentAccess.includes(value)
-        ? currentAccess.filter((item) => item !== value)
-        : [...currentAccess, value];
-      return { ...prev, options: { ...prev.options, genderAccess: newAccess } };
-    });
   };
 
   const updateUsageCategory = (categoryId, fieldId, value) => {
@@ -454,10 +366,35 @@ export default function AddWashroomForm() {
     }));
   };
 
+  // ✅ Generic Option Handlers
+  const handleOptionChange = (key, value) => {
+    setForm((prev) => ({
+      ...prev,
+      options: { ...prev.options, [key]: value },
+    }));
+  };
+
+  const handleMultiSelectChange = (key, value) => {
+    setForm((prev) => {
+      const currentArray = prev.options[key] || [];
+      const newArray = currentArray.includes(value)
+        ? currentArray.filter((item) => item !== value)
+        : [...currentArray, value];
+      return { ...prev, options: { ...prev.options, [key]: newArray } };
+    });
+  };
+
+  // ✅ Conditional Visibility Logic Evaluator
+  const isFieldVisible = (field) => {
+    if (!field.visibleWhen) return true;
+    const targetValue = form.options[field.visibleWhen.field];
+    return targetValue === field.visibleWhen.equals;
+  };
+
+  // Image Handlers
   const handleCoverImageSelect = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
     if (file.type.startsWith("image/") && file.size <= 5 * 1024 * 1024) {
       if (coverImage) URL.revokeObjectURL(coverImage.url);
       setCoverImage({ file, url: URL.createObjectURL(file), name: file.name });
@@ -470,11 +407,9 @@ export default function AddWashroomForm() {
   const handleOtherImagesSelect = (e) => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
-
     const validFiles = files.filter(
       (file) => file.type.startsWith("image/") && file.size <= 5 * 1024 * 1024,
     );
-
     if (validFiles.length > 0) {
       const newPreviews = validFiles.map((file) => ({
         file,
@@ -492,16 +427,14 @@ export default function AddWashroomForm() {
     if (coverImage) URL.revokeObjectURL(coverImage.url);
     setCoverImage(null);
   };
-
   const removeOtherImage = (index) => {
     URL.revokeObjectURL(otherImages[index].url);
     setOtherImages((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async () => {
-    if (!form.name || !form.type_id) {
+    if (!form.name || !form.type_id)
       return toast.error("Please fill in required fields (Name, Type)");
-    }
 
     const to12HourFormat = (time24) => {
       if (!time24) return "";
@@ -513,7 +446,6 @@ export default function AddWashroomForm() {
     };
 
     const normalizedSchedule = JSON.parse(JSON.stringify(form.schedule));
-
     if (normalizedSchedule.mode === "FIXED_HOURS") {
       const { opens_at, closes_at } = normalizedSchedule;
       if (opens_at && closes_at) {
@@ -522,7 +454,6 @@ export default function AddWashroomForm() {
         normalizedSchedule.closes_at = to12HourFormat(closes_at);
       }
     }
-
     if (normalizedSchedule.mode === "DAY_WISE") {
       Object.keys(normalizedSchedule.days).forEach((day) => {
         const dayData = normalizedSchedule.days[day];
@@ -534,7 +465,6 @@ export default function AddWashroomForm() {
       });
     }
 
-    // ✅ NEW: Dynamic Normalization
     const normalizedUsage = {};
     Object.keys(form.usage_category).forEach((catId) => {
       normalizedUsage[catId] = Object.fromEntries(
@@ -549,6 +479,7 @@ export default function AddWashroomForm() {
       ...form,
       schedule: normalizedSchedule,
       usage_category: normalizedUsage,
+      isNewCoverIncluded: !!coverImage, // ✅ Backend flag indicator
     };
 
     const combinedImages = [];
@@ -578,7 +509,6 @@ export default function AddWashroomForm() {
       } else {
         toast.success("Washroom added successfully");
       }
-
       setTimeout(() => router.push(`/washrooms?companyId=${companyId}`), 1000);
     } catch (error) {
       toast.error(error.message || "Submission failed");
@@ -599,9 +529,9 @@ export default function AddWashroomForm() {
   );
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8 pb-10 p-6 bg-slate-50 dark:bg-slate-900 min-h-screen">
+    <div className="max-w-7xl mx-auto space-y-8 pb-10 p-6 bg-slate-50 dark:bg-slate-950 min-h-screen transition-colors">
       {/* HEADER */}
-      <div className="w-full bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-8 py-6">
+      <div className="w-full bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-8 py-6 rounded-b-xl shadow-sm">
         <div className="flex items-center gap-4">
           <button
             onClick={() => router.back()}
@@ -656,7 +586,7 @@ export default function AddWashroomForm() {
                   <input
                     value={form.name}
                     onChange={(e) => handleChange("name", e.target.value)}
-                    className="w-full h-full pl-11 pr-4 rounded-xl text-sm transition-all outline-none border border-slate-200 bg-white text-slate-700 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:placeholder-slate-500 dark:focus:border-cyan-400 dark:focus:ring-cyan-400/20"
+                    className="w-full h-full pl-11 pr-4 rounded-xl text-sm transition-all outline-none border border-slate-200 bg-white text-slate-700 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:focus:border-cyan-400 dark:focus:ring-cyan-400/20"
                     placeholder="Enter washroom name"
                   />
                 </div>
@@ -688,7 +618,7 @@ export default function AddWashroomForm() {
                   <input
                     value={form.address}
                     onChange={(e) => handleChange("address", e.target.value)}
-                    className="w-full h-full pl-11 pr-4 rounded-xl text-sm transition-all outline-none border border-slate-200 bg-white text-slate-700 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:placeholder-slate-500 dark:focus:border-cyan-400 dark:focus:ring-cyan-400/20"
+                    className="w-full h-full pl-11 pr-4 rounded-xl text-sm transition-all outline-none border border-slate-200 bg-white text-slate-700 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:focus:border-cyan-400 dark:focus:ring-cyan-400/20"
                     placeholder="Enter full address"
                   />
                 </div>
@@ -708,7 +638,7 @@ export default function AddWashroomForm() {
                     onChange={(e) =>
                       handleChange("facility_company_id", e.target.value)
                     }
-                    className="w-full h-full pl-11 pr-4 rounded-xl text-sm transition-all outline-none border border-slate-200 bg-white text-slate-700 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:placeholder-slate-500 dark:focus:border-cyan-400 dark:focus:ring-cyan-400/20"
+                    className="w-full h-full pl-11 pr-4 rounded-xl text-sm transition-all outline-none border border-slate-200 bg-white text-slate-700 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:focus:border-cyan-400 dark:focus:ring-cyan-400/20"
                   >
                     <option value="">Select Provider</option>
                     {facilityCompanies.map((fc) => (
@@ -758,6 +688,7 @@ export default function AddWashroomForm() {
             </div>
           </div>
 
+          {/* 1.5 LOCATION INFORMATION CARD */}
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6">
             <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
               <div className="h-10 w-10 rounded-xl bg-cyan-400/10 flex items-center justify-center border border-cyan-500/10 shadow-sm">
@@ -868,7 +799,6 @@ export default function AddWashroomForm() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
                 {locationSchema?.usageCategories?.map((category, index) => {
                   const theme = CATEGORY_THEMES[index % CATEGORY_THEMES.length];
-
                   return (
                     <div
                       key={category.id}
@@ -949,52 +879,7 @@ export default function AddWashroomForm() {
             )}
           </div>
 
-          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6">
-            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
-              <div className="h-10 w-10 rounded-xl bg-cyan-400/5 flex items-center justify-center border border-cyan-500/10">
-                <Users className="text-cyan-500/70 text-xl" />
-              </div>
-              <div className="text-left">
-                <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-widest leading-none">
-                  Available for Gender*
-                </h2>
-                <p className="text-[10px] font-normal text-slate-400 uppercase tracking-widest mt-1.5">
-                  Operational Access Mapping
-                </p>
-              </div>
-            </div>
-            <div className="space-y-2">
-              {GENDER_OPTIONS.map((item) => (
-                <label
-                  key={item.value}
-                  className="flex items-center gap-4 group cursor-pointer p-2 rounded-xl hover:bg-slate-50/50 transition-colors"
-                >
-                  <div className="relative flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={form.options.genderAccess?.includes(item.value)}
-                      onChange={() => handleGenderAccessChange(item.value)}
-                      className="w-4 h-4 rounded border border-slate-200 text-cyan-500 focus:ring-0 cursor-pointer accent-cyan-500"
-                    />
-                  </div>
-                  <div className="flex flex-col">
-                    <div className="flex items-center gap-2">
-                      <span className="text-slate-400 group-hover:text-cyan-500/70 transition-colors">
-                        {item.icon}
-                      </span>
-                      <span className="text-sm font-medium text-slate-500 group-hover:text-slate-600 transition-colors tracking-tight">
-                        {item.label}
-                      </span>
-                    </div>
-                    <span className="text-[10px] font-normal text-slate-400 lowercase tracking-tight mt-0.5">
-                      {item.category}
-                    </span>
-                  </div>
-                </label>
-              ))}
-            </div>
-          </div>
-
+          {/* AVAILABILITY CARD */}
           <AvailabilityCard
             schedule={form.schedule}
             setSchedule={(updatedSchedule) =>
@@ -1005,6 +890,7 @@ export default function AddWashroomForm() {
 
         {/* === RIGHT COLUMN === */}
         <div className="space-y-8">
+          {/* 4. PIN LOCATION (MAP) */}
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6">
             <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
               <div className="h-10 w-10 rounded-xl bg-cyan-400/10 flex items-center justify-center border border-cyan-500/10 shadow-sm">
@@ -1022,8 +908,8 @@ export default function AddWashroomForm() {
 
             <div className="mb-4">
               <GoogleMapPicker
-                lat={form.latitude}
-                lng={form.longitude}
+                lat={form.latitude ? parseFloat(form.latitude) : null}
+                lng={form.longitude ? parseFloat(form.longitude) : null}
                 onSelect={handleMapLocationSelect}
               />
             </div>
@@ -1082,6 +968,7 @@ export default function AddWashroomForm() {
             </div>
           </div>
 
+          {/* 5. LOCATION IMAGES */}
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6">
             <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
               <div className="h-10 w-10 rounded-xl bg-cyan-400/10 flex items-center justify-center border border-cyan-500/10 shadow-sm">
@@ -1199,9 +1086,10 @@ export default function AddWashroomForm() {
             )}
           </div>
 
+          {/* 6. ASSIGN CLEANERS */}
           {canAssignCleaner && (
             <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6">
-              <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
+              <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
                 <div className="h-10 w-10 rounded-xl bg-cyan-400/10 flex items-center justify-center border border-cyan-500/10 shadow-sm">
                   <Users className="text-cyan-600 text-xl" />
                 </div>
@@ -1221,12 +1109,12 @@ export default function AddWashroomForm() {
                   onClick={() =>
                     setIsCleanerDropdownOpen(!isCleanerDropdownOpen)
                   }
-                  className="w-full text-left pl-4 pr-10 py-3 rounded-xl text-sm border border-slate-200 bg-white text-slate-700 flex justify-between items-center transition dark:bg-slate-800"
+                  className="w-full text-left pl-4 pr-10 py-3 rounded-xl text-sm border border-slate-200 bg-white text-slate-700 flex justify-between items-center transition dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200"
                 >
                   <span
                     className={
                       selectedCleaners.length
-                        ? "text-slate-700"
+                        ? "text-slate-700 dark:text-slate-200"
                         : "text-slate-400"
                     }
                   >
@@ -1238,10 +1126,10 @@ export default function AddWashroomForm() {
                 </button>
 
                 {isCleanerDropdownOpen && (
-                  <div className="absolute z-10 w-full mt-2 rounded-xl shadow-xl max-h-60 overflow-y-auto p-2 bg-white border border-slate-200">
-                    <div className="sticky top-0 z-10 p-2 mb-2 bg-white border-b border-slate-200">
+                  <div className="absolute z-10 w-full mt-2 rounded-xl shadow-xl max-h-60 overflow-y-auto p-2 bg-white border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
+                    <div className="sticky top-0 z-10 p-2 mb-2 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
                       <input
-                        className="w-full p-2 text-xs rounded-lg border bg-slate-50"
+                        className="w-full p-2 text-xs rounded-lg border bg-slate-50 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-200 outline-none focus:border-cyan-500"
                         placeholder="Search staff..."
                         value={cleanerSearchTerm}
                         onChange={(e) => setCleanerSearchTerm(e.target.value)}
@@ -1255,7 +1143,7 @@ export default function AddWashroomForm() {
                       filteredCleaners.map((cleaner) => (
                         <div
                           key={cleaner.id}
-                          className="flex items-center gap-2 p-2 hover:bg-slate-50 rounded-lg cursor-pointer"
+                          className="flex items-center gap-2 p-2 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-lg cursor-pointer"
                           onClick={() =>
                             setSelectedCleaners((prev) =>
                               prev.some((c) => c.id === cleaner.id)
@@ -1270,10 +1158,10 @@ export default function AddWashroomForm() {
                               (c) => c.id === cleaner.id,
                             )}
                             readOnly
-                            className="rounded text-cyan-500"
+                            className="rounded text-cyan-500 focus:ring-0"
                           />
                           <div>
-                            <p className="text-xs font-bold text-slate-700">
+                            <p className="text-xs font-bold text-slate-700 dark:text-slate-200">
                               {cleaner.name}
                             </p>
                             <p className="text-[10px] text-slate-400">
@@ -1289,63 +1177,173 @@ export default function AddWashroomForm() {
             </div>
           )}
 
+          {/* ✅ 7. DYNAMIC ADDITIONAL FEATURES CARD */}
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6">
-            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-b border-slate-200 dark:border-slate-700">
+            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
               <div className="h-10 w-10 rounded-xl bg-cyan-400/5 flex items-center justify-center border border-cyan-500/10">
                 <CheckCircle2 className="text-cyan-500/70 text-xl" />
               </div>
               <div className="text-left">
-                <h2 className="text-sm font-semibold uppercase tracking-[0.18em] leading-none text-slate-800 dark:text-slate-100">
-                  Additional Features
+                <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-widest leading-none">
+                  Additional Features & Access
                 </h2>
+                <p className="text-[10px] font-normal text-slate-400 uppercase tracking-widest mt-1.5">
+                  Operational Rules & Amenities
+                </p>
               </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
-              {FEATURE_CONFIG.map((item) => (
-                <label
-                  key={item.key}
-                  className="flex items-start gap-4 group cursor-pointer p-3 rounded-xl transition-colors hover:bg-slate-50/70"
-                >
-                  <div className="relative flex items-center mt-0.5">
-                    <input
-                      type="checkbox"
-                      checked={!!form.options[item.key]}
-                      onChange={(e) =>
-                        handleOptionChange(item.key, e.target.checked)
-                      }
-                      className="w-4 h-4 rounded border border-slate-200 text-cyan-500 focus:ring-0 cursor-pointer accent-cyan-500"
-                    />
-                  </div>
-                  <div className="flex flex-col">
-                    <div className="flex items-center gap-2">
-                      <span className="text-slate-400 group-hover:text-cyan-500/70">
-                        {item.icon}
-                      </span>
-                      <span className="text-sm font-medium text-slate-500">
-                        {item.label}
-                      </span>
+
+            {isLoadingSchema ? (
+              <div className="p-8 flex justify-center">
+                <Loader size="small" message="Loading Features..." />
+              </div>
+            ) : (
+              <div className="space-y-8">
+                {locationSchema?.additionalFeatures?.map((category) => (
+                  <div
+                    key={category.id}
+                    className="bg-slate-50/50 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-800 rounded-xl p-5"
+                  >
+                    <div className="flex items-center gap-3 mb-4 pb-3 border-b border-slate-200 dark:border-slate-700/50">
+                      <div className="text-cyan-600 dark:text-cyan-400">
+                        {getCategoryIcon(category.id, "text-lg")}
+                      </div>
+                      <h3 className="text-xs font-black uppercase tracking-widest text-slate-700 dark:text-slate-200">
+                        {category.label}
+                      </h3>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                      {category.fields.filter(isFieldVisible).map((field) => (
+                        <div key={field.key} className="flex flex-col gap-1.5">
+                          <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider ml-1">
+                            {field.label}
+                          </label>
+
+                          {field.type === "boolean" && (
+                            <label className="flex items-center gap-3 cursor-pointer group mt-1">
+                              <input
+                                type="checkbox"
+                                checked={!!form.options[field.key]}
+                                onChange={(e) =>
+                                  handleOptionChange(
+                                    field.key,
+                                    e.target.checked,
+                                  )
+                                }
+                                className="w-4 h-4 rounded border border-slate-300 text-cyan-500 focus:ring-0 cursor-pointer accent-cyan-500"
+                              />
+                              <span className="text-sm font-medium text-slate-600 dark:text-slate-300 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors">
+                                {form.options[field.key]
+                                  ? "Enabled"
+                                  : "Disabled"}
+                              </span>
+                            </label>
+                          )}
+
+                          {(field.type === "number" ||
+                            field.type === "text") && (
+                            <input
+                              type={field.type}
+                              value={
+                                form.options[field.key] ??
+                                field.defaultValue ??
+                                ""
+                              }
+                              onChange={(e) =>
+                                handleOptionChange(
+                                  field.key,
+                                  field.type === "number"
+                                    ? Number(e.target.value)
+                                    : e.target.value,
+                                )
+                              }
+                              className="w-full px-3 py-2 rounded-lg text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/10"
+                              placeholder={field.label}
+                            />
+                          )}
+
+                          {field.type === "select" && (
+                            <select
+                              value={
+                                form.options[field.key] ??
+                                field.defaultValue ??
+                                ""
+                              }
+                              onChange={(e) =>
+                                handleOptionChange(field.key, e.target.value)
+                              }
+                              className="w-full px-3 py-2 rounded-lg text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/10"
+                            >
+                              <option value="" disabled>
+                                Select an option
+                              </option>
+                              {field.options?.map((opt) => (
+                                <option key={opt.value} value={opt.value}>
+                                  {opt.label}
+                                </option>
+                              ))}
+                            </select>
+                          )}
+
+                          {field.type === "multiselect" && (
+                            <div className="grid grid-cols-2 gap-2 mt-1">
+                              {field.options?.map((opt) => (
+                                <label
+                                  key={opt.value}
+                                  className="flex items-center gap-2 cursor-pointer group"
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={(
+                                      form.options[field.key] || []
+                                    ).includes(opt.value)}
+                                    onChange={() =>
+                                      handleMultiSelectChange(
+                                        field.key,
+                                        opt.value,
+                                      )
+                                    }
+                                    className="w-3.5 h-3.5 rounded border border-slate-300 text-cyan-500 focus:ring-0 cursor-pointer accent-cyan-500"
+                                  />
+                                  <span className="text-xs text-slate-600 dark:text-slate-300 group-hover:text-cyan-600 transition-colors">
+                                    {opt.label}
+                                  </span>
+                                </label>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   </div>
-                </label>
-              ))}
-            </div>
+                ))}
+                {(!locationSchema?.additionalFeatures ||
+                  locationSchema.additionalFeatures.length === 0) && (
+                  <p className="text-xs text-slate-500 text-center p-4">
+                    No additional features configured.
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      <div className="flex flex-wrap justify-end items-center gap-4 pt-6 border-t border-slate-200">
+      {/* --- FOOTER ACTIONS --- */}
+      <div className="flex flex-wrap justify-end items-center gap-4 pt-6 border-t border-slate-200 dark:border-slate-800">
         <button
           type="button"
           onClick={() => router.back()}
           disabled={isSubmitting}
-          className="flex items-center gap-2 px-8 py-3 rounded-xl border bg-white text-slate-500 text-xs font-black uppercase hover:bg-slate-50 shadow-sm"
+          className="flex items-center gap-2 px-8 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-xs font-black uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-95 shadow-sm"
         >
           Cancel
         </button>
         <button
           onClick={handleSubmit}
           disabled={isSubmitting || !canAddLocation}
-          className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white px-10 py-3 rounded-xl text-sm font-bold shadow-lg hover:brightness-110 active:scale-95 uppercase"
+          className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white px-10 py-3 rounded-xl text-sm font-bold shadow-lg hover:brightness-110 active:scale-95 uppercase tracking-wider disabled:opacity-70 disabled:cursor-not-allowed"
         >
           {isSubmitting ? "Saving..." : "Add Washroom"}
         </button>

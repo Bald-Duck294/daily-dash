@@ -84,16 +84,25 @@ export const ConfigurationsApi = {
   },
 
   getTemplatesByName: async (name, companyId) => {
-    console.log(name, companyId, "getTemplates by name and company");
     try {
-      const params = new URLSearchParams();
-      if (companyId) params.append("company_id", companyId);
+      // ✅ 1. Always append include_global=true
+      const params = new URLSearchParams({
+        name: name,
+        include_global: "true",
+      });
 
+      // ✅ 2. Append company_id if it exists
+      if (companyId) {
+        params.append("company_id", companyId);
+      }
+
+      // Will make a call to: /api/configurations?name=LOCATION_USAGE_CATEGORY&include_global=true&company_id=28
       const response = await axiosInstance.get(
-        `/configurations?name=${name}&${params.toString()}`,
+        `/configurations?${params.toString()}`,
       );
       return { success: true, data: response.data.data };
     } catch (error) {
+      console.error("Error fetching templates:", error);
       return {
         success: false,
         error: error.response?.data?.message || error.message,
