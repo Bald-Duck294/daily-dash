@@ -43,6 +43,58 @@ export const CleanerReviewApi = {
   },
 
 
+  getAllCleanerReview: async (params = {}, company_id) => {
+    try {
+      const queryParams = new URLSearchParams();
+
+      // 1. Status Filter
+      if (params.status) {
+        queryParams.append("status", params.status);
+      }
+      
+      // 2. Cleaner Filter (matching the 'cleaner_id' key from your React query)
+      if (params.cleaner_id) {
+        queryParams.append("cleaner_user_id", params.cleaner_id);
+      }
+      
+      // 3. Date Range Filters (replaced the old single 'date' param)
+      if (params.start_date) {
+        queryParams.append("start_date", params.start_date);
+      }
+      if (params.end_date) {
+        queryParams.append("end_date", params.end_date);
+      }
+
+      // 4. Pagination Filters
+      if (params.page) {
+        queryParams.append("page", params.page);
+      }
+      if (params.limit) {
+        queryParams.append("limit", params.limit);
+      }
+
+      // 5. Company ID
+      if (company_id) {
+        queryParams.append("company_id", company_id);
+      }
+
+      const response = await axiosInstance.get(
+        `/cleaner-reviews/paginated?${queryParams.toString()}`,
+      );
+
+      return {
+        success: true,
+        // response.data now contains your { data: [...], pagination: {...} } object
+        data: response.data, 
+      };
+    } catch (error) {
+      console.error("Error fetching cleaner reviews:", error);
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message,
+      };
+    }
+  },
 
   getCleanerReviewsByCleanerId: async (cleanerUserId) => {
     try {

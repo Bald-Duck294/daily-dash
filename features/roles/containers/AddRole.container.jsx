@@ -11,6 +11,7 @@ import { useCompanyId } from "@/providers/CompanyProvider";
 import { useRequirePermission } from "@/shared/hooks/useRequirePermission";
 import AddRoleForm from "@/features/roles/components/AddRoleForm.jsx";
 import { MODULES } from "@/shared/constants/permissions";
+
 /* ================= Constants ================= */
 
 const ROLE_ID_MAP = {
@@ -43,6 +44,7 @@ export default function AddRoleContainer() {
   /* ================= Derived ================= */
   const roleId = role ? ROLE_ID_MAP[role] : null;
   const title = role ? ROLE_TITLE_MAP[role] : "";
+  const isSuperAdmin = role === "superadmin"; // <-- Define isSuperAdmin flag
 
   /* ================= Guard ================= */
   useEffect(() => {
@@ -96,8 +98,11 @@ export default function AddRoleContainer() {
       }
     };
 
-    fetchCompanies();
-  }, [currentCompanyId]);
+    // Skip fetching companies if they are a superadmin (optimization)
+    if (!isSuperAdmin) {
+      fetchCompanies();
+    }
+  }, [currentCompanyId, isSuperAdmin]);
 
   /* ================= Submit ================= */
   const handleSubmit = async () => {
@@ -112,15 +117,30 @@ export default function AddRoleContainer() {
     if (formData.password !== formData.confirm_password)
       return toast.error("Passwords do not match");
 
-    if (!formData.company_id) return toast.error("Company is required");
+    // Allow superadmin to bypass company requirement
+    if (!isSuperAdmin && !formData.company_id) {
+      return toast.error("Company is required");
+    }
 
     setLoading(true);
 
     try {
       const payload = { ...formData };
       delete payload.confirm_password;
+      
+      // Clean up empty strings before sending
+      if (payload.age === "") delete payload.age;
+      if (payload.email === "") delete payload.email;
 
-      const res = await UsersApi.createUser(payload, payload.company_id);
+      // Completely remove company_id for superadmins so it doesn't get sent at all
+      if (isSuperAdmin) {
+        delete payload.company_id; 
+      }
+
+      // If UsersApi.createUser needs a second argument for the URL, handle it safely
+      const companyIdArg = isSuperAdmin ? null : payload.company_id;
+
+      const res = await UsersApi.createUser(payload, companyIdArg);
 
       if (res.success) {
         toast.success(`${title} created successfully`);
@@ -128,10 +148,19 @@ export default function AddRoleContainer() {
           `/roles/${role}${currentCompanyId ? `?companyId=${currentCompanyId}` : ""}`,
         );
       } else {
-        toast.error(res.error || "Failed to create user");
+        // Show the specific error if the API returns a structured response without throwing
+        toast.error(res.error || res.message || "Failed to create user");
       }
-    } catch {
-      toast.error("Failed to create user");
+    } catch (error) {
+      // Catch and display the nice P2002 duplicate email error from the backend!
+      console.error("Creation error:", error);
+      
+      const backendMessage = 
+        error?.response?.data?.message || // Axios error
+        error?.message ||                 // Standard JS error
+        "Failed to create user";
+        
+      toast.error(backendMessage);
     } finally {
       setLoading(false);
     }
@@ -172,6 +201,7 @@ export default function AddRoleContainer() {
       {/* ================= Form ================= */}
       <AddRoleForm
         title={title}
+        isSuperAdmin={isSuperAdmin} // <-- Pass flag to the form component
         formData={formData}
         setFormData={setFormData}
         companies={companies}

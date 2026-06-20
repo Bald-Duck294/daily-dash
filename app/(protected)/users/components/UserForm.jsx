@@ -4,8 +4,8 @@ import { useState, useEffect, useMemo } from "react";
 import { useCompanyId } from "@/providers/CompanyProvider";
 import { useSelector } from "react-redux";
 // TanStack Query Hooks
-import { useGetAllRoles } from "@/features/roles/queries/roles.queries"; 
-import { useCompany } from "@/features/companies/queries/companies.queries"; 
+import { useDropdownRoles } from "@/features/dropdownList/dropdownlist.query";
+import { useCompany } from "@/features/companies/queries/companies.queries";
 
 export default function UserForm({
   initialData,
@@ -19,13 +19,26 @@ export default function UserForm({
 
   // --- TANSTACK QUERIES ---
   const { data: companyData, isLoading: isLoadingCompany } = useCompany(companyId);
-  const { data: allRoles, isLoading: isLoadingRoles } = useGetAllRoles({ enabled: !!companyId });
+  const { data: rolesResponse, isLoading: isLoadingRoles } = useDropdownRoles();
 
   // --- DERIVED STATE ---
   const isLoadingData = isLoadingCompany || isLoadingRoles || isLoadingLocations;
   const currentUser = useSelector((state) => state.auth.user);
-  
-  const roles = useMemo(() => (allRoles || []).filter((role) => role.id !== 1), [allRoles]);
+
+  const allRoles = useMemo(() => {
+    if (!rolesResponse) return [];
+
+    // 1. Safely extract the array (handles both direct arrays and { data: [...] } objects)
+    const extractedArray = Array.isArray(rolesResponse)
+      ? rolesResponse
+      : (rolesResponse.data || []);
+
+    // 2. Final safety check before filtering
+    const safeArray = Array.isArray(extractedArray) ? extractedArray : [];
+
+    // 3. Filter out the Superadmin (id: 1)
+    return safeArray.filter((role) => role.id !== 1);
+  }, [rolesResponse]);
 
   // --- FORM STATE ---
   const [formData, setFormData] = useState({
@@ -41,7 +54,7 @@ export default function UserForm({
   const [canAssignLocation, setCanAssignLocation] = useState(false);
 
   // --- EFFECTS ---
-  
+
   // 1. Initialize Form Data
   useEffect(() => {
     if (initialData) {
@@ -64,16 +77,16 @@ export default function UserForm({
   useEffect(() => {
     const isSuperadmin = currentUser?.role_id === 1;
 
-    const selectedRole = roles.find(
+    const selectedRole = allRoles.find(
       (r) => r.id.toString() === formData.role_id.toString(),
     );
-    
-    const hasPermissionToAssign = 
-      isSuperadmin || 
+
+    const hasPermissionToAssign =
+      isSuperadmin ||
       (selectedRole && ["Admin", "Supervisor"].includes(selectedRole.name));
-    
+
     setCanAssignLocation(hasPermissionToAssign);
-  }, [formData.role_id, roles, currentUser]);
+  }, [formData.role_id, allRoles, currentUser]);
 
   // --- EVENT HANDLERS ---
   const handleChange = (e) => {
@@ -342,7 +355,7 @@ export default function UserForm({
               <option value="">
                 {isLoadingData ? "Loading roles..." : "Select role"}
               </option>
-              {roles.map((role) => (
+              {allRoles.map((role) => (
                 <option key={role.id} value={role.id}>
                   {role.name}
                 </option>
@@ -366,11 +379,11 @@ export default function UserForm({
               border: "1px solid var(--user-form-border)",
             }}
           >
-            {isLoadingLocations ? ( 
+            {isLoadingLocations ? (
               <p className="text-sm" style={{ color: "var(--user-form-subtext)" }}>
                 Loading locations...
               </p>
-            ) : locations.length > 0 ? ( 
+            ) : locations.length > 0 ? (
               locations.map((loc) => (
                 <label
                   key={loc.id}
@@ -399,7 +412,7 @@ export default function UserForm({
       )}
 
       {/* Action Buttons */}
-     <div className="flex justify-end gap-3 pt-6 border-t border-[var(--user-form-border)]">
+      <div className="flex justify-end gap-3 pt-6 border-t border-[var(--user-form-border)]">
         <button
           type="button"
           onClick={() => window.history.back()}

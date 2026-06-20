@@ -18,6 +18,18 @@ export const useCleanerReviews = (params = {}, companyId) => {
     keepPreviousData: true,
   });
 };
+export const useCleanerReview = (params = {}, companyId) => {
+  return useQuery({
+    queryKey: ["cleanerReviews", companyId, params],
+    queryFn: async () => {
+      const res = await CleanerReviewApi.getAllCleanerReview(params, companyId);
+      if (!res.success) throw new Error(res.error);
+      return res.data;
+    },
+    enabled: companyId !== undefined,
+    keepPreviousData: true,
+  });
+};
 
 /* -----------------------------------------
    GET: Reviews by cleaner user ID

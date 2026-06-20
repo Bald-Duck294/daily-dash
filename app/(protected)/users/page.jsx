@@ -1633,7 +1633,7 @@
 
 "use client";
 
-import { useState, useEffect, useCallback, useMemo,useRef  } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useSelector } from "react-redux";
 import toast, { Toaster } from "react-hot-toast";
 import {
@@ -1661,68 +1661,34 @@ import { MODULES } from "@/shared/constants/permissions";
 
 // TanStack Query Hooks
 import { useGetAllUsers, useDeleteUser } from "@/features/users/users.queries";
+import { useDropdownRoles } from "@/features/dropdownList/dropdownlist.query"; // ✅ ADDED
 
-// 1. Updated Hierarchy with Color Classes
-const ROLE_HIERARCHY = {
-  2: {
-    name: "Admin",
-    level: 2,
-    icon: Shield,
-    color: "blue",
-    activeClass:
-      "bg-gradient-to-br from-blue-500 to-blue-600 border-blue-600 text-white shadow-blue-200",
-    iconColor: "text-blue-100",
-  },
-  3: {
-    name: "Supervisor",
-    level: 4,
-    icon: UserCog,
-    color: "teal",
-    activeClass:
-      "bg-gradient-to-br from-teal-500 to-teal-600 border-teal-600 text-white shadow-teal-200",
-    iconColor: "text-teal-100",
-  },
-  5: {
-    name: "Cleaner",
-    level: 5,
-    icon: HardHat,
-    color: "orange",
-    activeClass:
-      "bg-gradient-to-br from-orange-500 to-orange-600 border-orange-600 text-white shadow-orange-200",
-    iconColor: "text-orange-100",
-  },
-  6: {
-    name: "Zonal Admin",
-    level: 3,
-    icon: MapPin,
-    color: "purple",
-    activeClass:
-      "bg-gradient-to-br from-purple-500 to-purple-600 border-purple-600 text-white shadow-purple-200",
-    iconColor: "text-purple-100",
-  },
-  7: {
-    name: "Facility Supv",
-    level: 4,
-    icon: Users,
-    color: "cyan",
-    activeClass:
-      "bg-gradient-to-br from-cyan-500 to-cyan-600 border-cyan-600 text-white shadow-cyan-200",
-    iconColor: "text-cyan-100",
-  },
-  8: {
-    name: "Facility Admin",
-    level: 3,
-    icon: Building2,
-    color: "indigo",
-    activeClass:
-      "bg-gradient-to-br from-indigo-500 to-indigo-600 border-indigo-600 text-white shadow-indigo-200",
-    iconColor: "text-indigo-100",
-  },
+// 1. Define the strict hierarchy levels (Lower number = Higher authority)
+const ROLE_LEVELS = {
+  1: 1, // Superadmin
+  2: 2, // Admin
+  6: 3, // Zonal Admin
+  8: 3, // Facility Admin
+  3: 4, // Supervisor
+  7: 4, // Facility Supv
+  5: 5, // Cleaner
 };
+
+// 2. Define the UI aesthetics for each Role ID
+const ROLE_UI_CONFIG = {
+  2: { icon: Shield, color: "blue", activeClass: "bg-gradient-to-br from-blue-500 to-blue-600 border-blue-600 text-white shadow-blue-200" },
+  6: { icon: MapPin, color: "purple", activeClass: "bg-gradient-to-br from-purple-500 to-purple-600 border-purple-600 text-white shadow-purple-200" },
+  8: { icon: Building2, color: "indigo", activeClass: "bg-gradient-to-br from-indigo-500 to-indigo-600 border-indigo-600 text-white shadow-indigo-200" },
+  3: { icon: UserCog, color: "teal", activeClass: "bg-gradient-to-br from-teal-500 to-teal-600 border-teal-600 text-white shadow-teal-200" },
+  7: { icon: Users, color: "cyan", activeClass: "bg-gradient-to-br from-cyan-500 to-cyan-600 border-cyan-600 text-white shadow-cyan-200" },
+  5: { icon: HardHat, color: "orange", activeClass: "bg-gradient-to-br from-orange-500 to-orange-600 border-orange-600 text-white shadow-orange-200" },
+};
+
+const DEFAULT_UI = { icon: Users, color: "gray", activeClass: "bg-slate-500 border-slate-600 text-white" };
 
 const TableRowSkeleton = () => (
   <tr className="animate-pulse border-b border-slate-100 dark:border-slate-800">
-    {[...Array(4)].map((_, i) => (
+    {[...Array(5)].map((_, i) => (
       <td key={i} className="p-4">
         <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-full" />
       </td>
@@ -1754,73 +1720,91 @@ export default function UsersPage() {
   const { companyId } = useCompanyId();
   const router = useRouter();
   const currentUser = useSelector((state) => state.auth.user);
-  const currentUserRoleId = parseInt(currentUser?.role_id || 4);
   
+  const currentUserRoleId = parseInt(currentUser?.role_id || 4);
+  const currentUserLevel = ROLE_LEVELS[currentUserRoleId] || 99; // Get logged in user's level
+
   // --- STATE ---
   const [currentPage, setCurrentPage] = useState(1);
-  const [limit, setLimit] = useState(15); // Added limit state for packet size
+  const [limit, setLimit] = useState(15);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRole, setSelectedRole] = useState("all");
   const [viewMode, setViewMode] = useState("table");
 
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const isMobile = window.innerWidth < 768; // md breakpoint
+useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleResize = () => {
+      const isMobile = window.innerWidth < 768;
+      // Force grid mode if screen is small
       if (isMobile) {
         setViewMode("grid");
       }
-    }
+    };
+
+    // 1. Run immediately on initial load
+    handleResize();
+
+    // 2. Actively listen for window dragging/resizing
+    window.addEventListener("resize", handleResize);
+
+    // 3. Cleanup the listener when leaving the page
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   // --- QUERIES ---
+  const { data: rolesResponse } = useDropdownRoles();
   const { data, isLoading } = useGetAllUsers(
     {
       companyId,
       roleId: selectedRole !== "all" ? selectedRole : null,
       page: currentPage,
-      limit: limit, // Passed limit into the query
+      limit: limit,
       search: searchTerm
     },
     { enabled: !!companyId }
   );
 
   const users = data?.data || [];
-  // Updated to use the new meta fields from backend (totalCount, totalPages, currentPage)
   const pagination = data?.meta || { totalPages: 1, currentPage: 1, totalCount: 0 };
- 
   const deleteUserMutation = useDeleteUser();
- const [cachedRoleCounts, setCachedRoleCounts] = useState({});
+  const [cachedRoleCounts, setCachedRoleCounts] = useState({});
 
-  // Update the memory bank safely OUTSIDE the render cycle
   useEffect(() => {
     if (data?.roleCounts) {
       setCachedRoleCounts(data.roleCounts);
     }
   }, [data?.roleCounts]);
 
-
   const roleCounts = data?.roleCounts || cachedRoleCounts;
 
-  // Calculate global total
+  // --- DYNAMIC ROLE FILTERING ---
+  const visibleRoles = useMemo(() => {
+    const allRoles = Array.isArray(rolesResponse) ? rolesResponse : (rolesResponse?.data || []);
+    
+    // Filter roles: Users only see roles that have a HIGHER level number (lower authority) than themselves
+    return allRoles.filter((role) => {
+      const roleLevel = ROLE_LEVELS[role.id] || 99;
+      return currentUserRoleId === 1 ? role.id !== 1 : roleLevel > currentUserLevel;
+    });
+  }, [rolesResponse, currentUserLevel, currentUserRoleId]);
+
+  // Calculate global total ONLY for the roles the user is allowed to see
   const globalTotalUsers = useMemo(() => {
-    return Object.values(roleCounts).reduce((sum, count) => sum + count, 0);
-  }, [roleCounts]);
+    return visibleRoles.reduce((sum, role) => sum + (roleCounts[role.id] || 0), 0);
+  }, [roleCounts, visibleRoles]);
+
 
   // --- UI HELPERS ---
   const canManageUser = (targetUser) => {
     if (currentUserRoleId === 1) return true;
-    const targetUserRoleId = parseInt(
-      targetUser.role_id || targetUser.role?.id || 4,
-    );
-    const targetUserRoleLevel = ROLE_HIERARCHY[targetUserRoleId]?.level || 999;
-    const currentUserRoleLevel =
-      ROLE_HIERARCHY[currentUserRoleId]?.level || 999;
-    return targetUserRoleLevel > currentUserRoleLevel;
+    const targetUserRoleId = parseInt(targetUser.role_id || targetUser.role?.id || 4);
+    const targetUserRoleLevel = ROLE_LEVELS[targetUserRoleId] || 99;
+    return targetUserRoleLevel > currentUserLevel;
   };
 
   const getRoleDisplayName = (user) => {
-    const roleId = parseInt(user.role_id || user.role?.id || 4);
-    return ROLE_HIERARCHY[roleId]?.name || user.role?.name || "Unknown Role";
+    return user.role?.name || "Unknown Role";
   };
 
   const getRoleColorClass = (user) => {
@@ -1833,7 +1817,7 @@ export default function UsersPage() {
       indigo: "text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-900/30 border-indigo-200 dark:border-indigo-700",
       cyan: "text-cyan-700 dark:text-cyan-300 bg-cyan-50 dark:bg-cyan-900/30 border-cyan-200 dark:border-cyan-700",
     };
-    const color = ROLE_HIERARCHY[roleId]?.color || "gray";
+    const color = ROLE_UI_CONFIG[roleId]?.color || "gray";
     return colorMap[color] || "text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-600";
   };
 
@@ -1952,7 +1936,6 @@ export default function UsersPage() {
         <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-4 mb-5 ">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div className="flex items-center gap-4">
-                {/* Reduced icon container from w-14/h-14 to w-10/h-10 */}
                 <div className="w-10 h-10 bg-orange-50 dark:bg-orange-900/20 rounded-xl flex items-center justify-center border border-orange-100 dark:border-orange-800/50">
                   <Shield className="w-5 h-5 text-orange-600 dark:text-orange-500" />
                 </div>
@@ -1969,7 +1952,6 @@ export default function UsersPage() {
                 {canAddUser && (
                   <a
                     href={`/users/add?companyId=${companyId}`}
-                    // Reduced padding (px-4 py-2) and text size (text-xs)
                     className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-lg font-bold text-xs shadow-md transition-all active:scale-95"
                   >
                     <Plus size={16} strokeWidth={3} /> ADD NEW USER
@@ -1977,7 +1959,6 @@ export default function UsersPage() {
                 )}
                 <a
                   href={`/userMapping?companyId=${companyId}`}
-                  // Reduced padding (px-4 py-2) and text size (text-xs)
                   className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-lg font-bold text-xs shadow-md transition-all active:scale-95"
                 >
                   <Plus size={16} strokeWidth={3} /> Assign
@@ -1986,12 +1967,10 @@ export default function UsersPage() {
             </div>
           </div>
 
-          {/* Stats Cards Row (Compact) */}
-          {/* Reduced bottom margin (mb-5) and gap (gap-2) */}
+          {/* Stats Cards Row (Dynamic Rendering) */}
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2 mb-5">
             <button
               onClick={() => { setSelectedRole("all"); setCurrentPage(1); }}
-              // Reduced inner padding (p-3)
               className={`group relative overflow-hidden rounded-xl p-3 transition-all duration-300 cursor-pointer text-left border ${selectedRole === "all"
                 ? "bg-slate-800 dark:bg-slate-700 border-slate-700 text-white shadow-sm ring-1 ring-slate-700 dark:ring-slate-600"
                 : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:border-orange-400"
@@ -2001,34 +1980,34 @@ export default function UsersPage() {
                 <Users className={`w-4 h-4 ${selectedRole === "all" ? "text-orange-400" : "text-slate-400"}`} />
                 {selectedRole === "all" && <div className="h-1.5 w-1.5 rounded-full bg-orange-400" />}
               </div>
-              {/* Reduced text size (text-xl) */}
               <p className="text-xl font-black leading-none mt-1">{globalTotalUsers}</p>
               <p className="text-[9px] font-bold uppercase tracking-wider opacity-70 mt-1">Total Users</p>
             </button>
 
-            {Object.entries(ROLE_HIERARCHY).map(([roleId, roleData]) => {
-              const Icon = roleData.icon;
+            {/* Render dynamic roles based on user permissions */}
+            {visibleRoles.map((role) => {
+              const roleId = role.id.toString();
+              const roleUI = ROLE_UI_CONFIG[roleId] || DEFAULT_UI;
+              const Icon = roleUI.icon;
               const isSelected = selectedRole === roleId;
               const count = roleCounts[roleId] || 0;
 
               const activeClasses = isSelected
-                ? `${roleData.activeClass} dark:bg-slate-700 dark:border-slate-600`
+                ? `${roleUI.activeClass} dark:bg-slate-700 dark:border-slate-600`
                 : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:border-orange-400";
 
               return (
                 <button
                   key={roleId}
                   onClick={() => { setSelectedRole(isSelected ? "all" : roleId); setCurrentPage(1); }}
-                  // Reduced inner padding (p-3)
                   className={`group relative overflow-hidden rounded-xl p-3 transition-all duration-300 text-left border ${activeClasses}`}
                 >
                   <div className="flex justify-between items-start mb-1">
                     <Icon className={`w-4 h-4 ${isSelected ? "text-white" : "text-slate-400"}`} />
                   </div>
-                  {/* Reduced text size (text-xl) */}
                   <p className="text-xl font-black leading-none mt-1">{count}</p>
                   <p className="text-[9px] font-bold uppercase tracking-wider truncate mt-1">
-                    {roleData.name}
+                    {role.name}
                   </p>
                 </button>
               );
@@ -2094,6 +2073,8 @@ export default function UsersPage() {
                   <table className="w-full">
                     <thead>
                       <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 text-left">
+                        {/* 1. Added Index Header */}
+                        <th className="p-5 w-16 text-center text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">#</th>
                         <th className="p-5 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Staff Member</th>
                         <th className="p-5 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Contact Info</th>
                         <th className="p-5 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Permission Level</th>
@@ -2101,8 +2082,15 @@ export default function UsersPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                      {users.map((user) => (
+                      {/* 2. Added `index` to the map function */}
+                      {users.map((user, index) => (
                         <tr key={user.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
+                          
+                          {/* 3. Added Continuous Index Cell */}
+                          <td className="p-5 text-center text-sm font-semibold text-slate-500 dark:text-slate-400">
+                            {(currentPage - 1) * limit + index + 1}
+                          </td>
+
                           <td className="p-5">
                             <div className="flex items-center gap-4">
                               <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-300 font-bold text-sm border border-slate-200 dark:border-slate-700">
@@ -2124,7 +2112,8 @@ export default function UsersPage() {
                             </span>
                           </td>
                           <td className="p-5 text-right">
-                            <div className="flex justify-end gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                            {/* 4. Removed hover opacity classes to keep buttons always visible */}
+                            <div className="flex justify-end gap-2 transition-all">
                               <button
                                 onClick={() => router.push(`/users/view/${user.id}?companyId=${companyId}`)}
                                 className="p-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-orange-500 hover:border-orange-200 transition-all shadow-sm"

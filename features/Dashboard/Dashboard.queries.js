@@ -15,12 +15,14 @@ export const useDashboardCounts = (companyId, date) => {
 };
 
 // 2. Get top locations
-export const useDashboardTopLocations = (companyId, limit = 5, date) => {
+export const useDashboardAllLocations = (companyId, date) => {
   return useQuery({
-    queryKey: ['dashboard', 'topLocations', companyId, limit, date],
+    // Removed 'limit' from the query key array
+    queryKey: ['dashboard', 'allLocationsScores', companyId, date],
     queryFn: async () => {
-      const response = await DashboardApi.getTopLocations(companyId, limit, date);
-      if (!response.success) throw new Error(response.error || 'Failed to fetch top locations');
+      // Calling the updated API function
+      const response = await DashboardApi.getAllLocationsScores(companyId, date);
+      if (!response.success) throw new Error(response.error || 'Failed to fetch locations scores');
       return response.data;
     },
     enabled: !!companyId,
@@ -54,17 +56,17 @@ export const useWashroomScoresSummary = (companyId) => {
 };
 
 // 5. Get cleaner performance
+// Inside features/Dashboard/Dashboard.queries.js
+// In features/Dashboard/Dashboard.queries.js
 export const useCleanerPerformance = (companyId) => {
   return useQuery({
     queryKey: ['dashboard', 'cleanerPerformance', companyId],
     queryFn: async () => {
       const response = await DashboardApi.getCleanerPerformance(companyId);
-      if (!response.success) throw new Error('Failed to fetch cleaner performance');
-      // Returning both data and today_completed_tasks from your unique response structure
-      return { 
-        data: response.data, 
-        today_completed_tasks: response.today_completed_tasks 
-      };
+      if (!response.success) throw new Error('Failed to fetch');
+      
+      // Return the whole object so we get { data, stats, success }
+      return response; 
     },
     enabled: !!companyId,
   });
