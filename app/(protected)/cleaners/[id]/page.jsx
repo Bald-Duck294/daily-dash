@@ -32,8 +32,8 @@ import { useCleanerReviewById } from "@/features/cleaners/cleaners.queries";
 const cleanString = (str) =>
   str
     ? String(str)
-        .replace(/^["'\s]+|["'\s,]+$/g, "")
-        .trim()
+      .replace(/^["'\s]+|["'\s,]+$/g, "")
+      .trim()
     : "";
 
 const getCompletionTime = (start, end) => {
@@ -258,9 +258,8 @@ const PhotoModal = ({ photos, initialIndex = 0, onClose }) => {
         />
 
         <div
-          className={`absolute top-4 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded-full text-white font-semibold text-lg shadow-lg ${
-            currentPhoto.color === "blue" ? "bg-blue-500" : "bg-green-500"
-          }`}
+          className={`absolute top-4 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded-full text-white font-semibold text-lg shadow-lg ${currentPhoto.color === "blue" ? "bg-blue-500" : "bg-green-500"
+            }`}
         >
           {currentPhoto.label}
         </div>
@@ -333,13 +332,12 @@ const PhotoModal = ({ photos, initialIndex = 0, onClose }) => {
               setCurrentIndex(idx);
               resetZoom();
             }}
-            className={`relative cursor-pointer flex-shrink-0 w-14 h-14 rounded overflow-hidden border-2 transition-all ${
-              idx === currentIndex
+            className={`relative cursor-pointer flex-shrink-0 w-14 h-14 rounded overflow-hidden border-2 transition-all ${idx === currentIndex
                 ? photo.color === "blue"
                   ? "border-blue-500 ring-2 ring-blue-400"
                   : "border-green-500 ring-2 ring-green-400"
                 : "border-gray-600 hover:border-gray-400"
-            }`}
+              }`}
           >
             <img
               src={photo.url}
@@ -348,9 +346,8 @@ const PhotoModal = ({ photos, initialIndex = 0, onClose }) => {
               onError={(e) => (e.target.style.display = "none")}
             />
             <span
-              className={`absolute top-0.5 left-0.5 ${
-                photo.color === "blue" ? "bg-blue-500" : "bg-green-500"
-              } text-white px-1.5 py-0.5 text-[10px] font-bold rounded`}
+              className={`absolute top-0.5 left-0.5 ${photo.color === "blue" ? "bg-blue-500" : "bg-green-500"
+                } text-white px-1.5 py-0.5 text-[10px] font-bold rounded`}
             >
               {photo.label[0]}
             </span>
@@ -578,6 +575,19 @@ export default function ReviewDetails() {
     ...(review.after_photo || []).map((url) => ({ url, type: "after" })),
   ];
 
+  const formatDateTime12Hr = (dateString) => {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleString('en-US', {
+      month: 'numeric',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric',
+      second: 'numeric',
+      hour12: true // Forces 12-hour format with AM/PM
+    });
+  };
+
   /* ================= render ================= */
 
   return (
@@ -686,14 +696,16 @@ export default function ReviewDetails() {
                   Task Details
                 </h3>
 
+                {/* STARTED TIME */}
                 <p
                   className="text-sm"
                   style={{ color: "var(--cleaner-subtitle)" }}
                 >
                   <strong>Started:</strong>{" "}
-                  {new Date(review.created_at).toLocaleString()}
+                  {formatDateTime12Hr(review.created_at)}
                 </p>
 
+                {/* ONGOING STATUS */}
                 {review.status === "ongoing" && (
                   <p
                     className="text-sm mt-2 flex items-center gap-1"
@@ -707,21 +719,31 @@ export default function ReviewDetails() {
                   </p>
                 )}
 
+                {/* COMPLETED STATUS */}
                 {review.status === "completed" && (
-                  <p
-                    className="text-sm mt-2 flex items-center gap-1"
-                    style={{ color: "var(--cleaner-status-active-text)" }}
-                  >
-                    <CheckCircle
-                      size={14}
+                  <div className="mt-2 space-y-1">
+                    {/* Optional: Show exact completed timestamp */}
+                    <p className="text-sm" style={{ color: "var(--cleaner-subtitle)" }}>
+                      <strong>Completed:</strong>{" "}
+                      {formatDateTime12Hr(review.updated_at)}
+                    </p>
+
+                    {/* Duration */}
+                    <p
+                      className="text-sm flex items-center gap-1"
                       style={{ color: "var(--cleaner-status-active-text)" }}
-                    />
-                    Completed in{" "}
-                    {getCompletionTime(
-                      review.created_at,
-                      review.updated_at
-                    )}
-                  </p>
+                    >
+                      <CheckCircle
+                        size={14}
+                        style={{ color: "var(--cleaner-status-active-text)" }}
+                      />
+                      Completed in{" "}
+                      {getCompletionTime(
+                        review.created_at,
+                        review.updated_at
+                      )}
+                    </p>
+                  </div>
                 )}
               </div>
 

@@ -1688,7 +1688,7 @@ const DEFAULT_UI = { icon: Users, color: "gray", activeClass: "bg-slate-500 bord
 
 const TableRowSkeleton = () => (
   <tr className="animate-pulse border-b border-slate-100 dark:border-slate-800">
-    {[...Array(4)].map((_, i) => (
+    {[...Array(5)].map((_, i) => (
       <td key={i} className="p-4">
         <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-full" />
       </td>
@@ -1731,11 +1731,25 @@ export default function UsersPage() {
   const [selectedRole, setSelectedRole] = useState("all");
   const [viewMode, setViewMode] = useState("table");
 
-  useEffect(() => {
-    if (typeof window !== "undefined") {
+useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleResize = () => {
       const isMobile = window.innerWidth < 768;
-      if (isMobile) setViewMode("grid");
-    }
+      // Force grid mode if screen is small
+      if (isMobile) {
+        setViewMode("grid");
+      }
+    };
+
+    // 1. Run immediately on initial load
+    handleResize();
+
+    // 2. Actively listen for window dragging/resizing
+    window.addEventListener("resize", handleResize);
+
+    // 3. Cleanup the listener when leaving the page
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   // --- QUERIES ---
@@ -2059,6 +2073,8 @@ export default function UsersPage() {
                   <table className="w-full">
                     <thead>
                       <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 text-left">
+                        {/* 1. Added Index Header */}
+                        <th className="p-5 w-16 text-center text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">#</th>
                         <th className="p-5 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Staff Member</th>
                         <th className="p-5 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Contact Info</th>
                         <th className="p-5 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Permission Level</th>
@@ -2066,8 +2082,15 @@ export default function UsersPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                      {users.map((user) => (
+                      {/* 2. Added `index` to the map function */}
+                      {users.map((user, index) => (
                         <tr key={user.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
+                          
+                          {/* 3. Added Continuous Index Cell */}
+                          <td className="p-5 text-center text-sm font-semibold text-slate-500 dark:text-slate-400">
+                            {(currentPage - 1) * limit + index + 1}
+                          </td>
+
                           <td className="p-5">
                             <div className="flex items-center gap-4">
                               <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-300 font-bold text-sm border border-slate-200 dark:border-slate-700">
@@ -2089,7 +2112,8 @@ export default function UsersPage() {
                             </span>
                           </td>
                           <td className="p-5 text-right">
-                            <div className="flex justify-end gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                            {/* 4. Removed hover opacity classes to keep buttons always visible */}
+                            <div className="flex justify-end gap-2 transition-all">
                               <button
                                 onClick={() => router.push(`/users/view/${user.id}?companyId=${companyId}`)}
                                 className="p-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-orange-500 hover:border-orange-200 transition-all shadow-sm"

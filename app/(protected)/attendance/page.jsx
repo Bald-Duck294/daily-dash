@@ -6,10 +6,9 @@ import { useCleanerAttendance } from '@/features/attendance/attendance.queries';
 import Attendance from '@/features/attendance/component/Attendance.jsx';
 import { ChevronDown, RefreshCw, Filter, Users, UserCheck, UserX, LayoutGrid, List } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
-// Import the real TanStack query hooks
 import { useAssignedCleanersDropdown, useDropdownLocations } from "@/features/dropdownList/dropdownlist.query";
 import OnDutyList from '@/features/attendance/component/OnDutyList.jsx';
-// Helpers for Date Presets
+
 const getLocalDateString = (offsetDays = 0) => {
   const d = new Date();
   d.setDate(d.getDate() + offsetDays);
@@ -28,9 +27,10 @@ const getStartOfWeek = () => {
 export default function AttendancePage() {
   const { companyId } = useCompanyId();
   const queryClient = useQueryClient();
-  // Fetch real data for the dropdowns
+  
   const { data: locations = [] } = useDropdownLocations(companyId);
   const { data: cleaners = [] } = useAssignedCleanersDropdown(companyId);
+  
   const [viewMode, setViewMode] = useState('matrix');
   const [datePreset, setDatePreset] = useState("Today");
 
@@ -42,6 +42,7 @@ export default function AttendancePage() {
     page: 1,
     limit: 100
   });
+  
   const [attendanceStatusFilter, setAttendanceStatusFilter] = useState('all');
 
   useEffect(() => {
@@ -69,9 +70,8 @@ export default function AttendancePage() {
 
   const { data: queryResult, isLoading, isError, error, refetch } = useCleanerAttendance(
     {
-      // 🟢 CORRECT: Use cleaner_user_id for IDs, search for text
       cleaner_user_id: filters.cleanerId !== "all" ? filters.cleanerId : "",
-      search: "", // Keep search empty unless you are typing a name
+      search: "",
       locationId: filters.locationId !== "all" ? filters.locationId : "",
       start_date: filters.start_date,
       end_date: filters.end_date,
@@ -84,16 +84,11 @@ export default function AttendancePage() {
   const records = queryResult?.data?.data || queryResult?.data || [];
   const pagination = queryResult?.data?.pagination || queryResult?.pagination || null;
 
-  // 🟢 FIND THE LOCATION NAME FOR FILTERING
   const selectedLocObj = locations.find(loc => loc.id.toString() === filters.locationId);
   const selectedLocationName = selectedLocObj ? selectedLocObj.name : "all";
 
-  // 🟢 DYNAMIC KPI MATH
-  const uniqueCleanersInPeriod = new Set(
-    records.map(r => r.cleaner_id)
-  ).size;
+  const uniqueCleanersInPeriod = new Set(records.map(r => r.cleaner_id)).size;
 
-  // Make sure the "Missing" card calculates against the filtered roster!
   const relevantCleaners = selectedLocationName === "all"
     ? cleaners
     : cleaners.filter(c => c.locations?.includes(selectedLocationName));
@@ -101,7 +96,6 @@ export default function AttendancePage() {
   const totalAssigned = relevantCleaners.length;
   const missing = totalAssigned > uniqueCleanersInPeriod ? totalAssigned - uniqueCleanersInPeriod : 0;
 
-  // 🟢 DYNAMIC LABEL GENERATOR
   const kpiLabelSuffix = datePreset === "Custom Date" ? "(Custom Range)" : `(${datePreset})`;
 
   const handleFilterChange = (e) => {
@@ -112,12 +106,9 @@ export default function AttendancePage() {
   const handlePageChange = (newPage) => {
     setFilters(prev => ({ ...prev, page: newPage }));
   };
+  
   const handleRefresh = async () => {
-    // 🟢 Step A: Invalidate the specific query key used in 'useCleanerAttendance'
-    // Make sure 'cleanerAttendance' matches the queryKey in your useCleanerAttendance hook
     await queryClient.invalidateQueries({ queryKey: ['cleanerAttendance'] });
-
-    // 🟢 Step B: Trigger the refetch
     await refetch();
   };
 
@@ -207,10 +198,7 @@ export default function AttendancePage() {
           <button
             onClick={handleRefresh}
             disabled={isLoading}
-            className={`p-2 bg-white dark:bg-[#111827] border border-slate-300 dark:border-slate-700 
-    hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md 
-    text-slate-600 dark:text-slate-300 transition-colors cursor-pointer 
-    ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            className={`p-2 bg-white dark:bg-[#111827] border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md text-slate-600 dark:text-slate-300 transition-colors cursor-pointer ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             <RefreshCw
               size={16}
@@ -221,26 +209,38 @@ export default function AttendancePage() {
 
         {/* KPI CARDS */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* ON DUTY CARD */}
+
+          {/* 🟢 ON DUTY CARD */}
           <div
-            onClick={() => setAttendanceStatusFilter(prev => prev === 'present' ? 'all' : 'present')} // 🟢 Toggle logic
-            className={`cursor-pointer transition-all duration-200 bg-white dark:bg-[#111827] border rounded-lg p-4 flex items-center justify-between shadow-sm ${attendanceStatusFilter === 'present' ? 'border-emerald-500 ring-1 ring-emerald-500' : 'border-slate-200 dark:border-slate-800'}`}
+            onClick={() => setAttendanceStatusFilter(current => current === 'present' ? 'all' : 'present')}
+            className={`cursor-pointer transition-all duration-200 bg-white dark:bg-[#111827] border rounded-lg p-4 flex items-center justify-between shadow-sm ${attendanceStatusFilter === 'present'
+                ? 'border-emerald-500 ring-1 ring-emerald-500 bg-emerald-50/50 dark:bg-emerald-900/20' 
+                : 'border-slate-200 dark:border-slate-800'
+              }`}
           >
             <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-sm font-semibold uppercase tracking-wider">
+              {/* 🟢 FIXED: Removed "Global" */}
               <UserCheck size={16} /> On Duty <span className="text-xs opacity-75">{kpiLabelSuffix}</span>
             </div>
             <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{uniqueCleanersInPeriod}</span>
           </div>
 
-          {/* MISSING CARD */}
+          {/* 🟢 MISSING CARD */}
           <div
-            onClick={() => setAttendanceStatusFilter(prev => prev === 'absent' ? 'all' : 'absent')} // 🟢 Toggle logic
-            className={`cursor-pointer transition-all duration-200 bg-white dark:bg-[#111827] border rounded-lg p-4 flex items-center justify-between shadow-sm ${attendanceStatusFilter === 'absent' ? 'border-rose-500 ring-1 ring-rose-500' : 'border-slate-200 dark:border-slate-800'}`}
+            onClick={() => setAttendanceStatusFilter(current => current === 'absent' ? 'all' : 'absent')}
+            className={`cursor-pointer transition-all duration-200 bg-white dark:bg-[#111827] border rounded-lg p-4 flex items-center justify-between shadow-sm ${attendanceStatusFilter === 'absent'
+                ? 'border-rose-500 ring-1 ring-rose-500 bg-rose-50/50 dark:bg-rose-900/20' 
+                : 'border-slate-200 dark:border-slate-800'
+              }`}
           >
             <div className="flex items-center gap-2 text-rose-600 dark:text-rose-500 text-sm font-semibold uppercase tracking-wider">
+              {/* 🟢 FIXED: Removed "Global" */}
               <UserX size={16} /> Missing <span className="text-xs opacity-75">{kpiLabelSuffix}</span>
             </div>
-            <span className="text-2xl font-bold text-rose-600 dark:text-rose-500">{missing}</span>
+            <span className="text-2xl font-bold text-rose-600 dark:text-rose-500">
+              {/* 🟢 FIXED: Removed the filters.companyId check, just show missing */}
+              {missing}
+            </span>
           </div>
         </div>
 
@@ -249,7 +249,7 @@ export default function AttendancePage() {
           <Attendance
             records={records}
             allCleaners={cleaners}
-            attendanceStatusFilter={attendanceStatusFilter} // 🟢 ADD THIS PROP
+            attendanceStatusFilter={attendanceStatusFilter}
             selectedLocationName={selectedLocationName}
             selectedCleaner={filters.cleanerId}
             startDate={filters.start_date}
@@ -263,6 +263,8 @@ export default function AttendancePage() {
         ) : (
           <OnDutyList
             records={records}
+            allCleaners={cleaners} // 🟢 FIXED: Added props for List view filtering
+            attendanceStatusFilter={attendanceStatusFilter} // 🟢 FIXED: Added props for List view filtering
             pagination={pagination}
             onPageChange={handlePageChange}
           />

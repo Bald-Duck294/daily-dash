@@ -56,17 +56,17 @@ export const useWashroomScoresSummary = (companyId) => {
 };
 
 // 5. Get cleaner performance
+// Inside features/Dashboard/Dashboard.queries.js
+// In features/Dashboard/Dashboard.queries.js
 export const useCleanerPerformance = (companyId) => {
   return useQuery({
     queryKey: ['dashboard', 'cleanerPerformance', companyId],
     queryFn: async () => {
       const response = await DashboardApi.getCleanerPerformance(companyId);
-      if (!response.success) throw new Error('Failed to fetch cleaner performance');
-      // Returning both data and today_completed_tasks from your unique response structure
-      return { 
-        data: response.data, 
-        today_completed_tasks: response.today_completed_tasks 
-      };
+      if (!response.success) throw new Error('Failed to fetch');
+      
+      // Return the whole object so we get { data, stats, success }
+      return response; 
     },
     enabled: !!companyId,
   });

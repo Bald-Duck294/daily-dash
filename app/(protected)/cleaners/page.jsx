@@ -359,49 +359,18 @@ export default function CleanerReviewPage() {
   const { companyId } = useCompanyId();
 
   // Basic Filters
-  const [filter, setFilter] = useState(searchParams.get("status") || "all");
-  const [searchQuery, setSearchQuery] = useState("");
-
+ const [filter, setFilter] = useState(searchParams.get("status") || "all");
+  const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || "");
+  const [datePreset, setDatePreset] = useState(searchParams.get("datePreset") || "today");
+  const [startDate, setStartDate] = useState(searchParams.get("startDate") || getLocalDateString());
+  const [endDate, setEndDate] = useState(searchParams.get("endDate") || getLocalDateString());
+  const [selectedCleanerId, setSelectedCleanerId] = useState(searchParams.get("cleanerId") || "all");
+  const [page, setPage] = useState(Number(searchParams.get("page")) || 1);
+  const [limit, setLimit] = useState(Number(searchParams.get("limit")) || 15);
 
   const [isCleanerDropdownOpen, setIsCleanerDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  // Advanced Filters
-  const [datePreset, setDatePreset] = useState("today"); // 'all', 'today', 'this_month', 'custom'
-  const [startDate, setStartDate] = useState(getLocalDateString());
-  const [endDate, setEndDate] = useState(getLocalDateString());
-  const [selectedCleanerId, setSelectedCleanerId] = useState("all");
-
-  // Pagination State
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(15);
-
-  /* ---------------- Date Preset Logic ---------------- */
-  useEffect(() => {
-    const todayStr = getLocalDateString();
-    const todayObj = new Date();
-
-    if (datePreset === "today") {
-      setStartDate(todayStr);
-      setEndDate(todayStr);
-    } else if (datePreset === "this_month") {
-      const firstDay = new Date(todayObj.getFullYear(), todayObj.getMonth(), 1);
-      const lastDay = new Date(todayObj.getFullYear(), todayObj.getMonth() + 1, 0);
-
-      const formatLocal = (d) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().split("T")[0];
-
-      setStartDate(formatLocal(firstDay));
-      setEndDate(formatLocal(lastDay));
-    } else if (datePreset === "all") {
-      setStartDate("");
-      setEndDate("");
-    }
-  }, [datePreset]);
-
-  // Reset page to 1 if any filter changes
-  useEffect(() => {
-    setPage(1);
-  }, [filter, datePreset, startDate, endDate, selectedCleanerId]);
 
   /* ---------------- TanStack Queries ---------------- */
 
@@ -475,21 +444,52 @@ export default function CleanerReviewPage() {
   if (isError) {
     toast.error(error?.message || "Failed to load cleaner activity");
   }
+
 useEffect(() => {
-  const cleanerIdFromUrl = searchParams.get("cleanerId");
-  const dateFromUrl = searchParams.get("date");
+    const params = new URLSearchParams(searchParams.toString());
+    
+    params.set("status", filter);
+    params.set("cleanerId", selectedCleanerId);
+    params.set("datePreset", datePreset);
+    params.set("startDate", startDate);
+    params.set("endDate", endDate);
+    params.set("page", page.toString());
+    params.set("limit", limit.toString());
+    
+    if (searchQuery) {
+      params.set("search", searchQuery);
+    } else {
+      params.delete("search");
+    }
 
-  if (cleanerIdFromUrl) {
-    setSelectedCleanerId(cleanerIdFromUrl);
-  }
+    // Replace current URL to preserve history for the "Back" button
+    router.replace(`?${params.toString()}`, { scroll: false });
+  }, [filter, selectedCleanerId, datePreset, startDate, endDate, page, limit, searchQuery, router, searchParams]);
 
-  if (dateFromUrl) {
-    setDatePreset("custom"); // Set to custom so it doesn't default to 'today'
-    setStartDate(dateFromUrl);
-    setEndDate(dateFromUrl);
-  }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [searchParams]);
+  /* ---------------- Date Preset Logic ---------------- */
+  useEffect(() => {
+    const todayStr = getLocalDateString();
+    const todayObj = new Date();
+
+    if (datePreset === "today") {
+      setStartDate(todayStr);
+      setEndDate(todayStr);
+    } else if (datePreset === "this_month") {
+      const firstDay = new Date(todayObj.getFullYear(), todayObj.getMonth(), 1);
+      const lastDay = new Date(todayObj.getFullYear(), todayObj.getMonth() + 1, 0);
+      const formatLocal = (d) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().split("T")[0];
+      setStartDate(formatLocal(firstDay));
+      setEndDate(formatLocal(lastDay));
+    } else if (datePreset === "all") {
+      setStartDate("");
+      setEndDate("");
+    }
+  }, [datePreset]);
+
+  // Reset page to 1 if any filter changes
+  useEffect(() => {
+    setPage(1);
+  }, [filter, datePreset, startDate, endDate, selectedCleanerId]);
 
   /* ---------------- render ---------------- */
   return (

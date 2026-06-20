@@ -820,44 +820,73 @@ export function WashroomCleanlinessChart({ data = [] }) {
 // }
 
 
-export function CleanerPerformanceChart({ data = [], todayCount = 0 }) {
-  const [chartColors, setChartColors] = useState(getChartColors());
-  const tooltipRef = useRef(null);
+export function CleanerPerformanceChart({ data = [], isDarkMode = false }) {
+  const labels = data.map((d) => d.day || d.name || d.label);
+  const taskCounts = data.map((d) => d.count || d.completed || d.tasks);
 
-  useEffect(() => {
-    const updateColors = () => setChartColors(getChartColors());
-    updateColors();
-  }, []);
+  // Custom Plugin for Floating Labels
+  const floatingLabelsPlugin = {
+    id: "floatingLabels",
+    afterDatasetsDraw(chart) {
+      const { ctx } = chart;
+      chart.data.datasets.forEach((dataset, i) => {
+        const meta = chart.getDatasetMeta(i);
+        meta.data.forEach((element, index) => {
+          const dataValue = dataset.data[index];
+          if (!dataValue) return;
 
-  const labels = data.map((d) => d.day || d.label);
-  const taskCounts = data.map((d) => d.count || d.tasks);
+          const { x, y } = element.tooltipPosition();
+
+          ctx.fillStyle = isDarkMode ? "#1e293b" : "#f1f5f9";
+          ctx.beginPath();
+          ctx.roundRect(x - 14, y - 32, 28, 20, 6); 
+          ctx.fill();
+
+          ctx.fillStyle = isDarkMode ? "#f8fafc" : "#1e293b";
+          ctx.font = "bold 11px sans-serif";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(dataValue, x, y - 22);
+        });
+      });
+    },
+  };
 
   const chartData = {
-    labels:
-      labels.length > 0
-        ? labels
-        : ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+    labels: labels.length > 0 ? labels : ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"],
     datasets: [
       {
         label: "Tasks Completed",
-        data: taskCounts.length > 0 ? taskCounts : [12, 15, 18, 14, 20, 22, 24],
-        borderColor: "#FF9F1C",
+        data: taskCounts.length > 0 ? taskCounts : [1, 1, 4, 2, 1, 9, 3],
+        // The solid line color
+        borderColor: "#8b5cf6", 
+        // The Area Fill Gradient
         backgroundColor: (context) => {
-          if (!context.chart.chartArea) return "rgba(255, 191, 105, 0.15)";
-          const {
-            ctx,
-            chartArea: { top, bottom },
-          } = context.chart;
-          const gradient = ctx.createLinearGradient(0, top, 0, bottom);
-          gradient.addColorStop(0, "rgba(255, 191, 105, 0.4)");
-          gradient.addColorStop(1, "rgba(255, 255, 255, 0)");
+          const chart = context.chart;
+          const { ctx, chartArea } = chart;
+          
+          // Fallback if chartArea isn't ready yet
+          if (!chartArea) return "rgba(139, 92, 246, 0.5)"; 
+          
+          const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+          
+          if (isDarkMode) {
+            // Dark Mode Gradient: Stronger purple fading into dark slate
+            gradient.addColorStop(0, "rgba(139, 92, 246, 0.85)"); 
+            gradient.addColorStop(1, "rgba(15, 23, 42, 0.0)"); 
+          } else {
+            // Light Mode Gradient (Matches your reference image): Purple top fading to blue bottom
+            gradient.addColorStop(0, "rgba(139, 92, 246, 0.7)"); // Vivid Purple
+            gradient.addColorStop(1, "rgba(59, 130, 246, 0.05)"); // Faint Blue
+          }
           return gradient;
         },
+        // IMPORTANT: Use "start" or "origin" to enforce the fill down to the x-axis
+        fill: "start", 
         borderWidth: 3,
-        fill: true,
-        tension: 0.4, // Smooth curve
-        pointBackgroundColor: "#FFFFFF",
-        pointBorderColor: "#FF9F1C",
+        tension: 0.4, 
+        pointBackgroundColor: "#8b5cf6", 
+        pointBorderColor: isDarkMode ? "#0f172a" : "#ffffff", 
         pointBorderWidth: 2,
         pointRadius: 5,
         pointHoverRadius: 7,
@@ -868,46 +897,41 @@ export function CleanerPerformanceChart({ data = [], todayCount = 0 }) {
   const options = {
     responsive: true,
     maintainAspectRatio: false,
+    layout: {
+      padding: { top: 35, left: 0, right: 15 }
+    },
     plugins: {
       legend: { display: false },
-      tooltip: {
-        backgroundColor: "#fff",
-        titleColor: "#000",
-        bodyColor: "#000",
-        borderColor: "#E5E7EB",
-        borderWidth: 1,
-        callbacks: { label: (c) => `${c.parsed.y} tasks` },
-      },
+      tooltip: { enabled: false }, 
     },
     scales: {
-      x: { 
-        grid: { display: false }, 
-        ticks: { color: "#94a3b8" } 
+      x: {
+        grid: { display: false },
+        ticks: { color: isDarkMode ? "#94a3b8" : "#64748b", font: { weight: "600", size: 11 } },
+        border: { display: false },
       },
       y: {
-        grid: { color: "#f1f5f9" },
-        ticks: { color: "#94a3b8", stepSize: 5 },
+        grid: { color: isDarkMode ? "#334155" : "#f1f5f9" }, 
+        ticks: { 
+          color: isDarkMode ? "#94a3b8" : "#94a3b8", 
+          stepSize: 5, 
+          font: { weight: "600", size: 11 },
+          padding: 10
+        },
+        border: { display: false },
         min: 0,
-        max: 30, // Defined to match the image scale
+        suggestedMax: 20, 
       },
     },
   };
 
   return (
     <div className="w-full h-full relative">
-      <Line data={chartData} options={options} />
-      
-      {/* Custom Fire Badge Floating on right */}
-      {todayCount > 0 && (
-        <div className="absolute top-[35%] -right-4 z-10">
-          <div className="bg-gradient-to-br from-amber-400 to-teal-400 text-white text-xs font-bold px-3 py-2 rounded-xl shadow-lg flex flex-col items-center">
-            <span className="flex items-center gap-1">
-               🔥 {todayCount}
-            </span>
-            <span className="text-[10px] font-medium opacity-90">tasks</span>
-          </div>
-        </div>
-      )}
+      <Line 
+        data={chartData} 
+        options={options} 
+        plugins={[floatingLabelsPlugin]} 
+      />
     </div>
   );
 }

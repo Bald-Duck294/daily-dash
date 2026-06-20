@@ -83,21 +83,20 @@ getAllLocationsScores: async (companyId, date) => {
   },
 
   // 2. New API for Cleaner Performance Graph
-  getCleanerPerformance: async (companyId) => {
-    try {
-      const response = await axiosInstance.get(
-        `/dashboard/graph-cleaner-performance?companyId=${companyId}`,
-      );
-      // Expected response format from your JSON example:
-      // { success: true, data: [{date:..., tasks:...}], today_completed_tasks: 24 }
-      return {
-        success: true,
-        data: response.data.data,
-        today_completed_tasks: response.data.today_completed_tasks,
-      };
-    } catch (error) {
-      console.error("Cleaner performance error:", error);
-      return { success: false, data: [], today_completed_tasks: 0 };
+getCleanerPerformance: async (companyId) => {
+  try {
+    const response = await axiosInstance.get(
+      `/dashboard/graph-cleaner-performance?companyId=${companyId}`
+    );
+    
+    // Check if the response exists and has data
+    if (response.data) {
+      return response.data; // This returns { success: true, data: [...], stats: {...} }
     }
-  },
+    return { success: false, data: [], stats: {} };
+  } catch (error) {
+    console.error("Cleaner performance error:", error);
+    return { success: false, data: [], stats: {} };
+  }
+},
 };
