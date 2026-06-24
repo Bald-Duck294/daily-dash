@@ -727,7 +727,7 @@ export default function ClientDashboard() {
   }
 
   const overallScore = washroomGraphData.length > 0
-    ? (washroomGraphData.reduce((acc, curr) => acc + Number(curr.average_score || 0), 0) / washroomGraphData.length).toFixed(1)
+    ? (washroomGraphData.reduce((acc, curr) => acc + Number(curr.average_score || 0), 0) / washroomGraphData.length).toFixed(2)
     : "0.0";
 
   return (
@@ -806,8 +806,8 @@ export default function ClientDashboard() {
                     </div>
                     {/* Added shrink-0 to prevent number clipping on narrow screens */}
                     <div className="w-8 text-right shrink-0 flex flex-col gap-0.5">
-                      <span className="text-slate-800 dark:text-slate-100 font-bold leading-none">{Number(loc.current_score || 0).toFixed(1)}</span>
-                      <span className="text-slate-400 dark:text-slate-500 font-semibold leading-none text-[9px]">{Number(loc.average_score || 0).toFixed(1)}</span>
+                      <span className="text-slate-800 dark:text-slate-100 font-bold leading-none">{Number(loc.current_score || 0).toFixed(2)}</span>
+                      <span className="text-slate-400 dark:text-slate-500 font-semibold leading-none text-[9px]">{Number(loc.average_score || 0).toFixed(2)}</span>
                     </div>
                   </div>
                 ))}
