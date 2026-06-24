@@ -99,4 +99,16 @@ getCleanerPerformance: async (companyId) => {
     return { success: false, data: [], stats: {} };
   }
 },
+
+getWashroomHygieneHeatmap: async (params) => {
+    try {
+      const response = await axiosInstance.get("/dashboard/heat-map", { 
+        params 
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
+
 };

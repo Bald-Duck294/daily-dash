@@ -71,3 +71,23 @@ export const useCleanerPerformance = (companyId) => {
     enabled: !!companyId,
   });
 };
+
+export const useGetWashroomHygieneHeatmap = (params = {}) => {
+  return useQuery({
+    // Updated query key to match the new endpoint identifier
+    queryKey: ["dashboard", "heat-map", params], 
+    queryFn: async () => {
+      const response = await DashboardApi.getWashroomHygieneHeatmap(params);
+      
+      // Validate successful response format
+      if (response.status !== "success") {
+          throw new Error(response.message || "Failed to fetch heatmap data");
+      }
+      
+      return response;
+    },
+    // Prevent query execution until all required dates and companyId are present
+    enabled: !!params.company_id && params.company_id !== "null" && !!params.start_date && !!params.end_date,
+    staleTime: 5 * 60 * 1000, // Cache data for 5 minutes
+  });
+};

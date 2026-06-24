@@ -527,7 +527,7 @@ import {
   useWashroomScoresSummary,
   useCleanerPerformance
 } from "@/features/Dashboard/Dashboard.queries";
-import { useGetReport } from "@/features/reports/reports.queries";
+import { useGetWashroomHygieneHeatmap } from "@/features/Dashboard/Dashboard.queries";
 
 // --- SKELETON COMPONENTS ---
 const StatSkeleton = () => (
@@ -666,12 +666,19 @@ export default function ClientDashboard() {
   }, []);
 
   // --- Report Hook for Heatmap ---
-  const { data: heatmapResponse, isLoading: isHeatmapLoading } = useGetReport("washroom-daily-scores", {
-    company_id: companyId,
-    start_date: dateRange.startDate,
-    end_date: dateRange.endDate
-  });
+  const endDate = new Date();
+  const startDate = new Date();
+  startDate.setDate(endDate.getDate() - 30);
 
+  const formattedStartDate = startDate.toISOString().split("T")[0];
+  const formattedEndDate = endDate.toISOString().split("T")[0];
+
+  // 2. Pass the single object to the hook (API WILL NOW FIRE)
+  const { data: heatmapResponse, isLoading: isHeatmapLoading } = useGetWashroomHygieneHeatmap({
+    company_id: companyId,
+    start_date: formattedStartDate,
+    end_date: formattedEndDate
+  });
   const heatmapData = heatmapResponse?.data || [];
   const heatmapDatesArray = getDatesInRange(dateRange.startDate, dateRange.endDate);
 
