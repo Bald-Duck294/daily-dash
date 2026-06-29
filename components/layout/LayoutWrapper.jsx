@@ -10,7 +10,7 @@ const Sidebar = dynamic(() => import("./Sidebar"), { ssr: false });
 export default function LayoutWrapper({ children }) {
   const pathname = usePathname();
   // Routes that get full-screen layout (no sidebar/header)
-  const hideLayoutFor = ["/", "/login", "/register", "/stepper"];
+  const hideLayoutFor = ["/", "/login", "/register", "/stepper" , "/company-setup"];
   const shouldHideLayout = hideLayoutFor.includes(pathname);
 
   if (shouldHideLayout) {

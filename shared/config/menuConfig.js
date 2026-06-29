@@ -2,24 +2,19 @@ import {
   LayoutDashboard,
   Building2,
   List,
-
   FolderPlus,
   UserPlus,
   Users,
   UserCog,
   UserCheck,
   PlusCircle,
-
   MapPin,
- 
   MessageSquare,
   FileText,
   ShieldCheck,
   Award,
-
   Layers3,
   BarChart3,
-
   ListChecks,
   Activity,
   Wrench,
@@ -114,6 +109,11 @@ export function getSuperadminMainMenu() {
         //   href: "/role/superadmin",
         // },
       ],
+    },
+    {
+      icon: AlertCircle,
+      label: "System Limits",
+      href: "/system-limits",
     },
     {
       icon: AlertCircle,
@@ -327,7 +327,7 @@ export function getSuperadminCompanyMenu(companyId) {
       label: "Cleaner Activity",
       href: `/cleaners?companyId=${companyId}`,
     },
-      {
+    {
       icon: UserCheck,
       label: "Attendance",
       href: `/attendance?companyId=${companyId}`,
@@ -683,11 +683,11 @@ export const getFullCompanyMenuTemplate = (companyId) => [
     requiredPermission: "cleaner_reviews.view",
     href: `/cleaners?companyId=${companyId}`,
   },
-    {
-      icon: UserCheck,
-      label: "Attendance",
-      href: `/attendance?companyId=${companyId}`,
-    },
+  {
+    icon: UserCheck,
+    label: "Attendance",
+    href: `/attendance?companyId=${companyId}`,
+  },
   {
     icon: Cog,
     label: "Dynamic Configuration",

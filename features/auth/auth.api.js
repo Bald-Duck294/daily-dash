@@ -18,6 +18,13 @@ export const AuthApi = {
     }
   },
 
+  resetPassword: async (phone, newPassword) => {
+    const response = await axiosInstance.post("/auth/reset-password", {
+      phone,
+      newPassword,
+    });
+    return response.data;
+  },
   // LOGIN
   login: async (phone, password) => {
     try {

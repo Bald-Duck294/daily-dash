@@ -175,4 +175,10 @@ export const CompanyApi = {
       };
     }
   },
+
+  setupCompany: async (payload) => {
+    // payload: { organization_name, organization_type, operation_structure }
+    const response = await axiosInstance.post("/companies/setup", payload);
+    return response.data;
+  },
 };

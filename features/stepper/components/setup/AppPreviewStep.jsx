@@ -1,569 +1,447 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from "react";
+import toast from "react-hot-toast";
+import { useQueryClient } from "@tanstack/react-query";
+import { useSelector } from "react-redux";
+import axiosInstance from "@/shared/api/axios.instance.js";
+import StepHelpDrawer from "@/features/stepper/components/ui/StepHelpDrawer";
 
-export default function AppPreviewStep({ 
-  onNext, 
+export default function AppPreviewStep({
+  onDeploy,
   onBack,
-  summary = { zones: 5, staff: 9, washrooms: 12, cleaners: 6 } 
+  isLoading,
+  summary = { zones: 0, staff: 0, washrooms: 0, cleaners: 0 },
+  washroom_data: washrooms = [],
 }) {
-  // --- Simulated App State ---
-  const [appScreen, setAppScreen] = useState('HOME'); // HOME, SELECT, PHOTOS_BEFORE, PHOTOS_AFTER, TASK_DETAILS
-  const [homeTab, setHomeTab] = useState('ongoing'); 
-  const [hasOngoing, setHasOngoing] = useState(false);
-  const [completedTasks, setCompletedTasks] = useState([]);
-  
-  // Overlays
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isCameraOpen, setIsCameraOpen] = useState(false);
-  const [isScorePopupOpen, setIsScorePopupOpen] = useState(false);
-  
-  // Current Task State
-  const [currentScore, setCurrentScore] = useState(null);
-  const [capturedPhotos, setCapturedPhotos] = useState({ indian1: false, urinal1: false, urinal2: false, shower1: false });
-  const [activePhotoBox, setActivePhotoBox] = useState(null);
+  const iframeRef = useRef(null);
+  const queryClient = useQueryClient();
+  const { user } = useSelector((state) => state.auth) || {};
+  const hasSubmitted = useRef(false);
 
-  // Clock for the status bar
-  const [time, setTime] = useState('09:41');
-  useEffect(() => {
-    const updateTime = () => {
-      const d = new Date();
-      setTime(`${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`);
-    };
-    updateTime(); 
-    const interval = setInterval(updateTime, 60000);
-    return () => clearInterval(interval);
-  }, []);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
 
-  // --- Actions ---
-  const handleStartTask = () => setAppScreen('SELECT');
+  // ─── INTERCEPT IFRAME ACTIONS & INJECT DATA ────────────────────────────
+  const handleIframeLoad = () => {
+    try {
+      const iframe = iframeRef.current;
+      if (!iframe || !iframe.contentWindow) return;
+      const win = iframe.contentWindow;
+      const doc = iframe.contentDocument || win.document;
 
-  const handleSelectWashroom = () => {
-    setAppScreen('PHOTOS_BEFORE');
-    setCapturedPhotos({ indian1: false, urinal1: false, urinal2: false, shower1: false });
-  };
+      if (washrooms && washrooms.length > 0) {
+        // 1. INJECT WD (WASHROOM DETAILS) OBJECT FOR THE DETAIL PAGE
+        win.WD = {};
+        washrooms.forEach((w, i) => {
+          const wId = w.temp_id || String(i);
+          win.WD[wId] = {
+            id: wId,
+            name: w.name,
+            location_types: { name: (w.type || "Washroom").toUpperCase() },
+            averageRating: 10,
+            ratingCount: 0,
+            address: "Live Facility Preview",
+            city: "Workspace",
+            state: "Active",
+            pincode: "---",
+            schedule: { opens_at: "06:00 AM", closes_at: "10:00 PM" },
+            options: {
+              genderAccess: [w.type || "unisex"],
+              hasHandDryer: true,
+              isHandicapAccessible: w.type === "accessible",
+              hasBabyChangingStation: w.type === "female",
+            },
+            usage_category: {
+              men: {
+                wc:
+                  w.type === "male" || w.type === "unisex"
+                    ? w.wc_count || 0
+                    : 0,
+                basin:
+                  w.type === "male" || w.type === "unisex"
+                    ? w.basin_count || 0
+                    : 0,
+                urinals: w.type === "male" ? w.urinal_count || 0 : 0,
+              },
+              women: {
+                wc:
+                  w.type === "female" || w.type === "unisex"
+                    ? w.wc_count || 0
+                    : 0,
+                basin:
+                  w.type === "female" || w.type === "unisex"
+                    ? w.basin_count || 0
+                    : 0,
+                urinals: 0,
+              },
+            },
+          };
+        });
 
-  const openCamera = (boxId) => {
-    setActivePhotoBox(boxId);
-    setIsCameraOpen(true);
-  };
+        // 2. PATCH THE HTML'S DETAIL FUNCTION TO USE OUR DYNAMIC IDs
+        if (typeof win.openWashroomDetail === "function") {
+          const funcStr = win.openWashroomDetail.toString();
+          if (funcStr.includes('WD["409"]')) {
+            const patchedStr = funcStr.replace(
+              'WD["409"]',
+              "WD[id] || Object.values(WD)[0]",
+            );
+            win.eval(`window.openWashroomDetail = ${patchedStr}`);
+          }
+        }
 
-  const takePhoto = () => {
-    setCapturedPhotos(prev => ({ ...prev, [activePhotoBox]: true }));
-    setIsCameraOpen(false);
-  };
+        // 3. UPDATE THE "SELECT WASHROOM" LIST UI
+        win.washrooms = washrooms.map((w, index) => ({
+          id: w.temp_id || String(index),
+          name: w.name || "Custom Washroom",
+          zone: w.zone_temp_id || null,
+          wc: w.wc_count || 2,
+          basin: w.basin_count || 2,
+        }));
 
-  const handleSubmitPhotos = () => {
-    if (appScreen === 'PHOTOS_BEFORE') {
-      setHasOngoing(true);
-      setAppScreen('HOME');
-      setHomeTab('ongoing');
-    } else {
-      setHasOngoing(false);
-      const score = (8.0 + Math.random() * 1.9).toFixed(1);
-      setCurrentScore(score);
-      setIsScorePopupOpen(true);
-      
-      const newTask = {
-        id: Math.floor(1000 + Math.random() * 9000),
-        title: 'Khamla Washroom 1',
-        score: score,
-        time: '36 min',
-        date: '16 Jun, 13:40'
-      };
-      
-      setCompletedTasks([newTask, ...completedTasks]);
-      
-      setTimeout(() => {
-        setIsScorePopupOpen(false);
-        setAppScreen('HOME');
-        setHomeTab('completed');
-      }, 3000);
+        const selectListContainer = doc.querySelector(".washroom-list");
+        if (selectListContainer) {
+          selectListContainer.innerHTML = "";
+          washrooms.forEach((w, index) => {
+            const typeLabel = w.type
+              ? w.type.charAt(0).toUpperCase() + w.type.slice(1)
+              : "Washroom";
+            const btnHTML = `
+              <button class="washroom-item" data-dist="Active Location" data-name="${w.name}" data-dest-x="152" data-dest-y="22" onclick="selectWashroom(this)">
+                <div class="wi-icon">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2.2" stroke-linecap="round">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" /><circle cx="12" cy="10" r="3" />
+                  </svg>
+                </div>
+                <div class="wi-info">
+                  <div class="wi-name">${w.name}</div>
+                  <div class="wi-dist">${typeLabel} &middot; Newly Added</div>
+                </div>
+                <div class="wi-check">
+                  <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </div>
+              </button>`;
+            selectListContainer.insertAdjacentHTML("beforeend", btnHTML);
+          });
+        }
+
+        // 4. UPDATE THE SIDEBAR (DRAWER) UI
+        const drawerBody = doc.querySelector(".drawer-body");
+        if (drawerBody) {
+          drawerBody.innerHTML =
+            '<div class="drawer-section-label">Assigned Washrooms</div>';
+          washrooms.forEach((w, i) => {
+            const wId = w.temp_id || String(i);
+            const typeLabel = w.type
+              ? w.type.charAt(0).toUpperCase() + w.type.slice(1)
+              : "Washroom";
+            const btnHTML = `
+              <button class="assigned-item" onclick="openWashroomDetail('${w.name}', '${typeLabel}', '${wId}')">
+                <div class="assigned-item-icon">📍</div>
+                <div>
+                  <div class="assigned-item-name">${w.name}</div>
+                  <div class="assigned-item-sub">${typeLabel}</div>
+                </div>
+              </button>
+            `;
+            drawerBody.insertAdjacentHTML("beforeend", btnHTML);
+          });
+        }
+      }
+
+      // 5. INTERCEPT EXACT "SUBMIT TASK" FUNCTION
+      if (typeof win.submitTask === "function") {
+        const originalSubmit = win.submitTask;
+        win.submitTask = function () {
+          originalSubmit.apply(this, arguments);
+          const selectedName = win.selectedWashroom
+            ? win.selectedWashroom.name
+            : washrooms[0]?.name || "Demo Washroom";
+          window.parent.postMessage(
+            { type: "CLEANING_COMPLETED", washroomName: selectedName },
+            "*",
+          );
+        };
+      }
+    } catch (err) {
+      console.warn("Could not hook into iframe DOM (Check origin):", err);
     }
   };
 
-  const handleResumeTask = () => {
-    setAppScreen('PHOTOS_AFTER');
-    setCapturedPhotos({ indian1: false, urinal1: false, urinal2: false, shower1: false });
-  };
+  // ─── HANDLE BACKEND API CALL ─────────────────────────────────────────
+  useEffect(() => {
+    const handleMessage = async (event) => {
+      if (event.data?.type === "CLEANING_COMPLETED") {
+        if (hasSubmitted.current) return;
+        hasSubmitted.current = true;
+
+        try {
+          const washroomName = event.data.washroomName;
+          const payload = {
+            name: `${washroomName} (App Preview)`,
+            company_id: user?.company_id || null,
+            location_id: null,
+          };
+
+          const response = await axiosInstance.post(
+            "/cleaner-reviews/demo-completed",
+            payload,
+          );
+
+          if (response.data?.status === "success") {
+            queryClient.invalidateQueries({ queryKey: ["cleanerActivities"] });
+            queryClient.invalidateQueries({ queryKey: ["cleanerReviews"] });
+
+            toast.success(
+              `${washroomName} task submitted! You can view this live in the Cleaner Activity tab.`,
+              {
+                duration: 5000,
+                style: { background: "#1e293b", color: "#fff" },
+              },
+            );
+          }
+        } catch (error) {
+          console.error("Failed to log demo activity:", error);
+          toast.error("Error communicating with server.");
+        } finally {
+          setTimeout(() => {
+            hasSubmitted.current = false;
+          }, 3000);
+        }
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, [queryClient, user]);
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
-      
-      {/* ── HEADER ── */}
-      <div className="flex items-start justify-between gap-4 flex-wrap mb-5">
-        <div>
-          <h1 className="text-xl font-black text-slate-900">Mobile App Preview</h1>
-          <p className="text-sm mt-1 text-slate-500">Fully interactive. Tap tasks, capture photos, submit reports, scan QR — just like the real app.</p>
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300 pb-20 md:pb-0 w-full relative">
+      {/* ── EDUCATIONAL HELP DRAWER ── */}
+      <StepHelpDrawer
+        isOpen={isHelpOpen}
+        onClose={() => setIsHelpOpen(false)}
+        title="App Preview Guide"
+      >
+        <div className="space-y-6">
+          <div className="bg-emerald-50/50 p-4 rounded-xl border border-emerald-100">
+            <h3 className="font-bold text-[#1F4E79] mb-1 text-base">
+              🎉 We are almost done!
+            </h3>
+            <p className="text-slate-700">
+              The washrooms you set up, the usage categories you defined, and
+              the cleaners you assigned are now live in this interactive
+              preview.
+            </p>
+          </div>
+
+          <div>
+            <h3 className="font-bold text-slate-900 text-base mb-3 border-b pb-2">
+              How to Test the App
+            </h3>
+            <ul className="space-y-4 text-slate-600">
+              <li className="flex items-start gap-3">
+                <span className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
+                  1
+                </span>
+                <div>
+                  <strong className="text-slate-800">Login:</strong> Enter any
+                  10-digit mobile number to log in as a cleaner.
+                </div>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
+                  2
+                </span>
+                <div>
+                  <strong className="text-slate-800">Start Task:</strong> Tap
+                  the big blue "Start New Cleaning Task" button.
+                </div>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
+                  3
+                </span>
+                <div>
+                  <strong className="text-slate-800">Select Location:</strong>{" "}
+                  Choose a washroom from the list you created in Step 2.
+                </div>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
+                  4
+                </span>
+                <div>
+                  <strong className="text-slate-800">Photos & Submit:</strong>{" "}
+                  Tap the camera boxes to upload "Before" and "After" photos,
+                  review the checklist, and submit for an AI score.
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="font-bold text-slate-900 text-base mb-2 border-b pb-2">
+              Dashboard Navigation
+            </h3>
+            <ul className="space-y-3 text-slate-600 list-disc pl-4">
+              <li>
+                <strong className="text-slate-800">Completed Tab:</strong> Once
+                submitted, the task will appear here.
+              </li>
+              <li>
+                <strong className="text-slate-800">Ongoing Tab:</strong> If you
+                start a task but don't finish it, it is saved securely in the
+                Ongoing tab to resume later.
+              </li>
+              <li>
+                <strong className="text-slate-800">Sidebar Menu (☰):</strong>{" "}
+                Tap the top-left menu to see the specific washrooms assigned to
+                this cleaner. Tapping one reveals the full location details.
+              </li>
+            </ul>
+          </div>
         </div>
-        <button onClick={onNext} className="bg-[#22c55e] text-white px-6 py-3 rounded-lg font-bold text-sm shadow-sm hover:bg-[#16a34a] transition-colors flex items-center gap-2">
-          🚀 Go Live
-        </button>
+      </StepHelpDrawer>
+
+      {/* ── HEADER ── */}
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-5">
+        <div>
+          <h1 className="text-2xl font-black text-slate-900">
+            Mobile App Preview
+          </h1>
+          <p className="text-sm mt-1 text-slate-500">
+            View the actual V5 mobile app interface your cleaners will use.
+          </p>
+        </div>
+        <div className="flex gap-3 w-full md:w-auto">
+          <button
+            onClick={() => setIsHelpOpen(true)}
+            className="flex-1 md:flex-none bg-white text-[#1F4E79] px-4 py-2.5 rounded-lg text-sm font-bold flex items-center justify-center gap-2 border border-slate-200 shadow-sm hover:bg-slate-50 transition-colors"
+          >
+            <span className="text-lg leading-none">❓</span> Instructions
+          </button>
+          <button
+            onClick={onDeploy}
+            disabled={isLoading}
+            className="flex-1 md:flex-none bg-[#22c55e] text-white px-8 py-2.5 rounded-lg font-bold text-sm shadow-sm hover:bg-[#16a34a] transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isLoading ? "⏳ Deploying..." : "🚀 Go Live"}
+          </button>
+        </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-6 items-start justify-center">
-        
-        {/* ── LEFT: PHONE SIMULATOR ── */}
-        <div className="relative w-[310px] h-[630px] shrink-0 bg-slate-50 rounded-[36px] border-[6px] border-[#0B132B] shadow-[0_0_0_1px_#334155,0_32px_80px_rgba(0,0,0,0.4)] overflow-hidden flex flex-col">
-          
-          {/* Hardware Notch */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[90px] h-[22px] bg-[#0B132B] rounded-b-[14px] z-[60] flex items-center justify-center gap-1.5">
-            <div className="w-[36px] h-1 bg-slate-800 rounded-full" />
-            <div className="w-[9px] h-[9px] bg-slate-800 rounded-full border-[1.5px] border-slate-700" />
-          </div>
-
-          {/* Status Bar */}
-          <div className="bg-[#0B132B] pt-[25px] pb-[5px] px-3 flex justify-between text-[9px] font-bold text-slate-50 relative z-[55] shrink-0">
-            <span>{time}</span>
-            <div className="flex items-center gap-[3px] tracking-tighter">
-              <span>📶</span><span>🔋</span>
+      <div className="flex flex-col lg:flex-row gap-8 items-center lg:items-start justify-center w-full mt-4">
+        {/* ── LEFT: PHONE SIMULATOR (No Notch) ── */}
+        <div className="w-full flex justify-center py-2 overflow-hidden lg:w-auto lg:flex-shrink-0">
+          <div
+            className="relative flex flex-col origin-top scale-[0.85] sm:scale-100"
+            style={{
+              width: "320px",
+              height: "660px",
+              borderRadius: "44px",
+              background: "#1e293b",
+              padding: "10px", // Acts as the bezel
+              boxShadow:
+                "0 25px 50px -12px rgba(0, 0, 0, 0.4), 0 0 0 1px #334155",
+            }}
+          >
+            {/* The Screen */}
+            <div className="w-full h-full rounded-[34px] overflow-hidden bg-white relative">
+              <iframe
+                ref={iframeRef}
+                onLoad={handleIframeLoad}
+                src="/cleaner-preview/index.html"
+                className="w-full h-full border-none absolute inset-0"
+                title="SaafAI Cleaner App Preview"
+              />
             </div>
-          </div>
-
-          {/* APP VIEWPORT */}
-          <div className="relative flex-1 w-full flex flex-col overflow-hidden bg-slate-50">
-            
-            {/* ── OVERLAYS ── */}
-            {/* Sidebar Overlay */}
-            {isSidebarOpen && (
-              <div className="absolute inset-0 z-[70] flex">
-                <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsSidebarOpen(false)} />
-                <div className="relative w-[220px] bg-slate-50 h-full flex flex-col shadow-2xl animate-in slide-in-from-left duration-200 overflow-y-auto">
-                  <button onClick={() => setIsSidebarOpen(false)} className="absolute top-2 right-2 text-slate-400 hover:text-slate-600 text-lg z-10">✕</button>
-                  
-                  <div className="pt-9 pb-3 px-4 bg-white border-b border-slate-100">
-                    <div className="bg-white rounded-lg p-2 shadow-sm border border-slate-100 flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-md bg-pink-50 flex items-center justify-center text-[10px]">🌐</div>
-                        <span className="font-bold text-xs text-slate-700">Language</span>
-                      </div>
-                      <select className="bg-slate-900 text-white text-[10px] font-bold py-1 px-1.5 rounded-md outline-none cursor-pointer">
-                        <option>English</option><option>Hindi</option><option>Marathi</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="p-4 bg-white border-b border-slate-100 flex flex-col items-center">
-                    <div className="w-[54px] h-[54px] rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 text-white flex items-center justify-center text-lg font-black border-[3px] border-white shadow-[0_4px_10px_rgba(59,130,246,0.25)] mb-2.5">KC</div>
-                    <p className="font-bold text-sm text-slate-800">kartik Cleaner</p>
-                    <div className="flex items-center gap-1 mt-1.5 bg-cyan-50 text-cyan-600 text-[9px] font-bold px-2 py-0.5 rounded-full">
-                      🛡️ Verified Personnel
-                    </div>
-                  </div>
-
-                  <div className="p-4 flex-1">
-                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2">Assigned Toilets</p>
-                    <div className="bg-white rounded-lg p-2.5 shadow-sm border border-slate-100 flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full bg-blue-50 flex items-center justify-center text-blue-500 text-[10px]">📍</div>
-                      <span className="font-bold text-xs text-slate-700">Ground Floor WC</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Camera Overlay */}
-            {isCameraOpen && (
-              <div className="absolute inset-0 z-[80] bg-black flex flex-col animate-in fade-in duration-200">
-                <div className="flex justify-between items-center p-3 text-white bg-gradient-to-b from-black/50 to-transparent">
-                  <button onClick={() => setIsCameraOpen(false)} className="text-lg">✕</button>
-                  <span className="font-bold text-xs">Capture Photo</span>
-                  <span className="text-amber-400 text-sm">⚡</span>
-                </div>
-                <div className="flex-1 relative flex items-center justify-center bg-zinc-900 overflow-hidden">
-                  <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
-                    <span className="text-3xl text-slate-600 mb-2">📷</span>
-                    <p className="text-white font-bold text-xs mb-1">Camera initializing...</p>
-                    <p className="text-slate-400 text-[9px]">Simulated photo will be used if unavailable.</p>
-                  </div>
-                  {/* Viewfinder Corners */}
-                  <div className="absolute inset-5 border-2 border-white/20 rounded-[18px] pointer-events-none z-20 flex flex-col justify-between p-2">
-                    <div className="flex justify-between">
-                      <div className="w-4 h-4 border-t-2 border-l-2 border-white" />
-                      <div className="w-4 h-4 border-t-2 border-r-2 border-white" />
-                    </div>
-                    <div className="flex justify-between">
-                      <div className="w-4 h-4 border-b-2 border-l-2 border-white" />
-                      <div className="w-4 h-4 border-b-2 border-r-2 border-white" />
-                    </div>
-                  </div>
-                </div>
-                <div className="h-[100px] bg-black flex flex-col items-center justify-center gap-1.5">
-                  <p className="text-white/50 text-[8px] font-bold uppercase tracking-widest">Align inside frame</p>
-                  <button onClick={takePhoto} className="w-[50px] h-[50px] rounded-full border-[3px] border-white bg-white/15 flex items-center justify-center">
-                    <div className="w-[38px] h-[38px] rounded-full bg-white" />
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Score Popup Overlay */}
-            {isScorePopupOpen && (
-              <div className="absolute inset-0 z-[110] bg-slate-900/80 flex items-center justify-center animate-in fade-in duration-200">
-                <div className="bg-white rounded-[22px] p-6 pb-8 w-[82%] text-center shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-300">
-                  <button onClick={() => setIsScorePopupOpen(false)} className="absolute top-2.5 right-2.5 bg-slate-100 w-6 h-6 rounded-full text-slate-500 text-xs flex items-center justify-center">✕</button>
-                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-green-400 to-green-500 mx-auto flex items-center justify-center text-white text-2xl mb-3 shadow-[0_4px_14px_rgba(34,197,94,0.3)]">✓</div>
-                  <p className="font-extrabold text-[17px] text-slate-800 mb-1">Task Complete!</p>
-                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-3">Inspection Score</p>
-                  <div className="text-[48px] font-black text-transparent bg-clip-text bg-gradient-to-br from-green-400 to-cyan-400 leading-none mb-3">{currentScore}</div>
-                  {/* Shrinking progress bar */}
-                  <div className="absolute bottom-0 left-0 h-1 bg-gradient-to-r from-green-400 to-cyan-400 rounded-full animate-[shrink_3s_linear_forwards]" style={{ width: '100%' }}>
-                    <style>{`@keyframes shrink { from { width: 100%; } to { width: 0%; } }`}</style>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* ── SCREENS ── */}
-            
-            {/* SCREEN: HOME */}
-            {appScreen === 'HOME' && (
-              <div className="flex flex-col h-full overflow-y-auto">
-                {/* Navbar */}
-                <div className="flex justify-between items-center px-3 py-2.5 bg-white border-b border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
-                  <button onClick={() => setIsSidebarOpen(true)} className="text-slate-700 text-sm font-bold">☰</button>
-                  <div className="font-black text-sm text-slate-900">Safai<span className="text-[#1DA1F2]">AI</span></div>
-                  <button className="text-[#1DA1F2] text-xs">↻</button>
-                </div>
-                
-                {/* Profile */}
-                <div className="flex items-center px-3 py-3 bg-white">
-                  <div className="w-[50px] h-[50px] rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 text-white flex items-center justify-center text-base font-black shadow-[0_4px_10px_rgba(59,130,246,0.25)] border-[3px] border-white shrink-0">KC</div>
-                  <div className="ml-2.5">
-                    <p className="text-slate-500 text-[10px] font-medium">Hello, Welcome Back</p>
-                    <p className="text-slate-800 text-[15px] font-extrabold leading-tight">kartik Cleaner</p>
-                    <div className="inline-flex mt-1 items-center gap-1 bg-cyan-50 text-cyan-600 text-[8px] font-bold px-1.5 py-0.5 rounded-full border border-cyan-100">
-                      🛡️ Verified Personnel
-                    </div>
-                  </div>
-                </div>
-
-                {/* KPI Tabs */}
-                <div className="flex gap-2 px-3 mb-3 bg-white pb-3">
-                  <div onClick={() => setHomeTab('ongoing')} className={`flex-1 rounded-xl p-2.5 flex items-center gap-2 cursor-pointer shadow-[0_2px_8px_rgba(0,0,0,0.06)] border-[2px] transition-colors ${homeTab === 'ongoing' ? 'border-blue-500 bg-white' : 'border-transparent bg-white'}`}>
-                    <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center text-[9px] shrink-0">▶</div>
-                    <div>
-                      <p className="text-[18px] font-black text-slate-800 leading-none">{hasOngoing ? '1' : '0'}</p>
-                      <p className="text-[8px] font-bold text-slate-500 uppercase tracking-[0.05em] mt-0.5">Ongoing</p>
-                    </div>
-                  </div>
-                  <div onClick={() => setHomeTab('completed')} className={`flex-1 rounded-xl p-2.5 flex items-center gap-2 cursor-pointer shadow-[0_2px_8px_rgba(0,0,0,0.06)] border-[2px] transition-colors ${homeTab === 'completed' ? 'border-green-500 bg-white' : 'border-transparent bg-white'}`}>
-                    <div className="w-8 h-8 rounded-full bg-green-50 text-green-500 flex items-center justify-center text-[11px] shrink-0">✓</div>
-                    <div>
-                      <p className="text-[18px] font-black text-slate-800 leading-none">{completedTasks.length}</p>
-                      <p className="text-[8px] font-bold text-slate-500 uppercase tracking-[0.05em] mt-0.5">Completed</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Content Area */}
-                <div className="flex-1 px-3 pb-16 flex flex-col">
-                  {homeTab === 'ongoing' && !hasOngoing && (
-                    <>
-                      <button onClick={handleStartTask} className="w-full bg-gradient-to-br from-cyan-400 to-blue-600 text-white py-3.5 rounded-full font-bold text-[13px] shadow-[0_6px_18px_rgba(33,82,255,0.28)] flex items-center justify-center gap-2 mb-6">
-                        <div className="w-5 h-5 rounded-full border-2 border-white flex items-center justify-center text-[10px]">+</div>
-                        Start New Cleaning Task
-                      </button>
-                      <div className="flex-1 flex flex-col items-center justify-center opacity-90 py-8">
-                        <div className="w-11 h-11 rounded-full bg-green-50 flex items-center justify-center text-green-500 mb-2 text-lg">🍃</div>
-                        <p className="font-bold text-[14px] text-slate-800">All Caught Up!</p>
-                        <p className="text-[11px] text-slate-500 mt-1">No active tasks.</p>
-                      </div>
-                    </>
-                  )}
-
-                  {homeTab === 'ongoing' && hasOngoing && (
-                    <div>
-                      <div className="flex justify-between items-center mb-1.5">
-                        <span className="text-[8px] font-bold text-cyan-500 uppercase tracking-[0.1em]">IN-PROGRESS</span>
-                        <span className="bg-cyan-400 text-white w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold">1</span>
-                      </div>
-                      <div onClick={handleResumeTask} className="bg-white rounded-[14px] p-3.5 shadow-[0_4px_14px_rgba(0,0,0,0.06)] border border-slate-100 cursor-pointer relative overflow-hidden">
-                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-cyan-400" />
-                        <div className="pl-2">
-                          <div className="flex justify-between items-start mb-1">
-                            <p className="font-bold text-[14px] text-slate-800">Khamla Washroom 1</p>
-                            <span className="bg-amber-100 text-amber-600 text-[8px] font-bold px-1.5 py-0.5 rounded border border-amber-200">Ongoing</span>
-                          </div>
-                          <span className="inline-block bg-blue-50 text-blue-500 text-[8px] font-bold px-1.5 py-0.5 rounded-full mb-1.5">Local Draft</span>
-                          <p className="text-[9px] text-slate-500">Started just now</p>
-                          <div className="mt-2 pt-2 border-t border-slate-100 text-[11px] font-bold text-cyan-500 flex justify-between items-center">
-                            Resume to Submit <span>→</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {homeTab === 'completed' && (
-                    <div className="space-y-3">
-                      {completedTasks.length === 0 ? (
-                        <div className="text-center py-10 opacity-60">
-                          <span className="text-3xl block mb-2 text-slate-400">📥</span>
-                          <p className="text-[11px] text-slate-500">No completed tasks yet.</p>
-                        </div>
-                      ) : (
-                        completedTasks.map((task, i) => (
-                          <div key={i} onClick={() => setAppScreen('TASK_DETAILS')} className="bg-white rounded-[14px] shadow-sm border border-slate-100 p-3 cursor-pointer">
-                            <div className="flex justify-between items-start mb-2">
-                              <div>
-                                <p className="font-bold text-[13px] text-slate-800">{task.title}</p>
-                                <p className="text-[9px] text-slate-400 font-bold mt-0.5">ID: #{task.id}</p>
-                              </div>
-                              <div className="bg-amber-50 text-amber-600 border border-amber-200 text-[10px] font-bold px-1.5 py-0.5 rounded-md">⭐ {task.score}</div>
-                            </div>
-                            <div className="text-[9px] font-bold text-slate-500 border-t border-slate-100 pt-2 flex gap-3">
-                              <span>📅 {task.date}</span>
-                              <span className="text-green-500">✓ {task.time}</span>
-                            </div>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* SCREEN: SELECT WASHROOM */}
-            {appScreen === 'SELECT' && (
-              <div className="flex flex-col h-full bg-slate-50">
-                <div className="bg-[#0B132B] text-white p-3 flex items-center justify-between sticky top-0 z-10">
-                  <button onClick={() => setAppScreen('HOME')} className="text-sm font-bold">←</button>
-                  <span className="text-[13px] font-semibold">Start New Task</span>
-                  <span className="text-[13px]">🎯</span>
-                </div>
-                <div className="p-3.5 flex-1 flex flex-col pb-20">
-                  <p className="font-bold text-[17px] text-slate-800 mb-3.5">Select Washroom</p>
-                  
-                  <div className="bg-white border-2 border-blue-400 rounded-xl p-3 flex items-center shadow-[0_4px_12px_rgba(96,165,250,0.15)] mb-3.5 relative overflow-hidden cursor-pointer">
-                    <div className="absolute right-0 top-0 bottom-0 bg-blue-50 px-2.5 flex items-center border-l border-blue-200 text-blue-500 text-xs">✓</div>
-                    <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center mr-2.5 text-blue-500 text-xs">📍</div>
-                    <span className="font-bold text-[14px] text-slate-800">Khamla Washroom 1</span>
-                  </div>
-
-                  <div className="flex-1 bg-white rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.06)] border border-slate-200 overflow-hidden relative min-h-[160px]">
-                    <div className="absolute inset-0 bg-[#e5e3df] opacity-50" />
-                    {/* SVG Grid Map Pattern */}
-                    <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
-                      <defs><pattern id="pgrid" width="36" height="36" patternUnits="userSpaceOnUse"><path d="M 36 0 L 0 0 0 36" fill="none" stroke="#cbd5e1" strokeWidth="1"/></pattern></defs>
-                      <rect width="100%" height="100%" fill="url(#pgrid)"/>
-                      <path d="M 0 80 Q 80 80 120 30 T 260 60" fill="none" stroke="#fff" strokeWidth="6"/>
-                      <path d="M 0 80 Q 80 80 120 30 T 260 60" fill="none" stroke="#fadb5f" strokeWidth="2"/>
-                    </svg>
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
-                      <div className="bg-white/95 text-slate-700 text-[8px] font-bold px-2 py-1.5 rounded-md shadow-sm text-center mb-1.5 border border-slate-200 leading-[1.4]">
-                        Facility Block A<br/>Ground Floor
-                      </div>
-                      <div className="relative">
-                        <div className="w-4 h-4 rounded-full bg-slate-500 border-2 border-white shadow-sm relative z-10" />
-                        <div className="absolute inset-0 rounded-full bg-slate-500 opacity-40 animate-ping" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="sticky bottom-0 p-2.5 bg-gradient-to-t from-slate-50 via-slate-50 to-transparent">
-                  <button onClick={handleSelectWashroom} className="w-full bg-gradient-to-br from-sky-300 to-sky-500 text-white py-[13px] rounded-xl font-bold text-[14px] shadow-[0_6px_18px_rgba(56,189,248,0.22)] flex items-center justify-center gap-1.5">
-                    Next →
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* SCREEN: PHOTOS (Before & After) */}
-            {(appScreen === 'PHOTOS_BEFORE' || appScreen === 'PHOTOS_AFTER') && (
-              <div className="flex flex-col h-full bg-slate-50">
-                <div className="bg-[#0B132B] text-white p-3 flex items-center justify-between sticky top-0 z-10">
-                  <button onClick={() => setAppScreen(appScreen === 'PHOTOS_BEFORE' ? 'SELECT' : 'HOME')} className="text-sm font-bold">←</button>
-                  <span className="text-[13px] font-semibold">{appScreen === 'PHOTOS_BEFORE' ? 'Start New Task' : 'Complete Task'}</span>
-                  <span className="text-[13px]">🎯</span>
-                </div>
-                <div className="h-[3px] bg-slate-200 w-full">
-                  <div className={`h-full bg-cyan-500 transition-all duration-500 ${appScreen === 'PHOTOS_BEFORE' ? 'w-1/2' : 'w-full'}`} />
-                </div>
-                
-                <div className="flex-1 p-3.5 overflow-y-auto pb-20">
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-2.5 mb-3.5 flex gap-2">
-                    <span className="text-blue-500 text-[11px] mt-px">ℹ️</span>
-                    <p className="text-[11px] font-bold text-slate-700 leading-snug">
-                      Capture {appScreen === 'PHOTOS_BEFORE' ? 'Before' : 'After'} Cleaning photos to {appScreen === 'PHOTOS_BEFORE' ? 'start' : 'submit'}.
-                    </p>
-                  </div>
-
-                  <div className="space-y-2.5">
-                    {/* Indian WC */}
-                    <div className="bg-white border border-slate-200 rounded-[14px] p-3.5 shadow-[0_2px_6px_rgba(0,0,0,0.04)]">
-                      <p className="text-[12px] font-bold text-slate-800 mb-2.5 flex items-center gap-1.5"><span className="text-[10px] text-slate-400">🚽</span> Men – Indian WC</p>
-                      <div 
-                        onClick={() => openCamera('indian1')}
-                        className={`w-[70px] h-[70px] rounded-xl flex flex-col items-center justify-center cursor-pointer relative overflow-hidden transition-all
-                          ${capturedPhotos.indian1 ? 'border-2 border-cyan-400 bg-cyan-50' : 'border-2 border-dashed border-slate-300'}
-                        `}
-                      >
-                        {capturedPhotos.indian1 ? <span className="text-2xl z-10">📸</span> : <span className="text-cyan-500 text-[16px] mb-1 z-10">📷</span>}
-                        {!capturedPhotos.indian1 && <span className="text-[6px] font-bold text-slate-500 uppercase z-10">Indian 1</span>}
-                      </div>
-                    </div>
-
-                    {/* Urinals */}
-                    <div className="bg-white border border-slate-200 rounded-[14px] p-3.5 shadow-[0_2px_6px_rgba(0,0,0,0.04)]">
-                      <p className="text-[12px] font-bold text-slate-800 mb-2.5 flex items-center gap-1.5"><span className="text-[10px] text-slate-400">🚹</span> Men – Urinals</p>
-                      <div className="flex gap-2">
-                        <div onClick={() => openCamera('urinal1')} className={`w-[70px] h-[70px] rounded-xl flex flex-col items-center justify-center cursor-pointer border-2 ${capturedPhotos.urinal1 ? 'border-cyan-400 bg-cyan-50' : 'border-dashed border-slate-300'}`}>
-                          {capturedPhotos.urinal1 ? <span className="text-2xl">📸</span> : <span className="text-cyan-500 text-[16px] mb-1">📷</span>}
-                          {!capturedPhotos.urinal1 && <span className="text-[6px] font-bold text-slate-500 uppercase">Urinal 1</span>}
-                        </div>
-                        <div onClick={() => openCamera('urinal2')} className={`w-[70px] h-[70px] rounded-xl flex flex-col items-center justify-center cursor-pointer border-2 ${capturedPhotos.urinal2 ? 'border-cyan-400 bg-cyan-50' : 'border-dashed border-slate-300'}`}>
-                          {capturedPhotos.urinal2 ? <span className="text-2xl">📸</span> : <span className="text-cyan-500 text-[16px] mb-1">📷</span>}
-                          {!capturedPhotos.urinal2 && <span className="text-[6px] font-bold text-slate-500 uppercase">Urinal 2</span>}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Basin */}
-                    <div className="bg-white border border-slate-200 rounded-[14px] p-3.5 shadow-[0_2px_6px_rgba(0,0,0,0.04)]">
-                      <p className="text-[12px] font-bold text-slate-800 mb-2.5 flex items-center gap-1.5"><span className="text-[10px] text-slate-400">🚰</span> Men – Basin</p>
-                      <div className="flex gap-2">
-                        <div onClick={() => openCamera('shower1')} className={`w-[70px] h-[70px] rounded-xl flex flex-col items-center justify-center cursor-pointer border-2 ${capturedPhotos.shower1 ? 'border-cyan-400 bg-cyan-50' : 'border-dashed border-slate-300'}`}>
-                          {capturedPhotos.shower1 ? <span className="text-2xl">📸</span> : <span className="text-cyan-500 text-[16px] mb-1">📷</span>}
-                          {!capturedPhotos.shower1 && <span className="text-[6px] font-bold text-slate-500 uppercase">Basin 1</span>}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="sticky bottom-0 p-2.5 bg-white border-t border-slate-100 flex items-center justify-between shadow-[0_-3px_10px_rgba(0,0,0,0.03)]">
-                  <button onClick={() => setAppScreen('HOME')} className="text-slate-500 font-bold text-[12px] px-2.5">Cancel</button>
-                  <button onClick={handleSubmitPhotos} className="flex-1 ml-2 bg-gradient-to-br from-cyan-400 to-blue-600 text-white py-3 rounded-xl font-bold text-[13px] flex items-center justify-center gap-1.5">
-                    Submit & Continue ✓
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* SCREEN: TASK DETAILS */}
-            {appScreen === 'TASK_DETAILS' && (
-              <div className="flex flex-col h-full bg-slate-50 overflow-y-auto">
-                <div className="bg-white p-2.5 flex items-center gap-2 sticky top-0 z-10 shadow-[0_1px_3px_rgba(0,0,0,0.06)] border-b border-slate-100">
-                  <button onClick={() => { setAppScreen('HOME'); setHomeTab('completed'); }} className="text-slate-700 text-sm px-1 font-bold">←</button>
-                  <span className="font-bold text-[14px] text-slate-800">Task Details</span>
-                </div>
-                <div className="p-3.5 pb-12">
-                  <div className="flex justify-between items-start mb-3">
-                    <p className="font-extrabold text-[18px] text-slate-900 leading-[1.2] max-w-[160px]">Khamla Washroom 1</p>
-                    <div className="flex flex-col items-end gap-1">
-                      <span className="bg-green-100 text-green-600 text-[8px] font-bold px-2 py-0.5 rounded border border-green-200">Completed</span>
-                      <span className="font-extrabold text-[15px] text-amber-600">Score: 9.2</span>
-                    </div>
-                  </div>
-                  <div className="inline-flex items-center gap-1.5 bg-white border border-slate-200 rounded-full px-2.5 py-1 mb-3.5 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
-                    <span className="text-blue-400 text-[9px]">🏢</span>
-                    <span className="text-[10px] font-bold text-slate-500">ID: #1234</span>
-                  </div>
-                  
-                  <div className="bg-white rounded-[14px] shadow-[0_2px_8px_rgba(0,0,0,0.05)] border border-slate-100 p-3 flex mb-3.5">
-                    <div className="flex-1 pr-3 border-r border-slate-100">
-                      <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mb-1">Started</p>
-                      <p className="font-bold text-[12px] text-slate-800">16 Jun, 13:40</p>
-                    </div>
-                    <div className="flex-1 pl-3">
-                      <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mb-1">Time Taken</p>
-                      <p className="font-bold text-[12px] text-slate-800">36 min</p>
-                    </div>
-                  </div>
-
-                  <div className="bg-white rounded-[14px] shadow-[0_2px_8px_rgba(0,0,0,0.05)] border border-slate-100 p-3">
-                    <p className="font-bold text-[12px] text-slate-800 mb-3">Evidence Gallery</p>
-                    <div className="grid grid-cols-2 gap-2 opacity-50">
-                      <div className="h-20 bg-slate-100 rounded-lg flex items-center justify-center text-xl border border-slate-200">📸</div>
-                      <div className="h-20 bg-slate-100 rounded-lg flex items-center justify-center text-xl border border-slate-200">📸</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
           </div>
         </div>
 
-        {/* ── RIGHT: DESKTOP SUMMARY PANELS ── */}
-        <div className="flex-1 w-full max-w-2xl space-y-4">
-          
-          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
-            <h3 className="font-bold text-sm text-slate-900 mb-3">Platform Summary</h3>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="text-center p-3 rounded-lg border border-slate-100 bg-slate-50/50">
-                <p className="text-xl font-black text-[#1F4E79]">{summary.zones || '5'}</p>
-                <p className="text-[11px] font-bold text-slate-500 mt-1">Zones</p>
+        {/* ── RIGHT: SUMMARY PANEL ── */}
+        <div className="flex-1 w-full max-w-2xl space-y-6 pt-4 lg:pt-0">
+          <div className="bg-white border border-slate-200 rounded-xl p-5 md:p-6 shadow-sm">
+            <h3 className="font-bold text-base text-slate-900 mb-4">
+              Platform Summary
+            </h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="text-center p-4 rounded-xl bg-slate-50 border border-slate-100">
+                <p className="text-2xl font-black text-[#1F4E79]">
+                  {summary.zones || "0"}
+                </p>
+                <p className="text-xs font-bold text-slate-500 mt-1 uppercase tracking-wider">
+                  Zones
+                </p>
               </div>
-              <div className="text-center p-3 rounded-lg border border-slate-100 bg-slate-50/50">
-                <p className="text-xl font-black text-[#22c55e]">{summary.staff || '9'}</p>
-                <p className="text-[11px] font-bold text-slate-500 mt-1">Staff</p>
+              <div className="text-center p-4 rounded-xl bg-slate-50 border border-slate-100">
+                <p className="text-2xl font-black text-[#22c55e]">
+                  {summary.staff || "0"}
+                </p>
+                <p className="text-xs font-bold text-slate-500 mt-1 uppercase tracking-wider">
+                  Staff
+                </p>
               </div>
-              <div className="text-center p-3 rounded-lg border border-slate-100 bg-slate-50/50">
-                <p className="text-xl font-black text-[#f59e0b]">{summary.washrooms || '12'}</p>
-                <p className="text-[11px] font-bold text-slate-500 mt-1">Washrooms</p>
+              <div className="text-center p-4 rounded-xl bg-slate-50 border border-slate-100">
+                <p className="text-2xl font-black text-[#f59e0b]">
+                  {summary.washrooms || "0"}
+                </p>
+                <p className="text-xs font-bold text-slate-500 mt-1 uppercase tracking-wider">
+                  Washrooms
+                </p>
               </div>
-              <div className="text-center p-3 rounded-lg border border-slate-100 bg-slate-50/50">
-                <p className="text-xl font-black text-rose-500">{summary.cleaners || '6'}</p>
-                <p className="text-[11px] font-bold text-slate-500 mt-1">Cleaners</p>
+              <div className="text-center p-4 rounded-xl bg-slate-50 border border-slate-100">
+                <p className="text-2xl font-black text-rose-500">
+                  {summary.cleaners || "0"}
+                </p>
+                <p className="text-xs font-bold text-slate-500 mt-1 uppercase tracking-wider">
+                  Cleaners
+                </p>
               </div>
             </div>
           </div>
 
           <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
-            <h3 className="font-bold text-sm text-slate-900 mb-3">Readiness Checks</h3>
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-xs">
-                <div className="text-[#22c55e]">✓</div><span className="text-slate-700">Location hierarchy configured</span>
-              </div>
-              <div className="flex items-center gap-2 text-xs opacity-60">
-                <div className="text-slate-400">✕</div><span className="text-slate-400 line-through">Staff to be registered</span>
-              </div>
-              <div className="flex items-center gap-2 text-xs opacity-60">
-                <div className="text-slate-400">✕</div><span className="text-slate-400 line-through">Washrooms to be configured</span>
-              </div>
-              <div className="flex items-center gap-2 text-xs">
-                <div className="text-[#22c55e]">✓</div><span className="text-slate-700 font-bold">Mobile app ready</span>
-              </div>
-            </div>
+            <h3 className="font-bold text-sm text-slate-900 mb-3 border-b border-slate-100 pb-2">
+              Status
+            </h3>
+            <p className="text-sm text-slate-600 font-medium">
+              All configurations look good! Your facility workspace is ready for
+              launch.
+            </p>
           </div>
 
-          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
-            <h3 className="font-bold text-sm text-slate-900 mb-3">How to Use the App Preview</h3>
-            <div className="space-y-2 text-xs text-slate-500">
-              <div className="flex items-start gap-2"><span className="text-[#1F4E79] mt-0.5">👆</span><span>Tap <strong className="text-slate-700">Start New Cleaning Task</strong> to begin a new cleaning workflow.</span></div>
-              <div className="flex items-start gap-2"><span className="text-[#1F4E79] mt-0.5">📷</span><span>Tap any <strong className="text-slate-700">camera box</strong> to capture Before/After photos — uses live camera or simulates.</span></div>
-              <div className="flex items-start gap-2"><span className="text-[#22c55e] mt-0.5">✓</span><span>Submit photos to get an <strong className="text-slate-700">AI inspection score</strong> and view evidence in Completed.</span></div>
-              <div className="flex items-start gap-2"><span className="text-[#1F4E79] mt-0.5">☰</span><span>Tap the <strong className="text-slate-700">☰ menu</strong> to open the sidebar with language settings and user profile.</span></div>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-2 pt-1">
-            <button className="bg-[#22c55e] text-white py-3 rounded-lg font-bold text-sm shadow-sm hover:bg-[#16a34a] transition-colors flex justify-center items-center gap-2">
-              🚀 Go Live — View Dashboard
-            </button>
-            <button className="bg-white border border-slate-200 text-slate-700 py-2.5 rounded-lg font-bold text-sm shadow-sm hover:bg-slate-50 transition-colors flex justify-center items-center gap-2">
-              📥 Download Setup Report
-            </button>
-            <button className="bg-white border border-slate-200 text-slate-700 py-2.5 rounded-lg font-bold text-sm shadow-sm hover:bg-slate-50 transition-colors flex justify-center items-center gap-2">
-              ↗ Invite Team Members
-            </button>
-          </div>
-
+          <button
+            onClick={onDeploy}
+            disabled={isLoading}
+            className="w-full bg-[#22c55e] text-white py-4 rounded-xl font-bold text-base shadow-sm hover:bg-[#16a34a] transition-all hover:-translate-y-0.5 active:translate-y-0 flex justify-center items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isLoading
+              ? "⏳ Compiling Workspace..."
+              : "🚀 Go Live — View Dashboard"}
+          </button>
         </div>
       </div>
 
       {/* ── BOTTOM GLOBAL NAV ── */}
-      <div className="flex justify-between mt-8 pt-5 border-t border-slate-200">
-        <button onClick={onBack} className="inline-flex items-center gap-2 font-bold text-sm rounded-lg border border-slate-200 bg-white text-slate-700 px-6 py-2.5 hover:bg-slate-50 transition-colors shadow-sm">
+      <div className="flex justify-start mt-8 pt-5 border-t border-slate-200 w-full">
+        <button
+          onClick={onBack}
+          className="w-full md:w-auto inline-flex items-center justify-center gap-2 font-bold text-sm rounded-lg border border-slate-200 bg-white text-slate-700 min-h-[48px] px-6 hover:bg-slate-50 transition-colors shadow-sm"
+        >
           ← Back
-        </button>
-        <button onClick={onNext} className="inline-flex items-center gap-2 font-bold text-sm rounded-lg bg-[#22c55e] text-white px-8 py-3 hover:bg-[#16a34a] transition-colors shadow-sm">
-          🚀 Continue to Dashboard ➔
         </button>
       </div>
 
+      {/* Floating Help Button */}
+      <button
+        onClick={() => setIsHelpOpen(true)}
+        className="fixed bottom-6 right-6 z-40 bg-gradient-to-tr from-[#1F4E79] to-[#3a7ca5] text-white w-14 h-14 rounded-full flex items-center justify-center shadow-[0_4px_20px_rgba(31,78,121,0.4)] hover:scale-105 transition-transform"
+        title="Need Help?"
+      >
+        <span className="text-2xl animate-pulse">❓</span>
+      </button>
     </div>
   );
 }
