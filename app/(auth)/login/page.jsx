@@ -36,6 +36,76 @@ export default function LoginPage() {
   });
 
   // ─── LOGIN HANDLER ──────────────────────────────────────────
+  // const handleLoginSubmit = async (e) => {
+  //   e.preventDefault();
+  //   setIsLoading(true);
+  //   dispatch(loginStart());
+
+  //   try {
+  //     const response = await AuthApi.login(loginData.phone, loginData.password);
+
+  //     if (response.success || response.status === "success") {
+  //       const user = response.user || response.data?.user;
+  //       const token = user?.token;
+
+  //       if (!user?.role || !Array.isArray(user?.role?.permissions)) {
+  //         toast.error("Invalid Login, Please Contact Support!");
+  //         dispatch(loginFailure("Missing role/permissions"));
+  //         return;
+  //       }
+
+  //       if (token) localStorage.setItem("token", token);
+  //       dispatch(loginSuccess(user));
+
+  //       const roleId = parseInt(user?.role_id);
+
+  //       // Safely extract company data
+  //       const companyData = response.company || user?.company || {};
+  //       const isOnboardingDone = companyData?.is_onboarding_completed;
+  //       const hasMetadata =
+  //         companyData?.metadata?.organization_type ||
+  //         companyData?.onboarding_metadata?.organization_type;
+  //       const companyName = companyData?.name;
+
+  //       // 🚀 SMART ROUTING LOGIC
+  //       if (roleId === 2 && !isOnboardingDone) {
+  //         // Check if they need to do Phase 1 (Company Setup)
+  //         if (!hasMetadata || companyName === "Pending Setup" || !companyName) {
+  //           toast("Please complete your company profile.");
+  //           router.push("/company-setup");
+  //         } else {
+  //           // Phase 1 is done, skip questions, go straight to Phase 2 (Workspace)
+  //           toast("Resuming workspace setup...");
+  //           router.push("/stepper");
+  //         }
+  //         return;
+  //       }
+
+  //       toast.success(`Welcome back, ${user.name}!`);
+  //       if (roleId === 1) {
+  //         router.push("/dashboard");
+  //       } else if (user.company_id) {
+  //         router.push(`/clientDashboard/${user.company_id}`);
+  //       } else {
+  //         toast.error("No company assigned. Contact support.");
+  //         dispatch(loginFailure("No company"));
+  //       }
+  //     } else {
+  //       toast.error(response.error || response.message || "Login failed.");
+  //       dispatch(loginFailure(response.error));
+  //     }
+  //   } catch (error) {
+  //     console.error("Login error:", error);
+  //     toast.error(
+  //       error?.response?.data?.error || "An unexpected error occurred.",
+  //     );
+  //     dispatch(loginFailure(error.message));
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
+
+  // ─── LOGIN HANDLER ──────────────────────────────────────────
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -58,34 +128,32 @@ export default function LoginPage() {
         dispatch(loginSuccess(user));
 
         const roleId = parseInt(user?.role_id);
-
-        // Safely extract company data
-        const companyData = response.company || user?.company || {};
-        const isOnboardingDone = companyData?.is_onboarding_completed;
-        const hasMetadata =
-          companyData?.metadata?.organization_type ||
-          companyData?.onboarding_metadata?.organization_type;
-        const companyName = companyData?.name;
-
-        // 🚀 SMART ROUTING LOGIC
-        if (roleId === 2 && !isOnboardingDone) {
-          // Check if they need to do Phase 1 (Company Setup)
-          if (!hasMetadata || companyName === "Pending Setup" || !companyName) {
-            toast("Please complete your company profile.");
-            router.push("/company-setup");
-          } else {
-            // Phase 1 is done, skip questions, go straight to Phase 2 (Workspace)
-            toast("Resuming workspace setup...");
-            router.push("/stepper");
-          }
-          return;
-        }
-
         toast.success(`Welcome back, ${user.name}!`);
-        if (roleId === 1) {
-          router.push("/dashboard");
+
+        // 🚀 SMART ROUTING BASED ON BACKEND STATUS
+        if (roleId === 2 && user.company_id) {
+          try {
+            // Fetch exact status from backend
+            const statusRes = await AuthApi.getOnboardingStatus();
+
+            console.log("Onboarding status response:", statusRes);
+            if (statusRes.nextStep === "company") {
+              toast("Please complete your company profile.");
+              router.push("/company-setup");
+            } else if (statusRes.nextStep === "workspace") {
+              toast("Resuming workspace setup...");
+              router.push("/stepper");
+            } else {
+              router.push(`/clientDashboard/${user.company_id}`);
+            }
+          } catch (statusErr) {
+            console.error("Failed to get status, defaulting to dashboard");
+            router.push(`/clientDashboard/${user.company_id}`);
+          }
+        } else if (roleId === 1) {
+          router.push("/dashboard"); // Superadmin
         } else if (user.company_id) {
-          router.push(`/clientDashboard/${user.company_id}`);
+          router.push(`/clientDashboard/${user.company_id}`); // Regular Staff
         } else {
           toast.error("No company assigned. Contact support.");
           dispatch(loginFailure("No company"));
@@ -104,7 +172,6 @@ export default function LoginPage() {
       setIsLoading(false);
     }
   };
-
   // ─── REGISTER HANDLER ───────────────────────────────────────
   const handleRegisterSubmit = async (e) => {
     e.preventDefault();

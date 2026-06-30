@@ -75,6 +75,10 @@ export const AuthApi = {
     }
   },
 
+  getOnboardingStatus: async () => {
+    const response = await axiosInstance.get("/companies/onboarding-status");
+    return response.data;
+  },
   // LOGOUT (optional but recommended)
   logout: async () => {
     try {
