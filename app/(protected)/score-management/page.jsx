@@ -1060,7 +1060,7 @@ import { usePermissions } from "@/shared/hooks/usePermission";
 import "../../../app/globals.css";
 
 // ✅ Import the TanStack Query hooks
-import { useCompanies } from "@/features/companies/queries/companies.queries.js"; 
+import { useCompanies } from "@/features/companies/queries/companies.queries.js";
 import { useAllCleanerReviews, useUpdateReviewScore } from "@/features/cleanerReview/cleanerReview.queries.js"; // Adjust path as needed
 
 import {
@@ -1089,6 +1089,7 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { useMemo } from "react";
+
 const getScoreColor = (score) => {
   if (score >= 8) return "text-green-600";
   if (score >= 5) return "text-orange-500";
@@ -1103,7 +1104,7 @@ const PhotoModal = ({ photos, onClose }) => {
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
-  
+
   // 1. Create a reference for the modal wrapper
   const modalRef = useRef(null);
 
@@ -1111,7 +1112,7 @@ const PhotoModal = ({ photos, onClose }) => {
     setCurrentIndex(0);
     setZoomLevel(1);
     setPosition({ x: 0, y: 0 });
-    
+
     // 2. Automatically focus the modal when it opens so keydowns register instantly
     if (modalRef.current) {
       modalRef.current.focus();
@@ -1309,9 +1310,8 @@ const PhotoModal = ({ photos, onClose }) => {
         />
 
         <div
-          className={`absolute top-4 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded-full text-white font-semibold text-lg shadow-lg ${
-            currentPhoto.color === "blue" ? "bg-blue-500" : "bg-green-500"
-          }`}
+          className={`absolute top-4 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded-full text-white font-semibold text-lg shadow-lg ${currentPhoto.color === "blue" ? "bg-blue-500" : "bg-green-500"
+            }`}
         >
           {currentPhoto.label}
         </div>
@@ -1384,13 +1384,13 @@ const PhotoModal = ({ photos, onClose }) => {
               setCurrentIndex(idx);
               resetZoom();
             }}
-            className={`relative cursor-pointer flex-shrink-0 w-14 h-14 rounded overflow-hidden border-2 transition-all ${
-              idx === currentIndex
-                ? photo.color === "blue"
-                  ? "border-blue-500 ring-2 ring-blue-400"
-                  : "border-green-500 ring-2 ring-green-400"
-                : "border-gray-600 hover:border-gray-400"
-            }`}
+            className={`relative cursor-pointer flex-shrink-0 w-14 h-14 rounded overflow-hidden border-2 transition-all ${idx === currentIndex
+              ? photo.color === "blue"
+                ? "border-blue-500 ring-2 ring-blue-400"
+                : "border-green-500 ring-2 ring-green-400"
+              : "border-gray-600 hover:border-gray-400"
+
+              }`}
           >
             <img
               src={photo.url}
@@ -1399,9 +1399,8 @@ const PhotoModal = ({ photos, onClose }) => {
               onError={(e) => (e.target.style.display = "none")}
             />
             <span
-              className={`absolute top-0.5 left-0.5 ${
-                photo.color === "blue" ? "bg-blue-500" : "bg-green-500"
-              } text-white px-1.5 py-0.5 text-[10px] font-bold rounded`}
+              className={`absolute top-0.5 left-0.5 ${photo.color === "blue" ? "bg-blue-500" : "bg-green-500"
+                } text-white px-1.5 py-0.5 text-[10px] font-bold rounded`}
             >
               {photo.label[0]}
             </span>
@@ -1421,7 +1420,12 @@ const EditableScoreCell = ({
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   // Allow the initial state to fall back to an empty string safely
-  const [score, setScore] = useState(review.score ?? ""); 
+  const [score, setScore] = useState(review.score ?? "");
+
+  // Sync state if review.score updates externally
+  useEffect(() => {
+    setScore(review.score ?? "");
+  }, [review.score]);
 
   const { mutate: updateScore } = useUpdateReviewScore();
 
@@ -1469,8 +1473,7 @@ const EditableScoreCell = ({
     }
     if (isOngoing) {
       toast.error(
-        `Cannot edit ongoing review for ${
-          review.cleaner_user?.name || "cleaner"
+        `Cannot edit ongoing review for ${review.cleaner_user?.name || "cleaner"
         }. Please wait until it's completed.`
       );
       return;
@@ -1478,19 +1481,21 @@ const EditableScoreCell = ({
     setIsEditing(true);
   };
 
+  // The displayed original score
+  const displayScore = review.original_score ?? review.score;
+
   if (isEditing) {
     return (
-      <div className="flex items-center gap-2">
+      <div className="flex items-center justify-center gap-2">
         <input
           type="number"
           min="0"
           max="10"
           step="0.1"
-          value={score} 
+          value={score}
           onChange={(e) => {
             const val = e.target.value;
-            // If the user clears the input, set state to "" instead of NaN
-            setScore(val === "" ? "" : val); 
+            setScore(val === "" ? "" : val);
           }}
           className="w-16 px-2 py-1 border border-slate-300 rounded text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
           autoFocus
@@ -1514,17 +1519,16 @@ const EditableScoreCell = ({
   }
 
   return (
-    <div className="flex items-center gap-2">
-      <span className={`font-semibold ${getScoreColor(review.score)}`}>
-        {typeof review.score === 'number' ? review.score.toFixed(1) : "N/A"}
+    <div className="flex items-center justify-center gap-2">
+      <span className={`font-semibold ${getScoreColor(displayScore)}`}>
+        {typeof displayScore === 'number' ? displayScore.toFixed(2) : "N/A"}
       </span>
       <button
         onClick={handleEditClick}
-        className={`cursor-pointer p-1 rounded transition-colors ${
-          !canEdit || isOngoing
-            ? "text-slate-300 cursor-not-allowed"
-            : "text-slate-400 hover:text-indigo-600 hover:bg-indigo-50"
-        }`}
+        className={`cursor-pointer p-1 rounded transition-colors ${!canEdit || isOngoing
+          ? "text-slate-300 cursor-not-allowed"
+          : "text-slate-400 hover:text-indigo-600 hover:bg-indigo-50"
+          }`}
         title={
           !canEdit
             ? "No permission to edit"
@@ -1553,13 +1557,62 @@ const EmptyState = ({ message = "No reviews found" }) => (
   </div>
 );
 
+const ExplainabilityModal = ({ details, onClose }) => {
+  // Safely drill down to the explainability object
+  const explainability = details?.ai_response?.explainability || {};
+
+  // Filter out "consumables" (case-insensitive)
+  const filteredKeys = Object.keys(explainability).filter(
+    (key) => key.toLowerCase() !== "consumables"
+  );
+
+  return (
+    <div
+      className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="bg-white rounded-xl shadow-xl max-w-lg w-full overflow-hidden flex flex-col max-h-[80vh]" style={{ background: "var(--surface)", color: "var(--foreground)" }}>
+
+        {/* Header */}
+        <div className="flex justify-between items-center p-4 border-b border-gray-200">
+          <h3 className="text-lg font-bold flex items-center gap-2">
+            <Shield className="w-5 h-5 text-indigo-600" />
+            Reason for Score
+          </h3>
+          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full transition-colors text-gray-500">
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="p-4 overflow-y-auto flex-1 space-y-3">
+          {filteredKeys.length === 0 ? (
+            <p className="text-gray-500 text-sm text-center py-4">No detailed explanation available.</p>
+          ) : (
+            filteredKeys.map((key) => (
+              <div key={key} className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                <h4 className="font-semibold text-sm capitalize mb-1 text-slate-800">
+                  {key.replace(/_/g, ' ')}
+                </h4>
+                <p className="text-sm text-slate-600">
+                  {explainability[key]}
+                </p>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 /* ================= MAIN COMPONENT ================= */
 export default function ScoreManagement() {
   useRequirePermission({
     module: MODULES.SCORES,
     action: "view",
   });
-  
+
   const [photoStartIndex, setPhotoStartIndex] = useState(0);
   const { canUpdate } = usePermissions();
   const canEditScores = canUpdate(MODULES.SCORE_MANAGEMENT);
@@ -1573,90 +1626,43 @@ export default function ScoreManagement() {
   const [selectedPhotos, setSelectedPhotos] = useState(null);
 
   /* ================= State ================= */
-  // const [filteredReviews, setFilteredReviews] = useState([]);
-  
   const [companyFilter, setCompanyFilter] = useState("");
   const [dateFilter, setDateFilter] = useState(
     new Date().toISOString().split("T")[0],
   );
-
+  const [explainModalData, setExplainModalData] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [modifiedFilter, setModifiedFilter] = useState("all");
   const [scoreFilter, setScoreFilter] = useState("all");
 
   /* ================= API Queries ================= */
-  
+
   // 1. Fetch Companies
   const { data: companiesResponse, isLoading: loadingCompanies } = useCompanies(1, 100);
-  const companies = Array.isArray(companiesResponse?.data) 
-    ? companiesResponse.data 
-    : Array.isArray(companiesResponse) 
-      ? companiesResponse 
+  const companies = Array.isArray(companiesResponse?.data)
+    ? companiesResponse.data
+    : Array.isArray(companiesResponse)
+      ? companiesResponse
       : [];
 
   // 2. Fetch Reviews via TanStack Query
   const { data: rawReviews, isLoading: loadingReviews } = useAllCleanerReviews(
-    { date: dateFilter }, 
+    { date: dateFilter },
     companyFilter
   );
 
   /* ================= Filter Logic ================= */
-  // useEffect(() => {
-  //   // 1. Normalize data structure
-  //   const normalizedReviews = Array.isArray(rawReviews) 
-  //     ? rawReviews.map((r) => ({
-  //         ...r,
-  //         photos: {
-  //           before: r.before_photo || [],
-  //           after: r.after_photo || [],
-  //         },
-  //       })) 
-  //     : [];
-
-  //   let filtered = [...normalizedReviews];
-
-  //   if (searchTerm) {
-  //     filtered = filtered.filter(
-  //       (r) =>
-  //         r.cleaner_user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-  //         r.location?.name?.toLowerCase().includes(searchTerm.toLowerCase()),
-  //     );
-  //   }
-
-  //   if (statusFilter !== "all") {
-  //     filtered = filtered.filter((r) => r.status === statusFilter);
-  //   }
-
-  //   if (modifiedFilter === "modified") {
-  //     filtered = filtered.filter((r) => r.is_modified);
-  //   } else if (modifiedFilter === "unmodified") {
-  //     filtered = filtered.filter((r) => !r.is_modified);
-  //   }
-
-  //   if (scoreFilter === "high") {
-  //     filtered = filtered.filter((r) => typeof r.score === "number" && r.score >= 8);
-  //   } else if (scoreFilter === "medium") {
-  //     filtered = filtered.filter(
-  //       (r) => typeof r.score === "number" && r.score >= 5 && r.score <= 7,
-  //     );
-  //   } else if (scoreFilter === "low") {
-  //     filtered = filtered.filter((r) => typeof r.score === "number" && r.score < 5);
-  //   }
-
-  //   setFilteredReviews(filtered);
-  // }, [rawReviews, searchTerm, statusFilter, modifiedFilter, scoreFilter]);
-
-const filteredReviews = useMemo(() => {
+  const filteredReviews = useMemo(() => {
     // 1. Normalize data structure
-    let filtered = Array.isArray(rawReviews) 
+    let filtered = Array.isArray(rawReviews)
       ? rawReviews.map((r) => ({
-          ...r,
-          photos: {
-            before: r.before_photo || [],
-            after: r.after_photo || [],
-          },
-        })) 
+        ...r,
+        photos: {
+          before: r.before_photo || [],
+          after: r.after_photo || [],
+        },
+      }))
       : [];
 
     if (searchTerm) {
@@ -1786,8 +1792,8 @@ const filteredReviews = useMemo(() => {
 
                 <Select value={companyFilter} onValueChange={setCompanyFilter}>
                   <SelectTrigger disabled={loadingCompanies}>
-                    <SelectValue 
-                      placeholder={loadingCompanies ? "Loading companies..." : "Select company"} 
+                    <SelectValue
+                      placeholder={loadingCompanies ? "Loading companies..." : "Select company"}
                     />
                   </SelectTrigger>
 
@@ -1813,14 +1819,14 @@ const filteredReviews = useMemo(() => {
                 <div className="relative">
                   <Calendar
                     size={16}
-                    className="absolute left-3 top-1/2 -translate-y-1/2"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 cursor-pointer"
                     style={{ color: "var(--muted-foreground)" }}
                   />
                   <input
                     type="date"
                     value={dateFilter}
                     onChange={(e) => setDateFilter(e.target.value)}
-                    className="w-full pl-10 pr-3 py-2 rounded-lg border"
+                    className="w-full pl-10 pr-3 py-2 rounded-lg border cursor-pointer"
                     style={{
                       background: "var(--report-input-bg)",
                       color: "var(--report-input-text)",
@@ -1898,10 +1904,10 @@ const filteredReviews = useMemo(() => {
           >
             {loadingReviews && (
               <div className="absolute inset-0 bg-white/50 backdrop-blur-sm z-10 flex items-center justify-center">
-                 <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+                <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
               </div>
             )}
-            
+
             <div className="overflow-x-auto">
               <table className="w-full text-sm min-w-[900px]">
                 <thead
@@ -1914,7 +1920,8 @@ const filteredReviews = useMemo(() => {
                     <th className="px-4 py-3 text-left">CLEANER</th>
                     <th className="px-4 py-3 text-left">LOCATION</th>
                     <th className="px-4 py-3 text-center">PHOTOS</th>
-                    <th className="px-4 py-3 text-center">SCORE</th>
+                    <th className="px-4 py-3 text-center">ORIGINAL SCORE</th>
+                    <th className="px-4 py-3 text-center">MODIFIED SCORE</th>
                     <th className="px-4 py-3 text-center">STATUS</th>
                     <th className="px-4 py-3 text-center">MODIFIED</th>
                     <th className="px-4 py-3 text-left">DATE/TIME</th>
@@ -1924,7 +1931,7 @@ const filteredReviews = useMemo(() => {
                 <tbody>
                   {!loadingReviews && filteredReviews.length === 0 ? (
                     <tr>
-                      <td colSpan={7}>
+                      <td colSpan={8}>
                         <EmptyState message="No reviews found for the selected filters" />
                       </td>
                     </tr>
@@ -1949,13 +1956,35 @@ const filteredReviews = useMemo(() => {
                           />
                         </td>
 
-                        {/* SCORE (EditableScoreCell) */}
+                        {/* ORIGINAL SCORE (EditableScoreCell) */}
                         <td className="px-4 py-4 text-center">
-                          <EditableScoreCell
-                            review={review}
-                            canEdit={canEditScores}
-                            isOngoing={review.status !== "completed"}
-                          />
+                          <div className="flex flex-col items-center justify-center gap-1">
+                            <EditableScoreCell
+                              review={review}
+                              canEdit={canEditScores}
+                              isOngoing={review.status !== "completed"}
+                            />
+                            {/* ✅ Button to trigger Reason Modal (Assumes JSON is inside hygiene_score.details) */}
+                            {review.hygiene_score?.details && (
+                              <button
+                                onClick={() => setExplainModalData(review.hygiene_score.details)}
+                                className="text-[11px] font-medium text-indigo-600 hover:text-indigo-800 flex items-center gap-1 mt-1 transition-colors cursor-pointer"
+                              >
+                                <AlertCircle size={12} /> View Reason
+                              </button>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* MODIFIED SCORE */}
+                        <td className="px-4 py-4 text-center">
+                          {review.is_modified ? (
+                            <span className={`font-semibold ${getScoreColor(review.score)}`}>
+                              {typeof review.score === "number" ? review.score.toFixed(2) : "—"}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400 font-semibold">—</span>
+                          )}
                         </td>
 
                         {/* STATUS */}
@@ -1992,7 +2021,14 @@ const filteredReviews = useMemo(() => {
 
                         {/* DATE */}
                         <td className="px-4 py-4">
-                          {new Date(review.created_at).toLocaleString()}
+                          {new Date(review.created_at).toLocaleString("en-IN", {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: true
+                          })}
                         </td>
                       </tr>
                     ))
@@ -2002,15 +2038,15 @@ const filteredReviews = useMemo(() => {
             </div>
           </div>
         </div>
-        
+
         {/* Mobile Cards */}
         <div className="space-y-4 md:hidden mt-6 relative min-h-[200px]">
           {loadingReviews && (
-             <div className="absolute inset-0 bg-white/50 backdrop-blur-sm z-10 flex items-center justify-center">
-                <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
-             </div>
+            <div className="absolute inset-0 bg-white/50 backdrop-blur-sm z-10 flex items-center justify-center">
+              <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+            </div>
           )}
-          
+
           {!loadingReviews && filteredReviews.length === 0 ? (
             <EmptyState message="No reviews available" />
           ) : (
@@ -2050,14 +2086,26 @@ const filteredReviews = useMemo(() => {
                   </span>
                 </div>
 
-                {/* Score */}
+                {/* Original Score */}
                 <div className="flex justify-between items-center">
-                  <span className="text-xs text-muted-foreground">Score</span>
+                  <span className="text-xs text-muted-foreground">Original Score</span>
                   <EditableScoreCell
                     review={review}
                     canEdit={canEditScores}
                     isOngoing={review.status !== "completed"}
                   />
+                </div>
+
+                {/* Modified Score */}
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-muted-foreground">Modified Score</span>
+                  {review.is_modified ? (
+                    <span className={`font-semibold text-sm ${getScoreColor(review.score)}`}>
+                      {typeof review.score === "number" ? review.score.toFixed(2) : "—"}
+                    </span>
+                  ) : (
+                    <span className="text-gray-400 text-sm font-semibold">—</span>
+                  )}
                 </div>
 
                 {/* Photos */}
@@ -2088,6 +2136,13 @@ const filteredReviews = useMemo(() => {
             setIsPhotoModalOpen(false);
             setSelectedPhotos(null);
           }}
+        />
+      )}
+
+      {explainModalData && (
+        <ExplainabilityModal
+          details={explainModalData}
+          onClose={() => setExplainModalData(null)}
         />
       )}
     </>
