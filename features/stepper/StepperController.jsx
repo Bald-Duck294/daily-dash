@@ -206,6 +206,12 @@ export default function StepperController() {
     // DO NOT save if we haven't successfully hydrated yet. Overwriting danger!
     if (!isLoaded) return;
 
+    // 🚨 THE FIX: If we successfully deployed and moved to step 5, DO NOT SAVE.
+    if (currentStep >= 5) {
+      localStorage.removeItem(STORAGE_KEY);
+      return;
+    }
+
     const draft = {
       version: STORAGE_VERSION,
       savedAt: Date.now(),
@@ -215,7 +221,6 @@ export default function StepperController() {
 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
   }, [currentStep, workspaceDraft, isLoaded]);
-
   // ─── STEP HANDLERS ──────────────────────────────────────────────
   const updateDraft = (key, data) => {
     setWorkspaceDraft((prev) => ({ ...prev, [key]: data }));
@@ -245,7 +250,7 @@ export default function StepperController() {
 
   const handleDeploy = () => {
     const payload = buildDeploymentPayload(workspaceDraft);
-
+    console.log(payload, "payload");
     deployMutation.mutate(payload, {
       onSuccess: () => {
         // 🚀 3. CLEANUP ONLY ON SUCCESS
