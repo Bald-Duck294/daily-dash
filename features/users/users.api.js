@@ -172,17 +172,19 @@ getAllclientUsers: async ({ companyId = null, roleId = null, page = 1, limit = 1
     }
   },
 
-  changePassword: async (payload) => {
+ updateProfile: async (payload) => {
     try {
       /**
        * payload = {
-       *   currentPassword: string,
-       *   newPassword: string
+       * name?: string,
+       * email?: string,
+       * phone?: string,
+       * currentPassword?: string,
+       * newPassword?: string
        * }
        */
-
       const response = await axiosInstance.patch(
-        "/users/change-password",
+        "/users/update-profile",
         payload,
       );
 
@@ -191,7 +193,7 @@ getAllclientUsers: async ({ companyId = null, roleId = null, page = 1, limit = 1
         data: response.data,
       };
     } catch (error) {
-      console.error("Error changing password:", error);
+      console.error("Error updating profile:", error);
       return {
         success: false,
         error: error.response?.data?.message || error.message,

@@ -19,6 +19,7 @@ export default function AddRoleForm({
        bg-[var(--surface)]
         border-[var(--border)]
         shadow-sm
+        md:mb-[-30px]
       "
     >
       <form

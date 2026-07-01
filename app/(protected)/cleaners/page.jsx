@@ -302,7 +302,7 @@
 /* eslint-disable react-hooks/static-components */
 "use client";
 
-import { useState, useEffect, useMemo,useRef} from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -310,7 +310,6 @@ import { useCompanyId } from "@/providers/CompanyProvider";
 import { useRequirePermission } from "@/shared/hooks/useRequirePermission.js";
 import { MODULES } from "@/shared/constants/permissions";
 
-// IMPORT BOTH HOOKS HERE
 import { useCleanerReview } from "@/features/cleaners/cleaners.queries.js";
 import { useCleanersDropdown } from "@/features/dropdownList/dropdownlist.query";
 
@@ -320,7 +319,6 @@ import {
   Calendar,
   MapPin,
   RotateCcw,
-  BarChart3,
   User,
   ChevronDown,
 } from "lucide-react";
@@ -341,7 +339,6 @@ const getTimeElapsed = (startTime) => {
   return h > 0 ? `${h}h ${m}m ago` : `${m}m ago`;
 };
 
-// Helper to get local date string YYYY-MM-DD
 const getLocalDateString = () => {
   const now = new Date();
   const offset = now.getTimezoneOffset();
@@ -359,7 +356,7 @@ export default function CleanerReviewPage() {
   const { companyId } = useCompanyId();
 
   // Basic Filters
- const [filter, setFilter] = useState(searchParams.get("status") || "all");
+  const [filter, setFilter] = useState(searchParams.get("status") || "all");
   const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || "");
   const [datePreset, setDatePreset] = useState(searchParams.get("datePreset") || "today");
   const [startDate, setStartDate] = useState(searchParams.get("startDate") || getLocalDateString());
@@ -371,10 +368,8 @@ export default function CleanerReviewPage() {
   const [isCleanerDropdownOpen, setIsCleanerDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-
   /* ---------------- TanStack Queries ---------------- */
 
-  // 1. Fetch Main Table Data
   const { data: response, isLoading, isError, error } = useCleanerReview(
     {
       status: filter === "all" ? null : filter,
@@ -387,10 +382,8 @@ export default function CleanerReviewPage() {
     companyId,
   );
 
-  // 2. Fetch Dropdown Data (Independent of table filters)
   const { data: cleanersDropdownList = [] } = useCleanersDropdown(companyId);
 
-  // Extract arrays safely to prevent crashes
   const rawReviews = response?.data || [];
   const pagination = response?.pagination || {};
 
@@ -414,7 +407,6 @@ export default function CleanerReviewPage() {
       address: cleanString(r?.address),
     }));
 
-    // Client-side fallback for cleaner filtering
     if (selectedCleanerId !== "all") {
       cleaned = cleaned.filter(r => String(r.cleaner_user?.id) === String(selectedCleanerId));
     }
@@ -445,9 +437,9 @@ export default function CleanerReviewPage() {
     toast.error(error?.message || "Failed to load cleaner activity");
   }
 
-useEffect(() => {
-    const params = new URLSearchParams(searchParams.toString());
-    
+  useEffect(() => {
+    const params = new URLSearchParams();
+
     params.set("status", filter);
     params.set("cleanerId", selectedCleanerId);
     params.set("datePreset", datePreset);
@@ -455,55 +447,60 @@ useEffect(() => {
     params.set("endDate", endDate);
     params.set("page", page.toString());
     params.set("limit", limit.toString());
-    
+
     if (searchQuery) {
       params.set("search", searchQuery);
-    } else {
-      params.delete("search");
     }
 
-    // Replace current URL to preserve history for the "Back" button
-    router.replace(`?${params.toString()}`, { scroll: false });
-  }, [filter, selectedCleanerId, datePreset, startDate, endDate, page, limit, searchQuery, router, searchParams]);
+    const newQueryString = `?${params.toString()}`;
 
-  /* ---------------- Date Preset Logic ---------------- */
+    if (window.location.search !== newQueryString) {
+      router.replace(newQueryString, { scroll: false });
+    }
+  }, [filter, selectedCleanerId, datePreset, startDate, endDate, page, limit, searchQuery, router]);
+
   useEffect(() => {
     const todayStr = getLocalDateString();
     const todayObj = new Date();
 
     if (datePreset === "today") {
-      setStartDate(todayStr);
-      setEndDate(todayStr);
+      setStartDate((prev) => prev !== todayStr ? todayStr : prev);
+      setEndDate((prev) => prev !== todayStr ? todayStr : prev);
     } else if (datePreset === "this_month") {
       const firstDay = new Date(todayObj.getFullYear(), todayObj.getMonth(), 1);
       const lastDay = new Date(todayObj.getFullYear(), todayObj.getMonth() + 1, 0);
       const formatLocal = (d) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().split("T")[0];
-      setStartDate(formatLocal(firstDay));
-      setEndDate(formatLocal(lastDay));
+
+      const newStart = formatLocal(firstDay);
+      const newEnd = formatLocal(lastDay);
+
+      setStartDate((prev) => prev !== newStart ? newStart : prev);
+      setEndDate((prev) => prev !== newEnd ? newEnd : prev);
     } else if (datePreset === "all") {
-      setStartDate("");
-      setEndDate("");
+      setStartDate((prev) => prev !== "" ? "" : prev);
+      setEndDate((prev) => prev !== "" ? "" : prev);
     }
   }, [datePreset]);
 
-  // Reset page to 1 if any filter changes
   useEffect(() => {
-    setPage(1);
+    setPage((prevPage) => (prevPage !== 1 ? 1 : prevPage));
   }, [filter, datePreset, startDate, endDate, selectedCleanerId]);
 
   /* ---------------- render ---------------- */
   return (
- <>
+    <>
       <Toaster position="top-center" />
 
+      {/* CHANGED: Adjusted padding for mobile (p-2 sm:p-4) and desktop (lg:p-6) */}
       <div
-        className="min-h-screen p-4 md:p-6 md:mt-[-25px]"
+        className="min-h-screen p-2 sm:p-4 lg:p-6 md:mt-[-25px]"
         style={{
           background: "var(--cleaner-bg)",
           color: "var(--cleaner-title)",
         }}
       >
-        <div className="max-w-7xl mx-auto space-y-4">
+        {/* CHANGED: Removed max-w-7xl, replaced with w-full to let it expand naturally */}
+        <div className="w-full 2xl:max-w-[1800px] mx-auto space-y-4">
 
           {/* ================= HEADER CARD ================= */}
           <div
@@ -549,7 +546,7 @@ useEffect(() => {
 
             {/* STATUS TOGGLE */}
             <div
-              className="flex gap-1.5 p-1 rounded-lg"
+              className="flex gap-1.5 p-1 rounded-lg self-start md:self-auto"
               style={{
                 background: "var(--cleaner-input-bg)",
                 border: "1px solid var(--cleaner-border)",
@@ -557,12 +554,11 @@ useEffect(() => {
             >
               {["all", "ongoing", "completed"].map((v) => {
                 const active = filter === v;
-
                 return (
                   <button
                     key={v}
                     onClick={() => setFilter(v)}
-                    className="px-3 py-1.5 rounded-md text-xs font-medium transition cursor-pointer"
+                    className="px-3 py-1.5 rounded-md text-xs font-medium transition cursor-pointer flex-1 md:flex-auto text-center"
                     style={{
                       background: active
                         ? "var(--cleaner-primary-bg)"
@@ -579,9 +575,9 @@ useEffect(() => {
             </div>
           </div>
 
-        {/* ================= FILTER CARD ================= */}
+          {/* ================= FILTER CARD ================= */}
           <div
-            className="rounded-xl p-4 flex flex-wrap items-center justify-between gap-4" // Changed to flex, items-center, justify-between
+            className="rounded-xl p-4 flex flex-col xl:flex-row xl:items-center justify-between gap-4"
             style={{
               background: "var(--cleaner-surface)",
               border: "1px solid var(--cleaner-border)",
@@ -608,14 +604,14 @@ useEffect(() => {
             </div>
 
             {/* CONTROLS - Right Side */}
-            <div className="flex flex-wrap items-end gap-3">
-              
+            <div className="flex flex-wrap items-end gap-3 w-full xl:w-auto">
+
               {/* Cleaner Dropdown */}
-              <div className="flex flex-col gap-1" ref={dropdownRef}>
+              <div className="flex flex-col gap-1 flex-grow sm:flex-grow-0" ref={dropdownRef}>
                 <label className="text-[11px] font-medium" style={{ color: "var(--cleaner-subtitle)" }}>
                   Cleaner
                 </label>
-                <div className="relative w-44">
+                <div className="relative w-full sm:w-44">
                   <div
                     onClick={() => setIsCleanerDropdownOpen(!isCleanerDropdownOpen)}
                     className="w-full rounded-md px-2.5 py-1.5 text-xs flex justify-between items-center cursor-pointer select-none"
@@ -682,11 +678,11 @@ useEffect(() => {
               </div>
 
               {/* Date Preset Dropdown */}
-              <div className="flex flex-col gap-1">
+              <div className="flex flex-col gap-1 flex-grow sm:flex-grow-0">
                 <label className="text-[11px] font-medium" style={{ color: "var(--cleaner-subtitle)" }}>
                   Date Range
                 </label>
-                <div className="relative w-36">
+                <div className="relative w-full sm:w-36">
                   <select
                     value={datePreset}
                     onChange={(e) => setDatePreset(e.target.value)}
@@ -709,7 +705,7 @@ useEffect(() => {
               {/* Custom Date Inputs */}
               {datePreset === "custom" && (
                 <>
-                  <div className="flex flex-col gap-1">
+                  <div className="flex flex-col gap-1 flex-grow sm:flex-grow-0">
                     <label className="text-[11px] font-medium" style={{ color: "var(--cleaner-subtitle)" }}>
                       Start Date
                     </label>
@@ -717,7 +713,7 @@ useEffect(() => {
                       type="date"
                       value={startDate}
                       onChange={(e) => setStartDate(e.target.value)}
-                      className="w-32 rounded-md px-2.5 py-1.5 text-xs outline-none"
+                      className="w-full sm:w-32 rounded-md px-2.5 py-1.5 text-xs outline-none"
                       style={{
                         background: "var(--cleaner-input-bg)",
                         border: "1px solid var(--cleaner-input-border)",
@@ -725,7 +721,7 @@ useEffect(() => {
                       }}
                     />
                   </div>
-                  <div className="flex flex-col gap-1">
+                  <div className="flex flex-col gap-1 flex-grow sm:flex-grow-0">
                     <label className="text-[11px] font-medium" style={{ color: "var(--cleaner-subtitle)" }}>
                       End Date
                     </label>
@@ -734,7 +730,7 @@ useEffect(() => {
                       value={endDate}
                       onChange={(e) => setEndDate(e.target.value)}
                       min={startDate}
-                      className="w-32 rounded-md px-2.5 py-1.5 text-xs outline-none"
+                      className="w-full sm:w-32 rounded-md px-2.5 py-1.5 text-xs outline-none"
                       style={{
                         background: "var(--cleaner-input-bg)",
                         border: "1px solid var(--cleaner-input-border)",
@@ -748,7 +744,7 @@ useEffect(() => {
               {/* Reset Button */}
               <button
                 onClick={handleReset}
-                className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition h-[28px] cursor-pointer"
+                className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition h-[28px] cursor-pointer flex-grow sm:flex-grow-0 mt-2 sm:mt-0"
                 style={{
                   background: "var(--cleaner-danger-bg)",
                   color: "var(--cleaner-danger-text)",
@@ -762,76 +758,75 @@ useEffect(() => {
           </div>
 
           {/* ================= MAIN GRID ================= */}
-           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {/* UPDATED: md:grid-cols-2 xl:grid-cols-3 handles the 3-columns layout! */}
-            <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {isLoading ? (
-                <div className="col-span-full flex flex-col items-center justify-center py-12">
-                  <div
-                    className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin mb-3"
-                    style={{
-                      borderColor: "var(--cleaner-kpi-value)",
-                      borderTopColor: "transparent",
-                    }}
-                  />
-                  <p className="text-sm font-medium" style={{ color: "var(--cleaner-title)" }}>
-                    Loading cleaner activity
-                  </p>
-                </div>
-              ) : reviews.length ? (
-                <>
-                  {reviews.map((r) => {
-                    const active = r.status === "completed";
+          {/* CHANGED: Replaced the double-nested grid with a single responsive layout for Tablet (sm:grid-cols-2) and Desktop (lg:grid-cols-3, 2xl:grid-cols-4) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 mt-4">
+            {isLoading ? (
+              <div className="col-span-full flex flex-col items-center justify-center py-12">
+                <div
+                  className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin mb-3"
+                  style={{
+                    borderColor: "var(--cleaner-kpi-value)",
+                    borderTopColor: "transparent",
+                  }}
+                />
+                <p className="text-sm font-medium" style={{ color: "var(--cleaner-title)" }}>
+                  Loading cleaner activity
+                </p>
+              </div>
+            ) : reviews.length ? (
+              <>
+                {reviews.map((r) => {
+                  const active = r.status === "completed";
 
-                    // === COMBINED PHOTOS & LOGIC ===
-                    const allPhotos = [...(r.before_photo || []), ...(r.after_photo || [])];
-                    const totalPhotos = allPhotos.length;
-                    const displayPhotos = allPhotos.slice(0, 2);
-                    const remainingCount = totalPhotos - 2;
+                  const allPhotos = [...(r.before_photo || []), ...(r.after_photo || [])];
+                  const totalPhotos = allPhotos.length;
+                  const displayPhotos = allPhotos.slice(0, 2);
+                  const remainingCount = totalPhotos - 2;
 
-                    return (
-                      <div
-                        key={r.id}
-                        className="rounded-xl p-4 flex flex-col"
-                        style={{
-                          background: "var(--cleaner-surface)",
-                          border: "1px solid var(--cleaner-border)",
-                          boxShadow: "var(--cleaner-shadow)",
-                        }}
-                      >
-                        {/* HEADER */}
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex items-center gap-2.5">
-                            <div
-                              className="w-8 h-8 rounded-full flex items-center justify-center"
-                              style={{
-                                background: "var(--cleaner-header-icon-bg)",
-                                border: "1px solid var(--cleaner-header-icon-border)",
-                              }}
-                            >
-                              <User
-                                size={14}
-                                style={{ color: "var(--cleaner-header-icon-fg)" }}
-                              />
-                            </div>
-                            <div>
-                              <p
-                                className="text-sm font-semibold truncate max-w-[100px]"
-                                style={{ color: "var(--cleaner-title)", overflow: "hidden" }}
-                                title={r.cleaner_user?.name || "Cleaner"}
-                              >
-                                {r.cleaner_user?.name || "Cleaner"}
-                              </p>
-                              <p
-                                className="text-[10px]"
-                                style={{ color: "var(--cleaner-subtitle)" }}
-                              >
-                                STAFF MEMBER
-                              </p>
-                            </div>
+                  return (
+                    <div
+                      key={r.id}
+                      className="rounded-xl p-4 flex flex-col h-full"
+                      style={{
+                        background: "var(--cleaner-surface)",
+                        border: "1px solid var(--cleaner-border)",
+                        boxShadow: "var(--cleaner-shadow)",
+                      }}
+                    >
+                      {/* HEADER */}
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-2.5">
+                          <div
+                            className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
+                            style={{
+                              background: "var(--cleaner-header-icon-bg)",
+                              border: "1px solid var(--cleaner-header-icon-border)",
+                            }}
+                          >
+                            <User
+                              size={14}
+                              style={{ color: "var(--cleaner-header-icon-fg)" }}
+                            />
                           </div>
+                          <div className="min-w-0">
+                            <p
+                              className="text-sm font-semibold truncate max-w-[120px] sm:max-w-[150px]"
+                              style={{ color: "var(--cleaner-title)" }}
+                              title={r.cleaner_user?.name || "Cleaner"}
+                            >
+                              {r.cleaner_user?.name || "Cleaner"}
+                            </p>
+                            <p
+                              className="text-[10px]"
+                              style={{ color: "var(--cleaner-subtitle)" }}
+                            >
+                              STAFF MEMBER
+                            </p>
+                          </div>
+                        </div>
 
-                          {/* STATUS */}
+                        {/* STATUS & SCORE */}
+                        <div className="flex flex-col items-end gap-1.5 shrink-0">
                           <span
                             className="px-2 py-0.5 rounded text-[10px] font-bold uppercase"
                             style={{
@@ -845,182 +840,194 @@ useEffect(() => {
                           >
                             {r.status}
                           </span>
-                        </div>
 
-                        {/* EVIDENCE */}
-                        <p
-                          className="text-[10px] mb-1.5 uppercase tracking-wide"
-                          style={{ color: "var(--cleaner-subtitle)" }}
-                        >
-                          EVIDENCE LOGS ({totalPhotos})
-                        </p>
-
-                        <div className="flex items-center gap-1.5 mb-3">
-                          {displayPhotos.map((img, i) => (
-                            <img
-                              key={i}
-                              src={img}
-                              alt="Evidence"
-                              className="w-8 h-8 rounded-full object-cover"
-                              style={{ border: "1px solid var(--cleaner-border)" }}
-                            />
-                          ))}
-
-                          {remainingCount > 0 && (
-                            <div
-                              className="w-8 h-8 rounded-full text-[10px] font-bold flex items-center justify-center"
+                          {typeof r.score === "number" && (
+                            <span
+                              className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wide flex items-center gap-1"
                               style={{
-                                background: "var(--cleaner-kpi-value, #FFB800)",
-                                color: "#000000",
+                                background: "var(--cleaner-input-bg)",
+                                color: "var(--cleaner-title)",
+                                border: "1px solid var(--cleaner-border)",
                               }}
                             >
-                              +{remainingCount}
-                            </div>
+                              ⭐ {r.score.toFixed(2)} / <b>10</b>
+                            </span>
                           )}
                         </div>
-
-                        {/* LOCATION */}
-                        <div
-                          className="rounded-lg p-2.5 mb-3 mt-auto"
-                          style={{
-                            background: "var(--cleaner-input-bg)",
-                            border: "1px solid var(--cleaner-border)",
-                          }}
-                        >
-                          <p
-                            className="text-xs font-medium flex items-center gap-1.5"
-                            style={{ color: "var(--cleaner-title)" }}
-                          >
-                            <MapPin size={12} className="flex-shrink-0" />
-                            <span className="truncate">{r.location?.name}</span>
-                          </p>
-                          <p
-                            className="text-[10px] mt-1 pl-4"
-                            style={{ color: "var(--cleaner-subtitle)" }}
-                          >
-                            Started: {new Date(r.created_at).toLocaleString()}
-                          </p>
-                          {r.status === "ongoing" && (
-                            <p
-                              className="text-[10px] mt-0.5 pl-4 flex items-center gap-1"
-                              style={{ color: "var(--cleaner-primary-text)" }}
-                            >
-                              <Clock size={10} />
-                              {getTimeElapsed(r.created_at)}
-                            </p>
-                          )}
-                        </div>
-
-                        {/* ACTION */}
-                        <button
-                          onClick={() =>
-                            router.push(`/cleaners/${r.id}?companyId=${companyId}`)
-                          }
-                          className="w-full py-1.5 rounded-md text-xs font-medium transition cursor-pointer"
-                          style={{
-                            background: "var(--cleaner-primary-bg)",
-                            color: "var(--cleaner-primary-text)",
-                          }}
-                        >
-                          Detailed Report →
-                        </button>
                       </div>
-                    );
-                  })}
 
-                  {/* ================= PAGINATION CONTROLS ================= */}
-                  <div
-                    className="col-span-full flex flex-col sm:flex-row items-center justify-between gap-3 mt-2 p-3 rounded-xl"
-                    style={{
-                      background: "var(--cleaner-surface)",
-                      border: "1px solid var(--cleaner-border)",
-                    }}
-                  >
-                    {/* Limit Dropdown */}
-                    <div className="flex items-center gap-2">
-                      <span className="text-[11px]" style={{ color: "var(--cleaner-subtitle)" }}>
-                        Rows per page:
-                      </span>
-                      <select
-                        value={limit}
-                        onChange={(e) => {
-                          setLimit(Number(e.target.value));
-                          setPage(1); // Reset to first page
-                        }}
-                        className="rounded px-1.5 py-0.5 text-xs outline-none cursor-pointer"
-                        style={{
-                          background: "var(--cleaner-input-bg)",
-                          border: "1px solid var(--cleaner-input-border)",
-                          color: "var(--cleaner-title)",
-                        }}
+                      {/* EVIDENCE */}
+                      <p
+                        className="text-[10px] mb-1.5 uppercase tracking-wide"
+                        style={{ color: "var(--cleaner-subtitle)" }}
                       >
-                        <option value={15}>15</option>
-                        <option value={30}>30</option>
-                        <option value={50}>50</option>
-                      </select>
-                    </div>
+                        EVIDENCE LOGS ({totalPhotos})
+                      </p>
 
-                    {/* Metadata */}
-                    <div className="text-[11px]" style={{ color: "var(--cleaner-subtitle)" }}>
-                      Showing {pagination.total_items === 0 ? 0 : (page - 1) * limit + 1} to {Math.min(page * limit, pagination.total_items || 0)} of {pagination.total_items || 0} entries
-                    </div>
+                      <div className="flex items-center gap-1.5 mb-3">
+                        {displayPhotos.map((img, i) => (
+                          <img
+                            key={i}
+                            src={img}
+                            alt="Evidence"
+                            className="w-8 h-8 rounded-full object-cover shrink-0"
+                            style={{ border: "1px solid var(--cleaner-border)" }}
+                          />
+                        ))}
 
-                    {/* Page Navigation */}
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        disabled={!pagination.has_prev_page}
-                        onClick={() => setPage((p) => Math.max(1, p - 1))}
-                        className="px-2 py-1 rounded text-[11px] font-medium transition disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                        {remainingCount > 0 && (
+                          <div
+                            className="w-8 h-8 rounded-full text-[10px] font-bold flex items-center justify-center shrink-0"
+                            style={{
+                              background: "var(--cleaner-kpi-value, #FFB800)",
+                              color: "#000000",
+                            }}
+                          >
+                            +{remainingCount}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* LOCATION */}
+                      <div
+                        className="rounded-lg p-2.5 mb-3 mt-auto"
                         style={{
                           background: "var(--cleaner-input-bg)",
                           border: "1px solid var(--cleaner-border)",
-                          color: "var(--cleaner-title)",
                         }}
                       >
-                        Previous
-                      </button>
-
-                      <div className="text-[11px] font-medium px-1" style={{ color: "var(--cleaner-title)" }}>
-                        Page {page} of {pagination.total_pages || 1}
+                        <p
+                          className="text-xs font-medium flex items-center gap-1.5"
+                          style={{ color: "var(--cleaner-title)" }}
+                        >
+                          <MapPin size={12} className="flex-shrink-0" />
+                          <span className="truncate">{r.location?.name}</span>
+                        </p>
+                        <p
+                          className="text-[10px] mt-1 pl-4"
+                          style={{ color: "var(--cleaner-subtitle)" }}
+                        >
+                          Started: {new Date(r.created_at).toLocaleString()}
+                        </p>
+                        {r.status === "ongoing" && (
+                          <p
+                            className="text-[10px] mt-0.5 pl-4 flex items-center gap-1"
+                            style={{ color: "var(--cleaner-primary-text)" }}
+                          >
+                            <Clock size={10} />
+                            {getTimeElapsed(r.created_at)}
+                          </p>
+                        )}
                       </div>
 
+                      {/* ACTION */}
                       <button
-                        disabled={!pagination.has_next_page}
-                        onClick={() => setPage((p) => p + 1)}
-                        className="px-2 py-1 rounded text-[11px] font-medium transition disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                        onClick={() =>
+                          router.push(`/cleaners/${r.id}?companyId=${companyId}`)
+                        }
+                        className="w-full py-1.5 rounded-md text-xs font-medium transition cursor-pointer mt-auto"
                         style={{
-                          background: "var(--cleaner-input-bg)",
-                          border: "1px solid var(--cleaner-border)",
-                          color: "var(--cleaner-title)",
+                          background: "var(--cleaner-primary-bg)",
+                          color: "var(--cleaner-primary-text)",
                         }}
                       >
-                        Next
+                        Detailed Report →
                       </button>
                     </div>
+                  );
+                })}
+
+                {/* ================= PAGINATION CONTROLS ================= */}
+                <div
+                  className="col-span-full flex flex-col sm:flex-row items-center justify-between gap-3 mt-2 p-3 rounded-xl"
+                  style={{
+                    background: "var(--cleaner-surface)",
+                    border: "1px solid var(--cleaner-border)",
+                  }}
+                >
+                  {/* Limit Dropdown */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px]" style={{ color: "var(--cleaner-subtitle)" }}>
+                      Rows per page:
+                    </span>
+                    <select
+                      value={limit}
+                      onChange={(e) => {
+                        setLimit(Number(e.target.value));
+                        setPage(1); 
+                      }}
+                      className="rounded px-1.5 py-0.5 text-xs outline-none cursor-pointer"
+                      style={{
+                        background: "var(--cleaner-input-bg)",
+                        border: "1px solid var(--cleaner-input-border)",
+                        color: "var(--cleaner-title)",
+                      }}
+                    >
+                      <option value={15}>15</option>
+                      <option value={30}>30</option>
+                      <option value={50}>50</option>
+                    </select>
                   </div>
-                </>
-              ) : (
-                <div className="col-span-full flex flex-col items-center justify-center py-12">
-                  <div
-                    className="w-12 h-12 rounded-full flex items-center justify-center mb-3"
-                    style={{
-                      background: "var(--cleaner-input-bg)",
-                      border: "1px solid var(--cleaner-border)",
-                    }}
-                  >
-                    <ListChecks size={18} style={{ color: "var(--cleaner-header-icon-fg)" }} />
+
+                  {/* Metadata */}
+                  <div className="text-[11px]" style={{ color: "var(--cleaner-subtitle)" }}>
+                    Showing {pagination.total_items === 0 ? 0 : (page - 1) * limit + 1} to {Math.min(page * limit, pagination.total_items || 0)} of {pagination.total_items || 0} entries
                   </div>
-                  <p className="text-sm font-semibold mb-1" style={{ color: "var(--cleaner-title)" }}>
-                    No cleaner activity found
-                  </p>
-                  <p className="text-xs max-w-xs text-center" style={{ color: "var(--cleaner-subtitle)" }}>
-                    There are no cleaning tasks matching your current filters. Try changing the date or resetting filters.
-                  </p>
+
+                  {/* Page Navigation */}
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      disabled={!pagination.has_prev_page}
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      className="px-2 py-1 rounded text-[11px] font-medium transition disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                      style={{
+                        background: "var(--cleaner-input-bg)",
+                        border: "1px solid var(--cleaner-border)",
+                        color: "var(--cleaner-title)",
+                      }}
+                    >
+                      Previous
+                    </button>
+
+                    <div className="text-[11px] font-medium px-1" style={{ color: "var(--cleaner-title)" }}>
+                      Page {page} of {pagination.total_pages || 1}
+                    </div>
+
+                    <button
+                      disabled={!pagination.has_next_page}
+                      onClick={() => setPage((p) => p + 1)}
+                      className="px-2 py-1 rounded text-[11px] font-medium transition disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                      style={{
+                        background: "var(--cleaner-input-bg)",
+                        border: "1px solid var(--cleaner-border)",
+                        color: "var(--cleaner-title)",
+                      }}
+                    >
+                      Next
+                    </button>
+                  </div>
                 </div>
-              )}
-            </div>
-
-           </div>
+              </>
+            ) : (
+              <div className="col-span-full flex flex-col items-center justify-center py-12">
+                <div
+                  className="w-12 h-12 rounded-full flex items-center justify-center mb-3"
+                  style={{
+                    background: "var(--cleaner-input-bg)",
+                    border: "1px solid var(--cleaner-border)",
+                  }}
+                >
+                  <ListChecks size={18} style={{ color: "var(--cleaner-header-icon-fg)" }} />
+                </div>
+                <p className="text-sm font-semibold mb-1" style={{ color: "var(--cleaner-title)" }}>
+                  No cleaner activity found
+                </p>
+                <p className="text-xs max-w-xs text-center" style={{ color: "var(--cleaner-subtitle)" }}>
+                  There are no cleaning tasks matching your current filters. Try changing the date or resetting filters.
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </>

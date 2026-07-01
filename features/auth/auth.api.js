@@ -18,13 +18,6 @@ export const AuthApi = {
     }
   },
 
-  resetPassword: async (phone, newPassword) => {
-    const response = await axiosInstance.post("/auth/reset-password", {
-      phone,
-      newPassword,
-    });
-    return response.data;
-  },
   // LOGIN
   login: async (phone, password) => {
     try {
@@ -74,11 +67,50 @@ export const AuthApi = {
       };
     }
   },
+ googleLogin: async (idToken) => {
+    try {
+      const response = await axiosInstance.post("/auth/google-login", {
+        idToken,
+      });
 
-  getOnboardingStatus: async () => {
-    const response = await axiosInstance.get("/companies/onboarding-status");
-    return response.data;
+      return {
+        success: true,
+        data: response.data, 
+      };
+    } catch (err) {
+      return {
+        success: false,
+        error: err.response?.data?.error || "Google Authentication failed",
+      };
+    }
   },
+
+  // OTP: REQUEST
+  requestOtp: async (phone) => {
+    try {
+      const response = await axiosInstance.post("/auth/request-otp", { phone });
+      return { success: true, data: response.data };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.message || "Failed to send OTP",
+      };
+    }
+  },
+
+  // OTP: VERIFY
+  verifyOtp: async (phone, code) => {
+    try {
+      const response = await axiosInstance.post("/auth/verify-otp", { phone, code });
+      return { success: true, data: response.data };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.message || "Invalid OTP",
+      };
+    }
+  },
+
   // LOGOUT (optional but recommended)
   logout: async () => {
     try {

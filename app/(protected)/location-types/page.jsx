@@ -62,13 +62,12 @@ export default function LocationTypesPage() {
   const parentName = (id) => types.find((t) => t.id === id)?.name || "—";
 
   /* =======================
-     Delete logic (NO UI change)
+     Delete logic
   ======================= */
 
   const handleDeleteClick = (type) => {
     setDeleteModal({ open: true, type });
   };
-  console.log(deleteModal, "delete model");
 
   const confirmDelete = async () => {
     if (!deleteModal.type) return;
@@ -93,7 +92,7 @@ export default function LocationTypesPage() {
   };
 
   /* =======================
-     Update logic (READY, no UI change)
+     Update logic
   ======================= */
 
   const handleUpdate = async (id, data) => {
@@ -115,10 +114,10 @@ export default function LocationTypesPage() {
           {/* Header Card */}
           <div
             className="
-    rounded-2xl bg-background shadow-sm border border-border p-4 sm:p-5
-    flex flex-col gap-4
-    sm:flex-row sm:items-center sm:justify-between
-  "
+              rounded-2xl bg-background shadow-sm border border-border p-4 sm:p-5
+              flex flex-col gap-4
+              sm:flex-row sm:items-center sm:justify-between
+            "
           >
             {/* Left section */}
             <div className="flex items-center gap-4">
@@ -139,19 +138,19 @@ export default function LocationTypesPage() {
             {/* Right section (actions) */}
             <div
               className="
-      flex flex-col gap-3
-      sm:flex-row sm:items-center sm:gap-3
-      w-full sm:w-auto
-    "
+                flex flex-col gap-3
+                sm:flex-row sm:items-center sm:gap-3
+                w-full sm:w-auto
+              "
             >
               <button
                 onClick={() => setShowTree((v) => !v)}
                 className="
-        w-full sm:w-auto
-        rounded-lg border border-primary/40
-        px-4 py-2 text-sm font-medium
-        text-primary hover:bg-primary/10
-      "
+                  w-full sm:w-auto
+                  rounded-lg border border-primary/40
+                  px-4 py-2 text-sm font-medium
+                  text-primary hover:bg-primary/10
+                "
               >
                 Show Hierarchy
               </button>
@@ -160,12 +159,12 @@ export default function LocationTypesPage() {
                 <Link
                   href={`/location-types/add${companyId ? `?companyId=${companyId}` : ""}`}
                   className="
-          w-full sm:w-auto
-          rounded-lg bg-orange-300
-          px-4 py-2 text-sm font-medium
-          text-primary-foreground text-center
-          hover:opacity-90
-        "
+                    w-full sm:w-auto
+                    rounded-lg bg-orange-300
+                    px-4 py-2 text-sm font-medium
+                    text-primary-foreground text-center
+                    hover:opacity-90
+                  "
                 >
                   + Add Tree Hierarchy
                 </Link>
@@ -358,6 +357,37 @@ export default function LocationTypesPage() {
           </div>
         </div>
       </div>
+
+      {/* ================= DELETE CONFIRMATION MODAL ================= */}
+      {deleteModal.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl bg-background p-6 shadow-xl border border-border">
+            <h3 className="text-lg font-semibold mb-2 text-foreground">
+              Delete Location Hierarchy
+            </h3>
+            <p className="text-sm text-muted-foreground mb-6">
+              Are you sure you want to delete <strong className="text-foreground">{deleteModal.type?.name}</strong>? This action cannot be undone.
+            </p>
+            
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setDeleteModal({ open: false, type: null })}
+                className="rounded-lg px-4 py-2 text-sm font-medium border border-border text-foreground hover:bg-muted transition-colors"
+                disabled={deleteMutation.isPending}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 transition-colors flex items-center gap-2"
+                disabled={deleteMutation.isPending}
+              >
+                {deleteMutation.isPending ? "Deleting..." : "Yes, Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

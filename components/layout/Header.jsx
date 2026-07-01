@@ -238,6 +238,7 @@
 import React, { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useRouter, useSearchParams, useParams } from "next/navigation";
+import Link from "next/link"; // ✅ Import Link for navigation
 import { LogOut, Building, Sun, Moon } from "lucide-react";
 import { logout } from "@/features/auth/auth.slice.js";
 import { resetNotifications } from "@/features/notification/notification.slice.js";
@@ -246,9 +247,8 @@ import { useDeleteFCMTokenMutation } from "@/features/notification/notification.
 import useNotifications from "@/shared/hooks/useNotification.js";
 import NotificationBell from "../notification/NotificationBell";
 import { useCompanyId } from "@/providers/CompanyProvider.jsx";
-import { toast } from "sonner"; // Assuming you use sonner or similar for toast
+import { toast } from "sonner";
 
-// ✅ Import the new TanStack Query hook (Adjust the path to where you saved it)
 import { useCompany } from "@/features/companies/queries/companies.queries.js"; 
 
 const Header = ({ pageTitle }) => {
@@ -260,12 +260,10 @@ const Header = ({ pageTitle }) => {
 
   const { user } = useSelector((state) => state.auth);
 
-  // Initialize notifications (FCM listener)
   useNotifications();
 
   const [theme, setTheme] = useState("dark");
 
-  // Sync theme on load
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme") || "dark";
     setTheme(savedTheme);
@@ -280,8 +278,6 @@ const Header = ({ pageTitle }) => {
   };
 
   const { companyId } = useCompanyId();
-
-  // ✅ Replace useEffect and useState with TanStack Query hook
   const { data: company, isLoading: loadingCompany } = useCompany(companyId);
 
   const handleLogout = async () => {
@@ -302,8 +298,7 @@ const Header = ({ pageTitle }) => {
         localStorage.removeItem("user");
 
         if ("serviceWorker" in navigator) {
-          const registrations =
-            await navigator.serviceWorker.getRegistrations();
+          const registrations = await navigator.serviceWorker.getRegistrations();
           for (const registration of registrations) {
             if (registration.scope.includes("firebase-cloud-messaging")) {
               await registration.unregister();
@@ -320,64 +315,40 @@ const Header = ({ pageTitle }) => {
     }
   };
 
-  // Determine the role text based on user's role_id
   const getRoleText = () => {
     if (!user || !user.role_id) {
       return "User";
     }
     switch (user.role_id) {
-      case 1:
-        return "Super Admin";
-      case 2:
-        return "Admin";
-      case 3:
-        return "Supervisor";
-      case 4:
-        return "User";
-      case 5:
-        return "Cleaner";
-      case 6:
-        return "Zonal Admin";
-      case 7:
-        return "Facility Supervisor";
-      case 8:
-        return "Facility Admin";
-      default:
-        return "User";
+      case 1: return "Super Admin";
+      case 2: return "Admin";
+      case 3: return "Supervisor";
+      case 4: return "User";
+      case 5: return "Cleaner";
+      case 6: return "Zonal Admin";
+      case 7: return "Facility Supervisor";
+      case 8: return "Facility Admin";
+      default: return "User";
     }
   };
 
   const userRole = getRoleText();
 
-  // Smart truncation: Show first and last characters for very long names
-  const truncateCompanyName = (name, maxLength = 30) => {
-    if (!name || name.length <= maxLength) return name;
-
-    const firstPart = name.substring(0, Math.floor(maxLength / 2) - 2);
-    const lastPart = name.substring(
-      name.length - Math.floor(maxLength / 2) + 2,
-    );
-
-    return `${firstPart}...${lastPart}`;
-  };
-
   // Function to get header title - EITHER company name OR dashboard
   const getHeaderTitle = () => {
-    // Only show loading/company if we have a valid ID
- if (companyId && companyId !== "null") {
-      // Show skeleton if it's explicitly loading OR if we don't have the company data yet
+    if (companyId && companyId !== "null") {
+      // Loading State
       if (loadingCompany || !company) {
         return (
           <>
             <Building className="w-4 h-4 sm:w-5 sm:h-5 text-slate-300 dark:text-slate-600 animate-pulse flex-shrink-0 ml-[15px]" />
-            {/* Sleek skeleton bar instead of "Loading..." text */}
             <div className="h-4 sm:h-5 bg-slate-200 dark:bg-slate-700/50 rounded w-24 sm:w-32 animate-pulse" />
           </>
         );
       }
 
-      // Final loaded state
-      return (
+      // Base inner content
+      const companyContent = (
         <>
           <Building className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 text-cyan-600 ml-[15px]" />
           <span className="truncate block min-w-0" title={company.name}>
@@ -385,33 +356,44 @@ const Header = ({ pageTitle }) => {
           </span>
         </>
       );
+
+      // ✅ Only Role ID 2 (Admin) gets the clickable link
+  if (user?.role_id === 1 || user?.role_id === 2) {
+        return (
+          <Link 
+            href={`/organization/${companyId}`} 
+            className="flex items-center gap-2 hover:text-cyan-600 transition-colors cursor-pointer"
+            title={user?.role_id === 1 ? "Manage Client Company" : "View Company Profile"}
+          >
+            {companyContent}
+          </Link>
+        );
+      }
+
+      // Read-only for all other roles (Superadmin, Supervisor, etc.)
+      return (
+        <div className="flex items-center gap-2">
+          {companyContent}
+        </div>
+      );
     }
 
     return <span className="truncate text-[var(--foreground)]">Dashboard</span>;
   };
 
   return (
-    <header className="h-16  bg-[var(--background)] text-[var(--foreground)] shrink-0 border-b border-slate-200 flex items-center justify-between px-4 md:px-6 lg:px-8">
-      {/* Header Title - Centered on mobile, Left-aligned on desktop */}
+    <header className="h-16 bg-[var(--background)] text-[var(--foreground)] shrink-0 border-b border-slate-200 flex items-center justify-between px-4 md:px-6 lg:px-8">
+      {/* Header Title */}
       <div className="flex-1 flex items-center justify-center md:justify-start min-w-0 md:pr-4">
-        <h2
-          className="
-    flex items-center gap-2
-    min-w-0
-    text-sm sm:text-base md:text-lg lg:text-xl
-    font-semibold
-    text-[var(--foreground)]
-  "
-        >
+        <h2 className="flex items-center gap-2 min-w-0 text-sm sm:text-base md:text-lg lg:text-xl font-semibold text-[var(--foreground)]">
           {getHeaderTitle()}
         </h2>
       </div>
 
-      {/* User Info, Notification Bell, and Logout Section - Right aligned */}
+      {/* User Info & Actions */}
       <div className="flex items-center gap-2 sm:gap-3 md:gap-4 flex-shrink-0">
-        {/* User Name and Role */}
         <div className="text-right hidden md:block">
-          <span className="font-semibold text-xs md:text-sm text-[var(--foreground)] block  truncate max-w-[120px] lg:max-w-[180px]">
+          <span className="font-semibold text-xs md:text-sm text-[var(--foreground)] block truncate max-w-[120px] lg:max-w-[180px]">
             {user?.name || "Guest"}
           </span>
           <span className="block text-[10px] md:text-xs text-red-600 font-bold uppercase tracking-wider">
@@ -419,24 +401,21 @@ const Header = ({ pageTitle }) => {
           </span>
         </div>
 
-        {user?.role_id === 1 ? <NotificationBell className="ml-8" /> : ""}
+        {user?.role_id === 1 ? <NotificationBell className="ml-8" /> : null}
 
         <div className="flex items-center gap-3">
           <button
             onClick={toggleTheme}
-            className="flex items-center justify-center h-9 w-9 rounded-md
-          hover:bg-black/5 dark:hover:bg-white/10 transition"
+            className="flex items-center justify-center h-9 w-9 rounded-md hover:bg-black/5 dark:hover:bg-white/10 transition"
             aria-label="Toggle theme"
           >
             {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
           </button>
         </div>
-        {/* Logout Button */}
+
         <button
           onClick={handleLogout}
-          className="px-2 py-1.5 sm:px-3 sm:py-2 md:px-4 md:py-2 text-xs sm:text-sm font-medium text-white bg-slate-800 
-          rounded-lg hover:bg-slate-900 dark:bg-cyan-600 dark:hover:bg-cyan-700
-          transition-colors flex items-center justify-center gap-1 sm:gap-2 whitespace-nowrap"
+          className="px-2 py-1.5 sm:px-3 sm:py-2 md:px-4 md:py-2 text-xs sm:text-sm font-medium text-white bg-slate-800 rounded-lg hover:bg-slate-900 dark:bg-cyan-600 dark:hover:bg-cyan-700 transition-colors flex items-center justify-center gap-1 sm:gap-2 whitespace-nowrap"
         >
           <LogOut className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
           <span className="hidden sm:inline">Logout</span>

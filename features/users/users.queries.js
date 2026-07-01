@@ -177,12 +177,12 @@ export const useDeleteUser = () => {
    CHANGE PASSWORD
 ===================================================== */
 
-export const useChangePassword = () => {
+export const useChangeProfile = () => {
   return useMutation({
     mutationFn: async (payload) => {
-      const res = await UsersApi.changePassword(payload);
-      if (!res.success) throw new Error(res.error);
-      return res.data;
+      const res = await UsersApi.updateProfile(payload);
+      if (!res.success) throw new Error(res.error || "Failed to update profile");
+      return res.data; // This will return the updated user object from the backend
     },
   });
 };

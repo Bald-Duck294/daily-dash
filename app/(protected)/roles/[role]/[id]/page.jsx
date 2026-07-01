@@ -1,9 +1,11 @@
 "use client";
 
+import { use } from "react";
 import RoleDetailsContainer from "@/features/roles/containers/RoleDetails.container";
 
 export default function Page({ params }) {
-  const { role, id } = params;
+  // Safely unwrap the params Promise
+  const { role, id } = use(params);
 
   return <RoleDetailsContainer role={role} id={id} />;
 }

@@ -1,16 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import toast from "react-hot-toast";
 import { ArrowLeft } from "lucide-react";
-import { useParams } from "next/navigation";
-import { UsersApi } from "@/features/users/users.api";
-import { CompanyApi } from "@/features/companies/api/companies.api";
+
 import { useCompanyId } from "@/providers/CompanyProvider";
 import { useRequirePermission } from "@/shared/hooks/useRequirePermission";
 import AddRoleForm from "@/features/roles/components/AddRoleForm.jsx";
 import { MODULES } from "@/shared/constants/permissions";
+
+// Import your React Query hooks (adjust paths as needed for your project structure)
+import { useCreateUser } from "@/features/users/users.queries";
+import { useCompaniesDropdown } from "@/features/dropdownList/dropdownlist.query"; 
 
 /* ================= Constants ================= */
 
@@ -44,11 +46,11 @@ export default function AddRoleContainer() {
   /* ================= Derived ================= */
   const roleId = role ? ROLE_ID_MAP[role] : null;
   const title = role ? ROLE_TITLE_MAP[role] : "";
-  const isSuperAdmin = role === "superadmin"; // <-- Define isSuperAdmin flag
+  const isSuperAdmin = role === "superadmin";
 
   /* ================= Guard ================= */
   useEffect(() => {
-    if (role === undefined) return; // wait for params
+    if (role === undefined) return; 
 
     if (!ROLE_ID_MAP[role]) {
       toast.error("Invalid role");
@@ -57,52 +59,38 @@ export default function AddRoleContainer() {
   }, [role, router]);
 
   /* ================= State ================= */
-  const [companies, setCompanies] = useState([]);
-  const [loading, setLoading] = useState(false);
-
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     phone: "",
     password: "",
     confirm_password: "",
-    company_id: "",
+    company_id: currentCompanyId || "", // Initialize with context ID if available
     role_id: roleId,
     age: "",
   });
 
-  /* ================= Sync role_id ================= */
+  /* ================= Queries & Mutations ================= */
+  
+  // Fetch companies for dropdown (skips if user is superadmin)
+  const { data: companiesResponse } = useCompaniesDropdown({
+    enabled: !isSuperAdmin,
+  });
+  // Handle both { data: [...] } and direct array responses based on your API structure
+  const companies = companiesResponse?.data || companiesResponse || [];
+
+  // Setup the create user mutation
+  const { mutateAsync: createUser, isPending: isCreating } = useCreateUser();
+
+  /* ================= Sync role_id & company_id ================= */
   useEffect(() => {
-    if (roleId) {
-      setFormData((p) => ({ ...p, role_id: roleId }));
-    }
-  }, [roleId]);
+    setFormData((p) => ({
+      ...p,
+      ...(roleId && { role_id: roleId }),
+      ...(currentCompanyId && { company_id: currentCompanyId }),
+    }));
+  }, [roleId, currentCompanyId]);
 
-  /* ================= Fetch companies ================= */
-  useEffect(() => {
-    const fetchCompanies = async () => {
-      try {
-        const res = await CompanyApi.getAllCompanies();
-        if (res?.data) {
-          setCompanies(res?.data ?? []);
-
-          if (currentCompanyId) {
-            setFormData((p) => ({
-              ...p,
-              company_id: currentCompanyId,
-            }));
-          }
-        }
-      } catch {
-        toast.error("Failed to fetch companies");
-      }
-    };
-
-    // Skip fetching companies if they are a superadmin (optimization)
-    if (!isSuperAdmin) {
-      fetchCompanies();
-    }
-  }, [currentCompanyId, isSuperAdmin]);
 
   /* ================= Submit ================= */
   const handleSubmit = async () => {
@@ -117,52 +105,41 @@ export default function AddRoleContainer() {
     if (formData.password !== formData.confirm_password)
       return toast.error("Passwords do not match");
 
-    // Allow superadmin to bypass company requirement
     if (!isSuperAdmin && !formData.company_id) {
       return toast.error("Company is required");
     }
-
-    setLoading(true);
 
     try {
       const payload = { ...formData };
       delete payload.confirm_password;
       
-      // Clean up empty strings before sending
+      // Clean up empty strings
       if (payload.age === "") delete payload.age;
       if (payload.email === "") delete payload.email;
 
-      // Completely remove company_id for superadmins so it doesn't get sent at all
+      // Completely remove company_id for superadmins
       if (isSuperAdmin) {
         delete payload.company_id; 
       }
 
-      // If UsersApi.createUser needs a second argument for the URL, handle it safely
       const companyIdArg = isSuperAdmin ? null : payload.company_id;
 
-      const res = await UsersApi.createUser(payload, companyIdArg);
+      // Trigger React Query Mutation (Note: passing an object to match your hook definition)
+      await createUser({ data: payload, companyId: companyIdArg });
 
-      if (res.success) {
-        toast.success(`${title} created successfully`);
-        router.push(
-          `/roles/${role}${currentCompanyId ? `?companyId=${currentCompanyId}` : ""}`,
-        );
-      } else {
-        // Show the specific error if the API returns a structured response without throwing
-        toast.error(res.error || res.message || "Failed to create user");
-      }
-    } catch (error) {
-      // Catch and display the nice P2002 duplicate email error from the backend!
-      console.error("Creation error:", error);
+      toast.success(`${title} created successfully`);
+      router.push(
+        `/roles/${role}${currentCompanyId ? `?companyId=${currentCompanyId}` : ""}`,
+      );
       
+    } catch (error) {
+      console.error("Creation error:", error);
       const backendMessage = 
-        error?.response?.data?.message || // Axios error
-        error?.message ||                 // Standard JS error
+        error?.response?.data?.message || 
+        error?.message ||                 
         "Failed to create user";
         
       toast.error(backendMessage);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -178,9 +155,9 @@ export default function AddRoleContainer() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto p-4 sm:p-6">
+    <div className="max-w-2xl mx-auto p-4 sm:p-6 ">
       {/* ================= Header ================= */}
-      <div className="mb-6 rounded-lg border p-4 sm:p-6 flex items-center gap-3 bg-[var(--surface)] border-[var(--border)]">
+      <div className="mb-6 rounded-lg border p-4 sm:p-6 flex items-center gap-3 bg-[var(--surface)] border-[var(--border)] md:mt-[-30px] ">
         <button
           onClick={() => router.back()}
           className="p-2 rounded-md transition hover:bg-[var(--muted)] text-[var(--foreground)]"
@@ -201,11 +178,11 @@ export default function AddRoleContainer() {
       {/* ================= Form ================= */}
       <AddRoleForm
         title={title}
-        isSuperAdmin={isSuperAdmin} // <-- Pass flag to the form component
+        isSuperAdmin={isSuperAdmin}
         formData={formData}
         setFormData={setFormData}
         companies={companies}
-        loading={loading}
+        loading={isCreating} // Passed from React Query's isPending
         onSubmit={handleSubmit}
         onCancel={() => router.back()}
       />

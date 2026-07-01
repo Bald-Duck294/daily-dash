@@ -2,6 +2,7 @@ import { Save, X, Loader2 } from "lucide-react";
 
 export default function EditRoleForm({
   title,
+  isSuperAdmin, // <-- Added prop
   formData,
   setFormData,
   companies,
@@ -79,31 +80,32 @@ export default function EditRoleForm({
           />
         </div>
 
-        {/* Company */}
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            Company
-          </label>
-          <select
-            className="input"
-            name="company_id"
-            value={formData.company_id}
-            onChange={onChange}
-          >
-            <option value="">Select Company</option>
-            {companies.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </div>
+        {/* Company (Hidden for Superadmins) */}
+        {!isSuperAdmin && (
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              Company <span className="text-red-500">*</span>
+            </label>
+            <select
+              className="input"
+              name="company_id"
+              value={formData.company_id}
+              onChange={onChange}
+              required // Matches container validation
+            >
+              <option value="">Select Company</option>
+              {companies?.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {/* Age */}
         <div>
-          <label className="block text-sm font-medium mb-1">
-            Age
-          </label>
+          <label className="block text-sm font-medium mb-1">Age</label>
           <input
             className="input"
             type="number"
