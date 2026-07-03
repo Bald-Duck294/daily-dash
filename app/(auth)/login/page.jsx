@@ -16,19 +16,11 @@ export default function LoginPage() {
   const router = useRouter();
   const dispatch = useDispatch();
 
-  // --- UI View State ---
   const [activeView, setActiveView] = useState("main");
   const [loading, setIsLoading] = useState(false);
 
-  // --- Form States ---
   const [loginData, setLoginData] = useState({ phone: "", password: "" });
-
-  const [regData, setRegData] = useState({
-    name: "",
-    phone: "",
-    password: "",
-  });
-
+  const [regData, setRegData] = useState({ name: "", phone: "", password: "" });
   const [forgotData, setForgotData] = useState({
     phone: "",
     newPassword: "",
@@ -36,75 +28,6 @@ export default function LoginPage() {
   });
 
   // ─── LOGIN HANDLER ──────────────────────────────────────────
-  // const handleLoginSubmit = async (e) => {
-  //   e.preventDefault();
-  //   setIsLoading(true);
-  //   dispatch(loginStart());
-
-  //   try {
-  //     const response = await AuthApi.login(loginData.phone, loginData.password);
-
-  //     if (response.success || response.status === "success") {
-  //       const user = response.user || response.data?.user;
-  //       const token = user?.token;
-
-  //       if (!user?.role || !Array.isArray(user?.role?.permissions)) {
-  //         toast.error("Invalid Login, Please Contact Support!");
-  //         dispatch(loginFailure("Missing role/permissions"));
-  //         return;
-  //       }
-
-  //       if (token) localStorage.setItem("token", token);
-  //       dispatch(loginSuccess(user));
-
-  //       const roleId = parseInt(user?.role_id);
-
-  //       // Safely extract company data
-  //       const companyData = response.company || user?.company || {};
-  //       const isOnboardingDone = companyData?.is_onboarding_completed;
-  //       const hasMetadata =
-  //         companyData?.metadata?.organization_type ||
-  //         companyData?.onboarding_metadata?.organization_type;
-  //       const companyName = companyData?.name;
-
-  //       // 🚀 SMART ROUTING LOGIC
-  //       if (roleId === 2 && !isOnboardingDone) {
-  //         // Check if they need to do Phase 1 (Company Setup)
-  //         if (!hasMetadata || companyName === "Pending Setup" || !companyName) {
-  //           toast("Please complete your company profile.");
-  //           router.push("/company-setup");
-  //         } else {
-  //           // Phase 1 is done, skip questions, go straight to Phase 2 (Workspace)
-  //           toast("Resuming workspace setup...");
-  //           router.push("/stepper");
-  //         }
-  //         return;
-  //       }
-
-  //       toast.success(`Welcome back, ${user.name}!`);
-  //       if (roleId === 1) {
-  //         router.push("/dashboard");
-  //       } else if (user.company_id) {
-  //         router.push(`/clientDashboard/${user.company_id}`);
-  //       } else {
-  //         toast.error("No company assigned. Contact support.");
-  //         dispatch(loginFailure("No company"));
-  //       }
-  //     } else {
-  //       toast.error(response.error || response.message || "Login failed.");
-  //       dispatch(loginFailure(response.error));
-  //     }
-  //   } catch (error) {
-  //     console.error("Login error:", error);
-  //     toast.error(
-  //       error?.response?.data?.error || "An unexpected error occurred.",
-  //     );
-  //     dispatch(loginFailure(error.message));
-  //   } finally {
-  //     setIsLoading(false);
-  //   }
-  // };
-
   // ─── LOGIN HANDLER ──────────────────────────────────────────
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
@@ -130,25 +53,26 @@ export default function LoginPage() {
         const roleId = parseInt(user?.role_id);
         toast.success(`Welcome back, ${user.name}!`);
 
-        // 🚀 SMART ROUTING BASED ON BACKEND STATUS
-        if (roleId === 2 && user.company_id) {
-          try {
-            // Fetch exact status from backend
-            const statusRes = await AuthApi.getOnboardingStatus();
+        // 🚀 SMART ROUTING (No extra API calls needed!)
+        const companyData = user?.company || {};
+        const isSetupDone = companyData?.is_onboarding_completed === true;
+        const hasProfile =
+          companyData?.name &&
+          companyData.name !== "Pending Setup" &&
+          companyData?.onboarding_metadata;
 
-            console.log("Onboarding status response:", statusRes);
-            if (statusRes.nextStep === "company") {
-              toast("Please complete your company profile.");
-              router.push("/company-setup");
-            } else if (statusRes.nextStep === "workspace") {
-              toast("Resuming workspace setup...");
-              router.push("/stepper");
-            } else {
-              router.push(`/clientDashboard/${user.company_id}`);
-            }
-          } catch (statusErr) {
-            console.error("Failed to get status, defaulting to dashboard");
+        if (roleId === 2 && user.company_id) {
+          if (isSetupDone) {
+            // Everything is done, go to dashboard
             router.push(`/clientDashboard/${user.company_id}`);
+          } else if (!hasProfile) {
+            // Phase 1 is missing
+            toast("Please complete your company profile.");
+            router.push("/company-setup");
+          } else {
+            // Phase 1 is done, Phase 2 is missing
+            toast("Resuming workspace setup...");
+            router.push("/stepper");
           }
         } else if (roleId === 1) {
           router.push("/dashboard"); // Superadmin
@@ -165,7 +89,9 @@ export default function LoginPage() {
     } catch (error) {
       console.error("Login error:", error);
       toast.error(
-        error?.response?.data?.error || "An unexpected error occurred.",
+        error?.response?.data?.message ||
+          error?.response?.data?.error ||
+          "An unexpected error occurred.",
       );
       dispatch(loginFailure(error.message));
     } finally {
@@ -204,11 +130,9 @@ export default function LoginPage() {
   // ─── FORGOT PASSWORD HANDLER ────────────────────────────────
   const handleForgotSubmit = async (e) => {
     e.preventDefault();
-
     if (forgotData.newPassword !== forgotData.confirmPassword) {
       return toast.error("Passwords do not match!");
     }
-
     setIsLoading(true);
     try {
       await AuthApi.resetPassword(forgotData.phone, forgotData.newPassword);
@@ -223,22 +147,16 @@ export default function LoginPage() {
     }
   };
 
-  // ─── COMING SOON HANDLER ────────────────────────────────
   const handleComingSoon = (provider) => {
     toast(`Login with ${provider} will be available soon! 🚀`, {
       icon: "✨",
-      style: {
-        borderRadius: "10px",
-        background: "#1e293b",
-        color: "#fff",
-      },
+      style: { borderRadius: "10px", background: "#1e293b", color: "#fff" },
     });
   };
 
   return (
     <>
       <Toaster position="top-center" />
-
       <style
         dangerouslySetInnerHTML={{
           __html: `
@@ -702,7 +620,7 @@ export default function LoginPage() {
 
               <img
                 className="mascot-img"
-                src="/flo-mascot.png" /* <-- ADD YOUR BASE64 / IMG SRC HERE */
+                src="/flo-mascot.png"
                 alt="SaafAI Mascot"
               />
             </div>
@@ -861,7 +779,7 @@ export default function LoginPage() {
 
                   <img
                     className="mob-mascot-img"
-                    src="/flo-mascot.png" /* <-- ADD YOUR BASE64 / IMG SRC HERE */
+                    src="/flo-mascot.png"
                     alt="SaafAI Mascot"
                   />
                 </div>
@@ -886,6 +804,7 @@ export default function LoginPage() {
 
               {/* --- VIEW: MAIN (LOGIN) --- */}
               <div
+                id="view-main"
                 className={`auth-view ${activeView === "main" ? "active" : ""}`}
               >
                 <div className="brand-header">
@@ -983,16 +902,17 @@ export default function LoginPage() {
                     </div>
                   </div>
 
-                  <div className="form-link-row">
+                  <div className="form-link-row auth-links-row">
                     <span
                       onClick={() => setActiveView("register")}
-                      className="auth-link"
+                      className="auth-link register-link"
                     >
                       Don't have an account? Register
                     </span>
+                    <span className="auth-links-divider">|</span>
                     <span
                       onClick={() => setActiveView("forgot")}
-                      className="auth-link"
+                      className="auth-link forgot-password-link"
                     >
                       Forgot Password?
                     </span>
@@ -1076,6 +996,7 @@ export default function LoginPage() {
 
               {/* --- VIEW: REGISTER --- */}
               <div
+                id="view-register"
                 className={`auth-view ${activeView === "register" ? "active" : ""}`}
               >
                 <div className="brand-header">

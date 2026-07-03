@@ -67,7 +67,7 @@ export const AuthApi = {
       };
     }
   },
- googleLogin: async (idToken) => {
+  googleLogin: async (idToken) => {
     try {
       const response = await axiosInstance.post("/auth/google-login", {
         idToken,
@@ -75,7 +75,7 @@ export const AuthApi = {
 
       return {
         success: true,
-        data: response.data, 
+        data: response.data,
       };
     } catch (err) {
       return {
@@ -101,7 +101,10 @@ export const AuthApi = {
   // OTP: VERIFY
   verifyOtp: async (phone, code) => {
     try {
-      const response = await axiosInstance.post("/auth/verify-otp", { phone, code });
+      const response = await axiosInstance.post("/auth/verify-otp", {
+        phone,
+        code,
+      });
       return { success: true, data: response.data };
     } catch (error) {
       return {
@@ -118,6 +121,22 @@ export const AuthApi = {
       return { success: true };
     } catch (error) {
       return { success: false };
+    }
+  },
+
+  getOnboardingStatus: async () => {
+    try {
+      const response = await axiosInstance.get("/auth/onboarding-status");
+      return {
+        success: true,
+        data: response.data,
+      };
+    } catch (error) {
+      console.log(error, "error in getOnboardingStatus");
+      return {
+        success: false,
+        error: "Failed to fetch onboarding status",
+      };
     }
   },
 };
