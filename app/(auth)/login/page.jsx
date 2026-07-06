@@ -627,9 +627,9 @@ export default function LoginPage() {
 
             <div className="left-content-bottom">
               <h1>
-                Clean Today,
+                Get's Measured,
                 <br />
-                <span>Greener Tomorrow.</span>
+                <span>Get's Improved</span>
               </h1>
               <div className="info-icon-wrapper">
                 <svg
