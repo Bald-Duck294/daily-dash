@@ -10,7 +10,6 @@ import HierarchyStep from "./components/setup/HierarchyStep";
 import WashroomsStep from "./components/setup/WashroomsStep";
 import UsersStep from "./components/setup/UsersStep";
 import AppPreviewStep from "./components/setup/AppPreviewStep";
-import DashboardStep from "./components/setup/DashboardStep";
 
 const STORAGE_KEY = "safai_onboarding_draft";
 
@@ -32,7 +31,6 @@ export default function StepperController() {
   useEffect(() => {
     if (!user) return;
 
-    // If DB says we are done, wipe cache and force to dashboard
     if (user?.company?.is_onboarding_completed) {
       localStorage.removeItem(STORAGE_KEY);
       router.replace(`/clientDashboard/${user.company_id}`);
@@ -71,7 +69,7 @@ export default function StepperController() {
 
   const handleNextStep = (stepData, dataKey) => {
     if (dataKey) updateDraft(dataKey, stepData);
-    if (currentStep < 5) {
+    if (currentStep < 4) {
       setCurrentStep((prev) => prev + 1);
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
@@ -84,13 +82,13 @@ export default function StepperController() {
     }
   };
 
+  // Triggered by AppPreviewStep
   const handleDeploy = () => {
     const payload = buildDeploymentPayload(workspaceDraft);
     deployMutation.mutate(payload, {
       onSuccess: () => {
         // CLEAR CACHE ONLY ON SUCCESS
         localStorage.removeItem(STORAGE_KEY);
-        handleNextStep(null, null);
       },
     });
   };
@@ -111,14 +109,21 @@ export default function StepperController() {
 
   return (
     <div className="w-full min-h-screen bg-[#F5F7FA] flex flex-col">
-      <StepperNav
-        currentStep={currentStep}
-        onStepChange={(id) => {
-          setCurrentStep(id);
-          window.scrollTo({ top: 0, behavior: "smooth" });
-        }}
-      />
-      <main className="flex-1 w-full max-w-7xl mx-auto p-4 md:p-6 lg:p-8">
+      {/* Hide StepperNav completely on Step 4 (App Preview) */}
+      {currentStep < 4 && (
+        <StepperNav
+          currentStep={currentStep}
+          onStepChange={(id) => {
+            setCurrentStep(id);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+        />
+      )}
+
+      {/* Dynamic padding: If step 4 (no nav), no top padding needed on main */}
+      <main
+        className={`flex-1 w-full max-w-7xl mx-auto ${currentStep < 4 ? "p-4 md:p-6 lg:p-8" : ""}`}
+      >
         {currentStep === 1 && (
           <HierarchyStep
             nodes={hierarchy}
@@ -153,12 +158,12 @@ export default function StepperController() {
               cleaners: users.filter((u) => u.role === "cleaner").length,
             }}
             isLoading={deployMutation.isPending}
+            isSuccess={deployMutation.isSuccess}
             washroom_data={washrooms}
             onDeploy={handleDeploy}
             onBack={handlePrevStep}
           />
         )}
-        {currentStep === 5 && <DashboardStep onBack={handlePrevStep} />}
       </main>
     </div>
   );

@@ -291,14 +291,14 @@ const COMPANY_STORAGE_KEY = "company_setup_draft";
 const COMPANY_STORAGE_VERSION = 1;
 
 const ORGANIZATION_TYPES = [
-  { id: "Corporate Office / IT Park", label: "Corporate Office", icon: "🏢" },
-  { id: "Hospital / Healthcare", label: "Healthcare", icon: "🏥" },
-  { id: "School / College", label: "Education", icon: "🎓" },
-  { id: "Factory / Manufacturing", label: "Manufacturing", icon: "🏭" },
-  { id: "Mall / Commercial Complex", label: "Commercial", icon: "🛍️" },
-  { id: "Public Infrastructure", label: "Public Infra", icon: "✈️" },
   { id: "Government Office", label: "Government", icon: "🏛️" },
+  { id: "Hospital / Healthcare", label: "Healthcare", icon: "🏥" },
+  { id: "Mall / Commercial Complex", label: "Commercial", icon: "🛍️" },
+  { id: "Factory / Manufacturing", label: "Manufacturing", icon: "🏭" },
+  { id: "School / College", label: "Education", icon: "🎓" },
+  { id: "Public Infrastructure", label: "Public Infra", icon: "✈️" },
   { id: "Hotel", label: "Hospitality", icon: "🏨" },
+  { id: "Corporate Office / IT Park", label: "Corporate Office", icon: "🏢" },
   { id: "Other", label: "Other", icon: "⚙️" },
 ];
 

@@ -59,6 +59,12 @@ const quickTemplates = [
   },
 ];
 
+const defaultFixtures = {
+  men: { wc: 2, ind: 0, uri: 3, bas: 2, sho: 0, plb: 1 },
+  women: { wc: 4, ind: 1, uri: 0, bas: 3, sho: 0, plb: 1 },
+  handicap: { wc: 1, ind: 0, uri: 0, bas: 1, sho: 0, plb: 1 },
+};
+
 export default function WashroomsStep({
   onNext,
   onBack,
@@ -68,16 +74,17 @@ export default function WashroomsStep({
   const [localWashrooms, setLocalWashrooms] = useState(washrooms);
   const [activeTab, setActiveTab] = useState("manual");
   const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [showPublicTooltip, setShowPublicTooltip] = useState(false);
+
+  // EDIT STATE
+  const [editingId, setEditingId] = useState(null);
 
   const [formData, setFormData] = useState({
     name: "",
     zone_temp_id: "",
     type: "male",
-    fixtures: {
-      men: { wc: 2, ind: 0, uri: 3, bas: 2, sho: 0, plb: 1 },
-      women: { wc: 4, ind: 1, uri: 0, bas: 3, sho: 0, plb: 1 },
-      handicap: { wc: 1, ind: 0, uri: 0, bas: 1, sho: 0, plb: 1 },
-    },
+    is_public: false,
+    fixtures: JSON.parse(JSON.stringify(defaultFixtures)),
   });
 
   const [autoConfig, setAutoConfig] = useState({
@@ -101,9 +108,12 @@ export default function WashroomsStep({
     }));
   };
 
-  const handleAddManual = () => {
-    if (!formData.name || !formData.zone_temp_id)
-      return alert("Name and Location are required");
+  // Extract save logic so it can be called by both "Save" button and "Continue" button
+  const performSave = () => {
+    if (!formData.name || !formData.zone_temp_id) {
+      alert("Name and Location are required");
+      return false;
+    }
 
     let totalWc = 0;
     let totalBasin = 0;
@@ -121,22 +131,83 @@ export default function WashroomsStep({
       totalBasin += formData.fixtures.handicap.bas;
     }
 
-    const newWashroom = {
-      temp_id: generateTempId("wash"),
+    const washroomRecord = {
+      temp_id: editingId || generateTempId("wash"),
       name: formData.name,
       type: formData.type,
       zone_temp_id: formData.zone_temp_id,
+      is_public: formData.is_public,
       wc_count: totalWc || 1,
       basin_count: totalBasin || 1,
-      rawFixtures: formData.fixtures,
+      rawFixtures: JSON.parse(JSON.stringify(formData.fixtures)),
     };
 
-    setLocalWashrooms([...localWashrooms, newWashroom]);
-    setFormData((prev) => ({ ...prev, name: "" }));
+    let updatedList;
+    if (editingId) {
+      updatedList = localWashrooms.map((w) =>
+        w.temp_id === editingId ? washroomRecord : w,
+      );
+      setEditingId(null);
+    } else {
+      updatedList = [...localWashrooms, washroomRecord];
+    }
+
+    setLocalWashrooms(updatedList);
+    setFormData({
+      name: "",
+      zone_temp_id: formData.zone_temp_id,
+      type: "male",
+      is_public: false,
+      fixtures: JSON.parse(JSON.stringify(defaultFixtures)),
+    });
+
+    return updatedList; // Return the new list so handleContinue can use it immediately
+  };
+
+  const handleAddOrUpdateManual = () => {
+    performSave();
+  };
+
+  const handleContinue = () => {
+    let finalDataToPass = localWashrooms;
+
+    // If the user typed a name but forgot to hit save, auto-save it before continuing
+    if (formData.name.trim() !== "") {
+      const result = performSave();
+      if (!result) return; // Validation failed (missing location)
+      finalDataToPass = result;
+    }
+
+    onNext(finalDataToPass);
+  };
+
+  const handleEdit = (w) => {
+    setFormData({
+      name: w.name,
+      zone_temp_id: w.zone_temp_id,
+      type: w.type,
+      is_public: w.is_public || false,
+      fixtures: w.rawFixtures || JSON.parse(JSON.stringify(defaultFixtures)),
+    });
+    setEditingId(w.temp_id);
+    setActiveTab("manual");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setFormData({
+      name: "",
+      zone_temp_id: "",
+      type: "male",
+      is_public: false,
+      fixtures: JSON.parse(JSON.stringify(defaultFixtures)),
+    });
   };
 
   const handleDelete = (id) => {
     setLocalWashrooms(localWashrooms.filter((w) => w.temp_id !== id));
+    if (editingId === id) handleCancelEdit();
   };
 
   const handleApplyQuickTemplate = (template) => {
@@ -158,6 +229,7 @@ export default function WashroomsStep({
 
     setShowTemplateSuccess(true);
     setTimeout(() => setShowTemplateSuccess(false), 4000);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleGenerateAll = () => {
@@ -172,8 +244,14 @@ export default function WashroomsStep({
           name: `${node.name} Male WC`,
           zone_temp_id: node.temp_id,
           type: "male",
+          is_public: false,
           wc_count: 3,
           basin_count: 3,
+          rawFixtures: {
+            men: { wc: 3, ind: 0, uri: 3, bas: 3, sho: 0, plb: 1 },
+            women: defaultFixtures.women,
+            handicap: defaultFixtures.handicap,
+          },
         });
       if (autoConfig.female)
         generated.push({
@@ -181,8 +259,14 @@ export default function WashroomsStep({
           name: `${node.name} Female WC`,
           zone_temp_id: node.temp_id,
           type: "female",
+          is_public: false,
           wc_count: 3,
           basin_count: 3,
+          rawFixtures: {
+            men: defaultFixtures.men,
+            women: { wc: 3, ind: 0, uri: 0, bas: 3, sho: 0, plb: 1 },
+            handicap: defaultFixtures.handicap,
+          },
         });
       if (autoConfig.handicap)
         generated.push({
@@ -190,8 +274,14 @@ export default function WashroomsStep({
           name: `${node.name} Handicap WC`,
           zone_temp_id: node.temp_id,
           type: "handicap",
+          is_public: false,
           wc_count: 1,
           basin_count: 1,
+          rawFixtures: {
+            men: defaultFixtures.men,
+            women: defaultFixtures.women,
+            handicap: { wc: 1, ind: 0, uri: 0, bas: 1, sho: 0, plb: 1 },
+          },
         });
     });
 
@@ -213,21 +303,20 @@ export default function WashroomsStep({
   };
 
   const FixtureInput = ({ label, value, onChange }) => (
-    <div className="flex items-center justify-between border border-slate-200 rounded-md px-2 py-2 md:py-1.5 min-h-[44px] md:min-h-0 bg-white">
+    <div className="flex items-center justify-between border border-slate-200 rounded-md px-2 py-2 md:py-1.5 min-h-[44px] md:min-h-0 bg-white shadow-sm">
       <span className="text-[10px] font-black text-slate-500">{label}</span>
       <input
         type="number"
         min="0"
         value={value}
         onChange={onChange}
-        className="w-10 text-center text-sm font-bold text-slate-800 outline-none p-0 border-none bg-transparent"
+        className="w-10 text-center text-sm font-bold text-slate-800 outline-none p-0 border-none bg-transparent focus:ring-0"
       />
     </div>
   );
 
   return (
-    <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-300 pb-20 md:pb-0 w-full relative">
-      {/* Drawer */}
+    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-300 pb-16 w-full relative">
       <StepHelpDrawer
         isOpen={isHelpOpen}
         onClose={() => setIsHelpOpen(false)}
@@ -251,19 +340,8 @@ export default function WashroomsStep({
             </h3>
             <p className="mb-2">
               You can attach a washroom to <strong>ANY</strong> location in your
-              hierarchy (Building, Floor, Zone, etc.).
+              hierarchy.
             </p>
-            <ul className="list-disc pl-4 space-y-1 text-slate-600">
-              <li>
-                If you assign a washroom to a <strong>Floor</strong>, any
-                supervisor managing that Floor will automatically oversee this
-                washroom.
-              </li>
-              <li>
-                If you assign it to a specific <strong>Zone</strong>, it narrows
-                down the scope for targeted tracking.
-              </li>
-            </ul>
           </div>
 
           <div>
@@ -287,19 +365,36 @@ export default function WashroomsStep({
         </div>
       </StepHelpDrawer>
 
-      <div className="flex items-start justify-between mb-5 gap-4 flex-wrap">
+      {/* ── COMPACT INLINE HEADER ── */}
+      <div className="w-full flex flex-col md:flex-row items-start md:items-center justify-between gap-3 pb-2 border-b border-slate-200">
         <div>
-          <h1 className="text-2xl font-black text-slate-900">
+          <h1 className="text-xl md:text-[22px] font-black text-slate-900 tracking-tight leading-tight">
             Washroom Configuration
           </h1>
-          <p className="text-sm mt-1 text-slate-500">
+          <p className="text-xs text-slate-500 mt-0.5">
             Register washrooms, configure fixtures, and link them to your
             hierarchy.
           </p>
         </div>
+
+        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+          <button
+            onClick={onBack}
+            className="flex-1 md:flex-none bg-slate-100 border border-slate-300 text-slate-700 px-4 py-2 rounded-lg text-xs font-bold shadow-sm hover:bg-slate-200 hover:text-slate-900 transition-colors"
+          >
+            ← Back
+          </button>
+          <button
+            onClick={handleContinue}
+            className="flex-1 md:flex-none bg-[#22c55e] text-white px-5 py-2 rounded-lg text-xs font-bold shadow-sm hover:bg-[#16a34a] transition-colors flex items-center justify-center gap-1.5"
+          >
+            Continue ➔
+          </button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start mt-2">
+        {/* ── LEFT: CONFIGURATION PANEL ── */}
         <div className="lg:col-span-4 space-y-4">
           <div className="flex gap-2">
             {[
@@ -309,7 +404,10 @@ export default function WashroomsStep({
             ].map((t) => (
               <button
                 key={t.id}
-                onClick={() => setActiveTab(t.id)}
+                onClick={() => {
+                  setActiveTab(t.id);
+                  if (t.id !== "manual") handleCancelEdit();
+                }}
                 className={`flex-1 py-2 px-1 rounded-lg text-[10px] md:text-[11px] font-bold border-[1.5px] transition-colors flex flex-col md:flex-row items-center justify-center gap-1.5 shadow-sm min-h-[44px]
                   ${activeTab === t.id ? "bg-[#1F4E79] border-[#1F4E79] text-white" : "bg-white border-slate-200 text-slate-500 hover:border-[#1F4E79]"}`}
               >
@@ -320,10 +418,21 @@ export default function WashroomsStep({
 
           {activeTab === "manual" && (
             <div className="space-y-4 animate-in fade-in">
-              <div className="bg-white border border-slate-200 rounded-xl p-4 md:p-5 shadow-sm space-y-4">
-                <h3 className="font-bold text-xs text-slate-800 border-b border-slate-100 pb-2">
-                  Basic Details
-                </h3>
+              <div
+                className={`bg-white border-[2px] ${editingId ? "border-amber-400 shadow-md" : "border-slate-200 shadow-sm"} rounded-xl p-4 md:p-5 space-y-4 transition-all`}
+              >
+                <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                  <h3
+                    className={`font-bold text-xs ${editingId ? "text-amber-600" : "text-slate-800"}`}
+                  >
+                    {editingId ? "✏️ Edit Washroom" : "Basic Details"}
+                  </h3>
+                  {editingId && (
+                    <span className="bg-amber-100 text-amber-700 text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-widest">
+                      Editing Mode
+                    </span>
+                  )}
+                </div>
 
                 <div>
                   <label className="block text-[10px] font-bold mb-1.5 uppercase tracking-wider text-slate-500">
@@ -360,23 +469,62 @@ export default function WashroomsStep({
                   </select>
                 </div>
 
-                <div>
-                  <label className="block text-[10px] font-bold mb-1.5 uppercase tracking-wider text-slate-500">
-                    Washroom Type
-                  </label>
-                  <select
-                    value={formData.type}
-                    onChange={(e) =>
-                      setFormData({ ...formData, type: e.target.value })
-                    }
-                    className="w-full min-h-[44px] border-[1.5px] border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-[#1F4E79] outline-none focus:border-[#1F4E79] bg-[#f8fafc]"
-                  >
-                    <option value="male">🚹 Male</option>
-                    <option value="female">🚺 Female</option>
-                    <option value="unisex">🚻 Unisex</option>
-                    <option value="handicap">♿ Handicap</option>
-                  </select>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[10px] font-bold mb-1.5 uppercase tracking-wider text-slate-500">
+                      Washroom Type
+                    </label>
+                    <select
+                      value={formData.type}
+                      onChange={(e) =>
+                        setFormData({ ...formData, type: e.target.value })
+                      }
+                      className="w-full min-h-[44px] border-[1.5px] border-slate-200 rounded-lg px-2 py-2 text-xs font-bold text-[#1F4E79] outline-none focus:border-[#1F4E79] bg-[#f8fafc]"
+                    >
+                      <option value="male">🚹 Male</option>
+                      <option value="female">🚺 Female</option>
+                      <option value="unisex">🚻 Unisex</option>
+                      <option value="handicap">♿ Handicap</option>
+                    </select>
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5 mb-1.5 h-[15px]">
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 leading-none">
+                        Access Level
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setShowPublicTooltip(!showPublicTooltip)}
+                        className="w-[15px] h-[15px] rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-[10px] font-bold border border-blue-100 hover:bg-blue-100 transition-colors"
+                        title="Click for info"
+                      >
+                        ?
+                      </button>
+                    </div>
+                    <select
+                      value={formData.is_public ? "public" : "private"}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          is_public: e.target.value === "public",
+                        })
+                      }
+                      className="w-full min-h-[44px] border-[1.5px] border-slate-200 rounded-lg px-2 py-2 text-xs font-bold text-slate-700 outline-none focus:border-[#1F4E79] bg-[#f8fafc]"
+                    >
+                      <option value="private">🔒 Private</option>
+                      <option value="public">🌍 Public</option>
+                    </select>
+                  </div>
                 </div>
+
+                {showPublicTooltip && (
+                  <div className="mb-2 p-3 bg-blue-50 border border-blue-100 rounded-lg text-xs text-blue-800 leading-snug animate-in fade-in zoom-in-95 duration-200">
+                    <strong>Note:</strong> If made <strong>Public</strong>, this
+                    washroom will be visible and accessible to general visitors
+                    on the public-facing application. Private washrooms are
+                    strictly for internal staff access.
+                  </div>
+                )}
               </div>
 
               <div className="bg-white border border-slate-200 rounded-xl p-4 md:p-5 shadow-sm">
@@ -452,12 +600,23 @@ export default function WashroomsStep({
                 </div>
               </div>
 
-              <button
-                onClick={handleAddManual}
-                className="w-full min-h-[48px] bg-[#1F4E79] text-white py-3 rounded-lg font-bold text-sm hover:bg-[#163a5a] transition-colors shadow-sm"
-              >
-                + Add Washroom
-              </button>
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={handleAddOrUpdateManual}
+                  className={`w-full min-h-[48px] text-white py-3 rounded-lg font-bold text-sm transition-colors shadow-sm
+                    ${editingId ? "bg-amber-500 hover:bg-amber-600" : "bg-[#1F4E79] hover:bg-[#163a5a]"}`}
+                >
+                  {editingId ? "✓ Save Changes" : "+ Add Washroom"}
+                </button>
+                {editingId && (
+                  <button
+                    onClick={handleCancelEdit}
+                    className="w-full min-h-[48px] bg-white border border-slate-300 text-slate-600 py-3 rounded-lg font-bold text-sm hover:bg-slate-50 transition-colors shadow-sm"
+                  >
+                    Cancel Editing
+                  </button>
+                )}
+              </div>
             </div>
           )}
 
@@ -606,6 +765,7 @@ export default function WashroomsStep({
           )}
         </div>
 
+        {/* ── RIGHT: WASHROOMS LIST DIRECTORY ── */}
         <div className="lg:col-span-8 flex flex-col h-full w-full">
           <div className="bg-white border border-slate-200 rounded-xl p-4 md:p-5 shadow-sm flex flex-col flex-1 min-h-[400px] lg:min-h-[600px]">
             <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-4">
@@ -635,7 +795,8 @@ export default function WashroomsStep({
                   return (
                     <div
                       key={w.temp_id}
-                      className="flex flex-col sm:flex-row sm:items-center justify-between p-3 border border-slate-200 rounded-xl bg-white hover:border-[#1F4E79] transition-colors animate-in slide-in-from-bottom-2 gap-3"
+                      className={`flex flex-col sm:flex-row sm:items-center justify-between p-3 border rounded-xl bg-white transition-colors animate-in slide-in-from-bottom-2 gap-3
+                        ${editingId === w.temp_id ? "border-amber-400 bg-amber-50/20" : "border-slate-200 hover:border-[#1F4E79]"}`}
                     >
                       <div className="flex items-center gap-3 w-full sm:w-auto overflow-hidden">
                         <div
@@ -650,7 +811,7 @@ export default function WashroomsStep({
                           <p className="text-[10px] md:text-xs text-slate-500 truncate mt-0.5">
                             📍 {parentName}
                           </p>
-                          <div className="flex gap-1.5 mt-1.5 flex-wrap">
+                          <div className="flex gap-1.5 mt-1.5 flex-wrap items-center">
                             <span className="text-[9px] font-bold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">
                               {t.label}
                             </span>
@@ -660,15 +821,30 @@ export default function WashroomsStep({
                             <span className="text-[9px] font-bold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">
                               {w.basin_count} Basins
                             </span>
+                            {w.is_public && (
+                              <span className="text-[9px] font-bold bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded ml-1">
+                                🌍 Public
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>
-                      <button
-                        onClick={() => handleDelete(w.temp_id)}
-                        className="w-full sm:w-auto text-red-500 bg-red-50 hover:bg-red-100 font-bold text-xs px-4 py-2 rounded-lg transition-colors min-h-[44px] sm:min-h-0 shrink-0 border border-red-100 hover:border-red-200"
-                      >
-                        ✕ Remove
-                      </button>
+
+                      <div className="flex sm:flex-col gap-2 w-full sm:w-auto mt-2 sm:mt-0 shrink-0">
+                        <button
+                          onClick={() => handleEdit(w)}
+                          disabled={editingId === w.temp_id}
+                          className="flex-1 sm:flex-none text-[#1F4E79] bg-[#e8f0f9] hover:bg-[#d1e3f8] font-bold text-xs px-4 py-2 rounded-lg transition-colors min-h-[44px] sm:min-h-0 border border-[#bfdbfe] disabled:opacity-50"
+                        >
+                          ✏️ Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(w.temp_id)}
+                          className="flex-1 sm:flex-none text-red-500 bg-red-50 hover:bg-red-100 font-bold text-xs px-4 py-2 rounded-lg transition-colors min-h-[44px] sm:min-h-0 border border-red-100 hover:border-red-200"
+                        >
+                          ✕ Remove
+                        </button>
+                      </div>
                     </div>
                   );
                 })
@@ -676,21 +852,6 @@ export default function WashroomsStep({
             </div>
           </div>
         </div>
-      </div>
-
-      <div className="flex flex-col-reverse md:flex-row justify-between mt-6 pt-4 border-t border-slate-200 gap-3 w-full">
-        <button
-          onClick={onBack}
-          className="w-full md:w-auto inline-flex items-center justify-center gap-2 font-bold text-sm rounded-lg border border-slate-200 bg-white text-slate-700 min-h-[48px] px-6 hover:bg-slate-50 transition-colors shadow-sm"
-        >
-          ← Back
-        </button>
-        <button
-          onClick={() => onNext(localWashrooms)}
-          className="w-full md:w-auto inline-flex items-center justify-center gap-2 font-bold text-sm rounded-lg bg-[#1F4E79] text-white min-h-[48px] px-8 hover:bg-[#163a5a] transition-colors shadow-sm"
-        >
-          Continue to Users ➔
-        </button>
       </div>
 
       {/* Floating Help Button */}
