@@ -703,7 +703,7 @@ export default function LoginPage() {
                 src="/flo-mascot.png"
                 alt="SaafAI Mascot"
               />
-              <img className="mascot-img" src="/flo-mascot.png" alt="SaafAI Mascot" />
+              {/* <img className="mascot-img" src="/flo-mascot.png" alt="SaafAI Mascot" /> */}
             </div>
 
             <div className="left-content-bottom">
@@ -804,7 +804,7 @@ export default function LoginPage() {
                 id="view-main"
                 className={`auth-view ${activeView === "main" ? "active" : ""}`}
               >
-              <div className={`auth-view ${activeView === "main" ? "active" : ""}`}>
+              {/* <div className={`auth-view ${activeView === "main" ? "active" : ""}`}> */}
                 <div className="brand-header">
                   <div className="brand-title">Saaf<span>AI</span></div>
                   <div className="brand-divider">
@@ -945,7 +945,7 @@ export default function LoginPage() {
                 id="view-register"
                 className={`auth-view ${activeView === "register" ? "active" : ""}`}
               >
-              <div className={`auth-view ${activeView === "register" ? "active" : ""}`}>
+              {/* <div className={`auth-view ${activeView === "register" ? "active" : ""}`}> */}
                 <div className="brand-header">
                   <div className="brand-title">Create <span>Account</span></div>
                   <div className="brand-tagline">Join SaafAI Portal today</div>
