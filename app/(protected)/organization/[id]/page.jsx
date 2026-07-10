@@ -123,22 +123,22 @@ export default function SingleCompanyView() {
     );
   }
 
-  return (
-    <div className="min-h-screen p-6 bg-gray-50 text-slate-800">
+return (
+    <div className="w-full p-4 md:p-6 text-slate-800 dark:text-slate-100 transition-colors duration-200">
       <Toaster position="top-center" />
       
-      <div className="max-w-3xl mx-auto space-y-6">
+      <div className="max-w-3xl w-full mx-auto space-y-4">
         {/* Navigation & Header */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <button
               onClick={() => router.back()}
-              className="p-2 cursor-pointer bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+              className="p-1.5 cursor-pointer bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm"
             >
-              <ArrowLeft size={20} className="text-gray-600" />
+              <ArrowLeft size={18} className="text-slate-600 dark:text-slate-300" />
             </button>
-            <h1 className="text-2xl font-bold flex items-center gap-2 text-slate-800">
-              <Building2 className="text-indigo-600" size={28} />
+            <h1 className="text-xl font-bold flex items-center gap-2 text-slate-900 dark:text-white">
+              <Building2 className="text-orange-500 dark:text-orange-400" size={24} />
               Company Profile
             </h1>
           </div>
@@ -146,70 +146,55 @@ export default function SingleCompanyView() {
           {!isEditing ? (
             <button
               onClick={() => setIsEditing(true)}
-              className="flex cursor-pointer items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors shadow-sm"
+              className="flex cursor-pointer items-center gap-2 bg-orange-500 dark:bg-orange-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-orange-600 dark:hover:bg-orange-700 transition-colors shadow-sm"
             >
-              <Edit2 size={16} /> Edit Details
+              <Edit2 size={14} /> Edit Details
             </button>
           ) : (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <button
                 onClick={handleCancel}
                 disabled={isUpdating}
-                className="flex cursor-pointer items-center gap-2 bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-lg font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
+                className="flex cursor-pointer items-center gap-2 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm disabled:opacity-50"
               >
-                <X size={16} /> Cancel
+                <X size={14} /> Cancel
               </button>
               <button
                 onClick={handleSave}
                 disabled={isUpdating}
-                className="flex cursor-pointer items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors shadow-sm disabled:opacity-50"
+                className="flex cursor-pointer items-center gap-2 bg-green-600 dark:bg-green-500 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-green-700 dark:hover:bg-green-600 transition-colors shadow-sm disabled:opacity-50"
               >
-                <Save size={16} /> {isUpdating ? "Saving..." : "Save Changes"}
+                <Save size={14} /> {isUpdating ? "Saving..." : "Save"}
               </button>
             </div>
           )}
         </div>
 
         {/* Profile Card */}
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-          {/* Header Banner */}
-          <div className="h-24 bg-gradient-to-r from-indigo-500 to-purple-600" />
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-md overflow-hidden transition-colors duration-200">
+          {/* Header Banner - Soft light orange shade */}
+          <div className="h-20 bg-orange-100 dark:bg-orange-900/30" />
           
-          <div className="px-8 pb-8">
+          <div className="px-6 pb-6">
             {/* Avatar & Status Setup */}
-            <div className="relative flex justify-between items-end -mt-12 mb-8">
-              <div className="w-24 h-24 bg-white rounded-xl shadow-md border border-gray-100 flex items-center justify-center">
-                <Building2 size={48} className="text-indigo-400" />
+            <div className="relative flex justify-between items-end -mt-10 mb-6">
+              <div className="w-20 h-20 rounded-xl shadow-lg border-4 border-white dark:border-slate-800 flex items-center justify-center bg-slate-100 dark:bg-slate-700">
+                <Building2 size={36} className="text-orange-500 dark:text-orange-400" />
               </div>
               
-              <div className="flex flex-col items-end gap-2">
-                {/* Status Toggle */}
-                {/* <button
-                  onClick={handleStatusToggle}
-                  disabled={isToggling}
-                  className={`flex cursor-pointer items-center gap-2 px-4 py-2 rounded-lg border transition-all ${
-                    company.status 
-                      ? "bg-green-50 border-green-200 text-green-700 hover:bg-green-100" 
-                      : "bg-red-50 border-red-200 text-red-700 hover:bg-red-100"
-                  } disabled:opacity-50`}
-                >
-                  <Power size={16} />
-                  <span className="font-semibold text-sm">
-                    {company.status ? "Active Account" : "Inactive Account"}
-                  </span>
-                </button> */}
-                <p className="text-xs text-gray-500">
+              <div className="flex flex-col items-end gap-2 mb-2">
+                <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
                   Created {new Date(company.created_at).toLocaleDateString()}
                 </p>
               </div>
             </div>
 
             {/* Form Fields */}
-            <div className="space-y-6">
+            <div className="space-y-5">
               {/* Name */}
               <div>
-                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                  <Building2 size={16} className="text-gray-400" /> Company Name
+                <label className="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                  <Building2 size={14} className="text-orange-500 dark:text-orange-400" /> Company Name
                 </label>
                 {isEditing ? (
                   <input
@@ -217,20 +202,20 @@ export default function SingleCompanyView() {
                     name="name"
                     value={formData.name}
                     onChange={handleInputChange}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+                    className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white rounded-lg text-sm shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all placeholder-slate-400"
                     placeholder="Enter company name"
                   />
                 ) : (
-                  <p className="text-lg text-slate-800 bg-gray-50 p-3 rounded-lg border border-transparent">
-                    {company.name || <span className="text-gray-400 italic">Not provided</span>}
+                  <p className="text-sm font-medium text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-700/80 p-2.5 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm">
+                    {company.name || <span className="text-slate-400 italic font-normal">Not provided</span>}
                   </p>
                 )}
               </div>
 
               {/* Email */}
               <div>
-                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                  <Mail size={16} className="text-gray-400" /> Contact Email
+                <label className="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                  <Mail size={14} className="text-orange-500 dark:text-orange-400" /> Contact Email
                 </label>
                 {isEditing ? (
                   <input
@@ -238,33 +223,33 @@ export default function SingleCompanyView() {
                     name="contact_email"
                     value={formData.contact_email}
                     onChange={handleInputChange}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+                    className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white rounded-lg text-sm shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all placeholder-slate-400"
                     placeholder="company@example.com"
                   />
                 ) : (
-                  <p className="text-lg text-slate-800 bg-gray-50 p-3 rounded-lg border border-transparent">
-                    {company.contact_email || <span className="text-gray-400 italic">Not provided</span>}
+                  <p className="text-sm font-medium text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-700/80 p-2.5 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm">
+                    {company.contact_email || <span className="text-slate-400 italic font-normal">Not provided</span>}
                   </p>
                 )}
               </div>
 
               {/* Description */}
               <div>
-                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                  <FileText size={16} className="text-gray-400" /> Description
+                <label className="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                  <FileText size={14} className="text-orange-500 dark:text-orange-400" /> Description
                 </label>
                 {isEditing ? (
                   <textarea
                     name="description"
                     value={formData.description}
                     onChange={handleInputChange}
-                    rows={4}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all resize-none"
+                    rows={3}
+                    className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white rounded-lg text-sm shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all resize-none placeholder-slate-400"
                     placeholder="Enter company description..."
                   />
                 ) : (
-                  <p className="text-base text-slate-700 bg-gray-50 p-4 rounded-lg border border-transparent whitespace-pre-wrap leading-relaxed min-h-[100px]">
-                    {company.description || <span className="text-gray-400 italic">No description available.</span>}
+                  <p className="text-sm font-medium text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-700/80 p-3 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm whitespace-pre-wrap leading-relaxed min-h-[60px]">
+                    {company.description || <span className="text-slate-400 italic font-normal">No description available.</span>}
                   </p>
                 )}
               </div>

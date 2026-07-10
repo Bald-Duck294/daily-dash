@@ -179,22 +179,22 @@ export default function ProfileSettingsPage() {
 
   const initials = user.name?.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase() || "U";
 
-  return (
-    <div className="min-h-screen p-6 bg-gray-50 dark:bg-gray-900 text-slate-800 dark:text-slate-100 transition-colors duration-200">
+return (
+    <div className="w-full p-4 md:p-6 text-slate-800 dark:text-slate-100 transition-colors duration-200">
       <Toaster position="top-center" />
       
-      <div className="max-w-3xl mx-auto space-y-6">
+      <div className="max-w-3xl w-full mx-auto space-y-4">
         {/* Navigation & Header */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <button
               onClick={() => router.back()}
-              className="p-2 cursor-pointer bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              className="p-1.5 cursor-pointer bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm"
             >
-              <ArrowLeft size={20} className="text-gray-600 dark:text-gray-300" />
+              <ArrowLeft size={18} className="text-slate-600 dark:text-slate-300" />
             </button>
-            <h1 className="text-2xl font-bold flex items-center gap-2 text-slate-800 dark:text-slate-100">
-              <UserIcon className="text-indigo-600 dark:text-indigo-400" size={28} />
+            <h1 className="text-xl font-bold flex items-center gap-2 text-slate-900 dark:text-white">
+              <UserIcon className="text-orange-500 dark:text-orange-400" size={24} />
               My Profile
             </h1>
           </div>
@@ -202,58 +202,58 @@ export default function ProfileSettingsPage() {
           {!isEditing ? (
             <button
               onClick={() => setIsEditing(true)}
-              className="flex cursor-pointer items-center gap-2 bg-indigo-600 dark:bg-indigo-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 dark:hover:bg-indigo-600 transition-colors shadow-sm"
+              className="flex cursor-pointer items-center gap-2 bg-orange-500 dark:bg-orange-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-orange-600 dark:hover:bg-orange-700 transition-colors shadow-sm"
             >
-              <Edit2 size={16} /> Edit Details
+              <Edit2 size={14} /> Edit Details
             </button>
           ) : (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <button
                 onClick={handleCancel}
                 disabled={isPending}
-                className="flex cursor-pointer items-center gap-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 px-4 py-2 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+                className="flex cursor-pointer items-center gap-2 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm disabled:opacity-50"
               >
-                <X size={16} /> Cancel
+                <X size={14} /> Cancel
               </button>
               <button
                 onClick={handleSave}
                 disabled={isPending}
-                className="flex cursor-pointer items-center gap-2 bg-green-600 dark:bg-green-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 dark:hover:bg-green-600 transition-colors shadow-sm disabled:opacity-50"
+                className="flex cursor-pointer items-center gap-2 bg-green-600 dark:bg-green-500 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-green-700 dark:hover:bg-green-600 transition-colors shadow-sm disabled:opacity-50"
               >
-                <Save size={16} /> {isPending ? "Saving..." : "Save Changes"}
+                <Save size={14} /> {isPending ? "Saving..." : "Save"}
               </button>
             </div>
           )}
         </div>
 
         {/* Profile Card */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden transition-colors duration-200">
-          {/* Header Banner */}
-          <div className="h-24 bg-gradient-to-r from-indigo-500 to-purple-600 dark:from-indigo-600 dark:to-purple-700" />
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-md overflow-hidden transition-colors duration-200">
+          {/* Header Banner - Swapped to a soft, light orange shade */}
+          <div className="h-20 bg-orange-100 dark:bg-orange-900/30" />
           
-          <div className="px-8 pb-8">
+          <div className="px-6 pb-6">
             {/* Avatar & Role Setup */}
-            <div className="relative flex justify-between items-end -mt-12 mb-8">
-              <div className="w-24 h-24 bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-100 dark:border-gray-700 flex items-center justify-center bg-gradient-to-br from-indigo-600 to-purple-600 text-white text-3xl font-black">
+            <div className="relative flex justify-between items-end -mt-10 mb-6">
+              <div className="w-20 h-20 rounded-xl shadow-lg border-4 border-white dark:border-slate-800 flex items-center justify-center bg-slate-100 dark:bg-slate-700 text-orange-600 dark:text-orange-400 text-3xl font-black">
                 {initials}
               </div>
               
-              <div className="flex flex-col items-end gap-2">
-                <span className="px-4 py-1.5 rounded-lg border bg-indigo-50 dark:bg-indigo-900/30 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 font-semibold text-sm shadow-sm transition-colors">
+              <div className="flex flex-col items-end gap-1 mb-2">
+                <span className="px-3 py-1 rounded-lg border bg-orange-50 dark:bg-orange-900/40 border-orange-200 dark:border-orange-800 text-orange-700 dark:text-orange-300 font-bold text-xs shadow-sm transition-colors">
                   {getRoleText()}
                 </span>
               </div>
             </div>
 
             {/* Form Fields */}
-            <div className="space-y-6">
+            <div className="space-y-5">
               
               {/* Basic Details Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 {/* Name */}
                 <div>
-                  <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                    <UserIcon size={16} className="text-gray-400 dark:text-gray-500" /> Full Name
+                  <label className="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                    <UserIcon size={14} className="text-orange-500 dark:text-orange-400" /> Full Name
                   </label>
                   {isEditing ? (
                     <input
@@ -261,20 +261,20 @@ export default function ProfileSettingsPage() {
                       name="name"
                       value={formData.name}
                       onChange={handleInputChange}
-                      className="w-full p-3 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-slate-800 dark:text-slate-100 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all placeholder-gray-400 dark:placeholder-gray-500"
+                      className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white rounded-lg text-sm shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all placeholder-slate-400"
                       placeholder="Enter your name"
                     />
                   ) : (
-                    <p className="text-base text-slate-800 dark:text-slate-200 bg-gray-50 dark:bg-gray-900/50 p-3 rounded-lg border border-transparent dark:border-gray-700">
-                      {user.name || <span className="text-gray-400 dark:text-gray-500 italic">Not provided</span>}
+                    <p className="text-sm font-medium text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-700/80 p-2.5 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm">
+                      {user.name || <span className="text-slate-400 italic font-normal">Not provided</span>}
                     </p>
                   )}
                 </div>
 
                 {/* Email */}
                 <div>
-                  <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                    <Mail size={16} className="text-gray-400 dark:text-gray-500" /> Email Address
+                  <label className="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                    <Mail size={14} className="text-orange-500 dark:text-orange-400" /> Email Address
                   </label>
                   {isEditing ? (
                     <input
@@ -282,20 +282,20 @@ export default function ProfileSettingsPage() {
                       name="email"
                       value={formData.email}
                       onChange={handleInputChange}
-                      className="w-full p-3 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-slate-800 dark:text-slate-100 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all placeholder-gray-400 dark:placeholder-gray-500"
+                      className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white rounded-lg text-sm shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all placeholder-slate-400"
                       placeholder="your@email.com"
                     />
                   ) : (
-                    <p className="text-base text-slate-800 dark:text-slate-200 bg-gray-50 dark:bg-gray-900/50 p-3 rounded-lg border border-transparent dark:border-gray-700">
-                      {user.email || <span className="text-gray-400 dark:text-gray-500 italic">Not provided</span>}
+                    <p className="text-sm font-medium text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-700/80 p-2.5 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm">
+                      {user.email || <span className="text-slate-400 italic font-normal">Not provided</span>}
                     </p>
                   )}
                 </div>
 
                 {/* Phone */}
                 <div>
-                  <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                    <Phone size={16} className="text-gray-400 dark:text-gray-500" /> Phone Number
+                  <label className="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                    <Phone size={14} className="text-orange-500 dark:text-orange-400" /> Phone Number
                   </label>
                   {isEditing ? (
                     <input
@@ -303,12 +303,12 @@ export default function ProfileSettingsPage() {
                       name="phone"
                       value={formData.phone}
                       onChange={handleInputChange}
-                      className="w-full p-3 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-slate-800 dark:text-slate-100 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all placeholder-gray-400 dark:placeholder-gray-500"
+                      className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white rounded-lg text-sm shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all placeholder-slate-400"
                       placeholder="Enter phone number"
                     />
                   ) : (
-                    <p className="text-base text-slate-800 dark:text-slate-200 bg-gray-50 dark:bg-gray-900/50 p-3 rounded-lg border border-transparent dark:border-gray-700">
-                      {user.phone || <span className="text-gray-400 dark:text-gray-500 italic">Not provided</span>}
+                    <p className="text-sm font-medium text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-700/80 p-2.5 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm">
+                      {user.phone || <span className="text-slate-400 italic font-normal">Not provided</span>}
                     </p>
                   )}
                 </div>
@@ -316,19 +316,19 @@ export default function ProfileSettingsPage() {
 
               {/* Password Section - ONLY VISIBLE WHEN EDITING */}
               {isEditing && (
-                <div className="pt-6 mt-6 border-t border-gray-200 dark:border-gray-700">
+                <div className="pt-5 mt-4 border-t border-slate-200 dark:border-slate-700">
                   <div className="mb-4">
-                    <h3 className="text-lg font-semibold flex items-center gap-2 text-slate-800 dark:text-slate-100">
-                      <ShieldAlert size={20} className="text-indigo-600 dark:text-indigo-400" />
+                    <h3 className="text-base font-bold flex items-center gap-2 text-slate-900 dark:text-white">
+                      <ShieldAlert size={18} className="text-orange-500 dark:text-orange-400" />
                       Update Password
                     </h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Leave these fields blank if you do not wish to change your password.</p>
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1">Leave these fields blank if you do not wish to change your password.</p>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {/* Current Password */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
                         Current Password
                       </label>
                       <div className="relative">
@@ -337,22 +337,22 @@ export default function ProfileSettingsPage() {
                           name="currentPassword"
                           value={formData.currentPassword}
                           onChange={handleInputChange}
-                          className="w-full p-3 pr-10 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-slate-800 dark:text-slate-100 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-sm placeholder-gray-400 dark:placeholder-gray-500"
+                          className="w-full p-2.5 pr-10 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white rounded-lg shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all text-sm placeholder-slate-400"
                           placeholder="••••••••"
                         />
                         <button
                           type="button"
                           onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-orange-500 dark:hover:text-orange-400 transition-colors"
                         >
-                          {showCurrentPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                          {showCurrentPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                         </button>
                       </div>
                     </div>
 
                     {/* New Password */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
                         New Password
                       </label>
                       <div className="relative">
@@ -361,22 +361,22 @@ export default function ProfileSettingsPage() {
                           name="password"
                           value={formData.password}
                           onChange={handleInputChange}
-                          className="w-full p-3 pr-10 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-slate-800 dark:text-slate-100 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-sm placeholder-gray-400 dark:placeholder-gray-500"
+                          className="w-full p-2.5 pr-10 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white rounded-lg shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all text-sm placeholder-slate-400"
                           placeholder="••••••••"
                         />
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-orange-500 dark:hover:text-orange-400 transition-colors"
                         >
-                          {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                          {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                         </button>
                       </div>
                     </div>
 
                     {/* Confirm Password */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
                         Confirm Password
                       </label>
                       <div className="relative">
@@ -385,15 +385,15 @@ export default function ProfileSettingsPage() {
                           name="confirmPassword"
                           value={formData.confirmPassword}
                           onChange={handleInputChange}
-                          className="w-full p-3 pr-10 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-slate-800 dark:text-slate-100 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-sm placeholder-gray-400 dark:placeholder-gray-500"
+                          className="w-full p-2.5 pr-10 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white rounded-lg shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all text-sm placeholder-slate-400"
                           placeholder="••••••••"
                         />
                         <button
                           type="button"
                           onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-orange-500 dark:hover:text-orange-400 transition-colors"
                         >
-                          {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                          {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                         </button>
                       </div>
                     </div>

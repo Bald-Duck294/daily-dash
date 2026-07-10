@@ -1783,6 +1783,27 @@ export default function ScoreManagement() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Company */}
               <div>
+                {/* Injecting CSS directly into the component */}
+                <style>{`
+    .custom-scroll {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background-color: #cbd5e1;
+      border-radius: 10px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb:hover {
+      background-color: #94a3b8;
+    }
+  `}</style>
+
                 <label
                   className="text-xs font-medium mb-1 flex gap-1"
                   style={{ color: "var(--muted-foreground)" }}
@@ -1797,7 +1818,8 @@ export default function ScoreManagement() {
                     />
                   </SelectTrigger>
 
-                  <SelectContent>
+                  {/* Apply the custom class defined in the style block above */}
+                  <SelectContent className="custom-scroll">
                     {companies.map((company) => (
                       <SelectItem key={company.id} value={company.id}>
                         {company.name}
