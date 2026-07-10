@@ -177,11 +177,9 @@ export default function LoginPage() {
   // ─── FORGOT PASSWORD HANDLER ────────────────────────────────
   const handleForgotSubmit = async (e) => {
     e.preventDefault();
-
     if (forgotData.newPassword !== forgotData.confirmPassword) {
       return toast.error("Passwords do not match!");
     }
-
     setIsLoading(true);
     try {
       await AuthApi.resetPassword(forgotData.phone, forgotData.newPassword);
@@ -245,18 +243,13 @@ export default function LoginPage() {
   const handleComingSoon = (provider) => {
     toast(`Login with ${provider} will be available soon! 🚀`, {
       icon: "✨",
-      style: {
-        borderRadius: "10px",
-        background: "#1e293b",
-        color: "#fff",
-      },
+      style: { borderRadius: "10px", background: "#1e293b", color: "#fff" },
     });
   };
 
   return (
     <>
       <Toaster position="top-center" />
-
       <style
         dangerouslySetInnerHTML={{
           __html: `
@@ -705,14 +698,19 @@ export default function LoginPage() {
                 <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" fill="#3b4df2" />
               </svg>
 
+              <img
+                className="mascot-img"
+                src="/flo-mascot.png"
+                alt="SaafAI Mascot"
+              />
               <img className="mascot-img" src="/flo-mascot.png" alt="SaafAI Mascot" />
             </div>
 
             <div className="left-content-bottom">
               <h1>
-                Clean Today,
+                Get's Measured,
                 <br />
-                <span>Greener Tomorrow.</span>
+                <span>Get's Improved</span>
               </h1>
               <div className="info-icon-wrapper">
                 <svg
@@ -785,6 +783,11 @@ export default function LoginPage() {
                     <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" fill="#3b4df2" />
                   </svg>
 
+                  <img
+                    className="mob-mascot-img"
+                    src="/flo-mascot.png"
+                    alt="SaafAI Mascot"
+                  />
                   <img className="mob-mascot-img" src="/flo-mascot.png" alt="SaafAI Mascot" />
                 </div>
                 <div className="mob-tagline">
@@ -797,6 +800,10 @@ export default function LoginPage() {
               </div>
 
               {/* --- VIEW: MAIN (LOGIN) --- */}
+              <div
+                id="view-main"
+                className={`auth-view ${activeView === "main" ? "active" : ""}`}
+              >
               <div className={`auth-view ${activeView === "main" ? "active" : ""}`}>
                 <div className="brand-header">
                   <div className="brand-title">Saaf<span>AI</span></div>
@@ -886,11 +893,12 @@ export default function LoginPage() {
                     </div>
                   </div>
 
-                  <div className="form-link-row">
-                    <span onClick={() => setActiveView("register")} className="auth-link">
+                  <div className="form-link-row auth-links-row">
+                    <span onClick={() => setActiveView("register")} className="auth-link register-link">
                       Don't have an account? Register
                     </span>
-                    <span onClick={() => setActiveView("forgot")} className="auth-link">
+                    <span className="auth-links-divider">|</span>
+                    <span onClick={() => setActiveView("forgot")} className="auth-link forgot-password-link">
                       Forgot Password?
                     </span>
                   </div>
@@ -933,6 +941,10 @@ export default function LoginPage() {
               </div>
 
               {/* --- VIEW: REGISTER --- */}
+              <div
+                id="view-register"
+                className={`auth-view ${activeView === "register" ? "active" : ""}`}
+              >
               <div className={`auth-view ${activeView === "register" ? "active" : ""}`}>
                 <div className="brand-header">
                   <div className="brand-title">Create <span>Account</span></div>

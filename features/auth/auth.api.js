@@ -128,4 +128,20 @@ export const AuthApi = {
       return { success: false };
     }
   },
+
+  getOnboardingStatus: async () => {
+    try {
+      const response = await axiosInstance.get("/auth/onboarding-status");
+      return {
+        success: true,
+        data: response.data,
+      };
+    } catch (error) {
+      console.log(error, "error in getOnboardingStatus");
+      return {
+        success: false,
+        error: "Failed to fetch onboarding status",
+      };
+    }
+  },
 };

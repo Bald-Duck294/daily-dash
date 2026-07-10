@@ -21,7 +21,8 @@ export default function UsersStep({
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isAssignmentHelpOpen, setIsAssignmentHelpOpen] = useState(false);
 
-  // Custom Dialog State
+  const [editingId, setEditingId] = useState(null);
+
   const [dialogConfig, setDialogConfig] = useState({
     isOpen: false,
     title: "",
@@ -65,7 +66,7 @@ export default function UsersStep({
     setFormData({ ...formData, phone: val });
   };
 
-  const handleCreate = () => {
+  const handleAddOrUpdateUser = () => {
     if (!formData.phone || formData.phone.length !== 10) {
       return showDialog(
         "Invalid Phone Number",
@@ -90,8 +91,8 @@ export default function UsersStep({
       finalName = `${formData.role.charAt(0).toUpperCase() + formData.role.slice(1)}-${roleCount.toString().padStart(3, "0")}`;
     }
 
-    const newUser = {
-      temp_id: generateTempId("user"),
+    const userRecord = {
+      temp_id: editingId || generateTempId("user"),
       name: finalName,
       phone: formData.phone,
       role: formData.role,
@@ -107,12 +108,51 @@ export default function UsersStep({
             : [],
     };
 
-    setLocalUsers([newUser, ...localUsers]);
-    setFormData({ ...formData, name: "", phone: "", assigned_washrooms: [] });
+    if (editingId) {
+      setLocalUsers(
+        localUsers.map((u) => (u.temp_id === editingId ? userRecord : u)),
+      );
+      setEditingId(null);
+    } else {
+      setLocalUsers([userRecord, ...localUsers]);
+    }
+
+    setFormData({
+      name: "",
+      phone: "",
+      role: "cleaner",
+      assigned_zone_temp_id: "",
+      assigned_washrooms: [],
+    });
+  };
+
+  const handleEdit = (u) => {
+    setFormData({
+      name: u.name,
+      phone: u.phone,
+      role: u.role,
+      assigned_zone_temp_id: u.assigned_zone_temp_id || "",
+      assigned_washrooms: u.assigned_washrooms || [],
+    });
+    setEditingId(u.temp_id);
+    setActiveTab("manual");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setFormData({
+      name: "",
+      phone: "",
+      role: "cleaner",
+      assigned_zone_temp_id: "",
+      assigned_washrooms: [],
+    });
   };
 
   const handleDelete = (id) => {
     setLocalUsers(localUsers.filter((u) => u.temp_id !== id));
+    if (editingId === id) handleCancelEdit();
   };
 
   const handleCopyInvite = async () => {
@@ -255,7 +295,7 @@ export default function UsersStep({
   });
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300 pb-20 md:pb-0 w-full relative">
+    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-300 pb-16 w-full relative">
       <CustomDialog
         isOpen={dialogConfig.isOpen}
         onClose={() => setDialogConfig({ ...dialogConfig, isOpen: false })}
@@ -264,7 +304,6 @@ export default function UsersStep({
         type={dialogConfig.type}
       />
 
-      {/* Main Educational Drawer */}
       <StepHelpDrawer
         isOpen={isHelpOpen}
         onClose={() => setIsHelpOpen(false)}
@@ -276,7 +315,6 @@ export default function UsersStep({
             Safai system and what locations they are responsible for. It is
             crucial to set this up correctly so tasks generate properly.
           </p>
-
           <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100">
             <h3 className="font-bold text-[#1F4E79] mb-1 text-base">
               Phone Numbers are Logins
@@ -288,7 +326,6 @@ export default function UsersStep({
               into the mobile app.
             </p>
           </div>
-
           <div>
             <h3 className="font-bold text-slate-900 text-base mb-2 border-b pb-2">
               Understanding Roles
@@ -322,7 +359,6 @@ export default function UsersStep({
         </div>
       </StepHelpDrawer>
 
-      {/* Specific Assignment Help Drawer */}
       <StepHelpDrawer
         isOpen={isAssignmentHelpOpen}
         onClose={() => setIsAssignmentHelpOpen(false)}
@@ -332,7 +368,6 @@ export default function UsersStep({
           <p className="font-medium text-slate-600">
             Assignments dictate what a user sees when they open their app.
           </p>
-
           <div className="bg-emerald-50/50 p-4 rounded-xl border border-emerald-100">
             <h3 className="font-bold text-emerald-700 mb-2">
               Assigning Cleaners
@@ -349,7 +384,6 @@ export default function UsersStep({
               </li>
             </ul>
           </div>
-
           <div className="bg-amber-50/50 p-4 rounded-xl border border-amber-100">
             <h3 className="font-bold text-amber-700 mb-2">
               Assigning Supervisors
@@ -377,18 +411,36 @@ export default function UsersStep({
         </div>
       </StepHelpDrawer>
 
-      <div className="flex items-start justify-between mb-5 gap-4 flex-wrap relative">
+      {/* ── COMPACT INLINE HEADER ── */}
+      <div className="w-full flex flex-col md:flex-row items-start md:items-center justify-between gap-3 pb-2 border-b border-slate-200">
         <div>
-          <h1 className="text-2xl font-black text-slate-900">
+          <h1 className="text-xl md:text-[22px] font-black text-slate-900 tracking-tight leading-tight">
             Users & Assignments
           </h1>
-          <p className="text-sm mt-1 text-slate-500">
+          <p className="text-xs text-slate-500 mt-0.5">
             Register your workforce and assign them to locations.
           </p>
         </div>
+
+        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+          <button
+            onClick={onBack}
+            className="flex-1 md:flex-none bg-slate-100 border border-slate-300 text-slate-700 px-4 py-2 rounded-lg text-xs font-bold shadow-sm hover:bg-slate-200 hover:text-slate-900 transition-colors"
+          >
+            ← Back
+          </button>
+          {/* Removed Instructions Button from Header */}
+          <button
+            onClick={handleContinue}
+            className="flex-1 md:flex-none bg-[#22c55e] text-white px-5 py-2 rounded-lg text-xs font-bold shadow-sm hover:bg-[#16a34a] transition-colors flex items-center justify-center gap-1.5"
+          >
+            Continue ➔
+          </button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start mt-2">
+        {/* ── LEFT COLUMN ── */}
         <div className="lg:col-span-4 space-y-4">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 w-full">
             {[
@@ -399,11 +451,14 @@ export default function UsersStep({
             ].map((t) => (
               <button
                 key={t.id}
-                onClick={() => setActiveTab(t.id)}
-                className={`w-full py-2 px-1 rounded-lg text-[10px] md:text-[11px] font-bold border-[1.5px] transition-colors flex flex-col items-center justify-center gap-1 shadow-sm min-h-[50px] md:min-h-[60px]
+                onClick={() => {
+                  setActiveTab(t.id);
+                  if (t.id !== "manual") handleCancelEdit();
+                }}
+                className={`w-full py-2 px-1 rounded-lg text-[10px] md:text-[11px] font-bold border-[1.5px] transition-colors flex flex-col items-center justify-center gap-1 shadow-sm min-h-[50px] md:min-h-[56px]
                   ${activeTab === t.id ? "bg-[#1F4E79] border-[#1F4E79] text-white" : "bg-white border-slate-200 text-slate-500 hover:border-[#1F4E79]"}`}
               >
-                <span className="text-sm md:text-lg mb-0.5 leading-none">
+                <span className="text-sm md:text-base mb-0.5 leading-none">
                   {t.icon}
                 </span>
                 {t.label}
@@ -412,14 +467,25 @@ export default function UsersStep({
           </div>
 
           {activeTab === "manual" && (
-            <div className="bg-white border border-slate-200 rounded-xl p-4 md:p-5 shadow-sm space-y-4 animate-in fade-in">
-              <h3 className="font-bold text-sm border-b border-slate-100 pb-3 text-slate-900 flex items-center gap-2">
-                👤 Add New User
-              </h3>
+            <div
+              className={`bg-white border-[2px] ${editingId ? "border-amber-400 shadow-md" : "border-slate-200 shadow-sm"} rounded-xl p-4 space-y-4 transition-all animate-in fade-in`}
+            >
+              <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                <h3
+                  className={`font-bold text-xs ${editingId ? "text-amber-600" : "text-slate-800"}`}
+                >
+                  {editingId ? "✏️ Edit User" : "👤 Add New User"}
+                </h3>
+                {editingId && (
+                  <span className="bg-amber-100 text-amber-700 text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-widest">
+                    Editing Mode
+                  </span>
+                )}
+              </div>
 
               <div>
-                <label className="block text-[10px] md:text-xs font-bold mb-1.5 uppercase tracking-wider text-slate-500">
-                  Full Name (Optional)
+                <label className="block text-[10px] font-bold mb-1 uppercase tracking-wider text-slate-500">
+                  Full Name
                 </label>
                 <input
                   type="text"
@@ -427,17 +493,17 @@ export default function UsersStep({
                   onChange={(e) =>
                     setFormData({ ...formData, name: e.target.value })
                   }
-                  className="w-full min-h-[44px] border-[1.5px] border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1F4E79]"
-                  placeholder="e.g. Cleaner-001"
+                  className="w-full min-h-[40px] border-[1.5px] border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1F4E79]"
+                  placeholder="e.g. John Doe"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] md:text-xs font-bold mb-1.5 uppercase tracking-wider text-slate-500">
+                <label className="block text-[10px] font-bold mb-1 uppercase tracking-wider text-slate-500">
                   Phone Number *
                 </label>
                 <div className="flex gap-2">
-                  <div className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-semibold text-slate-500 flex items-center shrink-0 min-h-[44px]">
+                  <div className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 text-sm font-semibold text-slate-500 flex items-center shrink-0 min-h-[40px]">
                     🇮🇳 +91
                   </div>
                   <input
@@ -445,14 +511,14 @@ export default function UsersStep({
                     maxLength={10}
                     value={formData.phone}
                     onChange={handlePhoneChange}
-                    className="w-full min-h-[44px] border-[1.5px] border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1F4E79] font-medium tracking-wide"
+                    className="w-full min-h-[40px] border-[1.5px] border-slate-200 rounded-lg px-3 text-sm outline-none focus:border-[#1F4E79] font-medium tracking-wide"
                     placeholder="10-digit mobile"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[10px] md:text-xs font-bold mb-1.5 uppercase tracking-wider text-slate-500">
+                <label className="block text-[10px] font-bold mb-1 uppercase tracking-wider text-slate-500">
                   Role *
                 </label>
                 <select
@@ -465,7 +531,7 @@ export default function UsersStep({
                       assigned_zone_temp_id: "",
                     })
                   }
-                  className="w-full min-h-[44px] border-[1.5px] border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1F4E79] bg-white font-medium"
+                  className="w-full min-h-[40px] border-[1.5px] border-slate-200 rounded-lg px-3 text-sm outline-none focus:border-[#1F4E79] bg-white font-medium"
                 >
                   <option value="cleaner">🧹 Cleaner</option>
                   <option value="supervisor">👁️ Supervisor</option>
@@ -481,7 +547,7 @@ export default function UsersStep({
                     </p>
                     <button
                       onClick={() => setIsAssignmentHelpOpen(true)}
-                      className="w-6 h-6 md:w-5 md:h-5 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-xs font-bold hover:bg-blue-100 transition-colors shadow-sm"
+                      className="w-5 h-5 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-xs font-bold hover:bg-blue-100 transition-colors shadow-sm"
                     >
                       ?
                     </button>
@@ -502,7 +568,7 @@ export default function UsersStep({
                           })
                         }
                         disabled={formData.assigned_washrooms.length > 0}
-                        className="w-full min-h-[44px] border-[1.5px] border-amber-200 rounded-md px-2 py-1.5 text-xs outline-none focus:border-amber-400 bg-white disabled:opacity-50 font-medium truncate"
+                        className="w-full min-h-[40px] border-[1.5px] border-amber-200 rounded-md px-2 text-xs outline-none focus:border-amber-400 bg-white disabled:opacity-50 font-medium truncate"
                       >
                         <option value="">— None / Select —</option>
                         {nodes.map((n) => (
@@ -511,10 +577,6 @@ export default function UsersStep({
                           </option>
                         ))}
                       </select>
-                      <p className="text-[9px] text-amber-600 mt-2 leading-tight font-medium">
-                        Assigning a higher-level node automatically assigns
-                        every washroom inside it.
-                      </p>
                     </div>
                   )}
 
@@ -525,16 +587,16 @@ export default function UsersStep({
                       className={`block text-[10px] font-bold mb-2 uppercase tracking-wider ${formData.role === "cleaner" ? "text-emerald-700" : "text-slate-600"}`}
                     >
                       {formData.role === "cleaner"
-                        ? "Assign Washrooms (Multiple Allowed) *"
+                        ? "Assign Washrooms (Multiple) *"
                         : "OR Assign Single Washroom"}
                     </label>
 
                     {formData.role === "cleaner" ? (
-                      <div className="max-h-[160px] overflow-y-auto space-y-2 pr-1">
+                      <div className="max-h-[140px] overflow-y-auto space-y-1.5 pr-1">
                         {washrooms.map((w) => (
                           <label
                             key={w.temp_id}
-                            className="flex items-start gap-3 cursor-pointer bg-white border border-slate-200 p-2.5 rounded-lg hover:border-emerald-300 min-h-[44px]"
+                            className="flex items-start gap-3 cursor-pointer bg-white border border-slate-200 p-2 rounded-lg hover:border-emerald-300 min-h-[38px]"
                           >
                             <input
                               type="checkbox"
@@ -557,8 +619,8 @@ export default function UsersStep({
                           </label>
                         ))}
                         {washrooms.length === 0 && (
-                          <p className="text-xs text-slate-400 italic font-medium p-3 bg-white rounded-lg border border-slate-100">
-                            ⚠️ Please create washrooms in Step 2 first.
+                          <p className="text-xs text-slate-400 italic font-medium p-2 bg-white rounded border border-slate-100">
+                            ⚠️ Create washrooms in Step 2 first.
                           </p>
                         )}
                       </div>
@@ -575,7 +637,7 @@ export default function UsersStep({
                           })
                         }
                         disabled={!!formData.assigned_zone_temp_id}
-                        className="w-full min-h-[44px] border-[1.5px] border-slate-200 rounded-md px-2 py-1.5 text-xs outline-none focus:border-[#1F4E79] bg-white disabled:opacity-50 font-medium truncate"
+                        className="w-full min-h-[40px] border-[1.5px] border-slate-200 rounded-md px-2 text-xs outline-none focus:border-[#1F4E79] bg-white disabled:opacity-50 font-medium truncate"
                       >
                         <option value="">— None —</option>
                         {washrooms.map((w) => (
@@ -589,12 +651,22 @@ export default function UsersStep({
                 </div>
               )}
 
-              <button
-                onClick={handleCreate}
-                className="w-full min-h-[48px] bg-[#1F4E79] text-white py-3 rounded-xl font-bold text-sm hover:bg-[#163a5a] transition-colors shadow-sm mt-4 flex items-center justify-center gap-2"
-              >
-                👤 Add User
-              </button>
+              <div className="flex flex-col gap-2 pt-2">
+                <button
+                  onClick={handleAddOrUpdateUser}
+                  className={`w-full min-h-[44px] text-white rounded-lg font-bold text-sm transition-colors shadow-sm ${editingId ? "bg-amber-500 hover:bg-amber-600" : "bg-[#1F4E79] hover:bg-[#163a5a]"}`}
+                >
+                  {editingId ? "✓ Save Changes" : "+ Add User"}
+                </button>
+                {editingId && (
+                  <button
+                    onClick={handleCancelEdit}
+                    className="w-full min-h-[44px] bg-white border border-slate-300 text-slate-600 rounded-lg font-bold text-sm hover:bg-slate-50 transition-colors shadow-sm"
+                  >
+                    Cancel Editing
+                  </button>
+                )}
+              </div>
             </div>
           )}
 
@@ -608,8 +680,7 @@ export default function UsersStep({
               </div>
               <p className="text-xs text-slate-500 font-medium">
                 Automatically generate realistic team members. Cleaners will be
-                auto-assigned to available washrooms so you can test the app
-                preview quickly.
+                auto-assigned to available washrooms.
               </p>
               <div className="flex flex-col gap-3 mt-4">
                 <button
@@ -622,7 +693,7 @@ export default function UsersStep({
                   onClick={handleAddFullTeam}
                   className="w-full bg-white border border-slate-200 text-slate-700 py-3 min-h-[44px] rounded-lg font-bold text-xs hover:bg-slate-50 transition-colors shadow-sm"
                 >
-                  👥 Add Full Demo Team (3 Staff)
+                  👥 Add Full Demo Team
                 </button>
               </div>
             </div>
@@ -636,34 +707,35 @@ export default function UsersStep({
                   Quick Role Add
                 </h3>
               </div>
-              <p className="text-xs text-slate-500 mb-5">
-                Click a role to instantly generate a placeholder staff member.
-              </p>
               <div className="grid grid-cols-2 gap-3">
                 <div
                   onClick={() => handleQuickAdd("cleaner")}
-                  className="border border-slate-200 rounded-xl p-4 text-center cursor-pointer hover:border-[#1F4E79] hover:bg-[#f8fafc] transition-all min-h-[80px] flex flex-col justify-center items-center group"
+                  className="border border-slate-200 rounded-xl p-3 text-center cursor-pointer hover:border-[#1F4E79] hover:bg-[#f8fafc] transition-all min-h-[70px] flex flex-col justify-center items-center group"
                 >
-                  <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">
+                  <div className="text-2xl mb-1 group-hover:scale-110 transition-transform">
                     🧹
                   </div>
-                  <p className="text-xs font-bold text-slate-900">Cleaner</p>
+                  <p className="text-[11px] font-bold text-slate-900">
+                    Cleaner
+                  </p>
                 </div>
                 <div
                   onClick={() => handleQuickAdd("supervisor")}
-                  className="border border-slate-200 rounded-xl p-4 text-center cursor-pointer hover:border-[#1F4E79] hover:bg-[#f8fafc] transition-all min-h-[80px] flex flex-col justify-center items-center group"
+                  className="border border-slate-200 rounded-xl p-3 text-center cursor-pointer hover:border-[#1F4E79] hover:bg-[#f8fafc] transition-all min-h-[70px] flex flex-col justify-center items-center group"
                 >
-                  <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">
+                  <div className="text-2xl mb-1 group-hover:scale-110 transition-transform">
                     👁️
                   </div>
-                  <p className="text-xs font-bold text-slate-900">Supervisor</p>
+                  <p className="text-[11px] font-bold text-slate-900">
+                    Supervisor
+                  </p>
                 </div>
                 <div
                   onClick={() => handleQuickAdd("admin")}
-                  className="col-span-2 border border-slate-200 rounded-xl p-4 text-center cursor-pointer hover:border-[#1F4E79] hover:bg-[#f8fafc] flex items-center justify-center gap-3 transition-all min-h-[60px]"
+                  className="col-span-2 border border-slate-200 rounded-xl p-3 text-center cursor-pointer hover:border-[#1F4E79] hover:bg-[#f8fafc] flex items-center justify-center gap-2 transition-all min-h-[50px]"
                 >
-                  <div className="text-2xl">⚙️</div>
-                  <p className="text-xs font-bold text-slate-900">
+                  <div className="text-xl">⚙️</div>
+                  <p className="text-[11px] font-bold text-slate-900">
                     System Admin
                   </p>
                 </div>
@@ -680,14 +752,13 @@ export default function UsersStep({
                 </h3>
               </div>
               <p className="text-xs text-slate-500 font-medium">
-                Share this link with your team. They can fill their own details
-                and join your workspace automatically.
+                Share this link with your team to join automatically.
               </p>
               <div className="flex flex-col gap-2 mt-4">
                 <input
                   readOnly
                   value={inviteLink}
-                  className="w-full min-h-[44px] border-[1.5px] border-slate-200 bg-slate-50 rounded-lg px-3 py-2 text-xs font-medium text-slate-600 outline-none select-all"
+                  className="w-full min-h-[44px] border-[1.5px] border-slate-200 bg-slate-50 rounded-lg px-3 text-xs font-medium text-slate-600 outline-none select-all"
                 />
                 <button
                   onClick={handleCopyInvite}
@@ -700,20 +771,19 @@ export default function UsersStep({
           )}
         </div>
 
+        {/* ── RIGHT COLUMN: USER DIRECTORY ── */}
         <div className="lg:col-span-8 flex flex-col h-full w-full">
-          <div className="bg-white border border-slate-200 rounded-xl p-4 md:p-5 shadow-sm flex flex-col flex-1 h-[500px] lg:h-[700px]">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 border-b border-slate-100 pb-4 gap-3">
+          <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col flex-1 h-[500px] lg:h-[650px]">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-3 border-b border-slate-100 pb-3">
               <div className="flex items-center justify-between w-full sm:w-auto">
-                <h3 className="font-bold text-sm text-slate-900">
-                  User Directory
-                </h3>
+                <h3 className="font-bold text-sm text-slate-900">Directory</h3>
                 <span className="bg-[#e8f0f9] text-[#1F4E79] border border-[#bfdbfe] px-2 py-0.5 rounded-md text-[10px] font-bold ml-2">
                   {localUsers.length} users
                 </span>
               </div>
-              <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
-                <div className="relative w-full sm:w-[150px]">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <div className="relative flex-1 sm:w-[140px]">
+                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs">
                     🔍
                   </span>
                   <input
@@ -721,13 +791,13 @@ export default function UsersStep({
                     placeholder="Search"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-8 border-[1.5px] border-slate-200 rounded-lg pr-3 py-2 text-xs outline-none focus:border-[#1F4E79] w-full min-h-[44px]"
+                    className="pl-7 border-[1.5px] border-slate-200 rounded-md pr-2 py-1.5 text-xs outline-none focus:border-[#1F4E79] w-full min-h-[38px]"
                   />
                 </div>
                 <select
                   value={roleFilter}
                   onChange={(e) => setRoleFilter(e.target.value)}
-                  className="w-full sm:w-[120px] border-[1.5px] border-slate-200 rounded-lg px-2 py-2 text-xs outline-none focus:border-[#1F4E79] bg-white font-medium min-h-[44px]"
+                  className="w-[100px] border-[1.5px] border-slate-200 rounded-md px-2 py-1.5 text-xs outline-none focus:border-[#1F4E79] bg-white font-medium min-h-[38px]"
                 >
                   <option value="">All Roles</option>
                   <option value="cleaner">Cleaners</option>
@@ -738,8 +808,8 @@ export default function UsersStep({
             </div>
 
             {localUsers.length > 0 && (
-              <div className="mb-4 animate-in fade-in">
-                <div className="flex h-2.5 rounded-full overflow-hidden gap-0.5 bg-slate-100">
+              <div className="mb-3 animate-in fade-in">
+                <div className="flex h-2 rounded-full overflow-hidden gap-0.5 bg-slate-100">
                   <div
                     style={{
                       width: `${(counts.cleaner / totalUsers) * 100}%`,
@@ -762,32 +832,13 @@ export default function UsersStep({
                     }}
                   />
                 </div>
-                <div className="flex gap-3 mt-2 text-[10px] md:text-xs flex-wrap">
-                  <span className="text-slate-500 flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#10b981]"></span>
-                    <strong className="text-slate-700">{counts.cleaner}</strong>{" "}
-                    Cleaners
-                  </span>
-                  <span className="text-slate-500 flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#F59E0B]"></span>
-                    <strong className="text-slate-700">
-                      {counts.supervisor}
-                    </strong>{" "}
-                    Sup.
-                  </span>
-                  <span className="text-slate-500 flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#64748b]"></span>
-                    <strong className="text-slate-700">{counts.admin}</strong>{" "}
-                    Admins
-                  </span>
-                </div>
               </div>
             )}
 
-            <div className="flex-1 overflow-y-auto pr-1 space-y-3">
+            <div className="flex-1 overflow-y-auto pr-1 space-y-2.5">
               {filteredUsers.length === 0 ? (
                 <div className="text-center py-10 text-sm text-slate-400 h-full flex flex-col justify-center">
-                  <span className="text-4xl block mb-3 opacity-30">👥</span>
+                  <span className="text-3xl block mb-2 opacity-30">👥</span>
                   {localUsers.length === 0
                     ? "No users added yet."
                     : "No users match filter."}
@@ -797,13 +848,13 @@ export default function UsersStep({
                   const roleData = roleDisplay[u.role] || roleDisplay.cleaner;
 
                   let assignmentText = (
-                    <span className="text-slate-400 italic text-[10px]">
+                    <span className="text-slate-400 italic text-[9px]">
                       No assignment
                     </span>
                   );
                   if (u.role === "admin") {
                     assignmentText = (
-                      <span className="text-slate-600 font-bold text-[10px]">
+                      <span className="text-slate-600 font-bold text-[9px]">
                         System Administrator
                       </span>
                     );
@@ -815,7 +866,7 @@ export default function UsersStep({
                       nodes.find((n) => n.temp_id === u.assigned_zone_temp_id)
                         ?.name || "Unknown Location";
                     assignmentText = (
-                      <span className="text-amber-700 text-[10px] font-bold">
+                      <span className="text-amber-700 text-[9px] font-bold">
                         Location:{" "}
                         <span className="text-slate-800">{zName}</span>
                       </span>
@@ -827,7 +878,7 @@ export default function UsersStep({
                         "Unknown",
                     );
                     assignmentText = (
-                      <span className="text-emerald-700 text-[10px] font-bold truncate block">
+                      <span className="text-emerald-700 text-[9px] font-bold truncate block">
                         Assigned:{" "}
                         <span className="text-slate-800">
                           {wNames.join(", ")}
@@ -839,49 +890,58 @@ export default function UsersStep({
                   return (
                     <div
                       key={u.temp_id}
-                      className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 border border-slate-200 rounded-xl bg-white hover:border-[#1F4E79] transition-colors animate-in slide-in-from-bottom-2 gap-3"
+                      className={`flex flex-col sm:flex-row sm:items-center justify-between p-3 border rounded-xl bg-white transition-colors animate-in slide-in-from-bottom-2 gap-3
+                        ${editingId === u.temp_id ? "border-amber-400 bg-amber-50/20" : "border-slate-200 hover:border-[#1F4E79]"}`}
                     >
                       <div className="flex items-center gap-3 w-full sm:w-auto overflow-hidden flex-1">
-                        <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-xl shrink-0 shadow-sm">
+                        <div className="w-10 h-10 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-xl shrink-0 shadow-sm">
                           {roleData.icon}
                         </div>
                         <div className="flex-1 min-w-0 flex flex-col justify-center">
                           <div className="flex items-center gap-2">
-                            <p className="font-bold text-sm md:text-base text-slate-900 truncate">
+                            <p className="font-bold text-sm text-slate-900 truncate">
                               {u.name}
                             </p>
                             <span
-                              className={`hidden sm:inline-block text-[9px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider ${roleData.color}`}
+                              className={`hidden sm:inline-block text-[8px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider ${roleData.color}`}
                             >
                               {roleData.label}
                             </span>
                           </div>
-                          <p className="text-[10px] md:text-xs text-slate-500 font-medium font-mono mt-0.5">
+                          <p className="text-[10px] text-slate-500 font-medium font-mono mt-0.5">
                             +91 {u.phone}
                           </p>
                           <div
-                            className={`mt-1.5 inline-block px-2 py-1 rounded-md border text-[9px] w-fit max-w-full truncate ${u.role === "cleaner" ? "bg-emerald-50 border-emerald-100" : "bg-slate-50 border-slate-200"}`}
+                            className={`mt-1.5 inline-block px-2 py-0.5 rounded border text-[9px] w-fit max-w-full truncate ${u.role === "cleaner" ? "bg-emerald-50 border-emerald-100" : "bg-slate-50 border-slate-200"}`}
                           >
                             {assignmentText}
                           </div>
                         </div>
                       </div>
 
-                      {/* Mobile Role Badge (hidden on desktop) */}
                       <div className="sm:hidden w-full flex justify-start mb-1">
                         <span
-                          className={`text-[9px] font-bold px-2 py-1 rounded border uppercase tracking-wider ${roleData.color}`}
+                          className={`text-[8px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider ${roleData.color}`}
                         >
                           {roleData.label}
                         </span>
                       </div>
 
-                      <button
-                        onClick={() => handleDelete(u.temp_id)}
-                        className="w-full sm:w-auto text-red-500 bg-red-50 hover:bg-red-100 font-bold text-xs px-4 py-2 rounded-lg transition-colors min-h-[44px] sm:min-h-0 shrink-0 border border-red-100"
-                      >
-                        ✕ Remove
-                      </button>
+                      <div className="flex sm:flex-col gap-2 w-full sm:w-auto mt-2 sm:mt-0 shrink-0">
+                        <button
+                          onClick={() => handleEdit(u)}
+                          disabled={editingId === u.temp_id}
+                          className="flex-1 sm:flex-none text-[#1F4E79] bg-[#e8f0f9] hover:bg-[#d1e3f8] font-bold text-xs px-3 py-1.5 rounded-lg transition-colors min-h-[36px] sm:min-h-0 border border-[#bfdbfe] disabled:opacity-50"
+                        >
+                          ✏️ Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(u.temp_id)}
+                          className="flex-1 sm:flex-none text-red-500 bg-red-50 hover:bg-red-100 font-bold text-xs px-3 py-1.5 rounded-lg transition-colors min-h-[36px] sm:min-h-0 border border-red-100 hover:border-red-200"
+                        >
+                          ✕ Remove
+                        </button>
+                      </div>
                     </div>
                   );
                 })
@@ -891,36 +951,20 @@ export default function UsersStep({
         </div>
       </div>
 
-      <div className="mt-6 border border-slate-200 rounded-xl overflow-hidden shadow-sm h-[400px]">
+      <div className="mt-4 border border-slate-200 rounded-xl overflow-hidden shadow-sm h-[300px]">
         <LiveFlowchart
-          title="TEAM DISTRIBUTION MAP"
-          countLabel={`${localUsers.length} staff`}
+          title="TEAM MAP"
           treeData={buildTreeData(nodes, washrooms, localUsers)}
         />
-      </div>
-
-      <div className="flex flex-col-reverse md:flex-row justify-between mt-6 pt-4 border-t border-slate-200 gap-3 w-full">
-        <button
-          onClick={onBack}
-          className="w-full md:w-auto inline-flex items-center justify-center gap-2 font-bold text-sm rounded-lg border border-slate-200 bg-white text-slate-700 min-h-[48px] px-6 hover:bg-slate-50 transition-colors shadow-sm"
-        >
-          ← Back
-        </button>
-        <button
-          onClick={handleContinue}
-          className="w-full md:w-auto inline-flex items-center justify-center gap-2 font-bold text-sm rounded-lg bg-[#1F4E79] text-white min-h-[48px] px-8 hover:bg-[#163a5a] transition-colors shadow-sm"
-        >
-          Continue to App Preview ➔
-        </button>
       </div>
 
       {/* Floating Help Button */}
       <button
         onClick={() => setIsHelpOpen(true)}
-        className="fixed bottom-6 right-6 z-40 bg-gradient-to-tr from-[#1F4E79] to-[#3a7ca5] text-white w-14 h-14 rounded-full flex items-center justify-center shadow-[0_4px_20px_rgba(31,78,121,0.4)] hover:scale-105 transition-transform"
+        className="fixed bottom-6 right-6 z-40 bg-gradient-to-tr from-[#1F4E79] to-[#3a7ca5] text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg animate-pulse"
         title="Need Help?"
       >
-        <span className="text-2xl animate-pulse">❓</span>
+        <span className="text-2xl">❓</span>
       </button>
     </div>
   );
