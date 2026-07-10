@@ -21,6 +21,7 @@ import {
   AlertCircle,
   cog,
   Cog,
+  CameraIcon
 } from "lucide-react";
 
 /* ---------------- SUPERADMIN (NO COMPANY) ---------------- */
@@ -119,6 +120,11 @@ export function getSuperadminMainMenu() {
       icon: AlertCircle,
       label: "Service Request",
       href: "/serviceRequest",
+    },
+    {
+      icon:CameraIcon ,
+      label: "Photo Gallary",
+      href: "/photo",
     },
   ];
 }
