@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useDispatch } from "react-redux";
 import toast, { Toaster } from "react-hot-toast";
-
+import { Eye, EyeClosed, Smartphone } from "lucide-react";
 import { AuthApi } from "@/features/auth/auth.api.js";
 import {
   loginStart,
@@ -16,96 +16,125 @@ export default function LoginPage() {
   const router = useRouter();
   const dispatch = useDispatch();
 
-  // --- UI View State ---
   const [activeView, setActiveView] = useState("main");
   const [loading, setIsLoading] = useState(false);
-
-  // --- Form States ---
+  const [showPassword, setShowPassword] = useState(false);
   const [loginData, setLoginData] = useState({ phone: "", password: "" });
+  const [regData, setRegData] = useState({ name: "", phone: "", password: "" });
+  const [forgotData, setForgotData] = useState({ phone: "", newPassword: "", confirmPassword: "" });
+  const [otpData, setOtpData] = useState({ phone: "", code: "" });
+  const [otpSent, setOtpSent] = useState(false);
 
-  const [regData, setRegData] = useState({
-    name: "",
-    phone: "",
-    password: "",
-  });
+  // ─── 1. GOOGLE AUTHENTICATION INITIALIZATION ───────────────────
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src = "https://accounts.google.com/gsi/client";
+    script.async = true;
+    script.defer = true;
+    script.onload = () => initializeGoogleSignIn();
+    document.head.appendChild(script);
 
-  const [forgotData, setForgotData] = useState({
-    phone: "",
-    newPassword: "",
-    confirmPassword: "",
-  });
+    return () => document.head.removeChild(script);
+  }, [activeView]);
 
-  // ─── LOGIN HANDLER ──────────────────────────────────────────
-  // const handleLoginSubmit = async (e) => {
-  //   e.preventDefault();
-  //   setIsLoading(true);
-  //   dispatch(loginStart());
+  const initializeGoogleSignIn = () => {
+    if (!window.google) return;
 
-  //   try {
-  //     const response = await AuthApi.login(loginData.phone, loginData.password);
+    try {
+      window.google.accounts.id.initialize({
+        client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
+        callback: handleGoogleCredentialResponse,
+      });
 
-  //     if (response.success || response.status === "success") {
-  //       const user = response.user || response.data?.user;
-  //       const token = user?.token;
+      const renderOptions = { theme: "outline", size: "large", width: 200 };
 
-  //       if (!user?.role || !Array.isArray(user?.role?.permissions)) {
-  //         toast.error("Invalid Login, Please Contact Support!");
-  //         dispatch(loginFailure("Missing role/permissions"));
-  //         return;
-  //       }
+      // Render for Login View
+      if (activeView === "main") {
+        const desktopOverlay = document.getElementById("google-btn-overlay");
+        if (desktopOverlay) window.google.accounts.id.renderButton(desktopOverlay, renderOptions);
+      }
+      // Render for Register View
+      else if (activeView === "register") {
+        const registerOverlay = document.getElementById("google-register-overlay");
+        if (registerOverlay) window.google.accounts.id.renderButton(registerOverlay, renderOptions);
+      }
+    } catch (error) {
+      console.error("Google script initialization failed:", error);
+    }
+  };
 
-  //       if (token) localStorage.setItem("token", token);
-  //       dispatch(loginSuccess(user));
+  // ─── 2. GOOGLE SUCCESS HANDLER ────────────────────────────────
+  const handleGoogleCredentialResponse = async (googleResponse) => {
+    setIsLoading(true);
+    dispatch(loginStart());
 
-  //       const roleId = parseInt(user?.role_id);
+    try {
+      // Send the token to the backend
+      const response = await AuthApi.googleLogin(googleResponse.credential);
 
-  //       // Safely extract company data
-  //       const companyData = response.company || user?.company || {};
-  //       const isOnboardingDone = companyData?.is_onboarding_completed;
-  //       const hasMetadata =
-  //         companyData?.metadata?.organization_type ||
-  //         companyData?.onboarding_metadata?.organization_type;
-  //       const companyName = companyData?.name;
+      if (response.success || response.status === "success") {
+        const user = response.user || response.data?.user;
+        // Pass to your universal routing function
+        handleAuthSuccess(user, response.data || response);
+      } else {
+        toast.error(response.error || "Google Authentication failed.");
+        dispatch(loginFailure(response.error));
+      }
+    } catch (error) {
+      console.error("Google Auth error:", error);
+      toast.error("An unexpected error occurred during Google sign in.");
+      dispatch(loginFailure(error.message));
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  //       // 🚀 SMART ROUTING LOGIC
-  //       if (roleId === 2 && !isOnboardingDone) {
-  //         // Check if they need to do Phase 1 (Company Setup)
-  //         if (!hasMetadata || companyName === "Pending Setup" || !companyName) {
-  //           toast("Please complete your company profile.");
-  //           router.push("/company-setup");
-  //         } else {
-  //           // Phase 1 is done, skip questions, go straight to Phase 2 (Workspace)
-  //           toast("Resuming workspace setup...");
-  //           router.push("/stepper");
-  //         }
-  //         return;
-  //       }
+  // ─── 3. UNIVERSAL ROUTING LOGIC ────────────────────────────────
+  const handleAuthSuccess = (user, fullResponse) => {
+    const token = user?.token;
 
-  //       toast.success(`Welcome back, ${user.name}!`);
-  //       if (roleId === 1) {
-  //         router.push("/dashboard");
-  //       } else if (user.company_id) {
-  //         router.push(`/clientDashboard/${user.company_id}`);
-  //       } else {
-  //         toast.error("No company assigned. Contact support.");
-  //         dispatch(loginFailure("No company"));
-  //       }
-  //     } else {
-  //       toast.error(response.error || response.message || "Login failed.");
-  //       dispatch(loginFailure(response.error));
-  //     }
-  //   } catch (error) {
-  //     console.error("Login error:", error);
-  //     toast.error(
-  //       error?.response?.data?.error || "An unexpected error occurred.",
-  //     );
-  //     dispatch(loginFailure(error.message));
-  //   } finally {
-  //     setIsLoading(false);
-  //   }
-  // };
+    if (!user?.role || !Array.isArray(user?.role?.permissions)) {
+      toast.error("Invalid Login, Please Contact Support!");
+      dispatch(loginFailure("Missing role/permissions"));
+      return;
+    }
 
-  // ─── LOGIN HANDLER ──────────────────────────────────────────
+    if (token) localStorage.setItem("token", token);
+    dispatch(loginSuccess(user));
+
+    const roleId = parseInt(user?.role_id);
+    // ✅ Extract company data correctly
+    const companyData = fullResponse.company || user?.companies || user?.company || {};
+
+    // Check strict boolean true to ensure it ignores undefined
+    const isOnboardingDone = companyData?.is_onboarding_completed === true;
+    const hasMetadata = companyData?.metadata?.organization_type || companyData?.onboarding_metadata?.organization_type;
+    const companyName = companyData?.name;
+
+    // 🚀 NEW GOOGLE ADMINS HIT THIS EXACT LOGIC:
+    if (roleId === 2 && !isOnboardingDone) {
+      if (!hasMetadata || companyName === "Pending Setup" || !companyName) {
+        toast("Please complete your company profile.");
+        router.push("/company-setup");
+      } else {
+        toast("Resuming workspace setup...");
+        router.push("/stepper");
+      }
+      return;
+    }
+
+    toast.success(`Welcome back, ${user.name}!`);
+    if (roleId === 1) {
+      router.push("/dashboard");
+    } else if (user.company_id) {
+      router.push(`/clientDashboard/${user.company_id}`);
+    } else {
+      toast.error("No company assigned. Contact support.");
+      dispatch(loginFailure("No company"));
+    }
+  };
+
+  // ─── STANDARD FORM HANDLERS ───────────────────────────────────
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -113,89 +142,33 @@ export default function LoginPage() {
 
     try {
       const response = await AuthApi.login(loginData.phone, loginData.password);
-
       if (response.success || response.status === "success") {
         const user = response.user || response.data?.user;
-        const token = user?.token;
-
-        if (!user?.role || !Array.isArray(user?.role?.permissions)) {
-          toast.error("Invalid Login, Please Contact Support!");
-          dispatch(loginFailure("Missing role/permissions"));
-          return;
-        }
-
-        if (token) localStorage.setItem("token", token);
-        dispatch(loginSuccess(user));
-
-        const roleId = parseInt(user?.role_id);
-        toast.success(`Welcome back, ${user.name}!`);
-
-        // 🚀 SMART ROUTING BASED ON BACKEND STATUS
-        if (roleId === 2 && user.company_id) {
-          try {
-            // Fetch exact status from backend
-            const statusRes = await AuthApi.getOnboardingStatus();
-
-            console.log("Onboarding status response:", statusRes);
-            if (statusRes.nextStep === "company") {
-              toast("Please complete your company profile.");
-              router.push("/company-setup");
-            } else if (statusRes.nextStep === "workspace") {
-              toast("Resuming workspace setup...");
-              router.push("/stepper");
-            } else {
-              router.push(`/clientDashboard/${user.company_id}`);
-            }
-          } catch (statusErr) {
-            console.error("Failed to get status, defaulting to dashboard");
-            router.push(`/clientDashboard/${user.company_id}`);
-          }
-        } else if (roleId === 1) {
-          router.push("/dashboard"); // Superadmin
-        } else if (user.company_id) {
-          router.push(`/clientDashboard/${user.company_id}`); // Regular Staff
-        } else {
-          toast.error("No company assigned. Contact support.");
-          dispatch(loginFailure("No company"));
-        }
+        handleAuthSuccess(user, response); // Reuse routing
       } else {
         toast.error(response.error || response.message || "Login failed.");
         dispatch(loginFailure(response.error));
       }
     } catch (error) {
-      console.error("Login error:", error);
-      toast.error(
-        error?.response?.data?.error || "An unexpected error occurred.",
-      );
+      toast.error(error?.response?.data?.error || "An unexpected error occurred.");
       dispatch(loginFailure(error.message));
     } finally {
       setIsLoading(false);
     }
   };
-  // ─── REGISTER HANDLER ───────────────────────────────────────
+
   const handleRegisterSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-
     try {
-      const payload = {
-        name: regData.name,
-        phone: regData.phone,
-        password: regData.password,
-        role_id: 2,
-      };
-
+      const payload = { name: regData.name, phone: regData.phone, password: regData.password, role_id: 2 };
       await AuthApi.register(payload);
       toast.success("Account created! Please log in to setup your workspace.");
       setActiveView("main");
       setLoginData({ phone: regData.phone, password: "" });
       setRegData({ name: "", phone: "", password: "" });
     } catch (error) {
-      toast.error(
-        error?.response?.data?.message ||
-          error?.response?.data?.error ||
-          "Registration failed.",
-      );
+      toast.error(error?.response?.data?.message || "Registration failed.");
     } finally {
       setIsLoading(false);
     }
@@ -221,6 +194,51 @@ export default function LoginPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleOtpSubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    if (!otpSent) {
+      // 1. Request OTP
+      try {
+        const response = await AuthApi.requestOtp(otpData.phone);
+        if (response.success) {
+          toast.success("OTP sent to your mobile!");
+          setOtpSent(true);
+        } else {
+          toast.error(response.error);
+        }
+      } catch (error) {
+        toast.error("An unexpected error occurred.");
+      } finally {
+        setIsLoading(false);
+      }
+    } else {
+      // 2. Verify OTP
+      dispatch(loginStart());
+      try {
+        const response = await AuthApi.verifyOtp(otpData.phone, otpData.code);
+        if (response.success && response.data?.user) {
+          handleAuthSuccess(response.data.user, response.data);
+        } else {
+          toast.error(response.error);
+          dispatch(loginFailure(response.error));
+        }
+      } catch (error) {
+        toast.error("Failed to verify OTP");
+        dispatch(loginFailure("OTP Verification failed"));
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
+
+  const setupOtpView = () => {
+    setActiveView("otp");
+    setOtpSent(false);
+    setOtpData({ phone: "", code: "" });
   };
 
   // ─── COMING SOON HANDLER ────────────────────────────────
@@ -525,8 +543,27 @@ export default function LoginPage() {
         .or-divider:not(:empty)::after  { margin-left: 0.6rem; }
 
         .social-btn-group { display: flex; gap: 0.6rem; }
+        
+        /* 🔒 NATIVE INVISIBLE GOOGLE OVERLAY OVERRIDES */
+        .social-btn-wrapper {
+          position: relative;
+          flex: 1;
+        }
+        .google-iframe-overlay {
+          position: absolute;
+          inset: 0;
+          opacity: 0.01;
+          overflow: hidden;
+          z-index: 10;
+          cursor: pointer;
+        }
+        .google-iframe-overlay iframe {
+          width: 100% !important;
+          height: 100% !important;
+        }
+
         .btn-social {
-          flex: 1; background-color: #f8faff; border: 1.5px solid #e2e8f0; padding: clamp(0.5rem, 0.8vw, 0.7rem);
+          width: 100%; background-color: #f8faff; border: 1.5px solid #e2e8f0; padding: clamp(0.5rem, 0.8vw, 0.7rem);
           font-size: clamp(0.8rem, 0.9vw, 0.85rem); font-weight: 600; color: #1e293b; border-radius: 10px;
           cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 0.45rem;
           transition: background-color 0.18s, border-color 0.18s, box-shadow 0.18s, transform 0.12s;
@@ -644,9 +681,9 @@ export default function LoginPage() {
                   <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                 </svg>
               </div>
-              <span className="logo-name">
+              <div className="logo-name">
                 Saaf<span>AI</span>
-              </span>
+              </div>
             </div>
 
             <div className="mascot-container">
@@ -655,56 +692,20 @@ export default function LoginPage() {
               <div className="pulse-ring pulse-ring-3"></div>
               <div className="mascot-bg-glow"></div>
 
-              <svg
-                className="shuriken shuriken-1"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"
-                  fill="#3b4df2"
-                />
+              <svg className="shuriken shuriken-1" viewBox="0 0 24 24" fill="none">
+                <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" fill="#3b4df2" />
               </svg>
-              <svg
-                className="shuriken shuriken-2"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"
-                  fill="#3b4df2"
-                />
+              <svg className="shuriken shuriken-2" viewBox="0 0 24 24" fill="none">
+                <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" fill="#3b4df2" />
               </svg>
-              <svg
-                className="shuriken shuriken-3"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"
-                  fill="#3b4df2"
-                />
+              <svg className="shuriken shuriken-3" viewBox="0 0 24 24" fill="none">
+                <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" fill="#3b4df2" />
               </svg>
-              <svg
-                className="shuriken shuriken-4"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"
-                  fill="#3b4df2"
-                />
+              <svg className="shuriken shuriken-4" viewBox="0 0 24 24" fill="none">
+                <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" fill="#3b4df2" />
               </svg>
 
-              <img
-                className="mascot-img"
-                src="/flo-mascot.png" /* <-- ADD YOUR BASE64 / IMG SRC HERE */
-                alt="SaafAI Mascot"
-              />
+              <img className="mascot-img" src="/flo-mascot.png" alt="SaafAI Mascot" />
             </div>
 
             <div className="left-content-bottom">
@@ -729,10 +730,7 @@ export default function LoginPage() {
                   <path d="M11 12a3 3 0 0 1 4.5-2.5" />
                 </svg>
               </div>
-              <p>
-                SaafAI Portal empowers smart decisions for a cleaner and better
-                future.
-              </p>
+              <p>SaafAI Portal empowers smart decisions for a cleaner and better future.</p>
               <div className="slider-dots">
                 <div className="dot-bar"></div>
                 <div className="dot"></div>
@@ -747,15 +745,11 @@ export default function LoginPage() {
             <div className="form-container">
               {/* --- MOBILE MASCOT BLOCK (Hidden on Desktop) --- */}
               <div className="mobile-mascot-block">
-                <div
-                  className="brand-title"
-                  style={{ fontSize: "1.7rem", letterSpacing: "-1px" }}
-                >
+                <div className="brand-title" style={{ fontSize: "1.7rem", letterSpacing: "-1px" }}>
                   Saaf
                   <span
                     style={{
-                      background:
-                        "linear-gradient(135deg, #3b4df2 0%, #5c6eff 100%)",
+                      background: "linear-gradient(135deg, #3b4df2 0%, #5c6eff 100%)",
                       WebkitBackgroundClip: "text",
                       WebkitTextFillColor: "transparent",
                     }}
@@ -763,56 +757,12 @@ export default function LoginPage() {
                     AI
                   </span>
                 </div>
-                <div
-                  className="brand-divider"
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "0.5rem",
-                    margin: "0.25rem 0",
-                  }}
-                >
-                  <div
-                    className="line"
-                    style={{
-                      width: "28px",
-                      height: "1.5px",
-                      background:
-                        "linear-gradient(90deg, transparent, #3b4df2, transparent)",
-                    }}
-                  ></div>
-                  <div
-                    className="text"
-                    style={{
-                      fontSize: "0.65rem",
-                      fontWeight: 700,
-                      color: "#94a3b8",
-                      letterSpacing: "0.5em",
-                      textIndent: "0.5em",
-                    }}
-                  >
-                    PORTAL
-                  </div>
-                  <div
-                    className="line"
-                    style={{
-                      width: "28px",
-                      height: "1.5px",
-                      background:
-                        "linear-gradient(90deg, transparent, #3b4df2, transparent)",
-                    }}
-                  ></div>
+                <div className="brand-divider" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", margin: "0.25rem 0" }}>
+                  <div className="line" style={{ width: "28px", height: "1.5px", background: "linear-gradient(90deg, transparent, #3b4df2, transparent)" }}></div>
+                  <div className="text" style={{ fontSize: "0.65rem", fontWeight: 700, color: "#94a3b8", letterSpacing: "0.5em", textIndent: "0.5em" }}>PORTAL-1</div>
+                  <div className="line" style={{ width: "28px", height: "1.5px", background: "linear-gradient(90deg, transparent, #3b4df2, transparent)" }}></div>
                 </div>
-                <div
-                  className="brand-tagline"
-                  style={{
-                    fontSize: "0.82rem",
-                    color: "#94a3b8",
-                    fontWeight: 500,
-                    marginBottom: "0.5rem",
-                  }}
-                >
+                <div className="brand-tagline" style={{ fontSize: "0.82rem", color: "#94a3b8", fontWeight: 500, marginBottom: "0.5rem" }}>
                   Transforming Washroom Hygiene with AI
                 </div>
 
@@ -823,61 +773,23 @@ export default function LoginPage() {
                   <div className="mob-glow"></div>
 
                   <svg className="mob-shuriken" viewBox="0 0 24 24" fill="none">
-                    <path
-                      d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"
-                      fill="#3b4df2"
-                    />
+                    <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" fill="#3b4df2" />
                   </svg>
-                  <svg
-                    className="mob-shuriken mob-shuriken-2"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                  >
-                    <path
-                      d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"
-                      fill="#3b4df2"
-                    />
+                  <svg className="mob-shuriken mob-shuriken-2" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" fill="#3b4df2" />
                   </svg>
-                  <svg
-                    className="mob-shuriken mob-shuriken-3"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                  >
-                    <path
-                      d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"
-                      fill="#3b4df2"
-                    />
+                  <svg className="mob-shuriken mob-shuriken-3" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" fill="#3b4df2" />
                   </svg>
-                  <svg
-                    className="mob-shuriken mob-shuriken-4"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                  >
-                    <path
-                      d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"
-                      fill="#3b4df2"
-                    />
+                  <svg className="mob-shuriken mob-shuriken-4" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" fill="#3b4df2" />
                   </svg>
 
-                  <img
-                    className="mob-mascot-img"
-                    src="/flo-mascot.png" /* <-- ADD YOUR BASE64 / IMG SRC HERE */
-                    alt="SaafAI Mascot"
-                  />
+                  <img className="mob-mascot-img" src="/flo-mascot.png" alt="SaafAI Mascot" />
                 </div>
                 <div className="mob-tagline">
-                  Clean Today,&nbsp;
-                  <span className="accent">Greener Tomorrow.</span>
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="#22c55e"
-                    strokeWidth="2.2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
+                  Clean Today,&nbsp;<span className="accent">Greener Tomorrow.</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10z" />
                     <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12" />
                   </svg>
@@ -885,21 +797,15 @@ export default function LoginPage() {
               </div>
 
               {/* --- VIEW: MAIN (LOGIN) --- */}
-              <div
-                className={`auth-view ${activeView === "main" ? "active" : ""}`}
-              >
+              <div className={`auth-view ${activeView === "main" ? "active" : ""}`}>
                 <div className="brand-header">
-                  <div className="brand-title">
-                    Saaf<span>AI</span>
-                  </div>
+                  <div className="brand-title">Saaf<span>AI</span></div>
                   <div className="brand-divider">
                     <div className="line"></div>
                     <div className="text">PORTAL-1</div>
                     <div className="line"></div>
                   </div>
-                  <div className="brand-tagline">
-                    Smart Waste Management Platform
-                  </div>
+                  <div className="brand-tagline">Smart Waste Management Platform</div>
                 </div>
 
                 <div className="section-separator"></div>
@@ -909,16 +815,7 @@ export default function LoginPage() {
                     <label htmlFor="phone">Mobile Number</label>
                     <div className="input-wrapper">
                       <span className="input-icon-left">
-                        <svg
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                           <circle cx="12" cy="7" r="4"></circle>
                         </svg>
@@ -932,9 +829,7 @@ export default function LoginPage() {
                         onChange={(e) =>
                           setLoginData((prev) => ({
                             ...prev,
-                            phone: e.target.value
-                              .replace(/\D/g, "")
-                              .slice(0, 10),
+                            phone: e.target.value.replace(/\D/g, "").slice(0, 10),
                           }))
                         }
                         required
@@ -944,31 +839,16 @@ export default function LoginPage() {
 
                   <div className="form-group">
                     <label htmlFor="password">Password</label>
-                    <div className="input-wrapper">
+                    <div className="input-wrapper" style={{ position: "relative" }}>
                       <span className="input-icon-left">
-                        <svg
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <rect
-                            x="3"
-                            y="11"
-                            width="18"
-                            height="11"
-                            rx="2"
-                            ry="2"
-                          ></rect>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                           <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                         </svg>
                       </span>
+
                       <input
-                        type="password"
+                        type={showPassword ? "text" : "password"}
                         id="password"
                         placeholder="Enter your password"
                         value={loginData.password}
@@ -979,42 +859,46 @@ export default function LoginPage() {
                           }))
                         }
                         required
+                        style={{ paddingRight: "40px" }} 
                       />
+
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((prev) => !prev)}
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                        style={{
+                          position: "absolute",
+                          right: "12px",
+                          top: "50%",
+                          transform: "translateY(-50%)",
+                          background: "transparent",
+                          border: "none",
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          color: "#6b7280", 
+                          padding: 0
+                        }}
+                      >
+                        {showPassword ? <Eye size={18} /> : <EyeClosed size={18} />}
+                      </button>
                     </div>
                   </div>
 
                   <div className="form-link-row">
-                    <span
-                      onClick={() => setActiveView("register")}
-                      className="auth-link"
-                    >
+                    <span onClick={() => setActiveView("register")} className="auth-link">
                       Don't have an account? Register
                     </span>
-                    <span
-                      onClick={() => setActiveView("forgot")}
-                      className="auth-link"
-                    >
+                    <span onClick={() => setActiveView("forgot")} className="auth-link">
                       Forgot Password?
                     </span>
                   </div>
 
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="btn-login"
-                  >
+                  <button type="submit" disabled={loading} className="btn-login">
                     {loading ? "Authenticating..." : "Login"}
                     {!loading && (
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                         <line x1="5" y1="12" x2="19" y2="12"></line>
                         <polyline points="12 5 19 12 12 19"></polyline>
                       </svg>
@@ -1024,64 +908,34 @@ export default function LoginPage() {
                   <div className="or-divider">OR CONTINUE WITH</div>
 
                   <div className="social-btn-group">
-                    <button
-                      type="button"
-                      onClick={() => handleComingSoon("Google")}
-                      className="btn-social"
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24">
-                        <path
-                          fill="#4285F4"
-                          d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v3.92h6.61c-.29 1.5-1.14 2.77-2.4 3.63v3h3.86c2.26-2.09 3.67-5.17 3.67-8.48z"
-                        />
-                        <path
-                          fill="#34A853"
-                          d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.86-3c-1.08.72-2.45 1.16-4.07 1.16-3.13 0-5.78-2.11-6.73-4.96H1.29v3.13C3.26 21.35 7.37 24 12 24z"
-                        />
-                        <path
-                          fill="#FBBC05"
-                          d="M5.27 14.29c-.25-.72-.38-1.49-.38-2.29s.14-1.57.38-2.29V6.57H1.29C.47 8.2.0 10.05.0 12s.47 3.8 1.29 5.43l3.98-3.14z"
-                        />
-                        <path
-                          fill="#EA4335"
-                          d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.37 0 3.26 2.65 1.29 6.57l3.98 3.14c.95-2.85 3.6-4.96 6.73-4.96z"
-                        />
-                      </svg>
-                      Google
-                    </button>
+                    {/* 🔓 GOOGLE LOGIN WITH TRANSPARENT SECURE OVERLAY CONTAINER */}
+                    <div className="social-btn-wrapper">
+                      <div id="google-btn-overlay" className="google-iframe-overlay" />
+                      <button type="button" className="btn-social">
+                        <svg width="16" height="16" viewBox="0 0 24 24">
+                          <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v3.92h6.61c-.29 1.5-1.14 2.77-2.4 3.63v3h3.86c2.26-2.09 3.67-5.17 3.67-8.48z" />
+                          <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.86-3c-1.08.72-2.45 1.16-4.07 1.16-3.13 0-5.78-2.11-6.73-4.96H1.29v3.13C3.26 21.35 7.37 24 12 24z" />
+                          <path fill="#FBBC05" d="M5.27 14.29c-.25-.72-.38-1.49-.38-2.29s.14-1.57.38-2.29V6.57H1.29C.47 8.2.0 10.05.0 12s.47 3.8 1.29 5.43l3.98-3.14z" />
+                          <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.37 0 3.26 2.65 1.29 6.57l3.98 3.14c.95-2.85 3.6-4.96 6.73-4.96z" />
+                        </svg>
+                        Google
+                      </button>
+                    </div>
 
-                    <button
-                      type="button"
-                      onClick={() => handleComingSoon("Email")}
-                      className="btn-social"
-                    >
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="#3b4df2"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                        <polyline points="22,6 12,13 2,6"></polyline>
-                      </svg>
-                      Email
-                    </button>
+                    <div className="social-btn-wrapper">
+                      <button type="button" onClick={setupOtpView} className="btn-social">
+                        <Smartphone size={16} color="#3b4df2" />
+                        OTP
+                      </button>
+                    </div>
                   </div>
                 </form>
               </div>
 
               {/* --- VIEW: REGISTER --- */}
-              <div
-                className={`auth-view ${activeView === "register" ? "active" : ""}`}
-              >
+              <div className={`auth-view ${activeView === "register" ? "active" : ""}`}>
                 <div className="brand-header">
-                  <div className="brand-title">
-                    Create <span>Account</span>
-                  </div>
+                  <div className="brand-title">Create <span>Account</span></div>
                   <div className="brand-tagline">Join SaafAI Portal today</div>
                 </div>
 
@@ -1092,16 +946,7 @@ export default function LoginPage() {
                     <label htmlFor="reg-name">Full Name (Optional)</label>
                     <div className="input-wrapper">
                       <span className="input-icon-left">
-                        <svg
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                           <circle cx="12" cy="7" r="4"></circle>
                         </svg>
@@ -1125,16 +970,7 @@ export default function LoginPage() {
                     <label htmlFor="reg-phone">Mobile Number</label>
                     <div className="input-wrapper">
                       <span className="input-icon-left">
-                        <svg
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"></path>
                         </svg>
                       </span>
@@ -1147,9 +983,7 @@ export default function LoginPage() {
                         onChange={(e) =>
                           setRegData((prev) => ({
                             ...prev,
-                            phone: e.target.value
-                              .replace(/\D/g, "")
-                              .slice(0, 10),
+                            phone: e.target.value.replace(/\D/g, "").slice(0, 10),
                           }))
                         }
                         required
@@ -1161,24 +995,8 @@ export default function LoginPage() {
                     <label htmlFor="reg-password">Password</label>
                     <div className="input-wrapper">
                       <span className="input-icon-left">
-                        <svg
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <rect
-                            x="3"
-                            y="11"
-                            width="18"
-                            height="11"
-                            rx="2"
-                            ry="2"
-                          ></rect>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                           <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                         </svg>
                       </span>
@@ -1198,32 +1016,37 @@ export default function LoginPage() {
                     </div>
                   </div>
 
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="btn-login"
-                    style={{
-                      background:
-                        "linear-gradient(120deg, #10b981 0%, #059669 100%)",
-                      boxShadow: "0 6px 20px rgba(16, 185, 129, 0.3)",
-                    }}
-                  >
+                  <button type="submit" disabled={loading} className="btn-login" style={{ background: "linear-gradient(120deg, #10b981 0%, #059669 100%)", boxShadow: "0 6px 20px rgba(16, 185, 129, 0.3)" }}>
                     {loading ? "Creating account..." : "Register Now"}
                   </button>
 
-                  <button
-                    type="button"
-                    onClick={() => setActiveView("main")}
-                    className="btn-back-main"
-                  >
-                    <svg
-                      width="12"
-                      height="12"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                    >
+                  <div className="or-divider">OR SIGN UP WITH</div>
+
+                  <div className="social-btn-group">
+                    {/* 🔓 GOOGLE REGISTRATION OVERLAY */}
+                    <div className="social-btn-wrapper">
+                      <div id="google-register-overlay" className="google-iframe-overlay" />
+                      <button type="button" className="btn-social">
+                        <svg width="16" height="16" viewBox="0 0 24 24">
+                          <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v3.92h6.61c-.29 1.5-1.14 2.77-2.4 3.63v3h3.86c2.26-2.09 3.67-5.17 3.67-8.48z" />
+                          <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.86-3c-1.08.72-2.45 1.16-4.07 1.16-3.13 0-5.78-2.11-6.73-4.96H1.29v3.13C3.26 21.35 7.37 24 12 24z" />
+                          <path fill="#FBBC05" d="M5.27 14.29c-.25-.72-.38-1.49-.38-2.29s.14-1.57.38-2.29V6.57H1.29C.47 8.2.0 10.05.0 12s.47 3.8 1.29 5.43l3.98-3.14z" />
+                          <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.37 0 3.26 2.65 1.29 6.57l3.98 3.14c.95-2.85 3.6-4.96 6.73-4.96z" />
+                        </svg>
+                        Google
+                      </button>
+                    </div>
+
+                    <div className="social-btn-wrapper">
+                      <button type="button" onClick={setupOtpView} className="btn-social">
+                        <Smartphone size={16} color="#3b4df2" />
+                        OTP
+                      </button>
+                    </div>
+                  </div>
+
+                  <button type="button" onClick={() => setActiveView("main")} className="btn-back-main">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                       <line x1="19" y1="12" x2="5" y2="12"></line>
                       <polyline points="12 19 5 12 12 5"></polyline>
                     </svg>
@@ -1233,35 +1056,20 @@ export default function LoginPage() {
               </div>
 
               {/* --- VIEW: FORGOT PASSWORD --- */}
-              <div
-                className={`auth-view ${activeView === "forgot" ? "active" : ""}`}
-              >
+              <div className={`auth-view ${activeView === "forgot" ? "active" : ""}`}>
                 <div className="brand-header">
-                  <div className="brand-title">
-                    Reset <span>Password</span>
-                  </div>
-                  <div className="brand-tagline">
-                    Create a new password to regain access
-                  </div>
+                  <div className="brand-title">Reset <span>Password</span></div>
+                  <div className="brand-tagline">Create a new password to regain access</div>
                 </div>
 
                 <div className="section-separator"></div>
 
                 <form onSubmit={handleForgotSubmit}>
                   <div className="form-group">
-                    <label htmlFor="forgot-phone">
-                      Registered Mobile Number
-                    </label>
+                    <label htmlFor="forgot-phone">Registered Mobile Number</label>
                     <div className="input-wrapper">
                       <span className="input-icon-left">
-                        <svg
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                        >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
                         </svg>
                       </span>
@@ -1274,9 +1082,7 @@ export default function LoginPage() {
                         onChange={(e) =>
                           setForgotData((prev) => ({
                             ...prev,
-                            phone: e.target.value
-                              .replace(/\D/g, "")
-                              .slice(0, 10),
+                            phone: e.target.value.replace(/\D/g, "").slice(0, 10),
                           }))
                         }
                         required
@@ -1288,22 +1094,8 @@ export default function LoginPage() {
                     <label htmlFor="new-password">New Password</label>
                     <div className="input-wrapper">
                       <span className="input-icon-left">
-                        <svg
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                        >
-                          <rect
-                            x="3"
-                            y="11"
-                            width="18"
-                            height="11"
-                            rx="2"
-                            ry="2"
-                          ></rect>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                           <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                         </svg>
                       </span>
@@ -1327,22 +1119,8 @@ export default function LoginPage() {
                     <label htmlFor="confirm-password">Confirm Password</label>
                     <div className="input-wrapper">
                       <span className="input-icon-left">
-                        <svg
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                        >
-                          <rect
-                            x="3"
-                            y="11"
-                            width="18"
-                            height="11"
-                            rx="2"
-                            ry="2"
-                          ></rect>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                           <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                         </svg>
                       </span>
@@ -1362,32 +1140,91 @@ export default function LoginPage() {
                     </div>
                   </div>
 
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="btn-login"
-                    style={{
-                      background:
-                        "linear-gradient(120deg, #f59e0b 0%, #d97706 100%)",
-                      boxShadow: "0 6px 20px rgba(245, 158, 11, 0.3)",
-                    }}
-                  >
+                  <button type="submit" disabled={loading} className="btn-login" style={{ background: "linear-gradient(120deg, #f59e0b 0%, #d97706 100%)", boxShadow: "0 6px 20px rgba(245, 158, 11, 0.3)" }}>
                     {loading ? "Updating..." : "Update Password"}
                   </button>
 
-                  <button
-                    type="button"
-                    onClick={() => setActiveView("main")}
-                    className="btn-back-main"
-                  >
-                    <svg
-                      width="12"
-                      height="12"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                    >
+                  <button type="button" onClick={() => setActiveView("main")} className="btn-back-main">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <line x1="19" y1="12" x2="5" y2="12"></line>
+                      <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
+                    Back to login
+                  </button>
+                </form>
+              </div>
+
+
+              {/* --- VIEW: OTP LOGIN --- */}
+              <div className={`auth-view ${activeView === "otp" ? "active" : ""}`}>
+                <div className="brand-header">
+                  <div className="brand-title">OTP <span>Login</span></div>
+                  <div className="brand-tagline">{otpSent ? "Enter the code sent to your phone" : "Enter your registered mobile number"}</div>
+                </div>
+
+                <div className="section-separator"></div>
+
+                <form onSubmit={handleOtpSubmit}>
+                  <div className="form-group">
+                    <label htmlFor="otp-phone">Mobile Number</label>
+                    <div className="input-wrapper">
+                      <span className="input-icon-left">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                        </svg>
+                      </span>
+                      <input
+                        type="tel"
+                        id="otp-phone"
+                        inputMode="numeric"
+                        placeholder="10-digit mobile number"
+                        value={otpData.phone}
+                        disabled={otpSent}
+                        onChange={(e) =>
+                          setOtpData((prev) => ({
+                            ...prev,
+                            phone: e.target.value.replace(/\D/g, "").slice(0, 10),
+                          }))
+                        }
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  {otpSent && (
+                    <div className="form-group">
+                      <label htmlFor="otp-code">One Time Password</label>
+                      <div className="input-wrapper">
+                        <span className="input-icon-left">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                          </svg>
+                        </span>
+                        <input
+                          type="text"
+                          id="otp-code"
+                          inputMode="numeric"
+                          placeholder="Enter 6-digit OTP"
+                          value={otpData.code}
+                          onChange={(e) =>
+                            setOtpData((prev) => ({
+                              ...prev,
+                              code: e.target.value.replace(/\D/g, "").slice(0, 6),
+                            }))
+                          }
+                          required
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <button type="submit" disabled={loading} className="btn-login" style={{ background: "linear-gradient(120deg, #10b981 0%, #059669 100%)", boxShadow: "0 6px 20px rgba(16, 185, 129, 0.3)" }}>
+                    {loading ? (otpSent ? "Verifying..." : "Sending...") : (otpSent ? "Verify OTP & Login" : "Send OTP")}
+                  </button>
+
+                  <button type="button" onClick={() => setActiveView("main")} className="btn-back-main">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                       <line x1="19" y1="12" x2="5" y2="12"></line>
                       <polyline points="12 19 5 12 12 5"></polyline>
                     </svg>
@@ -1399,16 +1236,7 @@ export default function LoginPage() {
 
             {/* Footer */}
             <div className="form-footer">
-              <svg
-                width="13"
-                height="13"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                 <polyline points="9 11 11 13 15 9"></polyline>
               </svg>

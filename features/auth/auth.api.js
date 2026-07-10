@@ -67,7 +67,7 @@ export const AuthApi = {
       };
     }
   },
- googleLogin: async (idToken) => {
+  googleLogin: async (idToken) => {
     try {
       const response = await axiosInstance.post("/auth/google-login", {
         idToken,
@@ -75,7 +75,7 @@ export const AuthApi = {
 
       return {
         success: true,
-        data: response.data, 
+        data: response.data,
       };
     } catch (err) {
       return {
@@ -93,20 +93,28 @@ export const AuthApi = {
     } catch (error) {
       return {
         success: false,
-        error: error.response?.data?.message || "Failed to send OTP",
+        error:
+          error.response?.data?.error ||
+          error.response?.data?.message ||
+          "Failed to send OTP",
       };
     }
   },
 
-  // OTP: VERIFY
   verifyOtp: async (phone, code) => {
     try {
-      const response = await axiosInstance.post("/auth/verify-otp", { phone, code });
+      const response = await axiosInstance.post("/auth/verify-otp", {
+        phone,
+        code,
+      });
       return { success: true, data: response.data };
     } catch (error) {
       return {
         success: false,
-        error: error.response?.data?.message || "Invalid OTP",
+        error:
+          error.response?.data?.error ||
+          error.response?.data?.message ||
+          "Invalid OTP",
       };
     }
   },
