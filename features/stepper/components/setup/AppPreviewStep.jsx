@@ -5,7 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useSelector } from "react-redux";
 import axiosInstance from "@/shared/api/axios.instance.js";
 import StepHelpDrawer from "@/features/stepper/components/ui/StepHelpDrawer";
-
+import { Toaster } from "react-hot-toast";
 const DEPLOY_STEPS = [
   {
     label: "Building topology maps & hierarchy",
@@ -47,12 +47,13 @@ export default function AppPreviewStep({
   isSuccess,
   summary = { zones: 0, staff: 0, washrooms: 0, cleaners: 0 },
   washroom_data: washrooms = [],
+  users = [], // 👈 ADD USERS TO PROPS
 }) {
   const iframeRef = useRef(null);
   const queryClient = useQueryClient();
   const { user } = useSelector((state) => state.auth) || {};
   const hasSubmitted = useRef(false);
-
+  console.log(users, "users");
   const [isHelpOpen, setIsHelpOpen] = useState(false);
 
   // Modal State
@@ -89,6 +90,24 @@ export default function AppPreviewStep({
     }
   }, [deployStep, isSuccess]);
 
+  // ─── DYNAMIC SHARE APP HANDLERS ─────────────────────────────────────────
+  const dummyLink =
+    "https://play.google.com/store/apps/details?id=com.saafai.cleaner";
+  const shareText = `Hey! Download the SaafAI Cleaner App to get started: ${dummyLink}`;
+
+  const handleCopyLink = () => {
+    navigator.clipboard
+      .writeText(dummyLink)
+      .then(() => toast.success("App link copied to clipboard!"))
+      .catch(() => toast.error("Failed to copy link."));
+  };
+
+  const handleWhatsAppShare = () => {
+    window.open(
+      `https://wa.me/?text=${encodeURIComponent(shareText)}`,
+      "_blank",
+    );
+  };
   // ─── INTERCEPT IFRAME ACTIONS & INJECT DATA ────────────────────────────
   const handleIframeLoad = () => {
     try {
@@ -97,6 +116,39 @@ export default function AppPreviewStep({
       const win = iframe.contentWindow;
       const doc = iframe.contentDocument || win.document;
 
+      // 🚀 1. GET THE DYNAMIC CLEANER DATA
+      // Find the first assigned cleaner, or fallback if none exists
+      const cleanerUser = users.find((u) => u.role === "cleaner") || {
+        name: "Demo Cleaner",
+        phone: "9876543210",
+      };
+
+      const initials = cleanerUser.name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .substring(0, 2)
+        .toUpperCase();
+
+      const injectText = (elementId, text) => {
+        const el = doc.getElementById(elementId);
+        if (el) el.textContent = text;
+      };
+
+      // 🚀 2. INJECT LOGIN SCREEN DATA (FIXED FOR GOOGLE AUTOFILL)
+      // Grab all inputs, assuming the first one is the phone field
+      const inputs = doc.querySelectorAll("input");
+      if (inputs.length > 0) {
+        const phoneInput = inputs[0];
+
+        // 1. Force the exact cleaner's phone number
+        phoneInput.value = cleanerUser.phone;
+        phoneInput.setAttribute("value", cleanerUser.phone);
+
+        // 2. Aggressively kill Google Autofill by making it read-only for the preview
+        phoneInput.setAttribute("readonly", "true");
+        phoneInput.setAttribute("autocomplete", "new-password"); // Tricks the browser
+      }
       if (washrooms && washrooms.length > 0) {
         win.WD = {};
         washrooms.forEach((w, i) => {
@@ -280,22 +332,26 @@ export default function AppPreviewStep({
 
   return (
     <>
+      <Toaster
+        position="top-center"
+        toastOptions={{ style: { zIndex: 99999 } }}
+      />
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
-        
+
         /* 🚀 FORCE HIDE EXTERNAL NAVBARS/SIDEBARS */
         header:not(.preview-header), nav, aside, .stepper-nav {
           display: none !important;
         }
 
         .font-jakarta { font-family: 'Plus Jakarta Sans', sans-serif; }
-        
+
         @keyframes subtle-float {
           0%, 100% { transform: translateY(0); }
           50% { transform: translateY(-8px); }
         }
         .animate-float { animation: subtle-float 5s ease-in-out infinite; }
-        
+
         @keyframes pulse-ring {
           0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.5); }
           70% { box-shadow: 0 0 0 6px rgba(59, 130, 246, 0); }
@@ -405,7 +461,7 @@ export default function AppPreviewStep({
         </StepHelpDrawer>
 
         {/* ── HEADER (Inline & Centered Properly) ── */}
-        <header className="preview-header w-full max-w-[1240px] mx-auto px-6 pt-4 pb-2 flex flex-col md:flex-row items-center justify-between z-50 shrink-0 gap-4 md:gap-0">
+        <header className="preview-header w-full max-w-[1240px] mx-auto px-6 pt-4 pb-2 flex flex-col md:flex-row items-center justify-between z-50 shrink-0 gap-4 md:gap-0 mb-8">
           <div className="w-full md:w-[30%] flex justify-start">
             <button
               onClick={onBack}
@@ -415,7 +471,7 @@ export default function AppPreviewStep({
             </button>
           </div>
 
-          <div className="w-full md:w-[40%] flex flex-col items-center justify-center text-center">
+          <div className="bottom-2  w-full md:w-[40%] flex flex-col items-center justify-center text-center">
             <h1 className="text-[22px] md:text-[28px] font-black text-[#0B1B3D] tracking-tight leading-none">
               Test your setup before going live
             </h1>
@@ -455,7 +511,8 @@ export default function AppPreviewStep({
         </header>
 
         {/* ── MAIN GRID (Flex-1 fills remaining space, centers content) ── */}
-        <div className="flex-1 w-full max-w-[1240px] mx-auto px-6 flex flex-col lg:flex-row items-center lg:items-stretch justify-center gap-6 lg:gap-10 relative z-20 mt-4 md:mt-2">
+        <div className="flex-1 w-full max-w-[1240px] mx-auto px-4 sm:px-6 flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-40 relative z-20 mt-4 md:mt-2 pb-10">
+          {" "}
           {/* ── LEFT COLUMN: Platform Summary ── */}
           <div className="w-full sm:w-[320px] lg:w-[280px] xl:w-[300px] flex flex-col gap-4 order-2 lg:order-1 shrink-0">
             <div className="bg-white rounded-[24px] p-5 premium-card border border-slate-100">
@@ -626,11 +683,8 @@ export default function AppPreviewStep({
               </ul>
             </div>
           </div>
-
           {/* ── CENTER COLUMN: Phone Simulator ── */}
-          <div
-            className={`relative flex justify-center shrink-0 order-1 lg:order-2 z-10 mx-auto ${phoneSizeClasses.wrapper}`}
-          >
+          <div className="relative flex justify-center items-center order-1 lg:order-2 z-10 shrink-0 w-[310px] sm:w-[320px] h-[640px] mb-4 lg:mb-0">
             {/* Background SVG Rings */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0 flex flex-col items-center justify-center w-[600px] h-[600px] opacity-80 hidden md:flex">
               <svg width="600" height="600" viewBox="0 0 600 600">
@@ -663,11 +717,11 @@ export default function AppPreviewStep({
 
             {/* Concentric Ellipses (Ripples - Base Platform) */}
             <div
-              className="absolute bottom-[-10px] left-1/2 -translate-x-1/2 w-[550px] h-[110px] rounded-[100%] hidden sm:block"
+              className="absolute bottom-[-65px] left-1/2 -translate-x-1/2 w-[550px] h-[110px] rounded-[100%] hidden sm:block"
               style={{ boxShadow: "0 0 0 1px rgba(59, 130, 246, 0.15)" }}
             ></div>
             <div
-              className="absolute bottom-[10px] left-1/2 -translate-x-1/2 w-[420px] h-[80px] rounded-[100%] bg-blue-50/40 hidden sm:block"
+              className="absolute bottom-[-50px] left-1/2 -translate-x-1/2 w-[420px] h-[80px] rounded-[100%] bg-blue-50/40 hidden sm:block"
               style={{ boxShadow: "0 0 0 1.5px rgba(59, 130, 246, 0.25)" }}
             ></div>
             <div
@@ -702,9 +756,67 @@ export default function AppPreviewStep({
               </div>
             </div>
           </div>
-
           {/* ── RIGHT COLUMN: Feature Cards + Connecting Lines ── */}
           <div className="w-full sm:w-[320px] lg:w-[260px] xl:w-[280px] flex flex-col justify-center order-3 z-20 shrink-0 relative">
+            {/* 🚀 NEW RESPONSIVE SHARE APP SECTION (Detached from dotted lines) */}
+
+            <div className="mb-6 lg:mb-8 w-full">
+              {/* Desktop View: URL + Copy Button */}
+              <div className="hidden lg:flex flex-col gap-2">
+                <label className="text-[13px] font-extrabold text-[#0B1B3D]">
+                  Share Cleaner App
+                </label>
+                <div className="flex items-center bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm h-11">
+                  <div className="px-3 text-xs text-slate-500 truncate flex-1 font-medium bg-slate-50 h-full flex items-center border-r border-slate-200">
+                    {dummyLink}
+                  </div>
+                  <button
+                    onClick={handleCopyLink}
+                    className="cursor-pointer px-4 h-full bg-white text-blue-600 font-bold text-xs hover:bg-blue-50 transition-colors flex items-center gap-1.5 shrink-0"
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <rect
+                        x="9"
+                        y="9"
+                        width="13"
+                        height="13"
+                        rx="2"
+                        ry="2"
+                      ></rect>
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                    Copy
+                  </button>
+                </div>
+              </div>
+
+              {/* Mobile View: WhatsApp Button */}
+              <button
+                onClick={handleWhatsAppShare}
+                className="flex lg:hidden bg-[#25D366] hover:bg-[#1fbf58] text-white shadow-sm rounded-xl py-3.5 px-4 items-center justify-center gap-2.5 font-bold transition-all hover:-translate-y-[1px] hover:shadow-md w-full"
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  stroke="none"
+                >
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.405-.883-.733-1.479-1.639-1.653-1.937-.173-.298-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z" />
+                </svg>
+                Share via WhatsApp
+              </button>
+            </div>
+
             <div className="relative flex flex-col gap-4 lg:gap-6 w-full">
               {/* BEAUTIFUL SVG CONNECTING LINES (Hidden on Mobile) */}
               <svg className="hidden lg:block absolute right-[100%] top-0 w-[60px] h-full overflow-visible z-10 pointer-events-none">

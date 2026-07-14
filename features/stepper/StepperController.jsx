@@ -147,23 +147,26 @@ export default function StepperController() {
             onBack={handlePrevStep}
           />
         )}
-        {currentStep === 4 && (
-          <AppPreviewStep
-            summary={{
-              zones:
-                hierarchy.filter((n) => n.type === "zone").length ||
-                hierarchy.length,
-              staff: users.length,
-              washrooms: washrooms.length,
-              cleaners: users.filter((u) => u.role === "cleaner").length,
-            }}
-            isLoading={deployMutation.isPending}
-            isSuccess={deployMutation.isSuccess}
-            washroom_data={washrooms}
-            onDeploy={handleDeploy}
-            onBack={handlePrevStep}
-          />
-        )}
+        {currentStep === 4 &&
+          (console.log("worspace draft", workspaceDraft),
+          (
+            <AppPreviewStep
+              summary={{
+                zones:
+                  hierarchy.filter((n) => n.type === "zone").length ||
+                  hierarchy.length,
+                staff: users.length,
+                washrooms: washrooms.length,
+                cleaners: users.filter((u) => u.role === "cleaner").length,
+              }}
+              isLoading={deployMutation.isPending}
+              isSuccess={deployMutation.isSuccess}
+              washroom_data={washrooms}
+              onDeploy={handleDeploy}
+              onBack={handlePrevStep}
+              users={users}
+            />
+          ))}
       </main>
     </div>
   );
