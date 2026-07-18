@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import LiveFlowchart from "@/features/stepper/components/ui/LiveFlowchart";
 import StepHelpDrawer from "@/features/stepper/components/ui/StepHelpDrawer";
 import { generateTempId, buildTreeData } from "../../utils/hierarchyUtils";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 
 const nodeTypes = {
   building: { label: "Building / Block", icon: "🏢" },
@@ -11,15 +12,34 @@ const nodeTypes = {
   ward: { label: "Ward", icon: "🏥" },
 };
 
-const prebuiltTemplates = [
-  { id: "office", icon: "🏢", label: "Corporate Office" },
-  { id: "hospital", icon: "🏥", label: "Hospital" },
-  { id: "mall", icon: "🛍️", label: "Shopping Mall" },
-  { id: "airport", icon: "✈️", label: "Airport" },
-  { id: "metro", icon: "🚇", label: "Metro Station" },
-];
+// Dynamically generate templates based on company structure
+const getDynamicTemplates = (structureType, orgType) => {
+  const isHospital = orgType?.includes("Hospital");
+  const prefix = isHospital ? "Hospital" : "Main Facility";
 
-export default function HierarchyStep({ onNext, nodes = [] }) {
+  if (structureType === "Single Building") {
+    return [{ id: "single", icon: "🏢", label: "Standard Single Building" }];
+  } else if (structureType === "Multiple Building Campus") {
+    return [{ id: "campus", icon: "🏘️", label: "Multi-Building Campus" }];
+  } else if (
+    structureType === "Multiple Locations" ||
+    structureType?.includes("Network")
+  ) {
+    return [{ id: "network", icon: "📍", label: "Regional Locations" }];
+  }
+  // Default fallback
+  return [
+    { id: "office", icon: "🏢", label: "Corporate Office" },
+    { id: "hospital", icon: "🏥", label: "Hospital" },
+  ];
+};
+
+export default function HierarchyStep({
+  onNext,
+  onBack,
+  nodes = [],
+  companyProfile = {},
+}) {
   const defaultRoot = {
     temp_id: generateTempId("node"),
     name: "Main Facility",
@@ -31,31 +51,89 @@ export default function HierarchyStep({ onNext, nodes = [] }) {
     nodes.length > 0 ? nodes : [defaultRoot],
   );
 
+  // EDIT STATE
+  const [editMode, setEditMode] = useState(false);
+  const [editingNodeId, setEditingNodeId] = useState(null);
+
   useEffect(() => {
     if (nodes.length > 0) setLocalNodes(nodes);
   }, [nodes]);
 
-  const [activeTemplate, setActiveTemplate] = useState("office");
+  const dynamicTemplates = getDynamicTemplates(
+    companyProfile.operation_structure,
+    companyProfile.organization_type,
+  );
+  const [activeTemplate, setActiveTemplate] = useState(
+    dynamicTemplates[0]?.id || "office",
+  );
   const [isHelpOpen, setIsHelpOpen] = useState(false);
+
   const [formData, setFormData] = useState({
     name: "",
     type: "building",
     parent_temp_id: localNodes[0]?.temp_id || "root",
   });
 
-  const handleAddNode = () => {
-    if (!formData.name) return alert("Please enter a name for this location.");
-    const newNode = {
-      temp_id: generateTempId("node"),
-      name: formData.name,
-      type: formData.type,
-      parent_temp_id:
-        formData.parent_temp_id === "root" ? null : formData.parent_temp_id,
-    };
-    setLocalNodes([...localNodes, newNode]);
-    setFormData({ ...formData, name: "" });
+  const handleEditRequest = (nodeId) => {
+    const nodeToEdit = localNodes.find((n) => n.temp_id === nodeId);
+    if (nodeToEdit) {
+      setFormData({
+        name: nodeToEdit.name,
+        type: nodeToEdit.type,
+        parent_temp_id: nodeToEdit.parent_temp_id || "root",
+      });
+      setEditMode(true);
+      setEditingNodeId(nodeId);
+
+      // Optional: Scroll to the form so the user knows it changed
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
   };
 
+  const handleSaveNode = () => {
+    if (!formData.name) return alert("Please enter a name for this location.");
+
+    if (editMode && editingNodeId) {
+      // UPDATE EXISTING NODE
+      setLocalNodes((prev) =>
+        prev.map((n) =>
+          n.temp_id === editingNodeId
+            ? {
+                ...n,
+                name: formData.name,
+                type: formData.type,
+                parent_temp_id:
+                  formData.parent_temp_id === "root"
+                    ? null
+                    : formData.parent_temp_id,
+              }
+            : n,
+        ),
+      );
+      // Reset form after edit
+      cancelEdit();
+    } else {
+      // ADD NEW NODE (Your existing logic)
+      const newNode = {
+        temp_id: generateTempId("node"),
+        name: formData.name,
+        type: formData.type,
+        parent_temp_id:
+          formData.parent_temp_id === "root" ? null : formData.parent_temp_id,
+      };
+      setLocalNodes([...localNodes, newNode]);
+      setFormData({ ...formData, name: "" });
+    }
+  };
+  const cancelEdit = () => {
+    setEditMode(false);
+    setEditingNodeId(null);
+    setFormData({
+      name: "",
+      type: "building",
+      parent_temp_id: localNodes[0]?.temp_id || "root",
+    });
+  };
   const handleReset = () => {
     if (
       window.confirm("Are you sure you want to reset the entire hierarchy?")
@@ -69,16 +147,75 @@ export default function HierarchyStep({ onNext, nodes = [] }) {
           parent_temp_id: null,
         },
       ]);
-      setFormData({ name: "", type: "building", parent_temp_id: "root" });
+      cancelEdit();
     }
   };
 
   const handleApplyTemplate = (templateId) => {
     setActiveTemplate(templateId);
     let generated = [];
+    const bldgId = generateTempId("node");
 
-    if (templateId === "office") {
-      const bldgId = generateTempId("node");
+    if (templateId === "single") {
+      generated.push({
+        temp_id: bldgId,
+        name: "Main Building",
+        type: "building",
+        parent_temp_id: null,
+      });
+      generated.push({
+        temp_id: generateTempId("node"),
+        name: "Ground Floor",
+        type: "floor",
+        parent_temp_id: bldgId,
+      });
+      generated.push({
+        temp_id: generateTempId("node"),
+        name: "First Floor",
+        type: "floor",
+        parent_temp_id: bldgId,
+      });
+    } else if (templateId === "campus") {
+      const bldg2Id = generateTempId("node");
+      generated.push({
+        temp_id: bldgId,
+        name: "North Block",
+        type: "building",
+        parent_temp_id: null,
+      });
+      generated.push({
+        temp_id: generateTempId("node"),
+        name: "Ground Floor",
+        type: "floor",
+        parent_temp_id: bldgId,
+      });
+      generated.push({
+        temp_id: bldg2Id,
+        name: "South Block",
+        type: "building",
+        parent_temp_id: null,
+      });
+      generated.push({
+        temp_id: generateTempId("node"),
+        name: "Ground Floor",
+        type: "floor",
+        parent_temp_id: bldg2Id,
+      });
+    } else if (templateId === "network") {
+      generated.push({
+        temp_id: bldgId,
+        name: "Branch 1",
+        type: "building",
+        parent_temp_id: null,
+      });
+      generated.push({
+        temp_id: generateTempId("node"),
+        name: "Branch 2",
+        type: "building",
+        parent_temp_id: null,
+      });
+    } else {
+      // Fallbacks
       generated.push({
         temp_id: bldgId,
         name: "Corporate Office",
@@ -91,155 +228,16 @@ export default function HierarchyStep({ onNext, nodes = [] }) {
         type: "floor",
         parent_temp_id: bldgId,
       });
-      generated.push({
-        temp_id: generateTempId("node"),
-        name: "Floor 1",
-        type: "floor",
-        parent_temp_id: bldgId,
-      });
-      generated.push({
-        temp_id: generateTempId("node"),
-        name: "Floor 2",
-        type: "floor",
-        parent_temp_id: bldgId,
-      });
-    } else if (templateId === "hospital") {
-      const bldgId = generateTempId("node");
-      generated.push({
-        temp_id: bldgId,
-        name: "Hospital Main Building",
-        type: "building",
-        parent_temp_id: null,
-      });
-      generated.push({
-        temp_id: generateTempId("node"),
-        name: "Block A — OPD",
-        type: "ward",
-        parent_temp_id: bldgId,
-      });
-      generated.push({
-        temp_id: generateTempId("node"),
-        name: "Block B — IPD",
-        type: "ward",
-        parent_temp_id: bldgId,
-      });
-      generated.push({
-        temp_id: generateTempId("node"),
-        name: "Block C — Emergency",
-        type: "ward",
-        parent_temp_id: bldgId,
-      });
-      generated.push({
-        temp_id: generateTempId("node"),
-        name: "Administration Block",
-        type: "building",
-        parent_temp_id: null,
-      });
-    } else if (templateId === "mall") {
-      const bldgId = generateTempId("node");
-      const groundId = generateTempId("node");
-      generated.push({
-        temp_id: bldgId,
-        name: "Mall Building",
-        type: "building",
-        parent_temp_id: null,
-      });
-      generated.push({
-        temp_id: groundId,
-        name: "Ground Floor",
-        type: "floor",
-        parent_temp_id: bldgId,
-      });
-      generated.push({
-        temp_id: generateTempId("node"),
-        name: "First Floor",
-        type: "floor",
-        parent_temp_id: bldgId,
-      });
-      generated.push({
-        temp_id: generateTempId("node"),
-        name: "Second Floor",
-        type: "floor",
-        parent_temp_id: bldgId,
-      });
-      generated.push({
-        temp_id: generateTempId("node"),
-        name: "Food Court",
-        type: "zone",
-        parent_temp_id: groundId,
-      });
-    } else if (templateId === "airport") {
-      const t1Id = generateTempId("node");
-      const t2Id = generateTempId("node");
-      generated.push({
-        temp_id: t1Id,
-        name: "Terminal 1",
-        type: "building",
-        parent_temp_id: null,
-      });
-      generated.push({
-        temp_id: generateTempId("node"),
-        name: "Departures Hall",
-        type: "zone",
-        parent_temp_id: t1Id,
-      });
-      generated.push({
-        temp_id: generateTempId("node"),
-        name: "Arrivals Hall",
-        type: "zone",
-        parent_temp_id: t1Id,
-      });
-      generated.push({
-        temp_id: t2Id,
-        name: "Terminal 2",
-        type: "building",
-        parent_temp_id: null,
-      });
-      generated.push({
-        temp_id: generateTempId("node"),
-        name: "International Zone",
-        type: "zone",
-        parent_temp_id: t2Id,
-      });
-    } else if (templateId === "metro") {
-      const stnId = generateTempId("node");
-      const concourseId = generateTempId("node");
-      generated.push({
-        temp_id: stnId,
-        name: "Central Station",
-        type: "building",
-        parent_temp_id: null,
-      });
-      generated.push({
-        temp_id: concourseId,
-        name: "Concourse Level",
-        type: "floor",
-        parent_temp_id: stnId,
-      });
-      generated.push({
-        temp_id: generateTempId("node"),
-        name: "Platform 1 & 2",
-        type: "zone",
-        parent_temp_id: concourseId,
-      });
-    } else {
-      generated.push({
-        temp_id: generateTempId("node"),
-        name: `${templateId.charAt(0).toUpperCase() + templateId.slice(1)} Main`,
-        type: "building",
-        parent_temp_id: null,
-      });
     }
 
     setLocalNodes(generated);
     setFormData({ ...formData, parent_temp_id: generated[0].temp_id });
+    setEditMode(false);
   };
 
-  const parentOptions = localNodes.map((n) => ({
-    id: n.temp_id,
-    name: n.name,
-    type: n.type,
-  }));
+  const parentOptions = localNodes
+    .filter((n) => n.temp_id !== editingNodeId) // Prevent a node from being its own parent during edit
+    .map((n) => ({ id: n.temp_id, name: n.name, type: n.type }));
 
   return (
     <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-300 pb-20 md:pb-0 relative w-full">
@@ -260,9 +258,6 @@ export default function HierarchyStep({ onNext, nodes = [] }) {
               </strong>{" "}
               for this level.
             </p>
-            <div className="mt-2 bg-slate-50 p-2 rounded border border-slate-200 text-xs font-mono text-slate-600">
-              e.g. Building A
-            </div>
           </div>
           <div>
             <h3 className="font-bold text-slate-900 mb-1">
@@ -276,44 +271,49 @@ export default function HierarchyStep({ onNext, nodes = [] }) {
           <div>
             <h3 className="font-bold text-slate-900 mb-1">Step 3: Add Zones</h3>
             <p>
-              If floors contain specific zones (like North Wing or South Wing),
-              add them and set their{" "}
+              If floors contain specific zones, add them and set their{" "}
               <strong className="text-[#1F4E79]">Parent = Ground Floor</strong>.
             </p>
-          </div>
-          <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100">
-            <h3 className="font-bold text-[#1F4E79] mb-2">
-              Example Structure:
-            </h3>
-            <ul className="text-sm font-medium text-slate-700 space-y-1">
-              <li>🏢 Corporate Office</li>
-              <li className="pl-4">↳ 🏢 Building A</li>
-              <li className="pl-8">↳ 📋 Ground Floor</li>
-              <li className="pl-12">↳ 📍 North Wing</li>
-              <li className="pl-16 text-blue-600">↳ 🚻 Washroom</li>
-            </ul>
           </div>
         </div>
       </StepHelpDrawer>
 
-      <div className="flex items-start justify-between gap-4 flex-wrap">
+      {/* HEADER WITH GREEN BUTTONS */}
+      <div className="flex items-center justify-between gap-4 flex-wrap bg-white p-4 rounded-xl shadow-sm border border-slate-200">
         <div>
           <h1 className="text-xl md:text-2xl font-black text-slate-900">
             Location Hierarchy
           </h1>
           <p className="text-sm mt-1 text-slate-500">
-            Build the structural map of your facility. Washrooms attach to
-            zones.
+            Build the structural map of your facility. Edit directly from the
+            map.
           </p>
+        </div>
+        <div className="flex items-center gap-3">
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="flex items-center gap-2 text-sm font-bold text-slate-600 hover:text-slate-900 px-4 py-2 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" /> Back
+            </button>
+          )}
+          <button
+            onClick={() => onNext(localNodes)}
+            className="flex items-center gap-2 text-sm font-bold text-white px-6 py-2.5 bg-green-600 rounded-lg hover:bg-green-700 transition-colors shadow-sm"
+          >
+            Continue <ArrowRight className="w-4 h-4" />
+          </button>
         </div>
       </div>
 
+      {/* DYNAMIC TEMPLATES */}
       <div className="bg-white border border-slate-200 rounded-xl p-4 md:p-5 shadow-sm">
         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">
-          Pre-built Templates
+          Suggested Templates based on your setup
         </p>
         <div className="flex flex-col sm:flex-row flex-wrap gap-2 md:gap-3">
-          {prebuiltTemplates.map((template) => (
+          {dynamicTemplates.map((template) => (
             <button
               key={template.id}
               onClick={() => handleApplyTemplate(template.id)}
@@ -327,14 +327,28 @@ export default function HierarchyStep({ onNext, nodes = [] }) {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+        {/* FORM PANEL */}
         <div className="lg:col-span-4 space-y-4">
-          <div className="bg-white border border-slate-200 rounded-xl p-4 md:p-5 shadow-sm space-y-4">
-            <h3 className="font-bold text-sm text-slate-900">
-              Hierarchy Builder
-            </h3>
+          <div
+            className={`bg-white border rounded-xl p-4 md:p-5 shadow-sm space-y-4 transition-colors ${editMode ? "border-blue-400 ring-2 ring-blue-100" : "border-slate-200"}`}
+          >
+            <div className="flex justify-between items-center">
+              <h3 className="font-bold text-sm text-slate-900">
+                {editMode ? "✏️ Edit Hierarchy Node" : "Hierarchy Builder"}
+              </h3>
+              {editMode && (
+                <button
+                  onClick={cancelEdit}
+                  className="text-xs text-red-500 hover:text-red-700 font-bold"
+                >
+                  Cancel
+                </button>
+              )}
+            </div>
+
             <div>
               <label className="block text-[10px] font-bold mb-1.5 uppercase tracking-wider text-slate-500">
-                Hierarchy *
+                Name *
               </label>
               <input
                 type="text"
@@ -344,12 +358,12 @@ export default function HierarchyStep({ onNext, nodes = [] }) {
                 }
                 className="w-full border-[1.5px] border-slate-200 rounded-lg px-3 py-3 md:py-2 text-sm outline-none focus:border-[#1F4E79]"
                 placeholder="e.g. Block A, Floor 1"
-                onKeyDown={(e) => e.key === "Enter" && handleAddNode()}
+                onKeyDown={(e) => e.key === "Enter" && handleSaveNode()}
               />
             </div>
             <div>
               <label className="block text-[10px] font-bold mb-1.5 uppercase tracking-wider text-slate-500">
-                Hierarchy Type
+                Type
               </label>
               <select
                 value={formData.type}
@@ -387,13 +401,14 @@ export default function HierarchyStep({ onNext, nodes = [] }) {
 
             <div className="flex flex-col sm:flex-row gap-2 pt-2">
               <button
-                onClick={handleAddNode}
-                className="flex-1 bg-[#1F4E79] text-white py-3 md:py-2 rounded-lg font-semibold text-sm hover:bg-[#163a5a] transition-colors shadow-sm"
+                onClick={handleSaveNode}
+                className={`w-full text-white py-3 md:py-2 rounded-lg font-semibold text-sm transition-colors shadow-sm ${
+                  editMode
+                    ? "bg-blue-600 hover:bg-blue-700"
+                    : "bg-[#1F4E79] hover:bg-[#163a5a]"
+                }`}
               >
-                + Add Hierarchy
-              </button>
-              <button className="px-3 py-3 md:py-2 bg-white border border-slate-200 text-slate-700 rounded-lg font-semibold text-sm hover:bg-slate-50 transition-colors flex justify-center items-center gap-1 shadow-sm">
-                📋 Dup.
+                {editMode ? "Save Changes" : "+ Add Hierarchy"}
               </button>
             </div>
           </div>
@@ -406,20 +421,26 @@ export default function HierarchyStep({ onNext, nodes = [] }) {
           </button>
         </div>
 
+        {/* LIVE CHART */}
         <div className="lg:col-span-8 flex flex-col h-full w-full">
-          {/* Note: Map height made responsive */}
           <div className="bg-white border border-slate-200 rounded-xl shadow-sm flex flex-col flex-1 min-h-[400px] lg:min-h-[550px] overflow-hidden relative">
             <div className="flex-1 bg-slate-50/50 flex">
-              <LiveFlowchart treeData={buildTreeData(localNodes)} />
+              {/* Passing it to the Chart */}
+              <LiveFlowchart
+                treeData={buildTreeData(localNodes)}
+                isEditable={true}
+                onEditNode={handleEditRequest}
+              />
             </div>
           </div>
         </div>
       </div>
 
+      {/* FOOTER CONTINUE BUTTON */}
       <div className="flex justify-end mt-8 pt-4 border-t border-slate-200">
         <button
           onClick={() => onNext(localNodes)}
-          className="w-full md:w-auto inline-flex items-center justify-center gap-2 font-bold text-sm rounded-lg bg-[#1F4E79] text-white px-8 py-3.5 md:py-3 hover:bg-[#163a5a] transition-colors shadow-sm"
+          className="w-full md:w-auto inline-flex items-center justify-center gap-2 font-bold text-sm rounded-lg bg-green-600 text-white px-8 py-3.5 md:py-3 hover:bg-green-700 transition-colors shadow-sm"
         >
           Continue to Washrooms ➔
         </button>
@@ -428,8 +449,7 @@ export default function HierarchyStep({ onNext, nodes = [] }) {
       {/* FAB Floating Help Button */}
       <button
         onClick={() => setIsHelpOpen(true)}
-        className="fixed bottom-6 right-6 z-40 bg-[#1F4E79] text-white w-14 h-14 rounded-full flex items-center justify-center shadow-[0_4px_15px_rgba(31,78,121,0.4)] animate-[pulse_2s_infinite] hover:animate-none transition-all"
-        title="Need Help?"
+        className="fixed bottom-6 right-6 z-40 bg-[#1F4E79] text-white w-14 h-14 rounded-full flex items-center justify-center shadow-[0_4px_15px_rgba(31,78,121,0.4)] hover:scale-105 transition-transform"
       >
         <span className="text-2xl">❓</span>
       </button>
