@@ -731,7 +731,7 @@ export default function ClientDashboard() {
     : "0.0";
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] dark:bg-slate-950 p-6 font-sans md:mt-[-10px]">
+   <div className="min-h-screen bg-[#f8fafc] dark:bg-slate-950 p-3 sm:p-4 md:p-6 font-sans md:mt-[-10px]">
 
       {/* 1. TOP STATS ROW */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4 mb-6 md:mt-[-30px]">
