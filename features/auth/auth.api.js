@@ -100,21 +100,25 @@ export const AuthApi = {
       };
     }
   },
-
-  verifyOtp: async (phone, code) => {
+verifyOtp: async (phone, code, intent = "login") => { 
     try {
       const response = await axiosInstance.post("/auth/verify-otp", {
         phone,
         code,
+        intent,
       });
       return { success: true, data: response.data };
     } catch (error) {
+      // 🚨 THIS WILL REVEAL THE TRUE BUG IN YOUR CONSOLE 🚨
+      console.error("FULL OTP API ERROR:", error); 
+      console.error("BACKEND RESPONSE:", error.response?.data);
+
       return {
         success: false,
         error:
           error.response?.data?.error ||
           error.response?.data?.message ||
-          "Invalid OTP",
+          "Invalid OTP", // This is the fallback you are currently seeing
       };
     }
   },

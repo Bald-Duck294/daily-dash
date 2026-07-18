@@ -14,7 +14,7 @@ import RoleHeader from "@/features/roles/components/RoleHeader";
 import RoleTable from "@/features/roles/components/RoleTable";
 import RoleEmptyState from "@/features/roles/components/RoleEmptyState";
 import RoleLoading from "@/features/roles/components/RoleLoading";
-
+import { useCompaniesDropdown } from "@/features/dropdownList/dropdownlist.query";
 const ROLE_ID_MAP = {
   superadmin: 1,
   admin: 2,
@@ -33,19 +33,25 @@ export default function RolesListContainer({ role }) {
      PAGINATION & SEARCH STATE
   ================================ */
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [selectedCompany, setSelectedCompany] = useState("");
   const PAGE_SIZE = 10;
 
   /* ===============================
      TANSTACK FETCH & MUTATIONS
   ================================ */
+
+
+  const { data: companiesData, isLoading: isCompaniesLoading } = useCompaniesDropdown();
+
   const {
-    data: responseData, 
+    data: responseData,
     isLoading,
     isError,
     error,
     isFetching,
-  } = useGetUsersByRole(roleId, null, page, PAGE_SIZE);
+  } = useGetUsersByRole(roleId, selectedCompany || null, page, PAGE_SIZE,debouncedSearch);
 
   // Bring in the delete mutation
   const { mutateAsync: deleteUser } = useDeleteUser();
@@ -66,6 +72,14 @@ export default function RolesListContainer({ role }) {
   // Reset to page 1 if search changes
   useEffect(() => {
     setPage(1);
+  }, [debouncedSearch, selectedCompany]);
+
+useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 500); // Wait 500ms before triggering
+
+    return () => clearTimeout(timer); // Cleanup if the user types again before 500ms
   }, [search]);
 
   /* ===============================
@@ -82,7 +96,7 @@ export default function RolesListContainer({ role }) {
       try {
         await deleteUser(id);
         toast.success(`${name} deleted successfully`);
-        
+
         // If deleting the last item on a page, jump back one page
         if (users.length === 1 && page > 1) {
           setPage(page - 1);
@@ -112,11 +126,16 @@ export default function RolesListContainer({ role }) {
 
   return (
     <>
+
       <RoleHeader
         role={role}
         search={search}
         onSearch={setSearch}
         canAdd={canAdd(MODULES.USERS)}
+        companies={companiesData} // From useCompaniesDropdown()
+        selectedCompany={selectedCompany}
+        onCompanyChange={setSelectedCompany}
+        isCompaniesLoading={isCompaniesLoading}
       />
 
       {/* Loading Overlay */}
@@ -127,7 +146,7 @@ export default function RolesListContainer({ role }) {
       ) : (
         <>
           <RoleTable
-            users={users} 
+            users={users}
             role={role}
             permissions={{
               canView: canView(MODULES.USERS),
@@ -135,53 +154,54 @@ export default function RolesListContainer({ role }) {
               canDelete: canDelete(MODULES.USERS),
             }}
             onDelete={handleDelete} // <--- THIS WAS MISSING
+            currentPage={page}
+  pageSize={PAGE_SIZE}
           />
 
           {/* Pagination Controls */}
           {meta.totalPages > 1 && (
-           <div className="flex items-center justify-between pt-6 border-t mt-4">
-             <span className="text-sm text-gray-500">
-               Page {meta.currentPage} of {meta.totalPages} ({meta.totalCount} total)
-             </span>
+            <div className="flex items-center justify-between pt-6 border-t mt-4">
+              <span className="text-sm text-gray-500">
+                Page {meta.currentPage} of {meta.totalPages} ({meta.totalCount} total)
+              </span>
 
-             <div className="flex gap-1">
-               {/* Previous */}
-               <button
-                 disabled={meta.currentPage === 1 || isFetching}
-                 onClick={() => handlePageChange(meta.currentPage - 1)}
-                 className="px-3 py-1 border rounded-md disabled:opacity-50 text-sm"
-               >
-                 Prev
-               </button>
+              <div className="flex gap-1">
+                {/* Previous */}
+                <button
+                  disabled={meta.currentPage === 1 || isFetching}
+                  onClick={() => handlePageChange(meta.currentPage - 1)}
+                  className="px-3 py-1 border rounded-md disabled:opacity-50 text-sm"
+                >
+                  Prev
+                </button>
 
-               {/* Page Numbers */}
-               {getPageNumbers(meta.currentPage, meta.totalPages).map((pageNumber, index) => (
-                 <button
-                   key={index}
-                   disabled={pageNumber === '...' || isFetching}
-                   onClick={() => pageNumber !== '...' && handlePageChange(pageNumber)}
-                   className={`px-3 py-1 border rounded-md text-sm transition-colors ${
-                     pageNumber === meta.currentPage
-                       ? "bg-blue-600 text-white border-blue-600" 
-                       : pageNumber === '...' 
-                         ? "border-none cursor-default" 
-                         : "hover:bg-gray-100"
-                   }`}
-                 >
-                   {pageNumber}
-                 </button>
-               ))}
+                {/* Page Numbers */}
+                {getPageNumbers(meta.currentPage, meta.totalPages).map((pageNumber, index) => (
+                  <button
+                    key={index}
+                    disabled={pageNumber === '...' || isFetching}
+                    onClick={() => pageNumber !== '...' && handlePageChange(pageNumber)}
+                    className={`px-3 py-1 border rounded-md text-sm transition-colors ${pageNumber === meta.currentPage
+                        ? "bg-blue-600 text-white border-blue-600"
+                        : pageNumber === '...'
+                          ? "border-none cursor-default"
+                          : "hover:bg-gray-100"
+                      }`}
+                  >
+                    {pageNumber}
+                  </button>
+                ))}
 
-               {/* Next */}
-               <button
-                 disabled={meta.currentPage === meta.totalPages || isFetching}
-                 onClick={() => handlePageChange(meta.currentPage + 1)}
-                 className="px-3 py-1 border rounded-md disabled:opacity-50 text-sm"
-               >
-                 Next
-               </button>
-             </div>
-           </div>
+                {/* Next */}
+                <button
+                  disabled={meta.currentPage === meta.totalPages || isFetching}
+                  onClick={() => handlePageChange(meta.currentPage + 1)}
+                  className="px-3 py-1 border rounded-md disabled:opacity-50 text-sm"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
           )}
         </>
       )}

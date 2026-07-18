@@ -100,7 +100,7 @@ import { Edit, Trash2 } from "lucide-react";
 import { formatDate } from "../utils/formatDate";
 import { useRouter } from "next/navigation";
 
-export default function CompaniesTable({ companies, onDelete, onView }) {
+export default function CompaniesTable({ companies, onDelete, onView,currentPage = 1, pageSize = 10   }) {
   const router = useRouter();
 
   return (
@@ -137,14 +137,14 @@ export default function CompaniesTable({ companies, onDelete, onView }) {
                 transition
               "
             >
-              <td className="p-3">{i + 1}</td>
+              <td className="p-3">{(currentPage - 1) * pageSize + i + 1}</td>
 
               <td className="p-3 font-medium text-[var(--foreground)]">
                 {c.name}
               </td>
 
               <td className="p-3 text-[var(--sidebar-muted)]">
-                {c.contact_email}
+                {c.contact_email ||"N/A"}
               </td>
 
               <td className="p-3">

@@ -103,19 +103,20 @@ export const CompanyApi = {
     }
   },
 
-  getAllCompanies: async ({ page = 1, limit = 4, signal } = {}) => {
-    console.log(page, limit, "pagination data");
+getAllCompanies: async ({ page = 1, limit = 4, search = "", signal } = {}) => {
     try {
-      // Build query string properly
       const params = new URLSearchParams();
       params.append("page", page.toString());
       params.append("limit", limit.toString());
+      
+      // ✅ Append search if it exists
+      if (search) params.append("search", search);
 
       const response = await axiosInstance.get(
         `/companies?${params.toString()}`,
         { signal },
       );
-      return response.data; // Return the data directly
+      return response.data; 
     } catch (error) {
       if (error.name === "CanceledError") return;
       throw error;

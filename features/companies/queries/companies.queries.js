@@ -6,16 +6,17 @@ import { CompanyApi } from "@/features/companies/api/companies.api.js"; // Adjus
 // ==========================================
 
 // 1. Get Paginated Companies
-export const useCompanies = (page = 1, limit = 4) => {
+export const useCompanies = (page = 1, limit = 4, search = "") => {
   return useQuery({
-    queryKey: ["companies", page, limit],
+    // ✅ Include search in queryKey to trigger automatic refetching
+    queryKey: ["companies", page, limit, search],
     queryFn: async () => {
-      // Your API already throws natively here, so no need for manual success checks
-      return await CompanyApi.getAllCompanies({ page, limit });
+      // ✅ Pass search down to the API function
+      return await CompanyApi.getAllCompanies({ page, limit, search });
     },
-    placeholderData: keepPreviousData, // Smooth page transitions
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes cache
+    placeholderData: keepPreviousData, 
+    staleTime: 5 * 60 * 1000, 
+    gcTime: 10 * 60 * 1000, 
     retry: 2,
   });
 };

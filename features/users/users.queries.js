@@ -66,15 +66,16 @@ export const useGetAllUsers = (
 //   });
 // };
 
-export const useGetUsersByRole = (roleId, companyId = null, page = 1, limit = 10, options = {}) => {
+export const useGetUsersByRole = (roleId, companyId = null, page = 1, limit = 10, search = "", options = {}) => {
   return useQuery({
-    queryKey: ["users", { roleId, companyId, page, limit }],
+    // ✅ 1. Add search to the queryKey so it refetches on keystrokes
+    queryKey: ["users", { roleId, companyId, page, limit, search }],
     queryFn: async () => {
-      // ✅ Now using the correct method name defined in UsersApi
-      const res = await UsersApi.getUsersByRole(roleId, companyId, page, limit);
+      // ✅ 2. Pass search as the 5th argument to your API service
+      const res = await UsersApi.getUsersByRole(roleId, companyId, page, limit, search);
+      
       if (!res.success) throw new Error(res.error);
       
-      // ✅ Now returns the consistent structure { data, pagination }
       return res; 
     },
     enabled: !!roleId,

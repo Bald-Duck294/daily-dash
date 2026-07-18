@@ -176,7 +176,7 @@
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Toaster } from "react-hot-toast";
-
+import { useEffect } from "react";
 import Loader from "@/components/ui/Loader";
 import { useCompanyId } from "@/providers/CompanyProvider";
 
@@ -198,8 +198,21 @@ export default function CompaniesPage() {
 
   /* ---------------- UI STATE ---------------- */
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [page, setPage] = useState(1);
-  const PAGE_SIZE = 6;
+  const PAGE_SIZE = 10;
+
+useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  // ✅ Reset to page 1 when search changes
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
 
   /* ---------------- QUERIES WITH PAGINATION ---------------- */
   const {
@@ -207,15 +220,15 @@ export default function CompaniesPage() {
     isLoading: isCompaniesLoading,
     isError,
     isFetching,
-  } = useCompanies(page, PAGE_SIZE);
+  } = useCompanies(page, PAGE_SIZE,debouncedSearch);
 
-  const { data: countData, isLoading: isCountLoading } = useCompaniesCount();
+  // const { data: countData, isLoading: isCountLoading } = useCompaniesCount();
 
   // Extract companies from response
   const companies = data?.data ?? [];
 
   // Extract count and calculate pagination locally
-  const totalCount = countData?.totalCount ?? 0;
+ const totalCount = data?.pagination?.totalCount ?? 0;
   const totalPages = Math.ceil(totalCount / PAGE_SIZE) || 1;
   const hasNextPage = page < totalPages;
   const hasPrevPage = page > 1;
@@ -252,7 +265,7 @@ export default function CompaniesPage() {
   };
 
   /* ---------------- LOADING & ERROR STATES ---------------- */
-  if (isCompaniesLoading || isCountLoading) {
+  if (isCompaniesLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader size="large" message="Loading organizations..." />
@@ -282,6 +295,7 @@ export default function CompaniesPage() {
               search={search}
               onSearch={setSearch}
               companies={filteredCompanies}
+           
             />
           </div>
 
@@ -321,6 +335,8 @@ export default function CompaniesPage() {
               onDelete={handleDelete}
               onToggleStatus={handleStatusToggle}
               onView={handleViewCompany}
+                 currentPage={page}
+              pageSize={PAGE_SIZE}
             />
           </div>
 
