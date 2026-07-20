@@ -1,8 +1,8 @@
-import { Edit, Trash2 } from "lucide-react";
+import { Edit, Trash2, RotateCcw } from "lucide-react";
 import { formatDate } from "../utils/formatDate";
 import { useRouter } from "next/navigation";
 
-export default function CompaniesCards({ companies, onDelete, onView }) {
+export default function CompaniesCards({ companies, onDelete, onView, onReset }) {
   const router = useRouter();
 
   return (
@@ -64,6 +64,16 @@ export default function CompaniesCards({ companies, onDelete, onView }) {
               onClick={(e) => {
                 e.stopPropagation();
                 router.push(`/companies/${c.id}`);
+              }}
+            />
+
+            <RotateCcw
+              size={16}
+              className="cursor-pointer text-amber-500 hover:text-amber-600"
+              title="Reset Workspace"
+              onClick={(e) => {
+                e.stopPropagation();
+                onReset?.(c.id);
               }}
             />
 

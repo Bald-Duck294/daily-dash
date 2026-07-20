@@ -1,34 +1,33 @@
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
-import { CompanyApi } from "@/features/companies/api/companies.api.js"; // Adjust import path
+import { CompanyApi } from "@/features/companies/api/companies.api.js";
 
 // ==========================================
 // QUERIES (Fetching Data)
 // ==========================================
 
-// 1. Get Paginated Companies
-export const useCompanies = (page = 1, limit = 4) => {
+// 1. Get Paginated Companies (with search + sort)
+export const useCompanies = (page = 1, limit = 6, search = "", sortField = "", sortOrder = "") => {
   return useQuery({
-    queryKey: ["companies", page, limit],
+    queryKey: ["companies", page, limit, search, sortField, sortOrder],
     queryFn: async () => {
-      // Your API already throws natively here, so no need for manual success checks
-      return await CompanyApi.getAllCompanies({ page, limit });
+      return await CompanyApi.getAllCompanies({ page, limit, search, sortField, sortOrder });
     },
-    placeholderData: keepPreviousData, // Smooth page transitions
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes cache
+    placeholderData: keepPreviousData,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
     retry: 2,
   });
 };
 
 // 2. Get Companies Count
-export const useCompaniesCount = () => {
+export const useCompaniesCount = (search = "") => {
   return useQuery({
-    queryKey: ["companies", "count"],
+    queryKey: ["companies", "count", search],
     queryFn: async () => {
-      return await CompanyApi.getCompaniesCount();
+      return await CompanyApi.getCompaniesCount({ search });
     },
-    staleTime: 30 * 1000, // 30 seconds
-    gcTime: 5 * 60 * 1000, 
+    staleTime: 30 * 1000,
+    gcTime: 5 * 60 * 1000,
   });
 };
 
@@ -38,11 +37,10 @@ export const useCompany = (companyId) => {
     queryKey: ["company", companyId],
     queryFn: async () => {
       const response = await CompanyApi.getCompanyById(companyId);
-      // Force React Query into error state if success is false
       if (!response.success) throw new Error(response.error || "Failed to fetch company");
       return response.data;
     },
-    enabled: !!companyId && companyId !== "null", // Prevent running if ID is invalid
+    enabled: !!companyId && companyId !== "null",
     staleTime: 5 * 60 * 1000,
   });
 };
@@ -62,7 +60,6 @@ export function useCreateCompany() {
       return response.data;
     },
     onSuccess: () => {
-      // Invalidate both lists and counts to trigger a refetch
       queryClient.invalidateQueries({ queryKey: ["companies"] });
     },
   });
@@ -79,7 +76,6 @@ export function useUpdateCompany() {
       return response.data;
     },
     onSuccess: (data, variables) => {
-      // Invalidate the main list and the specific cached company
       queryClient.invalidateQueries({ queryKey: ["companies"] });
       queryClient.invalidateQueries({ queryKey: ["company", variables.id] });
     },
@@ -97,16 +93,13 @@ export function useDeleteCompany() {
       return response.data;
     },
     onSuccess: () => {
-      // 1. Refetch the active page of data to remove the row from the table
       queryClient.invalidateQueries({ queryKey: ["companies"] });
-      
-      // 2. Refetch the total count so your pagination math stays accurate
-      queryClient.invalidateQueries({ queryKey: ["companies", "count"] }); 
+      queryClient.invalidateQueries({ queryKey: ["companies", "count"] });
     },
   });
 }
 
-// 7. Toggle Company Status (Specific use case leveraging update logic)
+// 7. Toggle Company Status
 export function useToggleCompanyStatus() {
   const queryClient = useQueryClient();
 
@@ -122,6 +115,22 @@ export function useToggleCompanyStatus() {
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["companies"] });
       queryClient.invalidateQueries({ queryKey: ["company", variables.id] });
+    },
+  });
+}
+
+// 8. Reset Company Workspace
+export function useResetCompanyWorkspace() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (companyId) => {
+      return await CompanyApi.resetCompanyWorkspace(companyId);
+    },
+    onSuccess: (data, companyId) => {
+      queryClient.invalidateQueries({ queryKey: ["companies"] });
+      queryClient.invalidateQueries({ queryKey: ["companies", "count"] });
+      queryClient.invalidateQueries({ queryKey: ["company", companyId] });
     },
   });
 }

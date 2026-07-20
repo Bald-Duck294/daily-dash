@@ -94,28 +94,31 @@ import axiosInstance from "@/shared/api/axios.instance";
 export const CompanyApi = {
   // READ ALL (QUERY → supports pagination)
 
-  getCompaniesCount: async () => {
+  getCompaniesCount: async ({ search = "" } = {}) => {
     try {
-      const response = await axiosInstance.get("/companies/count");
+      const params = new URLSearchParams();
+      if (search) params.append("search", search);
+      const response = await axiosInstance.get(`/companies/count?${params.toString()}`);
       return response.data;
     } catch (error) {
       throw error.response?.data?.message || error.message;
     }
   },
 
-  getAllCompanies: async ({ page = 1, limit = 4, signal } = {}) => {
-    console.log(page, limit, "pagination data");
+  getAllCompanies: async ({ page = 1, limit = 4, search = "", sortField = "", sortOrder = "", signal } = {}) => {
     try {
-      // Build query string properly
       const params = new URLSearchParams();
       params.append("page", page.toString());
       params.append("limit", limit.toString());
+      if (search) params.append("search", search);
+      if (sortField) params.append("sortField", sortField);
+      if (sortOrder) params.append("sortOrder", sortOrder);
 
       const response = await axiosInstance.get(
         `/companies?${params.toString()}`,
         { signal },
       );
-      return response.data; // Return the data directly
+      return response.data;
     } catch (error) {
       if (error.name === "CanceledError") return;
       throw error;
@@ -180,5 +183,18 @@ export const CompanyApi = {
     // payload: { organization_name, organization_type, operation_structure }
     const response = await axiosInstance.post("/companies/setup", payload);
     return response.data;
+  },
+
+  // RESET WORKSPACE (mutation)
+  resetCompanyWorkspace: async (companyId) => {
+    try {
+      const response = await axiosInstance.post("/companies/reset", { companyId });
+      return { success: true, data: response.data };
+    } catch (error) {
+      // Preserve the HTTP status for granular error handling
+      const err = new Error(error.response?.data?.error || error.response?.data?.message || error.message);
+      err.status = error.response?.status;
+      throw err;
+    }
   },
 };
