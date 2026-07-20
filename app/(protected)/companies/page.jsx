@@ -36,7 +36,7 @@ export default function CompaniesPage() {
   const [companyToReset, setCompanyToReset] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
-  const PAGE_SIZE = 6;
+  const PAGE_SIZE = 8;
 
   // Debounce search input (400ms)
   useEffect(() => {
