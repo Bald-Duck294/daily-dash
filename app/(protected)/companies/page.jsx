@@ -61,7 +61,7 @@ export default function CompaniesPage() {
   const totalPages = Math.ceil(totalCount / PAGE_SIZE) || 1;
   const hasNextPage = page < totalPages;
   const hasPrevPage = page > 1;
-  clg
+
   const deleteCompany = useDeleteCompany();
   const toggleStatus = useToggleCompanyStatus();
   const resetWorkspace = useResetCompanyWorkspace();
