@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { Eye, Edit, Trash2, Mail, Phone, User } from "lucide-react";
 
-export default function RoleTable({ users, role, permissions, onDelete }) {
+export default function RoleTable({ users, role, permissions, onDelete, currentPage = 1,
+  pageSize = 10 }) {
   return (
     <div className="mt-4 rounded-xl border bg-[var(--background)] overflow-hidden">
       <table className="w-full text-sm">
@@ -12,6 +13,9 @@ export default function RoleTable({ users, role, permissions, onDelete }) {
             <th className="px-5 py-4 text-left font-semibold">Name</th>
             <th className="px-5 py-4 text-left font-semibold">Email</th>
             <th className="px-5 py-4 text-left font-semibold">Phone</th>
+            {role !== 'superadmin' && (
+              <th className="px-5 py-4 text-left font-semibold">Company</th>
+            )}
             <th className="px-5 py-4 text-left font-semibold">Status</th>
             <th className="px-5 py-4 text-left font-semibold">Actions</th>
           </tr>
@@ -30,7 +34,7 @@ export default function RoleTable({ users, role, permissions, onDelete }) {
             >
               {/* ID (hidden on mobile) */}
               <td className="hidden sm:table-cell px-5 py-4 text-[var(--muted-foreground)]">
-                {index + 1}
+                {(currentPage - 1) * pageSize + index + 1}
               </td>
 
               {/* Name */}
@@ -65,6 +69,18 @@ export default function RoleTable({ users, role, permissions, onDelete }) {
                   {user.phone || "—"}
                 </div>
               </td>
+
+              {role !== 'superadmin' && (
+                <td
+                  className="block sm:table-cell px-5 py-2 sm:py-4"
+                  data-label="Company"
+                >
+                  <div className="flex items-center gap-2 text-[var(--muted-foreground)]">
+                    {/* Note: Ensure the API sends back the nested company object name */}
+                    {user.companies?.name || "N/A"}
+                  </div>
+                </td>
+              )}
 
               {/* Status */}
               <td

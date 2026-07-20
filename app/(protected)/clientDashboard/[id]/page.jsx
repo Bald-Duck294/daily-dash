@@ -731,10 +731,10 @@ export default function ClientDashboard() {
     : "0.0";
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] dark:bg-slate-950 p-6 font-sans md:mt-[-10px]">
+   <div className="min-h-screen bg-[#f8fafc] dark:bg-slate-950 p-3 sm:p-4 md:p-6 font-sans md:mt-[-10px]">
 
       {/* 1. TOP STATS ROW */}
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6 md:mt-[-30px]">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4 mb-6 md:mt-[-30px]">
         {isCountsLoading ? (
           Array(5).fill(0).map((_, i) => <StatSkeleton key={i} />)
         ) : (
@@ -955,20 +955,22 @@ export default function ClientDashboard() {
           {isHeatmapLoading ? (
             <div className="py-12"><Loader /></div>
           ) : (
-            <div className="w-full overflow-x-auto pb-4 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-200 dark:[&::-webkit-scrollbar-thumb]:bg-slate-700 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-slate-300 dark:hover:[&::-webkit-scrollbar-thumb]:bg-slate-600 transition-colors">
+            <div className="w-full overflow-x-auto overflow-y-auto max-h-[330px] pb-4 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-200 dark:[&::-webkit-scrollbar-thumb]:bg-slate-700 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-slate-300 dark:hover:[&::-webkit-scrollbar-thumb]:bg-slate-600 transition-colors">
+              {/* Container with both X and Y scrolling, max height, and slim scrollbar styling */}
               <div className="w-max min-w-full border border-slate-100 dark:border-slate-800 rounded-xl overflow-hidden text-xs bg-white dark:bg-slate-900 shadow-sm relative">
 
-                {/* Table Header */}
-                <div className="flex font-bold text-slate-600 dark:text-slate-300 mb-1 border-b border-slate-100 dark:border-slate-800 pb-2">
-                  {/* Reduced left column width on mobile from w-64 to w-28 */}
-                  <div className="w-28 md:w-64 flex-shrink-0 pl-3 md:pl-4 sticky left-0 bg-white dark:bg-slate-900 z-10 border-r border-slate-50 dark:border-slate-800">Washroom</div>
+                {/* Table Header - Now sticky to the top on vertical scroll */}
+                <div className="flex font-bold text-slate-600 dark:text-slate-300 mb-1 border-b border-slate-100 dark:border-slate-800 pb-2 sticky top-0 bg-white dark:bg-slate-900 z-20">
+                  {/* Left corner cell (Washroom) needs z-30 to float above both scrolling directions */}
+                  <div className="w-28 md:w-64 flex-shrink-0 pl-3 md:pl-4 sticky left-0 bg-white dark:bg-slate-900 z-30 border-r border-slate-50 dark:border-slate-800">Washroom</div>
                   {heatmapDatesArray.map((dateStr) => {
                     const day = new Date(dateStr).getDate();
                     return (
                       <div key={dateStr} className="w-8 flex-shrink-0 text-center">{day}</div>
                     );
                   })}
-                  <div className="w-14 flex-shrink-0 text-center sticky right-0 bg-white dark:bg-slate-900 z-10 border-l border-slate-100 dark:border-slate-800 shadow-[-4px_0_10px_rgba(0,0,0,0.02)]">Avg</div>
+                  {/* Right corner cell (Avg) needs z-30 to float above both scrolling directions */}
+                  <div className="w-14 flex-shrink-0 text-center sticky right-0 bg-white dark:bg-slate-900 z-30 border-l border-slate-100 dark:border-slate-800 shadow-[-4px_0_10px_rgba(0,0,0,0.02)]">Avg</div>
                 </div>
 
                 {/* Table Rows */}
@@ -978,7 +980,7 @@ export default function ClientDashboard() {
                   return (
                     <div key={row.washroom_id || i} className="flex h-10 items-stretch group">
 
-                      {/* Reduced left column width on mobile from w-64 to w-28, adjusted text size slightly to prevent too much cutting off */}
+                      {/* Left Sticky Column */}
                       <div className="w-28 md:w-64 flex-shrink-0 text-[10px] md:text-xs font-bold text-slate-700 dark:text-slate-200 pl-3 md:pl-4 pr-2 truncate flex items-center border-b border-white dark:border-slate-900 sticky left-0 bg-white dark:bg-slate-900 z-10 border-r border-slate-50 dark:border-slate-800 group-hover:bg-slate-50 dark:group-hover:bg-slate-800/50 transition-colors" title={row.washroom_name}>
                         {row.washroom_name}
                       </div>
@@ -993,6 +995,7 @@ export default function ClientDashboard() {
                         )
                       })}
 
+                      {/* Right Sticky Column */}
                       <div className="w-14 flex-shrink-0 flex items-center justify-center font-black text-slate-800 dark:text-slate-100 border-b border-white dark:border-slate-900 sticky right-0 bg-white dark:bg-slate-900 z-10 border-l border-slate-100 dark:border-slate-800 shadow-[-4px_0_10px_rgba(0,0,0,0.02)] group-hover:bg-slate-50 dark:group-hover:bg-slate-800/50 transition-colors">
                         {rowAvg}
                       </div>

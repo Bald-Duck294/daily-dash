@@ -80,26 +80,30 @@ getAllclientUsers: async ({ companyId = null, roleId = null, page = 1, limit = 1
   //     };
   //   }
   // },
-  getUsersByRole: async (roleId, companyId = null, page = 1, limit = 10) => {
-  try {
-    const params = { page, limit, roleId };
-    if (companyId) params.companyId = companyId;
+getUsersByRole: async (roleId, companyId = null, page = 1, limit = 10, search = "") => {
+    try {
+      const params = { page, limit, roleId };
+      
+      if (companyId) params.companyId = companyId;
+      
+      // ✅ Add search to the Axios params object
+      if (search) params.search = search;
 
-    const response = await axiosInstance.get("/users", { params });
+      const response = await axiosInstance.get("/users", { params });
 
-    return {
-      success: true,
-      data: response.data.data,      // Matches getAllUsers structure
-      pagination: response.data.meta, // Matches getAllUsers structure
-    };
-  } catch (error) {
-    console.error("Error fetching users by role:", error);
-    return {
-      success: false,
-      error: error.response?.data?.message || error.message,
-    };
-  }
-},
+      return {
+        success: true,
+        data: response.data.data,      // Matches getAllUsers structure
+        pagination: response.data.meta, // Matches getAllUsers structure
+      };
+    } catch (error) {
+      console.error("Error fetching users by role:", error);
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message,
+      };
+    }
+  },
 
   getUserById: async (id) => {
     try {

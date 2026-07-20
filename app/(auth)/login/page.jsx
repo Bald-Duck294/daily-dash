@@ -24,7 +24,8 @@ export default function LoginPage() {
   const [forgotData, setForgotData] = useState({ phone: "", newPassword: "", confirmPassword: "" });
   const [otpData, setOtpData] = useState({ phone: "", code: "" });
   const [otpSent, setOtpSent] = useState(false);
-
+  const [regStep, setRegStep] = useState(1); // 1: Phone, 2: OTP, 3: Details
+  const [regOtpCode, setRegOtpCode] = useState("");
   // ─── 1. GOOGLE AUTHENTICATION INITIALIZATION ───────────────────
   useEffect(() => {
     const script = document.createElement("script");
@@ -157,18 +158,50 @@ export default function LoginPage() {
     }
   };
 
-  const handleRegisterSubmit = async (e) => {
+  // const handleRegisterSubmit = async (e) => {
+  //   e.preventDefault();
+  //   setIsLoading(true);
+  //   try {
+  //     const payload = { name: regData.name, phone: regData.phone, password: regData.password, role_id: 2 };
+  //     await AuthApi.register(payload);
+  //     toast.success("Account created! Please log in to setup your workspace.");
+  //     setActiveView("main");
+  //     setLoginData({ phone: regData.phone, password: "" });
+  //     setRegData({ name: "", phone: "", password: "" });
+  //   } catch (error) {
+  //     toast.error(error?.response?.data?.message || "Registration failed.");
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
+
+const handleRegisterSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     try {
+      // 1. Create the account
       const payload = { name: regData.name, phone: regData.phone, password: regData.password, role_id: 2 };
-      await AuthApi.register(payload);
-      toast.success("Account created! Please log in to setup your workspace.");
-      setActiveView("main");
-      setLoginData({ phone: regData.phone, password: "" });
-      setRegData({ name: "", phone: "", password: "" });
+      await AuthApi.register(payload); 
+
+      toast.success("Account created! Logging you in...");
+
+      // 2. FORCE DIRECT LOGIN: Immediately authenticate using the new credentials
+      const loginResponse = await AuthApi.login(regData.phone, regData.password);
+
+      if (loginResponse.success || loginResponse.status === "success") {
+        const user = loginResponse.user || loginResponse.data?.user;
+        // This handles your token storage and Next.js routing automatically
+        handleAuthSuccess(user, loginResponse); 
+      } else {
+        // Fallback ONLY if the auto-login fails for some unexpected reason
+        toast.error("Auto-login failed. Please log in manually.");
+        setActiveView("main");
+        setLoginData({ phone: regData.phone, password: "" });
+        setRegStep(1);
+      }
+      
     } catch (error) {
-      toast.error(error?.response?.data?.message || "Registration failed.");
+      toast.error(error?.response?.data?.error || error?.response?.data?.message || "Registration failed.");
     } finally {
       setIsLoading(false);
     }
@@ -233,19 +266,61 @@ export default function LoginPage() {
     }
   };
 
+  const handleRegSendOtp = async (e) => {
+    e.preventDefault();
+    if (regData.phone.length !== 10) return toast.error("Enter a valid 10-digit number");
+
+    setIsLoading(true);
+    try {
+      const response = await AuthApi.requestOtp(regData.phone);
+      if (response.success) {
+        toast.success("OTP sent for registration!");
+        setRegStep(2);
+      } else {
+        toast.error(response.error || "Failed to send OTP");
+      }
+    } catch (error) {
+      toast.error("An unexpected error occurred.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRegVerifyOtp = async (e) => {
+    e.preventDefault();
+    if (regOtpCode.length !== 6) return toast.error("Enter a valid 6-digit OTP");
+
+    // 🚨 THIS WILL CONFIRM YOUR DATA ISN'T EMPTY 🚨
+    console.log("PAYLOAD BEING SENT:", {
+      phone: regData.phone,
+      code: regOtpCode,
+      intent: "register"
+    });
+
+    setIsLoading(true);
+    try {
+      const response = await AuthApi.verifyOtp(regData.phone, regOtpCode, "register");
+
+      if (response.success) {
+        toast.success("Number verified! Please complete your profile.");
+        setRegStep(3);
+      } else {
+        toast.error(response.error || "Invalid OTP");
+      }
+    } catch (error) {
+      toast.error("Failed to verify OTP.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const setupOtpView = () => {
     setActiveView("otp");
     setOtpSent(false);
     setOtpData({ phone: "", code: "" });
   };
 
-  // ─── COMING SOON HANDLER ────────────────────────────────
-  const handleComingSoon = (provider) => {
-    toast(`Login with ${provider} will be available soon! 🚀`, {
-      icon: "✨",
-      style: { borderRadius: "10px", background: "#1e293b", color: "#fff" },
-    });
-  };
+
 
   return (
     <>
@@ -788,7 +863,7 @@ export default function LoginPage() {
                     src="/flo-mascot.png"
                     alt="SaafAI Mascot"
                   />
-                  <img className="mob-mascot-img" src="/flo-mascot.png" alt="SaafAI Mascot" />
+                  {/* <img className="mob-mascot-img" src="/flo-mascot.png" alt="SaafAI Mascot" /> */}
                 </div>
                 <div className="mob-tagline">
                   Clean Today,&nbsp;<span className="accent">Greener Tomorrow.</span>
@@ -804,7 +879,7 @@ export default function LoginPage() {
                 id="view-main"
                 className={`auth-view ${activeView === "main" ? "active" : ""}`}
               >
-              {/* <div className={`auth-view ${activeView === "main" ? "active" : ""}`}> */}
+                {/* <div className={`auth-view ${activeView === "main" ? "active" : ""}`}> */}
                 <div className="brand-header">
                   <div className="brand-title">Saaf<span>AI</span></div>
                   <div className="brand-divider">
@@ -866,7 +941,7 @@ export default function LoginPage() {
                           }))
                         }
                         required
-                        style={{ paddingRight: "40px" }} 
+                        style={{ paddingRight: "40px" }}
                       />
 
                       <button
@@ -884,7 +959,7 @@ export default function LoginPage() {
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
-                          color: "#6b7280", 
+                          color: "#6b7280",
                           padding: 0
                         }}
                       >
@@ -945,7 +1020,6 @@ export default function LoginPage() {
                 id="view-register"
                 className={`auth-view ${activeView === "register" ? "active" : ""}`}
               >
-              {/* <div className={`auth-view ${activeView === "register" ? "active" : ""}`}> */}
                 <div className="brand-header">
                   <div className="brand-title">Create <span>Account</span></div>
                   <div className="brand-tagline">Join SaafAI Portal today</div>
@@ -953,118 +1027,158 @@ export default function LoginPage() {
 
                 <div className="section-separator"></div>
 
-                <form onSubmit={handleRegisterSubmit}>
-                  <div className="form-group">
-                    <label htmlFor="reg-name">Full Name (Optional)</label>
-                    <div className="input-wrapper">
-                      <span className="input-icon-left">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                          <circle cx="12" cy="7" r="4"></circle>
-                        </svg>
-                      </span>
-                      <input
-                        type="text"
-                        id="reg-name"
-                        placeholder="John Doe"
-                        value={regData.name}
-                        onChange={(e) =>
-                          setRegData((prev) => ({
-                            ...prev,
-                            name: e.target.value,
-                          }))
-                        }
-                      />
+                {/* STEP 1: MOBILE NUMBER */}
+                {regStep === 1 && (
+                  <form onSubmit={handleRegSendOtp}>
+                    <div className="form-group">
+                      <label htmlFor="reg-phone">Mobile Number</label>
+                      <div className="input-wrapper">
+                        <span className="input-icon-left">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                          </svg>
+                        </span>
+                        <input
+                          type="tel"
+                          id="reg-phone"
+                          inputMode="numeric"
+                          placeholder="10-digit mobile number"
+                          value={regData.phone}
+                          onChange={(e) => setRegData((prev) => ({ ...prev, phone: e.target.value.replace(/\D/g, "").slice(0, 10) }))}
+                          required
+                        />
+                      </div>
                     </div>
-                  </div>
+                    <button type="submit" disabled={loading} className="btn-login" style={{ background: "linear-gradient(120deg, #10b981 0%, #059669 100%)", boxShadow: "0 6px 20px rgba(16, 185, 129, 0.3)" }}>
+                      {loading ? "Sending..." : "Send OTP"}
+                    </button>
 
-                  <div className="form-group">
-                    <label htmlFor="reg-phone">Mobile Number</label>
-                    <div className="input-wrapper">
-                      <span className="input-icon-left">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"></path>
-                        </svg>
-                      </span>
-                      <input
-                        type="tel"
-                        id="reg-phone"
-                        inputMode="numeric"
-                        placeholder="10-digit mobile number"
-                        value={regData.phone}
-                        onChange={(e) =>
-                          setRegData((prev) => ({
-                            ...prev,
-                            phone: e.target.value.replace(/\D/g, "").slice(0, 10),
-                          }))
-                        }
-                        required
-                      />
+                    <div className="or-divider">OR SIGN UP WITH</div>
+                    <div className="social-btn-group">
+                      <div className="social-btn-wrapper">
+                        <div id="google-register-overlay" className="google-iframe-overlay" />
+                        <button type="button" className="btn-social">
+                          <svg width="16" height="16" viewBox="0 0 24 24">
+                            <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v3.92h6.61c-.29 1.5-1.14 2.77-2.4 3.63v3h3.86c2.26-2.09 3.67-5.17 3.67-8.48z" />
+                            <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.86-3c-1.08.72-2.45 1.16-4.07 1.16-3.13 0-5.78-2.11-6.73-4.96H1.29v3.13C3.26 21.35 7.37 24 12 24z" />
+                            <path fill="#FBBC05" d="M5.27 14.29c-.25-.72-.38-1.49-.38-2.29s.14-1.57.38-2.29V6.57H1.29C.47 8.2.0 10.05.0 12s.47 3.8 1.29 5.43l3.98-3.14z" />
+                            <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.37 0 3.26 2.65 1.29 6.57l3.98 3.14c.95-2.85 3.6-4.96 6.73-4.96z" />
+                          </svg>
+                          Google
+                        </button>
+                      </div>
                     </div>
-                  </div>
+                  </form>
+                )}
 
-                  <div className="form-group">
-                    <label htmlFor="reg-password">Password</label>
-                    <div className="input-wrapper">
-                      <span className="input-icon-left">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                        </svg>
-                      </span>
-                      <input
-                        type="password"
-                        id="reg-password"
-                        placeholder="Create a secure password"
-                        value={regData.password}
-                        onChange={(e) =>
-                          setRegData((prev) => ({
-                            ...prev,
-                            password: e.target.value,
-                          }))
-                        }
-                        required
-                      />
+                {/* STEP 2: VERIFY OTP */}
+                {regStep === 2 && (
+                  <form onSubmit={handleRegVerifyOtp}>
+                    <div className="form-group">
+                      <label htmlFor="reg-otp">Enter OTP</label>
+                      <div className="input-wrapper">
+                        <span className="input-icon-left">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                          </svg>
+                        </span>
+                        <input
+                          type="text"
+                          id="reg-otp"
+                          inputMode="numeric"
+                          placeholder="Enter 6-digit OTP"
+                          value={regOtpCode}
+                          onChange={(e) => setRegOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                          required
+                        />
+                      </div>
                     </div>
-                  </div>
+                    <button type="submit" disabled={loading} className="btn-login" style={{ background: "linear-gradient(120deg, #10b981 0%, #059669 100%)", boxShadow: "0 6px 20px rgba(16, 185, 129, 0.3)" }}>
+                      {loading ? "Verifying..." : "Verify Number"}
+                    </button>
+                  </form>
+                )}
 
-                  <button type="submit" disabled={loading} className="btn-login" style={{ background: "linear-gradient(120deg, #10b981 0%, #059669 100%)", boxShadow: "0 6px 20px rgba(16, 185, 129, 0.3)" }}>
-                    {loading ? "Creating account..." : "Register Now"}
-                  </button>
-
-                  <div className="or-divider">OR SIGN UP WITH</div>
-
-                  <div className="social-btn-group">
-                    {/* 🔓 GOOGLE REGISTRATION OVERLAY */}
-                    <div className="social-btn-wrapper">
-                      <div id="google-register-overlay" className="google-iframe-overlay" />
-                      <button type="button" className="btn-social">
-                        <svg width="16" height="16" viewBox="0 0 24 24">
-                          <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v3.92h6.61c-.29 1.5-1.14 2.77-2.4 3.63v3h3.86c2.26-2.09 3.67-5.17 3.67-8.48z" />
-                          <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.86-3c-1.08.72-2.45 1.16-4.07 1.16-3.13 0-5.78-2.11-6.73-4.96H1.29v3.13C3.26 21.35 7.37 24 12 24z" />
-                          <path fill="#FBBC05" d="M5.27 14.29c-.25-.72-.38-1.49-.38-2.29s.14-1.57.38-2.29V6.57H1.29C.47 8.2.0 10.05.0 12s.47 3.8 1.29 5.43l3.98-3.14z" />
-                          <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.37 0 3.26 2.65 1.29 6.57l3.98 3.14c.95-2.85 3.6-4.96 6.73-4.96z" />
-                        </svg>
-                        Google
-                      </button>
+                {/* STEP 3: DETAILS & SECURE PASSWORD */}
+                {regStep === 3 && (
+                  <form onSubmit={handleRegisterSubmit}>
+                    <div className="form-group">
+                      <label htmlFor="reg-name">Full Name (Optional)</label>
+                      <div className="input-wrapper">
+                        <span className="input-icon-left">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                          </svg>
+                        </span>
+                        <input
+                          type="text"
+                          id="reg-name"
+                          placeholder="John Doe"
+                          value={regData.name}
+                          onChange={(e) => setRegData((prev) => ({ ...prev, name: e.target.value }))}
+                        />
+                      </div>
                     </div>
 
-                    <div className="social-btn-wrapper">
-                      <button type="button" onClick={setupOtpView} className="btn-social">
-                        <Smartphone size={16} color="#3b4df2" />
-                        OTP
-                      </button>
-                    </div>
-                  </div>
+                    <div className="form-group">
+                      <label htmlFor="reg-password">Password</label>
+                      <div className="input-wrapper" style={{ position: "relative" }}>
+                        <span className="input-icon-left">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                          </svg>
+                        </span>
 
-                  <button type="button" onClick={() => setActiveView("main")} className="btn-back-main">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                      <line x1="19" y1="12" x2="5" y2="12"></line>
-                      <polyline points="12 19 5 12 12 5"></polyline>
-                    </svg>
-                    Already have an account? Log in
-                  </button>
-                </form>
+                        <input
+                          type={showPassword ? "text" : "password"}
+                          id="reg-password"
+                          placeholder="Create a secure password"
+                          value={regData.password}
+                          onChange={(e) => setRegData((prev) => ({ ...prev, password: e.target.value }))}
+                          required
+                          style={{ paddingRight: "40px" }}
+                        />
+
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword((prev) => !prev)}
+                          aria-label={showPassword ? "Hide password" : "Show password"}
+                          style={{
+                            position: "absolute",
+                            right: "12px",
+                            top: "50%",
+                            transform: "translateY(-50%)",
+                            background: "transparent",
+                            border: "none",
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: "#6b7280",
+                            padding: 0
+                          }}
+                        >
+                          {showPassword ? <Eye size={18} /> : <EyeClosed size={18} />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <button type="submit" disabled={loading} className="btn-login" style={{ background: "linear-gradient(120deg, #10b981 0%, #059669 100%)", boxShadow: "0 6px 20px rgba(16, 185, 129, 0.3)" }}>
+                      {loading ? "Creating account..." : "Register Now"}
+                    </button>
+                  </form>
+                )}
+
+                <button type="button" onClick={() => { setActiveView("main"); setRegStep(1); }} className="btn-back-main">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                  </svg>
+                  Already have an account? Log in
+                </button>
               </div>
 
               {/* --- VIEW: FORGOT PASSWORD --- */}

@@ -655,7 +655,7 @@ export function WashroomCleanlinessChart({ data = [] }) {
       {
         label: "Before Cleaning", // Orange
         data: avgScores.length > 0 ? avgScores : [0],
-        backgroundColor: "rgba(251, 191, 143, 0.7)", 
+        backgroundColor: "rgba(251, 191, 143, 0.7)",
         borderColor: "#F8A25A",
         borderWidth: 2,
         borderRadius: 4,
@@ -839,7 +839,7 @@ export function CleanerPerformanceChart({ data = [], isDarkMode = false }) {
 
           ctx.fillStyle = isDarkMode ? "#1e293b" : "#f1f5f9";
           ctx.beginPath();
-          ctx.roundRect(x - 14, y - 32, 28, 20, 6); 
+          ctx.roundRect(x - 14, y - 32, 28, 20, 6);
           ctx.fill();
 
           ctx.fillStyle = isDarkMode ? "#f8fafc" : "#1e293b";
@@ -858,22 +858,22 @@ export function CleanerPerformanceChart({ data = [], isDarkMode = false }) {
       {
         label: "Tasks Completed",
         data: taskCounts.length > 0 ? taskCounts : [1, 1, 4, 2, 1, 9, 3],
-        // The solid line color
-        borderColor: "#8b5cf6", 
+        spanGaps: true,
+        borderColor: "#8b5cf6",
         // The Area Fill Gradient
         backgroundColor: (context) => {
           const chart = context.chart;
           const { ctx, chartArea } = chart;
-          
+
           // Fallback if chartArea isn't ready yet
-          if (!chartArea) return "rgba(139, 92, 246, 0.5)"; 
-          
+          if (!chartArea) return "rgba(139, 92, 246, 0.5)";
+
           const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
-          
+
           if (isDarkMode) {
             // Dark Mode Gradient: Stronger purple fading into dark slate
-            gradient.addColorStop(0, "rgba(139, 92, 246, 0.85)"); 
-            gradient.addColorStop(1, "rgba(15, 23, 42, 0.0)"); 
+            gradient.addColorStop(0, "rgba(139, 92, 246, 0.85)");
+            gradient.addColorStop(1, "rgba(15, 23, 42, 0.0)");
           } else {
             // Light Mode Gradient (Matches your reference image): Purple top fading to blue bottom
             gradient.addColorStop(0, "rgba(139, 92, 246, 0.7)"); // Vivid Purple
@@ -882,11 +882,11 @@ export function CleanerPerformanceChart({ data = [], isDarkMode = false }) {
           return gradient;
         },
         // IMPORTANT: Use "start" or "origin" to enforce the fill down to the x-axis
-        fill: "start", 
+        fill: "start",
         borderWidth: 3,
-        tension: 0.4, 
-        pointBackgroundColor: "#8b5cf6", 
-        pointBorderColor: isDarkMode ? "#0f172a" : "#ffffff", 
+        tension: 0.4,
+        pointBackgroundColor: "#8b5cf6",
+        pointBorderColor: isDarkMode ? "#0f172a" : "#ffffff",
         pointBorderWidth: 2,
         pointRadius: 5,
         pointHoverRadius: 7,
@@ -902,7 +902,7 @@ export function CleanerPerformanceChart({ data = [], isDarkMode = false }) {
     },
     plugins: {
       legend: { display: false },
-      tooltip: { enabled: false }, 
+      tooltip: { enabled: false },
     },
     scales: {
       x: {
@@ -911,26 +911,26 @@ export function CleanerPerformanceChart({ data = [], isDarkMode = false }) {
         border: { display: false },
       },
       y: {
-        grid: { color: isDarkMode ? "#334155" : "#f1f5f9" }, 
-        ticks: { 
-          color: isDarkMode ? "#94a3b8" : "#94a3b8", 
-          stepSize: 5, 
+        grid: { color: isDarkMode ? "#334155" : "#f1f5f9" },
+        ticks: {
+          color: isDarkMode ? "#94a3b8" : "#94a3b8",
+          stepSize: 5,
           font: { weight: "600", size: 11 },
           padding: 10
         },
         border: { display: false },
         min: 0,
-        suggestedMax: 20, 
+        suggestedMax: 20,
       },
     },
   };
 
   return (
     <div className="w-full h-full relative">
-      <Line 
-        data={chartData} 
-        options={options} 
-        plugins={[floatingLabelsPlugin]} 
+      <Line
+        data={chartData}
+        options={options}
+        plugins={[floatingLabelsPlugin]}
       />
     </div>
   );

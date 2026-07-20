@@ -91,14 +91,14 @@ export default function CompaniesTable({
                 transition
               "
             >
-              <td className="p-3">{i + 1}</td>
+              <td className="p-3">{(currentPage - 1) * pageSize + i + 1}</td>
 
               <td className="p-3 font-medium text-[var(--foreground)]">
                 {c.name}
               </td>
 
               <td className="p-3 text-[var(--sidebar-muted)]">
-                {c.contact_email}
+                {c.contact_email || "N/A"}
               </td>
 
               <td className="p-3">

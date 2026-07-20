@@ -1,7 +1,16 @@
 import Link from "next/link";
 import { ArrowLeft, Plus, Search } from "lucide-react";
 
-export default function RoleHeader({ role, search, onSearch, canAdd }) {
+export default function RoleHeader({ 
+  role, 
+  search, 
+  onSearch, 
+  canAdd,
+  companies = [],
+  selectedCompany,
+  onCompanyChange,
+  isCompaniesLoading
+}) {
   const title = role.charAt(0).toUpperCase() + role.slice(1);
 
   return (
@@ -15,17 +24,36 @@ export default function RoleHeader({ role, search, onSearch, canAdd }) {
         </p>
       </div>
 
-      <div className="flex gap-2 items-center">
+      <div className="flex flex-wrap gap-2 items-center">
+        {/* Company Filter */}
+        {role !== 'superadmin' && (
+          <select
+            value={selectedCompany}
+            onChange={(e) => onCompanyChange(e.target.value)}
+            disabled={isCompaniesLoading}
+            className="px-3 py-2 border rounded-md bg-[var(--bg-muted)] text-[var(--text-primary)] text-sm outline-none min-w-[150px]"
+          >
+            <option value="">All Companies</option>
+            {companies?.map((company) => (
+              <option key={company.id} value={company.id}>
+                {company.name}
+              </option>
+            ))}
+          </select>
+        )}
+
+        {/* Search Input */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-secondary)]" />
           <input
             value={search}
             onChange={e => onSearch(e.target.value)}
             placeholder="Search users..."
-            className="pl-9 pr-3 py-2 border rounded-md bg-[var(--bg-muted)] text-sm"
+            className="pl-9 pr-3 py-2 border rounded-md bg-[var(--bg-muted)] text-sm outline-none"
           />
         </div>
 
+        {/* Add Button */}
         {canAdd && (
           <Link
             href={`/roles/${role}/add`}
