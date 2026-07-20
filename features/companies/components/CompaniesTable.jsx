@@ -27,6 +27,8 @@ export default function CompaniesTable({
   sortField,
   sortOrder,
   onSortChange,
+  currentPage = 1,
+  pageSize = 6,
 }) {
   const router = useRouter();
 
