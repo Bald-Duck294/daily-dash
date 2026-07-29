@@ -39,9 +39,9 @@ export default function TreeNode({
             [ID: {type.id}]
           </span>
 
-          {type.is_toilet && (
+          {type.ui_type && (
             <span className="text-emerald-600 dark:text-emerald-400 text-xs font-semibold">
-              (Toilet Type)
+              ({type.ui_type.toUpperCase()})
             </span>
           )}
         </div>

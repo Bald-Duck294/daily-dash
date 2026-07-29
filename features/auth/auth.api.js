@@ -86,9 +86,9 @@ export const AuthApi = {
   },
 
   // OTP: REQUEST
-  requestOtp: async (phone) => {
+  requestOtp: async (phone, intent = "login") => {
     try {
-      const response = await axiosInstance.post("/auth/request-otp", { phone });
+      const response = await axiosInstance.post("/auth/request-otp", { phone, intent });
       return { success: true, data: response.data };
     } catch (error) {
       return {
@@ -119,6 +119,17 @@ verifyOtp: async (phone, code, intent = "login") => {
           error.response?.data?.error ||
           error.response?.data?.message ||
           "Invalid OTP", // This is the fallback you are currently seeing
+      };
+    }
+  },
+  resetPassword: async (phone, newPassword) => {
+    try {
+      const response = await axiosInstance.post("/auth/reset-pass", { phone, newPassword });
+      return { success: true, data: response.data };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.error || error.response?.data?.message || "Password reset failed"
       };
     }
   },

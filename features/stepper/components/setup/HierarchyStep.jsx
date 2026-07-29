@@ -1,9 +1,10 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import LiveFlowchart from "@/features/stepper/components/ui/LiveFlowchart";
 import StepHelpDrawer from "@/features/stepper/components/ui/StepHelpDrawer";
 import { generateTempId, buildTreeData } from "../../utils/hierarchyUtils";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { getTemplatesForStructure } from "../../utils/hierarchyTemplates";
+import { ArrowLeft, ArrowRight, Sparkles, Check } from "lucide-react";
 
 const nodeTypes = {
   building: { label: "Building / Block", icon: "🏢" },
@@ -12,61 +13,53 @@ const nodeTypes = {
   ward: { label: "Ward", icon: "🏥" },
 };
 
-// Dynamically generate templates based on company structure
-const getDynamicTemplates = (structureType, orgType) => {
-  const isHospital = orgType?.includes("Hospital");
-  const prefix = isHospital ? "Hospital" : "Main Facility";
-
-  if (structureType === "Single Building") {
-    return [{ id: "single", icon: "🏢", label: "Standard Single Building" }];
-  } else if (structureType === "Multiple Building Campus") {
-    return [{ id: "campus", icon: "🏘️", label: "Multi-Building Campus" }];
-  } else if (
-    structureType === "Multiple Locations" ||
-    structureType?.includes("Network")
-  ) {
-    return [{ id: "network", icon: "📍", label: "Regional Locations" }];
-  }
-  // Default fallback
-  return [
-    { id: "office", icon: "🏢", label: "Corporate Office" },
-    { id: "hospital", icon: "🏥", label: "Hospital" },
-  ];
-};
-
 export default function HierarchyStep({
   onNext,
   onBack,
   nodes = [],
   companyProfile = {},
 }) {
-  const defaultRoot = {
-    temp_id: generateTempId("node"),
-    name: "Main Facility",
-    type: "building",
-    parent_temp_id: null,
-  };
+  const dynamicTemplates = useMemo(
+    () =>
+      getTemplatesForStructure(
+        companyProfile.operation_structure,
+        companyProfile.organization_type
+      ),
+    [companyProfile.operation_structure, companyProfile.organization_type]
+  );
 
-  const [localNodes, setLocalNodes] = useState(
-    nodes.length > 0 ? nodes : [defaultRoot],
+  const recommendedTemplate = useMemo(
+    () => dynamicTemplates.find((t) => t.isRecommended) || dynamicTemplates[0],
+    [dynamicTemplates]
+  );
+
+  const [localNodes, setLocalNodes] = useState(() => {
+    if (nodes && nodes.length > 0) return nodes;
+    if (recommendedTemplate) return recommendedTemplate.buildNodes();
+    const defaultRoot = {
+      temp_id: generateTempId("node"),
+      name: "Main Facility",
+      type: "building",
+      parent_temp_id: null,
+    };
+    return [defaultRoot];
+  });
+
+  const [activeTemplateId, setActiveTemplateId] = useState(
+    recommendedTemplate?.id || ""
   );
 
   // EDIT STATE
   const [editMode, setEditMode] = useState(false);
   const [editingNodeId, setEditingNodeId] = useState(null);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
 
   useEffect(() => {
-    if (nodes.length > 0) setLocalNodes(nodes);
+    if (nodes && nodes.length > 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setLocalNodes(nodes);
+    }
   }, [nodes]);
-
-  const dynamicTemplates = getDynamicTemplates(
-    companyProfile.operation_structure,
-    companyProfile.organization_type,
-  );
-  const [activeTemplate, setActiveTemplate] = useState(
-    dynamicTemplates[0]?.id || "office",
-  );
-  const [isHelpOpen, setIsHelpOpen] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -151,87 +144,25 @@ export default function HierarchyStep({
     }
   };
 
-  const handleApplyTemplate = (templateId) => {
-    setActiveTemplate(templateId);
-    let generated = [];
-    const bldgId = generateTempId("node");
-
-    if (templateId === "single") {
-      generated.push({
-        temp_id: bldgId,
-        name: "Main Building",
-        type: "building",
-        parent_temp_id: null,
-      });
-      generated.push({
-        temp_id: generateTempId("node"),
-        name: "Ground Floor",
-        type: "floor",
-        parent_temp_id: bldgId,
-      });
-      generated.push({
-        temp_id: generateTempId("node"),
-        name: "First Floor",
-        type: "floor",
-        parent_temp_id: bldgId,
-      });
-    } else if (templateId === "campus") {
-      const bldg2Id = generateTempId("node");
-      generated.push({
-        temp_id: bldgId,
-        name: "North Block",
-        type: "building",
-        parent_temp_id: null,
-      });
-      generated.push({
-        temp_id: generateTempId("node"),
-        name: "Ground Floor",
-        type: "floor",
-        parent_temp_id: bldgId,
-      });
-      generated.push({
-        temp_id: bldg2Id,
-        name: "South Block",
-        type: "building",
-        parent_temp_id: null,
-      });
-      generated.push({
-        temp_id: generateTempId("node"),
-        name: "Ground Floor",
-        type: "floor",
-        parent_temp_id: bldg2Id,
-      });
-    } else if (templateId === "network") {
-      generated.push({
-        temp_id: bldgId,
-        name: "Branch 1",
-        type: "building",
-        parent_temp_id: null,
-      });
-      generated.push({
-        temp_id: generateTempId("node"),
-        name: "Branch 2",
-        type: "building",
-        parent_temp_id: null,
-      });
-    } else {
-      // Fallbacks
-      generated.push({
-        temp_id: bldgId,
-        name: "Corporate Office",
-        type: "building",
-        parent_temp_id: null,
-      });
-      generated.push({
-        temp_id: generateTempId("node"),
-        name: "Ground Floor",
-        type: "floor",
-        parent_temp_id: bldgId,
-      });
+  const handleApplyTemplate = (template) => {
+    if (
+      localNodes.length > 0 &&
+      activeTemplateId &&
+      activeTemplateId !== template.id
+    ) {
+      const confirmChange = window.confirm(
+        `Applying "${template.label}" will replace your current location hierarchy tree. Do you wish to proceed?`
+      );
+      if (!confirmChange) return;
     }
 
+    setActiveTemplateId(template.id);
+    const generated = template.buildNodes();
     setLocalNodes(generated);
-    setFormData({ ...formData, parent_temp_id: generated[0].temp_id });
+    setFormData((prev) => ({
+      ...prev,
+      parent_temp_id: generated[0]?.temp_id || "root",
+    }));
     setEditMode(false);
   };
 
@@ -308,21 +239,57 @@ export default function HierarchyStep({
       </div>
 
       {/* DYNAMIC TEMPLATES */}
-      <div className="bg-white border border-slate-200 rounded-xl p-4 md:p-5 shadow-sm">
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">
-          Suggested Templates based on your setup
-        </p>
-        <div className="flex flex-col sm:flex-row flex-wrap gap-2 md:gap-3">
-          {dynamicTemplates.map((template) => (
-            <button
-              key={template.id}
-              onClick={() => handleApplyTemplate(template.id)}
-              className={`flex items-center justify-center gap-2 px-4 py-2.5 md:py-2 rounded-lg text-xs font-bold border-[1.5px] transition-colors w-full sm:w-auto
-                ${activeTemplate === template.id ? "border-[#1F4E79] text-[#1F4E79] bg-[#e8f0f9]" : "border-slate-200 text-slate-600 bg-white hover:border-slate-300"}`}
-            >
-              <span className="text-sm">{template.icon}</span> {template.label}
-            </button>
-          ))}
+      <div className="bg-white border border-slate-200 rounded-xl p-4 md:p-5 shadow-sm space-y-3">
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+            <Sparkles className="w-4 h-4 text-amber-500" />
+            Hierarchy Presets ({companyProfile.operation_structure || "Standard"})
+          </p>
+          <span className="text-[11px] text-slate-400 font-medium">
+            Select a layout template or customize below
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+          {dynamicTemplates.map((template) => {
+            const isSelected = activeTemplateId === template.id;
+            return (
+              <button
+                key={template.id}
+                type="button"
+                onClick={() => handleApplyTemplate(template)}
+                className={`relative flex flex-col justify-between p-3.5 rounded-xl border-2 text-left transition-all duration-200 group ${
+                  isSelected
+                    ? "border-blue-600 bg-blue-50/50 shadow-sm"
+                    : "border-slate-200 bg-white hover:border-blue-200 hover:bg-slate-50"
+                }`}
+              >
+                <div>
+                  <div className="flex items-center justify-between gap-2 mb-1.5">
+                    <span className="text-xl">{template.icon}</span>
+                    <div className="flex items-center gap-1.5">
+                      {template.isRecommended && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200 flex items-center gap-1">
+                          ★ Recommended
+                        </span>
+                      )}
+                      {isSelected && (
+                        <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center">
+                          <Check className="w-3 h-3 stroke-[3]" />
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <h4 className="text-xs font-bold text-slate-900 group-hover:text-blue-700">
+                    {template.label}
+                  </h4>
+                  <p className="text-[11px] text-slate-500 mt-1 leading-snug line-clamp-2">
+                    {template.desc}
+                  </p>
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -353,9 +320,33 @@ export default function HierarchyStep({
               <input
                 type="text"
                 value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
+                onChange={(e) => {
+                  const newName = e.target.value;
+                  let autoType = formData.type;
+
+                  // Auto-guess type based on user's typing
+                  const lowerName = newName.toLowerCase();
+                  if (lowerName.includes("ward")) autoType = "ward";
+                  else if (
+                    lowerName.includes("floor") ||
+                    lowerName.includes("level")
+                  )
+                    autoType = "floor";
+                  else if (
+                    lowerName.includes("zone") ||
+                    lowerName.includes("area") ||
+                    lowerName.includes("wing")
+                  )
+                    autoType = "zone";
+                  else if (
+                    lowerName.includes("building") ||
+                    lowerName.includes("block") ||
+                    lowerName.includes("facility")
+                  )
+                    autoType = "building";
+
+                  setFormData({ ...formData, name: newName, type: autoType });
+                }}
                 className="w-full border-[1.5px] border-slate-200 rounded-lg px-3 py-3 md:py-2 text-sm outline-none focus:border-[#1F4E79]"
                 placeholder="e.g. Block A, Floor 1"
                 onKeyDown={(e) => e.key === "Enter" && handleSaveNode()}

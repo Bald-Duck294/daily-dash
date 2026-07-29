@@ -149,6 +149,38 @@ export default function AppPreviewStep({
         phoneInput.setAttribute("readonly", "true");
         phoneInput.setAttribute("autocomplete", "new-password"); // Tricks the browser
       }
+
+      if (inputs.length > 1) {
+        const passwordInput = inputs[1];
+        passwordInput.value = "123456";
+        passwordInput.setAttribute("value", "123456");
+        passwordInput.setAttribute("readonly", "true");
+        passwordInput.setAttribute("autocomplete", "new-password");
+      }
+
+      // Inject Name
+      ["profileNameDisplay", "profileNameInModal", "drawerName"].forEach((id) =>
+        injectText(id, cleanerUser.name),
+      );
+      const nameInput = doc.getElementById("nameInput");
+      if (nameInput) {
+        nameInput.value = cleanerUser.name;
+        nameInput.setAttribute("value", cleanerUser.name);
+      }
+
+      // Inject Phone
+      ["profilePhoneDisplay", "drawerPhone", "phoneDisplayVisible"].forEach(
+        (id) =>
+          injectText(
+            id,
+            "+91 " + cleanerUser.phone.replace(/(\d{5})(\d{5})/, "$1 $2"),
+          ),
+      );
+
+      // Inject Initials
+      ["profileAvatar", "drawerAvatar", "photoInitials"].forEach((id) =>
+        injectText(id, initials),
+      );
       if (washrooms && washrooms.length > 0) {
         win.WD = {};
         washrooms.forEach((w, i) => {
@@ -291,12 +323,18 @@ export default function AppPreviewStep({
         if (hasSubmitted.current) return;
         hasSubmitted.current = true;
 
+        const cleanerUser = users.find((u) => u.role === "cleaner") || {
+          name: "Demo Cleaner",
+        };
+
         try {
           const washroomName = event.data.washroomName;
           const payload = {
-            name: `${washroomName} (App Preview)`,
+            name: `${washroomName} (App Preview - ${cleanerUser.name})`,
             company_id: user?.company_id || null,
             location_id: null,
+            cleaner_name: cleanerUser.name,
+            cleaner_phone: cleanerUser.phone,
           };
 
           const response = await axiosInstance.post(
@@ -328,7 +366,7 @@ export default function AppPreviewStep({
 
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
-  }, [queryClient, user]);
+  }, [queryClient, user, users]);
 
   return (
     <>

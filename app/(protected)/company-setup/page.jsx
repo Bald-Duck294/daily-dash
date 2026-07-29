@@ -358,9 +358,8 @@ import {
 } from "lucide-react";
 import { CompanyApi } from "@/features/companies/api/companies.api";
 // If you are using next/image, you can import Image from "next/image";
-
-const COMPANY_STORAGE_KEY = "company_setup_draft";
-const COMPANY_STORAGE_VERSION = 1;
+import { useSelector } from "react-redux";
+import { StorageManager } from "@/shared/utils/storageManager";
 
 // Replaced emojis with modern Lucide icons
 const ORGANIZATION_TYPES = [
@@ -415,6 +414,7 @@ const LOADING_TAGLINES = [
 
 export default function CompanySetupPage() {
   const router = useRouter();
+  const { user } = useSelector((state) => state.auth) || {};
   const inputRef = useRef(null);
   const otherInputRef = useRef(null);
 
@@ -436,48 +436,36 @@ export default function CompanySetupPage() {
 
   // 🚀 HYDRATION
   useEffect(() => {
-    const savedState = localStorage.getItem(COMPANY_STORAGE_KEY);
-    if (savedState) {
-      try {
-        const parsed = JSON.parse(savedState);
-        if (parsed.version === COMPANY_STORAGE_VERSION) {
-          if (parsed.step) setStep(parsed.step);
-          if (parsed.formData) {
-            setFormData(parsed.formData);
-            // Check if the loaded type is a custom one (not in the standard list)
-            const isStandardType = ORGANIZATION_TYPES.some(
-              (t) => t.id === parsed.formData.organization_type
-            );
-            if (
-              parsed.formData.organization_type &&
-              !isStandardType &&
-              parsed.step === 2
-            ) {
-              setShowOtherInput(true);
-              setCustomType(parsed.formData.organization_type);
-            }
-          }
-        } else {
-          localStorage.removeItem(COMPANY_STORAGE_KEY);
+    StorageManager.purgeLegacyDrafts();
+    if (!user?.id) return;
+
+    const parsed = StorageManager.loadCompanySetupDraft(user.id);
+    if (parsed) {
+      if (parsed.step) setStep(parsed.step);
+      if (parsed.formData) {
+        setFormData(parsed.formData);
+        // Check if the loaded type is a custom one (not in the standard list)
+        const isStandardType = ORGANIZATION_TYPES.some(
+          (t) => t.id === parsed.formData.organization_type
+        );
+        if (
+          parsed.formData.organization_type &&
+          !isStandardType &&
+          parsed.step === 2
+        ) {
+          setShowOtherInput(true);
+          setCustomType(parsed.formData.organization_type);
         }
-      } catch (e) {
-        localStorage.removeItem(COMPANY_STORAGE_KEY);
       }
     }
     setIsLoaded(true);
-  }, []);
+  }, [user?.id]);
 
   // 🚀 SAVE
   useEffect(() => {
-    if (!isLoaded) return;
-    const draft = {
-      version: COMPANY_STORAGE_VERSION,
-      step,
-      formData,
-      savedAt: Date.now(),
-    };
-    localStorage.setItem(COMPANY_STORAGE_KEY, JSON.stringify(draft));
-  }, [step, formData, isLoaded]);
+    if (!isLoaded || !user?.id) return;
+    StorageManager.saveCompanySetupDraft(user.id, step, formData);
+  }, [step, formData, isLoaded, user?.id]);
 
   useEffect(() => {
     if (step === 1 && inputRef.current) {
@@ -546,7 +534,9 @@ export default function CompanySetupPage() {
       await CompanyApi.setupCompany(finalData);
 
       // 🚀 CLEANUP ON SUCCESS
-      localStorage.removeItem(COMPANY_STORAGE_KEY);
+      if (user?.id) {
+        StorageManager.clearCompanySetupDraft(user.id);
+      }
 
       toast.success("Workspace initialized!");
       setTimeout(() => {

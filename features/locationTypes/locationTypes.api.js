@@ -67,10 +67,6 @@ const locationTypesApi = {
     const res = await axiosInstance.patch(`${BASE}/${id}`, data);
     return res.data;
   },
-  markAsToilet: async (id) => {
-    const res = await axiosInstance.patch(`${BASE}/${id}/mark-toilet`);
-    return res.data;
-  },
 };
 
 export default locationTypesApi;

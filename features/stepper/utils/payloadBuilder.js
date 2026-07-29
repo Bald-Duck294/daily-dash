@@ -19,8 +19,7 @@ export const buildDeploymentPayload = (draft) => {
       name: u.name,
       phone: u.phone,
       role: u.role,
-      assigned_washroom_temp_id:
-        u.assigned_washrooms?.length > 0 ? u.assigned_washrooms[0] : null,
+      assigned_locations: u.assigned_washrooms || [],
       assigned_zone_temp_id: u.assigned_zone_temp_id || null,
     })),
   };

@@ -249,7 +249,7 @@ import NotificationBell from "../notification/NotificationBell";
 import { useCompanyId } from "@/providers/CompanyProvider.jsx";
 import { toast } from "sonner";
 
-import { useCompany } from "@/features/companies/queries/companies.queries.js"; 
+import { useCompany } from "@/features/companies/queries/companies.queries.js";
 
 const Header = ({ pageTitle }) => {
   const dispatch = useDispatch();
@@ -298,7 +298,8 @@ const Header = ({ pageTitle }) => {
         localStorage.removeItem("user");
 
         if ("serviceWorker" in navigator) {
-          const registrations = await navigator.serviceWorker.getRegistrations();
+          const registrations =
+            await navigator.serviceWorker.getRegistrations();
           for (const registration of registrations) {
             if (registration.scope.includes("firebase-cloud-messaging")) {
               await registration.unregister();
@@ -320,15 +321,24 @@ const Header = ({ pageTitle }) => {
       return "User";
     }
     switch (user.role_id) {
-      case 1: return "Super Admin";
-      case 2: return "Admin";
-      case 3: return "Supervisor";
-      case 4: return "User";
-      case 5: return "Cleaner";
-      case 6: return "Zonal Admin";
-      case 7: return "Facility Supervisor";
-      case 8: return "Facility Admin";
-      default: return "User";
+      case 1:
+        return "Super Admin";
+      case 2:
+        return "Admin";
+      case 3:
+        return "Supervisor";
+      case 4:
+        return "User";
+      case 5:
+        return "Cleaner";
+      case 6:
+        return "Zonal Admin";
+      case 7:
+        return "Facility Supervisor";
+      case 8:
+        return "Facility Admin";
+      default:
+        return "User";
     }
   };
 
@@ -358,12 +368,16 @@ const Header = ({ pageTitle }) => {
       );
 
       // ✅ Only Role ID 2 (Admin) gets the clickable link
-  if (user?.role_id === 1 || user?.role_id === 2) {
+      if (user?.role_id === 1 || user?.role_id === 2) {
         return (
-          <Link 
-            href={`/organization/${companyId}`} 
+          <Link
+            href={`/organization/${companyId}`}
             className="flex items-center gap-2 hover:text-cyan-600 transition-colors cursor-pointer"
-            title={user?.role_id === 1 ? "Manage Client Company" : "View Company Profile"}
+            title={
+              user?.role_id === 1
+                ? "Manage Client Company"
+                : "View Company Profile"
+            }
           >
             {companyContent}
           </Link>
@@ -371,11 +385,7 @@ const Header = ({ pageTitle }) => {
       }
 
       // Read-only for all other roles (Superadmin, Supervisor, etc.)
-      return (
-        <div className="flex items-center gap-2">
-          {companyContent}
-        </div>
-      );
+      return <div className="flex items-center gap-2">{companyContent}</div>;
     }
 
     return <span className="truncate text-[var(--foreground)]">Dashboard</span>;
@@ -406,7 +416,7 @@ const Header = ({ pageTitle }) => {
         <div className="flex items-center gap-3">
           <button
             onClick={toggleTheme}
-            className="flex items-center justify-center h-9 w-9 rounded-md hover:bg-black/5 dark:hover:bg-white/10 transition"
+            className="cursor-pointer flex items-center justify-center h-9 w-9 rounded-md hover:bg-black/5 dark:hover:bg-white/10 transition"
             aria-label="Toggle theme"
           >
             {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
@@ -415,7 +425,7 @@ const Header = ({ pageTitle }) => {
 
         <button
           onClick={handleLogout}
-          className="px-2 py-1.5 sm:px-3 sm:py-2 md:px-4 md:py-2 text-xs sm:text-sm font-medium text-white bg-slate-800 rounded-lg hover:bg-slate-900 dark:bg-cyan-600 dark:hover:bg-cyan-700 transition-colors flex items-center justify-center gap-1 sm:gap-2 whitespace-nowrap"
+          className="cursor-pointer px-2 py-1.5 sm:px-3 sm:py-2 md:px-4 md:py-2 text-xs sm:text-sm font-medium text-white bg-slate-800 rounded-lg hover:bg-slate-900 dark:bg-cyan-600 dark:hover:bg-cyan-700 transition-colors flex items-center justify-center gap-1 sm:gap-2 whitespace-nowrap"
         >
           <LogOut className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
           <span className="hidden sm:inline">Logout</span>

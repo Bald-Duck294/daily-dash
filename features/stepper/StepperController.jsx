@@ -10,8 +10,7 @@ import HierarchyStep from "./components/setup/HierarchyStep";
 import WashroomsStep from "./components/setup/WashroomsStep";
 import UsersStep from "./components/setup/UsersStep";
 import AppPreviewStep from "./components/setup/AppPreviewStep";
-
-const STORAGE_KEY = "safai_onboarding_draft";
+import { StorageManager } from "@/shared/utils/storageManager";
 
 export default function StepperController() {
   const router = useRouter();
@@ -29,27 +28,27 @@ export default function StepperController() {
 
   // ─── 1. LOAD DRAFT ON MOUNT (With DB Verification) ─────────────
   useEffect(() => {
+    StorageManager.purgeLegacyDrafts();
     if (!user) return;
 
     if (user?.company?.is_onboarding_completed) {
-      localStorage.removeItem(STORAGE_KEY);
+      if (user.company_id) {
+        StorageManager.clearWorkspaceDraft(user.company_id);
+      }
       router.replace(`/clientDashboard/${user.company_id}`);
       return;
     }
 
-    const savedDraft = localStorage.getItem(STORAGE_KEY);
-    if (savedDraft) {
-      try {
-        const parsed = JSON.parse(savedDraft);
+    if (user.company_id) {
+      const parsed = StorageManager.loadWorkspaceDraft(user.company_id);
+      if (parsed) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setWorkspaceDraft({
           hierarchy: parsed.workspaceDraft?.hierarchy || [],
           washrooms: parsed.workspaceDraft?.washrooms || [],
           users: parsed.workspaceDraft?.users || [],
         });
         setCurrentStep(parsed.currentStep || 1);
-      } catch (e) {
-        console.error("Failed to parse workspace draft", e);
-        localStorage.removeItem(STORAGE_KEY);
       }
     }
     setIsLoaded(true);
@@ -57,11 +56,14 @@ export default function StepperController() {
 
   // ─── 2. SAVE DRAFT ON CHANGE ────────────────────────────────────
   useEffect(() => {
-    if (isLoaded && currentStep < 5) {
-      const draftToSave = { currentStep, workspaceDraft };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(draftToSave));
+    if (isLoaded && currentStep < 5 && user?.company_id) {
+      StorageManager.saveWorkspaceDraft(
+        user.company_id,
+        currentStep,
+        workspaceDraft,
+      );
     }
-  }, [workspaceDraft, currentStep, isLoaded]);
+  }, [workspaceDraft, currentStep, isLoaded, user?.company_id]);
 
   const updateDraft = (key, data) => {
     setWorkspaceDraft((prev) => ({ ...prev, [key]: data }));
@@ -88,7 +90,9 @@ export default function StepperController() {
     deployMutation.mutate(payload, {
       onSuccess: () => {
         // CLEAR CACHE ONLY ON SUCCESS
-        localStorage.removeItem(STORAGE_KEY);
+        if (user?.company_id) {
+          StorageManager.clearWorkspaceDraft(user.company_id);
+        }
       },
     });
   };
@@ -127,6 +131,7 @@ export default function StepperController() {
         {currentStep === 1 && (
           <HierarchyStep
             nodes={hierarchy}
+            companyProfile={user?.company || {}}
             onNext={(nodes) => handleNextStep(nodes, "hierarchy")}
           />
         )}

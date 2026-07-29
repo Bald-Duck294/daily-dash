@@ -88,18 +88,3 @@ export const useUpdateLocationTypeParent = (companyId) => {
     },
   });
 };
-
-// MARK AS TOILET
-export const useMarkLocationTypeAsToilet = (companyId) => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (id) =>
-      locationTypesApi.markAsToilet(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: locationTypesKeys.list(companyId),
-      });
-    },
-  });
-};

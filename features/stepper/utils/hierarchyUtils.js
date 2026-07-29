@@ -39,23 +39,30 @@ export const buildTreeData = (nodes = [], washrooms = [], users = []) => {
 
   // 4. Connect Users
   users.forEach((u) => {
-    const userNode = {
-      id: u.temp_id,
-      name: u.name,
-      type: u.role,
-      meta: u.role.toUpperCase(),
-    };
-
     if (u.role === "cleaner" && u.assigned_washrooms?.length > 0) {
-      // Find the specific washroom in the map and attach the cleaner to it
-      const targetWashroom = nodeMap[u.assigned_washrooms[0]];
-      if (targetWashroom) {
-        targetWashroom.children.push(userNode);
-      }
+      // Iterate over all assigned washrooms to create duplicated visual nodes
+      u.assigned_washrooms.forEach((washroomId) => {
+        const targetWashroom = nodeMap[washroomId];
+        if (targetWashroom) {
+          const userNode = {
+            id: `${u.temp_id}_assigned_${washroomId}`,
+            name: u.name,
+            type: u.role,
+            meta: u.role.toUpperCase(),
+          };
+          targetWashroom.children.push(userNode);
+        }
+      });
     } else if (u.role === "supervisor" && u.assigned_zone_temp_id) {
       // Attach supervisor to the zone
       const targetZone = nodeMap[u.assigned_zone_temp_id];
       if (targetZone) {
+        const userNode = {
+          id: `${u.temp_id}_assigned_${u.assigned_zone_temp_id}`,
+          name: u.name,
+          type: u.role,
+          meta: u.role.toUpperCase(),
+        };
         targetZone.children.push(userNode);
       }
     }

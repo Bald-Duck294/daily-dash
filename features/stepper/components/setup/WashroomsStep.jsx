@@ -261,12 +261,18 @@ export default function WashroomsStep({
     if (nodes.length === 0)
       return alert("No valid locations found to attach washrooms.");
 
+    const washroomRegex = /(washroom|wc|restroom|toilet)/i;
     let generated = [];
     nodes.forEach((node) => {
+      const hasWashroomTerm = washroomRegex.test(node.name);
+      const maleName = hasWashroomTerm ? `${node.name} - Male` : `${node.name} Male WC`;
+      const femaleName = hasWashroomTerm ? `${node.name} - Female` : `${node.name} Female WC`;
+      const handicapName = hasWashroomTerm ? `${node.name} - Handicap` : `${node.name} Handicap WC`;
+
       if (autoConfig.male)
         generated.push({
           temp_id: generateTempId("wash"),
-          name: `${node.name} Male WC`,
+          name: maleName,
           zone_temp_id: node.temp_id,
           type: "male",
           is_public: false,
@@ -281,7 +287,7 @@ export default function WashroomsStep({
       if (autoConfig.female)
         generated.push({
           temp_id: generateTempId("wash"),
-          name: `${node.name} Female WC`,
+          name: femaleName,
           zone_temp_id: node.temp_id,
           type: "female",
           is_public: false,
@@ -296,7 +302,7 @@ export default function WashroomsStep({
       if (autoConfig.handicap)
         generated.push({
           temp_id: generateTempId("wash"),
-          name: `${node.name} Handicap WC`,
+          name: handicapName,
           zone_temp_id: node.temp_id,
           type: "handicap",
           is_public: false,
@@ -315,14 +321,17 @@ export default function WashroomsStep({
   };
 
   const generatePreviewList = () => {
+    const washroomRegex = /(washroom|wc|restroom|toilet)/i;
     let previewItems = [];
     nodes.forEach((node) => {
+      const hasWashroomTerm = washroomRegex.test(node.name);
+      
       if (autoConfig.male)
-        previewItems.push({ label: `${node.name} — Male WC`, type: "male" });
+        previewItems.push({ label: hasWashroomTerm ? `${node.name} — Male` : `${node.name} — Male WC`, type: "male" });
       if (autoConfig.female)
-        previewItems.push({ label: `${node.name} — Female WC`, type: "female" });
+        previewItems.push({ label: hasWashroomTerm ? `${node.name} — Female` : `${node.name} — Female WC`, type: "female" });
       if (autoConfig.handicap)
-        previewItems.push({ label: `${node.name} — Handicap WC`, type: "handicap" });
+        previewItems.push({ label: hasWashroomTerm ? `${node.name} — Handicap` : `${node.name} — Handicap WC`, type: "handicap" });
     });
     return previewItems;
   };

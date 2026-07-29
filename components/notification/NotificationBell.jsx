@@ -136,7 +136,7 @@ const NotificationBell = () => {
         {/* ✅ Bell Icon Button - Touch-friendly size */}
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="relative p-2 sm:p-2.5 text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors touch-manipulation"
+          className="cursor-pointer relative p-2 sm:p-2.5 text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors touch-manipulation"
           aria-label="Notifications"
           aria-expanded={isOpen}
           aria-haspopup="true"

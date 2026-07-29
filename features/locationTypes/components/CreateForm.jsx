@@ -20,6 +20,7 @@ export default function CreateForm({ onCreated, allTypes }) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [parentId, setParentId] = useState("");
+  const [uiType, setUiType] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isParentDropdownOpen, setIsParentDropdownOpen] = useState(false);
   const [parentSearchTerm, setParentSearchTerm] = useState("");
@@ -56,6 +57,7 @@ export default function CreateForm({ onCreated, allTypes }) {
         {
           name: name.trim(),
           parent_id: parentId ? Number(parentId) : null,
+          ui_type: uiType || null,
         },
         companyId
       );
@@ -64,6 +66,7 @@ export default function CreateForm({ onCreated, allTypes }) {
 
       setName("");
       setParentId("");
+      setUiType("");
       onCreated();
     } catch (err) {
       toast.error("Failed to create zone", { id: loading });
@@ -122,6 +125,27 @@ export default function CreateForm({ onCreated, allTypes }) {
             className="w-full rounded-xl border border-border bg-background py-3 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-60"
           />
         </div>
+      </div>
+
+      {/* ===== UI TYPE ===== */}
+      <div className="space-y-2">
+        <label className="text-xs font-semibold uppercase text-indigo-600">
+          Visual Type <span className="text-slate-400 normal-case font-normal">(Optional)</span>
+        </label>
+        <select
+          value={uiType}
+          onChange={(e) => setUiType(e.target.value)}
+          disabled={isSubmitting}
+          className="w-full rounded-xl border border-border bg-background py-3 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-60"
+        >
+          <option value="">None / Default</option>
+          <option value="building">Building</option>
+          <option value="floor">Floor</option>
+          <option value="zone">Zone</option>
+          <option value="ward">Ward</option>
+          <option value="section">Section</option>
+          <option value="other">Other</option>
+        </select>
       </div>
 
       {/* ===== PARENT TYPE ===== */}
