@@ -166,6 +166,9 @@ export default function StepperController() {
               }}
               isLoading={deployMutation.isPending}
               isSuccess={deployMutation.isSuccess}
+              isError={deployMutation.isError}
+              error={deployMutation.error}
+              resetMutation={deployMutation.reset}
               washroom_data={washrooms}
               onDeploy={handleDeploy}
               onBack={handlePrevStep}

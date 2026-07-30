@@ -35,14 +35,9 @@ export default function CompaniesTable({
   const handleHeaderClick = (field) => {
     if (!onSortChange) return;
     if (sortField === field) {
-      // cycle: asc → desc → clear
-      if (sortOrder === "asc") {
-        onSortChange(field, "desc");
-      } else {
-        onSortChange("", "");
-      }
+      onSortChange(field, sortOrder === "asc" ? "desc" : "asc");
     } else {
-      onSortChange(field, "asc");
+      onSortChange(field, "desc");
     }
   };
 
@@ -54,79 +49,78 @@ export default function CompaniesTable({
   ];
 
   return (
-    <div
-      className="
-        overflow-hidden rounded-xl
-        border border-[var(--sidebar-border)]
-        bg-[var(--background)]
-      "
-    >
-      <table className="w-full text-sm">
+    <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-xs overflow-hidden transition-all">
+      <table className="w-full text-sm text-left border-collapse">
         {/* ===== TABLE HEADER ===== */}
-        <thead className="border-b border-[var(--sidebar-border)]">
-          <tr className="text-left text-[var(--sidebar-muted)]">
-            <th className="p-3">#</th>
+        <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider border-b border-slate-200/80 dark:border-slate-800">
+          <tr>
+            <th className="px-4 py-3.5 w-12">#</th>
             {sortableHeaders.map((col) => (
               <th
                 key={col.key}
-                className="p-3 cursor-pointer select-none hover:text-[var(--foreground)] transition-colors"
+                className="px-4 py-3.5 cursor-pointer select-none hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                 onClick={() => handleHeaderClick(col.key)}
               >
                 {col.label}
                 <SortIndicator field={col.key} sortField={sortField} sortOrder={sortOrder} />
               </th>
             ))}
-            <th className="p-3">Actions</th>
+            <th className="px-4 py-3.5 text-right">Actions</th>
           </tr>
         </thead>
 
         {/* ===== TABLE BODY ===== */}
-        <tbody>
+        <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 font-medium text-slate-700 dark:text-slate-300">
           {companies.map((c, i) => (
             <tr
               key={c.id}
               onClick={() => onView(c.id)}
               className="
-                border-t border-[var(--sidebar-border)]
-                hover:bg-[var(--sidebar-hover)]
+                group bg-white dark:bg-slate-900
+                hover:bg-blue-50/70 dark:hover:bg-blue-950/40
+                hover:shadow-sm
+                hover:-translate-y-0.5
                 cursor-pointer
-                transition
+                transition-all duration-200 ease-out
               "
             >
-              <td className="p-3">{(currentPage - 1) * pageSize + i + 1}</td>
+              <td className="px-4 py-3.5 font-mono text-xs text-slate-400 font-bold group-hover:text-blue-600 transition-colors">
+                {(currentPage - 1) * pageSize + i + 1}
+              </td>
 
-              <td className="p-3 font-medium text-[var(--foreground)]">
+              <td className="px-4 py-3.5 font-semibold text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors">
                 {c.name}
               </td>
 
-              <td className="p-3 text-[var(--sidebar-muted)]">
+              <td className="px-4 py-3.5 text-slate-500 dark:text-slate-400 text-xs">
                 {c.contact_email || "N/A"}
               </td>
 
-              <td className="p-3">
+              <td className="px-4 py-3.5">
                 <span
                   className={`
-                    px-2 py-1 rounded-full text-xs font-medium
+                    inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold border
                     ${c.status
-                      ? "bg-emerald-500/15 text-emerald-500"
-                      : "bg-red-500/15 text-red-500"
+                      ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800"
+                      : "bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-800"
                     }
                   `}
                 >
+                  <span className={`h-1.5 w-1.5 rounded-full ${c.status ? "bg-emerald-500 animate-pulse" : "bg-rose-500"}`} />
                   {c.status ? "Active" : "Inactive"}
                 </span>
               </td>
 
-              <td className="p-3 text-[var(--sidebar-muted)]">
+              <td className="px-4 py-3.5 text-slate-500 dark:text-slate-400 text-xs font-mono">
                 {formatDate(c.created_at)}
               </td>
 
               {/* ===== ACTIONS ===== */}
-              <td className="p-3">
-                <div className="flex items-center gap-3">
+              <td className="px-4 py-3.5 text-right">
+                <div className="flex items-center justify-end gap-2.5">
                   <Edit
                     size={16}
-                    className="cursor-pointer text-[var(--sidebar-muted)] hover:text-[var(--foreground)]"
+                    className="cursor-pointer text-slate-400 hover:text-blue-600 transition-all hover:scale-125"
                     onClick={(e) => {
                       e.stopPropagation();
                       router.push(`/companies/${c.id}`);
@@ -135,7 +129,7 @@ export default function CompaniesTable({
 
                   <RotateCcw
                     size={16}
-                    className="cursor-pointer text-amber-500 hover:text-amber-600"
+                    className="cursor-pointer text-amber-500 hover:text-amber-600 transition-all hover:scale-125"
                     title="Reset Workspace"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -145,7 +139,7 @@ export default function CompaniesTable({
 
                   <Trash2
                     size={16}
-                    className="cursor-pointer text-red-500"
+                    className="cursor-pointer text-rose-500 hover:text-rose-600 transition-all hover:scale-125"
                     onClick={(e) => {
                       e.stopPropagation();
                       onDelete(c.id);
