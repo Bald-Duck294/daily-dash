@@ -28,6 +28,7 @@ export const useAuthSuccess = () => {
     const hasMetadata = companyData?.metadata?.organization_type || companyData?.onboarding_metadata?.organization_type;
     const companyName = companyData?.name;
 
+    console.log("isOnboardingDone", isOnboardingDone);
     // 🚀 NEW GOOGLE ADMINS HIT THIS EXACT LOGIC:
     if (roleId === 2 && !isOnboardingDone) {
       if (!hasMetadata || companyName === "Pending Setup" || !companyName) {

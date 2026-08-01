@@ -312,6 +312,10 @@ import { MODULES } from "@/shared/constants/permissions";
 
 import { useCleanerReview } from "@/features/cleaners/cleaners.queries.js";
 import { useCleanersDropdown } from "@/features/dropdownList/dropdownlist.query";
+import { usePermissions } from "@/shared/hooks/usePermission";
+import { useCompanySlaConfig } from "@/features/companies/queries/sla.queries.js";
+import { useUpdateSupervisorScore } from "@/features/cleanerReview/cleanerReview.queries.js";
+
 
 import {
   ListChecks,
@@ -321,6 +325,8 @@ import {
   RotateCcw,
   User,
   ChevronDown,
+  Edit2,
+  X,
 } from "lucide-react";
 
 /* ---------------- helpers ---------------- */
@@ -364,6 +370,51 @@ export default function CleanerReviewPage() {
   const [selectedCleanerId, setSelectedCleanerId] = useState(searchParams.get("cleanerId") || "all");
   const [page, setPage] = useState(Number(searchParams.get("page")) || 1);
   const [limit, setLimit] = useState(Number(searchParams.get("limit")) || 15);
+
+  // SLA and Permissions
+  const { hasPermission, userPermissions } = usePermissions();
+  const canManageReviews = hasPermission("cleaner_reviews", "manage");
+  const { data: slaConfig, error: slaError } = useCompanySlaConfig(companyId, true);
+  const isSlaEnabled = slaConfig?.enabled || false;
+
+  console.log("=== SLA EDIT BUTTON DEBUG ===");
+  console.log("userPermissions:", userPermissions);
+  console.log("canManageReviews:", canManageReviews);
+  console.log("companyId:", companyId);
+  console.log("slaConfig raw:", slaConfig);
+  console.log("slaError:", slaError);
+  console.log("isSlaEnabled:", isSlaEnabled);
+  console.log("EDIT BUTTON VISIBLE:", canManageReviews && isSlaEnabled);
+  console.log("============================");
+
+  // Modal State
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [reviewToEdit, setReviewToEdit] = useState(null);
+  const [newScore, setNewScore] = useState("");
+
+  const updateScoreMutation = useUpdateSupervisorScore();
+
+  const handleSaveScore = async () => {
+    if (!reviewToEdit) return;
+
+    if (newScore === "" || isNaN(Number(newScore)) || Number(newScore) < 0 || Number(newScore) > 10) {
+      toast.error("Please enter a valid score between 0 and 10.");
+      return;
+    }
+
+    try {
+      await updateScoreMutation.mutateAsync({
+        reviewId: reviewToEdit.id,
+        newScore: Number(newScore),
+      });
+      toast.success("Score updated successfully.");
+      setIsEditModalOpen(false);
+      setReviewToEdit(null);
+      setNewScore("");
+    } catch (err) {
+      toast.error(err.message || "Failed to update score.");
+    }
+  };
 
   const [isCleanerDropdownOpen, setIsCleanerDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -842,16 +893,24 @@ export default function CleanerReviewPage() {
                           </span>
 
                           {typeof r.score === "number" && (
-                            <span
-                              className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wide flex items-center gap-1"
-                              style={{
-                                background: "var(--cleaner-input-bg)",
-                                color: "var(--cleaner-title)",
-                                border: "1px solid var(--cleaner-border)",
-                              }}
-                            >
-                              ⭐ {r.score.toFixed(2)} / <b>10</b>
-                            </span>
+                            <div className="flex flex-col items-end gap-1">
+                              <span
+                                className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wide flex items-center gap-1"
+                                style={{
+                                  background: "var(--cleaner-input-bg)",
+                                  color: "var(--cleaner-title)",
+                                  border: "1px solid var(--cleaner-border)",
+                                }}
+                              >
+                                ⭐ {r.score.toFixed(2)} / <b>10</b>
+                              </span>
+                              <span
+                                className="text-[9px] uppercase tracking-wide opacity-80"
+                                style={{ color: "var(--cleaner-subtitle)" }}
+                              >
+                                Review Type: Original
+                              </span>
+                            </div>
                           )}
                         </div>
                       </div>
@@ -921,18 +980,40 @@ export default function CleanerReviewPage() {
                       </div>
 
                       {/* ACTION */}
-                      <button
-                        onClick={() =>
-                          router.push(`/cleaners/${r.id}?companyId=${companyId}`)
-                        }
-                        className="w-full py-1.5 rounded-md text-xs font-medium transition cursor-pointer mt-auto"
-                        style={{
-                          background: "var(--cleaner-primary-bg)",
-                          color: "var(--cleaner-primary-text)",
-                        }}
-                      >
-                        Detailed Report →
-                      </button>
+                      <div className="mt-auto flex gap-2">
+                        <button
+                          onClick={() =>
+                            router.push(`/cleaners/${r.id}?companyId=${companyId}`)
+                          }
+                          className="flex-1 py-1.5 rounded-md text-xs font-medium transition cursor-pointer"
+                          style={{
+                            background: "var(--cleaner-primary-bg)",
+                            color: "var(--cleaner-primary-text)",
+                          }}
+                        >
+                          Detailed Report →
+                        </button>
+
+                        {canManageReviews && isSlaEnabled && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setReviewToEdit(r);
+                              setNewScore(r.score || "");
+                              setIsEditModalOpen(true);
+                            }}
+                            className="p-1.5 rounded-md transition cursor-pointer flex items-center justify-center border"
+                            style={{
+                              background: "transparent",
+                              borderColor: "var(--cleaner-primary-bg)",
+                              color: "var(--cleaner-title)",
+                            }}
+                            title="Edit Score"
+                          >
+                            <Edit2 size={14} />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   );
                 })}
@@ -954,7 +1035,7 @@ export default function CleanerReviewPage() {
                       value={limit}
                       onChange={(e) => {
                         setLimit(Number(e.target.value));
-                        setPage(1); 
+                        setPage(1);
                       }}
                       className="rounded px-1.5 py-0.5 text-xs outline-none cursor-pointer"
                       style={{
@@ -1030,6 +1111,81 @@ export default function CleanerReviewPage() {
           </div>
         </div>
       </div>
+
+      {/* Edit Score Modal */}
+      {isEditModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ background: "rgba(0,0,0,0.5)" }}
+          onClick={() => {
+            setIsEditModalOpen(false);
+            setReviewToEdit(null);
+            setNewScore("");
+          }}
+        >
+          <div
+            className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b">
+              <h2 className="text-base font-bold text-gray-800">Update Activity Score</h2>
+              <button
+                onClick={() => {
+                  setIsEditModalOpen(false);
+                  setReviewToEdit(null);
+                  setNewScore("");
+                }}
+                className="text-gray-400 hover:text-gray-600 transition cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="px-5 py-4 space-y-4">
+              <p className="text-sm text-gray-600">
+                Please provide the updated score for this cleaning activity.
+                Only same-day updates are allowed, and limits may apply based on SLA configurations.
+              </p>
+              <div>
+                <label className="block text-xs font-semibold mb-1 text-gray-700">New Score (0-10)</label>
+                <input
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  max="10"
+                  value={newScore}
+                  onChange={(e) => setNewScore(e.target.value)}
+                  className="w-full border border-gray-300 rounded-md p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Enter score between 0 and 10"
+                />
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex justify-end gap-2 px-5 py-4 border-t">
+              <button
+                onClick={() => {
+                  setIsEditModalOpen(false);
+                  setReviewToEdit(null);
+                  setNewScore("");
+                }}
+                className="px-4 py-2 text-sm font-medium border rounded-md text-gray-700 hover:bg-gray-50 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveScore}
+                disabled={updateScoreMutation.isPending}
+                className="px-4 py-2 text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 cursor-pointer"
+              >
+                {updateScoreMutation.isPending ? "Saving..." : "Save Score"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

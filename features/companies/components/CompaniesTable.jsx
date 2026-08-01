@@ -1,4 +1,4 @@
-import { Edit, Trash2, RotateCcw } from "lucide-react";
+import { Edit, Trash2, RotateCcw, Shield } from "lucide-react";
 import { formatDate } from "../utils/formatDate";
 import { useRouter } from "next/navigation";
 
@@ -24,6 +24,8 @@ export default function CompaniesTable({
   onDelete,
   onView,
   onReset,
+  onSlaConfig,
+  slaStatuses = [],
   sortField,
   sortOrder,
   onSortChange,
@@ -31,6 +33,12 @@ export default function CompaniesTable({
   pageSize = 6,
 }) {
   const router = useRouter();
+
+  const getSlaStatus = (companyId) => {
+    if (!Array.isArray(slaStatuses)) return false;
+    const status = slaStatuses.find(s => String(s.company_id) === String(companyId));
+    return status?.enabled ? true : false;
+  };
 
   const handleHeaderClick = (field) => {
     if (!onSortChange) return;
@@ -65,6 +73,7 @@ export default function CompaniesTable({
                 <SortIndicator field={col.key} sortField={sortField} sortOrder={sortOrder} />
               </th>
             ))}
+            <th className="px-4 py-3.5">SLA</th>
             <th className="px-4 py-3.5 text-right">Actions</th>
           </tr>
         </thead>
@@ -115,6 +124,12 @@ export default function CompaniesTable({
                 {formatDate(c.created_at)}
               </td>
 
+              <td className="px-4 py-3.5">
+                <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${getSlaStatus(c.id) ? 'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30' : 'text-slate-600 bg-slate-100 dark:bg-slate-800 dark:text-slate-400'}`}>
+                  {getSlaStatus(c.id) ? "🟢 Enabled" : "🔴 Disabled"}
+                </span>
+              </td>
+
               {/* ===== ACTIONS ===== */}
               <td className="px-4 py-3.5 text-right">
                 <div className="flex items-center justify-end gap-2.5">
@@ -124,6 +139,16 @@ export default function CompaniesTable({
                     onClick={(e) => {
                       e.stopPropagation();
                       router.push(`/companies/${c.id}`);
+                    }}
+                  />
+
+                  <Shield
+                    size={16}
+                    className="cursor-pointer text-indigo-500 hover:text-indigo-600 transition-all hover:scale-125"
+                    title="SLA Configuration"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSlaConfig?.(c);
                     }}
                   />
 
