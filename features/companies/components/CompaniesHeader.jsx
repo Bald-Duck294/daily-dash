@@ -9,6 +9,7 @@ export default function CompaniesHeader() {
       <button
         onClick={() => router.back()}
         className="
+        cursor-pointer
           p-2 rounded-lg
           hover:bg-[var(--sidebar-hover)]
           transition

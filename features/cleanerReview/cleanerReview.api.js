@@ -198,4 +198,25 @@ export const CleanerReviewApi = {
       };
     }
   },
+
+  updateSupervisorScore: async (reviewId, newScore) => {
+    try {
+      const response = await axiosInstance.put(
+        `/cleaner-reviews/${reviewId}/supervisor-score`,
+        {
+          score: newScore,
+        },
+      );
+      return {
+        success: true,
+        data: response.data,
+      };
+    } catch (error) {
+      console.error("Error updating supervisor score:", error);
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message,
+      };
+    }
+  },
 };

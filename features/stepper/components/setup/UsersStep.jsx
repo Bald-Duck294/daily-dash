@@ -67,10 +67,24 @@ export default function UsersStep({
   };
 
   const handleAddOrUpdateUser = () => {
-    if (!formData.phone || formData.phone.length !== 10) {
+    const cleanPhone = formData.phone.trim().replace(/\D/g, "");
+    if (!cleanPhone || cleanPhone.length !== 10) {
       return showDialog(
         "Invalid Phone Number",
         "Please enter a valid 10-digit mobile number. This is required as it acts as their login ID.",
+      );
+    }
+
+    const duplicateUser = localUsers.find(
+      (u) =>
+        u.phone.trim().replace(/\D/g, "") === cleanPhone &&
+        u.temp_id !== editingId,
+    );
+    if (duplicateUser) {
+      return showDialog(
+        "Duplicate Phone Number",
+        `Phone number ${cleanPhone} is already assigned to '${duplicateUser.name}'. Each user must have a unique 10-digit mobile number.`,
+        "warning",
       );
     }
 
@@ -86,10 +100,10 @@ export default function UsersStep({
 
     let finalName = formData.name.trim();
     if (!finalName) {
-      const roleCount =
-        localUsers.filter((u) => u.role === formData.role).length + 1;
-      finalName = `${formData.role.charAt(0).toUpperCase() + formData.role.slice(1)}-${roleCount.toString().padStart(3, "0")}`;
+      finalName = generateRealisticName(formData.role, localUsers);
     }
+
+    
 
     const userRecord = {
       temp_id: editingId || generateTempId("user"),
@@ -160,21 +174,73 @@ export default function UsersStep({
       await navigator.clipboard.writeText(inviteLink);
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
-    } catch (err) {}
+    } catch (err) { }
   };
 
   const getDefaultWashroom = () =>
     washrooms.length > 0 ? [washrooms[0].temp_id] : [];
 
-  const handleAutoFill = () => {
-    const fakeNames = [
-      "Rahul Sharma",
-      "Priya Patel",
-      "Amit Kumar",
-      "Sneha Gupta",
+  // Helper: Generate realistic 10-digit mobile numbers with standard prefixes
+  const generateUniquePhone = (existingList = []) => {
+    const usedPhones = new Set(
+      existingList.map((u) =>
+        u.phone ? String(u.phone).trim().replace(/\D/g, "") : "",
+      ),
+    );
+    const prefixes = ["9876", "9812", "9711", "9650", "9910", "8800", "7011", "9820"];
+
+    for (let attempt = 0; attempt < 500; attempt++) {
+      const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+      const randomDigits = Math.floor(
+        100000 + Math.random() * 900000,
+      ).toString();
+      const candidate = `${prefix}${randomDigits}`;
+      if (!usedPhones.has(candidate)) {
+        return candidate;
+      }
+    }
+    return `98${Math.floor(10000000 + Math.random() * 90000000)}`;
+  };
+
+  // Helper: Generate realistic Indian full names
+  const generateRealisticName = (role, existingList = []) => {
+    const existingNames = new Set(
+      existingList.map((u) => u.name?.trim().toLowerCase()),
+    );
+    const supervisorFirst = [
+      "Rajesh", "Anjali", "Vikram", "Pooja", "Sanjay",
+      "Kavita", "Rakesh", "Aarti", "Manish", "Deepa",
+      "Suresh", "Anita", "Sunil", "Priya", "Rahul"
     ];
-    const randomName = fakeNames[Math.floor(Math.random() * fakeNames.length)];
-    const randomPhone = `91${Math.floor(Math.random() * 90000000) + 10000000}`;
+    const cleanerFirst = [
+      "Suresh", "Meena", "Ramu", "Sunita", "Gopal",
+      "Lata", "Raju", "Kamla", "Mohan", "Sarita",
+      "Ramesh", "Geeta", "Dinesh", "Radha", "Karan"
+    ];
+    const lastNames = [
+      "Kumar", "Devi", "Sharma", "Verma", "Patel",
+      "Singh", "Yadav", "Gupta", "Rao", "Joshi", "Das"
+    ];
+
+    const firstList = role === "supervisor" ? supervisorFirst : cleanerFirst;
+
+    for (let i = 0; i < 100; i++) {
+      const first = firstList[Math.floor(Math.random() * firstList.length)];
+      const last = lastNames[Math.floor(Math.random() * lastNames.length)];
+      const fullName = `${first} ${last}`;
+      if (!existingNames.has(fullName.toLowerCase())) {
+        return fullName;
+      }
+    }
+
+    const baseFirst = firstList[Math.floor(Math.random() * firstList.length)];
+    const baseLast = lastNames[Math.floor(Math.random() * lastNames.length)];
+    return `${baseFirst} ${baseLast}`;
+  };
+
+  const handleAutoFill = () => {
+    const randomName = generateRealisticName("cleaner", localUsers);
+    const randomPhone = generateUniquePhone(localUsers);
     setLocalUsers([
       {
         temp_id: generateTempId("user"),
@@ -189,42 +255,57 @@ export default function UsersStep({
   };
 
   const handleAddFullTeam = () => {
-    const team = [
-      {
-        temp_id: generateTempId("user"),
-        name: "Anjali Desai",
-        phone: "9876543211",
-        role: "supervisor",
-        assigned_zone_temp_id: null,
-        assigned_washrooms: [],
-      },
-      {
-        temp_id: generateTempId("user"),
-        name: "Suresh Kumar",
-        phone: "9876543212",
-        role: "cleaner",
-        assigned_zone_temp_id: null,
-        assigned_washrooms: getDefaultWashroom(),
-      },
-      {
-        temp_id: generateTempId("user"),
-        name: "Meena Devi",
-        phone: "9876543213",
-        role: "cleaner",
-        assigned_zone_temp_id: null,
-        assigned_washrooms: getDefaultWashroom(),
-      },
-    ];
-    setLocalUsers([...team, ...localUsers]);
+    const currentList = [...localUsers];
+
+    // Supervisor
+    const supName = generateRealisticName("supervisor", currentList);
+    const supPhone = generateUniquePhone(currentList);
+    const supervisor = {
+      temp_id: generateTempId("user"),
+      name: supName,
+      phone: supPhone,
+      role: "supervisor",
+      assigned_zone_temp_id: null,
+      assigned_washrooms: [],
+    };
+    currentList.push(supervisor);
+
+    // Cleaner 1
+    const c1Name = generateRealisticName("cleaner", currentList);
+    const c1Phone = generateUniquePhone(currentList);
+    const cleaner1 = {
+      temp_id: generateTempId("user"),
+      name: c1Name,
+      phone: c1Phone,
+      role: "cleaner",
+      assigned_zone_temp_id: null,
+      assigned_washrooms: getDefaultWashroom(),
+    };
+    currentList.push(cleaner1);
+
+    // Cleaner 2
+    const c2Name = generateRealisticName("cleaner", currentList);
+    const c2Phone = generateUniquePhone(currentList);
+    const cleaner2 = {
+      temp_id: generateTempId("user"),
+      name: c2Name,
+      phone: c2Phone,
+      role: "cleaner",
+      assigned_zone_temp_id: null,
+      assigned_washrooms: getDefaultWashroom(),
+    };
+
+    setLocalUsers([supervisor, cleaner1, cleaner2, ...localUsers]);
   };
 
   const handleQuickAdd = (role) => {
-    const id = generateTempId("user");
+    const name = generateRealisticName(role, localUsers);
+    const phone = generateUniquePhone(localUsers);
     setLocalUsers([
       {
-        temp_id: id,
-        name: `New ${role.charAt(0).toUpperCase() + role.slice(1)} ${id.slice(-3)}`,
-        phone: `91000${Math.floor(Math.random() * 99999)}`,
+        temp_id: generateTempId("user"),
+        name,
+        phone,
         role,
         assigned_zone_temp_id: null,
         assigned_washrooms: role === "cleaner" ? getDefaultWashroom() : [],
@@ -234,6 +315,29 @@ export default function UsersStep({
   };
 
   const handleContinue = () => {
+    // 1. Check for duplicate phone numbers in local list
+    const phoneMap = new Map();
+    const duplicates = [];
+
+    for (const u of localUsers) {
+      const cleanP = u.phone ? String(u.phone).trim().replace(/\D/g, "") : "";
+      if (cleanP) {
+        if (phoneMap.has(cleanP)) {
+          duplicates.push(`• '${cleanP}' (${phoneMap.get(cleanP)} & ${u.name})`);
+        } else {
+          phoneMap.set(cleanP, u.name);
+        }
+      }
+    }
+
+    if (duplicates.length > 0) {
+      return showDialog(
+        "Duplicate Phone Numbers Detected",
+        `Multiple users share the same phone number:\n\n${duplicates.join("\n")}\n\nPlease edit them so every user has a unique 10-digit mobile number before continuing.`,
+        "warning",
+      );
+    }
+
     const cleaners = localUsers.filter((u) => u.role === "cleaner");
 
     if (cleaners.length === 0) {

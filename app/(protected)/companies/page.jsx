@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import toast, { Toaster } from "react-hot-toast";
 import { useQueryClient } from "@tanstack/react-query";
+import { ArrowUp } from "lucide-react";
 
 import Loader from "@/components/ui/Loader";
 import { useCompanyId } from "@/providers/CompanyProvider";
@@ -20,6 +21,8 @@ import CompaniesHeader from "@/features/companies/components/CompaniesHeader";
 import CompaniesToolbar from "@/features/companies/components/CompaniesToolbar";
 import CompaniesTable from "@/features/companies/components/CompaniesTable";
 import CompaniesCards from "@/features/companies/components/CompaniesCards";
+import SLAConfigModal from "@/features/companies/components/SLAConfigModal";
+import { useSlaStatuses } from "@/features/companies/queries/sla.queries";
 
 export default function CompaniesPage() {
   const router = useRouter();
@@ -36,7 +39,40 @@ export default function CompaniesPage() {
   const [companyToReset, setCompanyToReset] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
+  const [showTopBtn, setShowTopBtn] = useState(false);
+  const [slaModalOpen, setSlaModalOpen] = useState(false);
+  const [selectedCompanyForSla, setSelectedCompanyForSla] = useState(null);
   const PAGE_SIZE = 8;
+
+  // Scroll listener for responsive "Go to Top" button (listens to main scroll container)
+  useEffect(() => {
+    const mainEl = document.querySelector("main");
+
+    const handleScroll = () => {
+      const scrollPos = mainEl ? mainEl.scrollTop : window.scrollY;
+      setShowTopBtn(scrollPos > 120);
+    };
+
+    if (mainEl) {
+      mainEl.addEventListener("scroll", handleScroll);
+    }
+    window.addEventListener("scroll", handleScroll);
+
+    return () => {
+      if (mainEl) {
+        mainEl.removeEventListener("scroll", handleScroll);
+      }
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
+
+  const scrollToTop = () => {
+    const mainEl = document.querySelector("main");
+    if (mainEl) {
+      mainEl.scrollTo({ top: 0, behavior: "smooth" });
+    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   // Debounce search input (400ms)
   useEffect(() => {
@@ -65,6 +101,7 @@ export default function CompaniesPage() {
   const deleteCompany = useDeleteCompany();
   const toggleStatus = useToggleCompanyStatus();
   const resetWorkspace = useResetCompanyWorkspace();
+  const { data: slaStatuses = [] } = useSlaStatuses();
 
   /* ---------------- HANDLERS: DELETE ---------------- */
   const handleDelete = (id) => setCompanyToDelete(id);
@@ -175,8 +212,12 @@ export default function CompaniesPage() {
     <>
       <Toaster position="top-center" />
 
-      <div className="min-h-screen sm:p-6 bg-[var(--background)]">
-        <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6 md:mt-[-35px]">
+      {/* Main Page Outer Background - Soft Gradient matching Dashboard */}
+      <div className="min-h-screen p-3 sm:p-6 lg:p-8 bg-gradient-to-br from-slate-50/80 via-blue-50/30 to-indigo-50/20 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 text-[var(--foreground)]">
+        {/* Soft Rounded Container Card matching Main Dashboard */}
+        <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6 rounded-3xl p-4 sm:p-6 lg:p-8 bg-white/80 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800/80 shadow-sm backdrop-blur-md relative md:mt-[-30px]">
+
+          {/* Header & Toolbar Row */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <CompaniesHeader />
 
@@ -188,22 +229,22 @@ export default function CompaniesPage() {
           </div>
 
           {/* Sort Order Toggle */}
-          <div className="flex items-center gap-2 text-sm">
-            <span className="text-[var(--sidebar-muted)]">Sort:</span>
+          <div className="flex items-center gap-2 text-sm pt-1">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Sort By:</span>
             <button
               onClick={() => handleSortChange("created_at", "desc")}
-              className={`px-3 py-1 rounded-md border transition-colors text-xs font-medium ${sortField === "created_at" && sortOrder === "desc"
-                ? "bg-[var(--sidebar-accent)] text-[var(--sidebar-accent-foreground)] border-[var(--sidebar-border)]"
-                : "bg-[var(--card)] text-[var(--sidebar-muted)] border-[var(--sidebar-border)] hover:bg-[var(--sidebar-hover)]"
+              className={`px-3 py-1.5 rounded-xl border transition-all text-xs font-extrabold cursor-pointer ${sortField === "created_at" && sortOrder === "desc"
+                  ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 border-slate-900 dark:border-white shadow-xs"
+                  : "bg-white/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
                 }`}
             >
               Newest First
             </button>
             <button
               onClick={() => handleSortChange("created_at", "asc")}
-              className={`px-3 py-1 rounded-md border transition-colors text-xs font-medium ${sortField === "created_at" && sortOrder === "asc"
-                ? "bg-[var(--sidebar-accent)] text-[var(--sidebar-accent-foreground)] border-[var(--sidebar-border)]"
-                : "bg-[var(--card)] text-[var(--sidebar-muted)] border-[var(--sidebar-border)] hover:bg-[var(--sidebar-hover)]"
+              className={`px-3 py-1.5 rounded-xl border transition-all text-xs font-extrabold cursor-pointer ${sortField === "created_at" && sortOrder === "asc"
+                  ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 border-slate-900 dark:border-white shadow-xs"
+                  : "bg-white/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
                 }`}
             >
               Oldest First
@@ -247,6 +288,11 @@ export default function CompaniesPage() {
               onToggleStatus={handleStatusToggle}
               onView={handleViewCompany}
               onReset={handleReset}
+              onSlaConfig={(c) => {
+                setSelectedCompanyForSla(c);
+                setSlaModalOpen(true);
+              }}
+              slaStatuses={slaStatuses}
               sortField={sortField}
               sortOrder={sortOrder}
               onSortChange={handleSortChange}
@@ -263,6 +309,11 @@ export default function CompaniesPage() {
               onToggleStatus={handleStatusToggle}
               onView={handleViewCompany}
               onReset={handleReset}
+              onSlaConfig={(c) => {
+                setSelectedCompanyForSla(c);
+                setSlaModalOpen(true);
+              }}
+              slaStatuses={slaStatuses}
             />
           </div>
 
@@ -579,6 +630,27 @@ export default function CompaniesPage() {
           </div>
         </div>
       )}
+
+      {/* Floating Go to Top Button (Responsive Mobile View) */}
+      {showTopBtn && (
+        <button
+          type="button"
+          onClick={scrollToTop}
+          className="fixed bottom-6 right-6 z-50 p-3.5 rounded-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white shadow-2xl border border-blue-400/30 transition-all hover:scale-110 active:scale-95 flex items-center justify-center cursor-pointer lg:hidden"
+          title="Go to Top"
+        >
+          <ArrowUp className="w-5 h-5" />
+        </button>
+      )}
+
+      <SLAConfigModal
+        isOpen={slaModalOpen}
+        onClose={() => {
+          setSlaModalOpen(false);
+          setSelectedCompanyForSla(null);
+        }}
+        company={selectedCompanyForSla}
+      />
     </>
   );
 }

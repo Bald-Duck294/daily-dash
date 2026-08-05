@@ -235,7 +235,70 @@ export default function WashroomsStep({
     }
   };
 
+  const handleTogglePublicOnItem = (tempId) => {
+    setLocalWashrooms((prev) =>
+      prev.map((w) =>
+        w.temp_id === tempId ? { ...w, is_public: !w.is_public } : w,
+      ),
+    );
+  };
+
   const handleApplyQuickTemplate = (template) => {
+    if (nodes.length === 0) {
+      alert("No hierarchy locations found. Please add locations in Step 1 first.");
+      return;
+    }
+
+    const washroomRegex = /(washroom|wc|restroom|toilet)/i;
+    let generated = [];
+
+    const typesToCreate = template.overrideType
+      ? [template.overrideType]
+      : ["male", "female"];
+
+    const targetNodes = formData.zone_temp_id
+      ? nodes.filter((n) => n.temp_id === formData.zone_temp_id)
+      : nodes;
+
+    targetNodes.forEach((node) => {
+      const hasWashroomTerm = washroomRegex.test(node.name);
+
+      typesToCreate.forEach((tType) => {
+        let namePrefix = "";
+        if (tType === "male")
+          namePrefix = hasWashroomTerm ? `${node.name} - Male` : `${node.name} Male WC`;
+        else if (tType === "female")
+          namePrefix = hasWashroomTerm ? `${node.name} - Female` : `${node.name} Female WC`;
+        else
+          namePrefix = hasWashroomTerm ? `${node.name} - Handicap` : `${node.name} Handicap WC`;
+
+        const rawFixtures = JSON.parse(JSON.stringify(defaultFixtures));
+        const catKey =
+          tType === "female" ? "women" : tType === "male" ? "men" : "handicap";
+        rawFixtures[catKey] = {
+          wc: template.fixtures.wc || 0,
+          ind: template.fixtures.ind || 0,
+          uri: template.fixtures.uri || 0,
+          bas: template.fixtures.bas || 0,
+          sho: template.fixtures.sho || 0,
+          plb: template.fixtures.plb || 1,
+        };
+
+        generated.push({
+          temp_id: generateTempId("wash"),
+          name: namePrefix,
+          zone_temp_id: node.temp_id,
+          type: tType,
+          is_public: false, // Default: Private
+          wc_count: template.fixtures.wc || 1,
+          basin_count: template.fixtures.bas || 1,
+          rawFixtures,
+        });
+      });
+    });
+
+    setLocalWashrooms((prev) => [...prev, ...generated]);
+
     const targetCategory =
       template.overrideType === "handicap"
         ? "handicap"
@@ -254,7 +317,6 @@ export default function WashroomsStep({
 
     setShowTemplateSuccess(true);
     setTimeout(() => setShowTemplateSuccess(false), 4000);
-    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleGenerateAll = () => {
@@ -520,32 +582,57 @@ export default function WashroomsStep({
                       <button
                         type="button"
                         onClick={() => setShowPublicTooltip(!showPublicTooltip)}
-                        className="w-[15px] h-[15px] rounded-full bg-slate-100 text-slate-500 flex items-center justify-center hover:bg-slate-200 transition-colors"
-                        title="Click for info"
+                        className="w-[16px] h-[16px] rounded-full bg-[#e8f0f9] text-[#1F4E79] flex items-center justify-center hover:bg-[#bfdbfe] transition-colors font-bold text-[11px] shrink-0"
+                        title="Click to view Access Level Info"
                       >
-                        <Info className="w-3 h-3" />
+                        ?
                       </button>
                     </div>
-                    <select
-                      value={formData.is_public ? "public" : "private"}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          is_public: e.target.value === "public",
-                        })
-                      }
-                      className="w-full min-h-[44px] border-[1.5px] border-slate-200 rounded-lg px-2 py-2 text-xs font-bold text-slate-700 outline-none focus:border-[#1F4E79] bg-[#f8fafc]"
-                    >
-                      <option value="private">Private</option>
-                      <option value="public">Public</option>
-                    </select>
+                    <div className="flex items-center justify-between bg-[#f8fafc] border border-slate-200 rounded-lg px-3 py-2 min-h-[44px]">
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setFormData({
+                              ...formData,
+                              is_public: !formData.is_public,
+                            })
+                          }
+                          className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                            formData.is_public ? "bg-blue-600" : "bg-slate-300"
+                          }`}
+                          title="Click to toggle Public / Private"
+                        >
+                          <span
+                            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                              formData.is_public
+                                ? "translate-x-5"
+                                : "translate-x-0"
+                            }`}
+                          />
+                        </button>
+                        <span className="text-xs font-extrabold text-slate-800">
+                          {formData.is_public ? "🌐 Public" : "🔒 Private"}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
                 {showPublicTooltip && (
-                  <div className="mb-2 p-3 bg-blue-50 border border-blue-100 rounded-lg text-xs text-blue-800 leading-snug animate-in fade-in zoom-in-95 duration-200">
-                    <strong>Note:</strong> Public washrooms are visible to
-                    general visitors on the public-facing application.
+                  <div className="p-3.5 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-900 leading-relaxed shadow-sm animate-in fade-in zoom-in-95 duration-200">
+                    <div className="font-bold flex items-center gap-1.5 text-blue-950 mb-1">
+                      <Info className="w-4 h-4 text-blue-600" />
+                      Access Level Importance:
+                    </div>
+                    <ul className="space-y-1 text-[11.5px]">
+                      <li>
+                        <strong>• Private (Default):</strong> Restricts access to authorized facility staff & assigned cleaners. Recommended for internal office floors, staff WCs, and restricted facility zones.
+                      </li>
+                      <li>
+                        <strong>• Public:</strong> Open for general visitors on public apps & QR feedback scanning stations.
+                      </li>
+                    </ul>
                   </div>
                 )}
               </div>
@@ -838,7 +925,7 @@ export default function WashroomsStep({
                   </p>
                 </div>
               ) : (
-                localWashrooms.map((w) => {
+                localWashrooms.map((w, index) => {
                   const t = washroomTypes[w.type] || washroomTypes.male;
                   const TypeIcon = t.Icon;
                   const parentName =
@@ -854,7 +941,7 @@ export default function WashroomsStep({
                           : "border-slate-200 hover:border-blue-300 hover:shadow-sm"
                         }`}
                     >
-                      <div className="flex items-center gap-4 w-full sm:w-auto overflow-hidden">
+                      <div className="flex items-center gap-4 w-full sm:w-auto overflow-hidden flex-1">
                         <div
                           className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border bg-opacity-20 ${t.colorClass}`}
                         >
@@ -878,30 +965,68 @@ export default function WashroomsStep({
                             <span className="text-[10px] font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded border border-slate-200">
                               {w.basin_count} Basins
                             </span>
-                            {w.is_public && (
-                              <span className="text-[10px] font-bold bg-blue-50 text-blue-700 px-2 py-0.5 rounded border border-blue-100 flex items-center gap-1">
-                                Public
+                            {/* Inline Real Access Level Toggle Switch & Question Mark */}
+                            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-lg">
+                              <button
+                                type="button"
+                                onClick={() => handleTogglePublicOnItem(w.temp_id)}
+                                className={`relative inline-flex h-4 w-7 shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                                  w.is_public ? "bg-blue-600" : "bg-slate-300"
+                                }`}
+                                title={`Click to switch to ${w.is_public ? "Private" : "Public"}`}
+                              >
+                                <span
+                                  className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                                    w.is_public ? "translate-x-3" : "translate-x-0"
+                                  }`}
+                                />
+                              </button>
+                              <span className="text-[10px] font-bold text-slate-700">
+                                {w.is_public ? "🌐 Public" : "🔒 Private"}
                               </span>
-                            )}
+                              <button
+                                type="button"
+                                onClick={() => setShowPublicTooltip(!showPublicTooltip)}
+                                className="w-[14px] h-[14px] rounded-full bg-[#e8f0f9] text-[#1F4E79] flex items-center justify-center hover:bg-[#bfdbfe] transition-colors font-bold text-[9px] shrink-0 ml-0.5"
+                                title="Access Level Info"
+                              >
+                                ?
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>
 
-                      {/* Ghost buttons for actions (visible on hover for desktop) */}
-                      <div className="flex sm:flex-col gap-2 w-full sm:w-auto mt-2 sm:mt-0 shrink-0 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={() => handleEdit(w)}
-                          disabled={editingId === w.temp_id}
-                          className="flex items-center justify-center gap-1.5 flex-1 sm:flex-none text-blue-600 bg-blue-50 hover:bg-blue-100 font-bold text-xs px-3 py-2 rounded-lg transition-colors border border-blue-100 disabled:opacity-50"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" /> Edit
-                        </button>
-                        <button
-                          onClick={() => handleDelete(w.temp_id)}
-                          className="flex items-center justify-center gap-1.5 flex-1 sm:flex-none text-red-500 bg-red-50 hover:bg-red-100 font-bold text-xs px-3 py-2 rounded-lg transition-colors border border-red-100"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" /> Remove
-                        </button>
+                      {/* Right side: Serial Number & Always-Visible Styled Action Icon Buttons */}
+                      <div className="flex items-center sm:flex-col justify-between sm:justify-center gap-2 shrink-0">
+                        {/* Serial Number Badge on Right Side */}
+                        <span className="text-xs font-black text-slate-500 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md font-mono shrink-0">
+                          #{index + 1}
+                        </span>
+
+                        {/* Always-Visible Pen & Trash Icon Buttons with Hover Effects */}
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {/* Pen / Edit Icon Button */}
+                          <button
+                            type="button"
+                            onClick={() => handleEdit(w)}
+                            disabled={editingId === w.temp_id}
+                            title="Edit Washroom"
+                            className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white border border-blue-200 transition-all flex items-center justify-center shadow-sm hover:scale-105 active:scale-95 disabled:opacity-40 cursor-pointer"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+
+                          {/* Trash / Delete Icon Button */}
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(w.temp_id)}
+                            title="Remove Washroom"
+                            className="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white border border-rose-200 transition-all flex items-center justify-center shadow-sm hover:scale-105 active:scale-95 cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );

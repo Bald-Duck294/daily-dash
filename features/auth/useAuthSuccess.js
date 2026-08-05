@@ -18,7 +18,7 @@ export const useAuthSuccess = () => {
     }
 
     if (token) localStorage.setItem("token", token);
-    
+
     // Fetch latest onboarding status from API
     let onboardingStatusData = null;
     try {
@@ -29,19 +29,26 @@ export const useAuthSuccess = () => {
     } catch (e) {
       console.error("Failed to fetch onboarding status", e);
     }
-    
+
     dispatch(loginSuccess(user));
 
     const roleId = parseInt(user?.role_id);
-    
+
     // ✅ Extract company data correctly
     const companyData =
-      onboardingStatusData?.company || fullResponse?.company || user?.companies || user?.company || {};
+      onboardingStatusData?.company ||
+      fullResponse?.company ||
+      user?.companies ||
+      user?.company ||
+      {};
 
     // Check strict boolean true to ensure it ignores undefined
     let isOnboardingDone = companyData?.is_onboarding_completed === true;
-    
-    if (onboardingStatusData && onboardingStatusData.is_onboarding_completed !== undefined) {
+
+    if (
+      onboardingStatusData &&
+      onboardingStatusData.is_onboarding_completed !== undefined
+    ) {
       isOnboardingDone = onboardingStatusData.is_onboarding_completed === true;
     }
 
@@ -51,10 +58,11 @@ export const useAuthSuccess = () => {
     const companyName = companyData?.name;
 
     // OLD COMPANY CHECK:
-    // If it has a real name but metadata is null (and is_onboarding_completed is false/null), 
+    // If it has a real name but metadata is null (and is_onboarding_completed is false/null),
     // it's an old company already operating. We bypass the stepper.
-    const isOldCompany = companyName && companyName !== "Pending Setup" && !hasMetadata;
-    
+    const isOldCompany =
+      companyName && companyName !== "Pending Setup" && !hasMetadata;
+
     if (isOldCompany) {
       isOnboardingDone = true;
     }

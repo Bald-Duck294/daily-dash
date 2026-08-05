@@ -45,6 +45,9 @@ export default function AppPreviewStep({
   onBack,
   isLoading,
   isSuccess,
+  isError,
+  error,
+  resetMutation,
   summary = { zones: 0, staff: 0, washrooms: 0, cleaners: 0 },
   washroom_data: washrooms = [],
   users = [], // 👈 ADD USERS TO PROPS
@@ -56,13 +59,16 @@ export default function AppPreviewStep({
   console.log(users, "users");
   const [isHelpOpen, setIsHelpOpen] = useState(false);
 
-  // Modal State
+  // Modal & Error State
   const [showDeployModal, setShowDeployModal] = useState(false);
   const [deployStep, setDeployStep] = useState(0);
   const [isLive, setIsLive] = useState(false);
   const [hasDeployed, setHasDeployed] = useState(false);
+  const [deployError, setDeployError] = useState(null);
 
   const handleDeployClick = () => {
+    if (typeof resetMutation === "function") resetMutation();
+    setDeployError(null);
     setShowDeployModal(true);
     setDeployStep(0);
     setIsLive(false);
@@ -89,6 +95,33 @@ export default function AppPreviewStep({
       setHasDeployed(true);
     }
   }, [deployStep, isSuccess]);
+
+  // Sync with actual API failure / error
+  useEffect(() => {
+    if (isError && error) {
+      setShowDeployModal(false);
+      setIsLive(false);
+      setDeployStep(0);
+
+      const responseData = error?.response?.data;
+      const errorMsg =
+        responseData?.message ||
+        (Array.isArray(responseData?.errors)
+          ? responseData.errors.join("; ")
+          : null) ||
+        error?.message ||
+        "Workspace deployment failed. Please check your data and retry.";
+
+      setDeployError({
+        message: errorMsg,
+        step: responseData?.step || "users",
+      });
+
+      toast.error(errorMsg, {
+        duration: 8000,
+      });
+    }
+  }, [isError, error]);
 
   // ─── DYNAMIC SHARE APP HANDLERS ─────────────────────────────────────────
   const dummyLink =
@@ -499,7 +532,7 @@ export default function AppPreviewStep({
         </StepHelpDrawer>
 
         {/* ── HEADER (Inline & Centered Properly) ── */}
-        <header className="preview-header w-full max-w-[1240px] mx-auto px-6 pt-4 pb-2 flex flex-col md:flex-row items-center justify-between z-50 shrink-0 gap-4 md:gap-0 mb-8">
+        <header className="preview-header w-full max-w-[1240px] mx-auto px-6 pt-4 pb-2 flex flex-col md:flex-row items-center justify-between z-50 shrink-0 gap-4 md:gap-0 mb-4">
           <div className="w-full md:w-[30%] flex justify-start">
             <button
               onClick={onBack}
@@ -547,6 +580,41 @@ export default function AppPreviewStep({
             )}
           </div>
         </header>
+
+        {/* ── DEPLOYMENT ERROR BANNER ── */}
+        {deployError && (
+          <div className="w-full max-w-[1240px] mx-auto px-6 mb-4 z-50">
+            <div className="bg-rose-50 border-2 border-rose-200 rounded-2xl p-4 shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
+              <div className="flex items-start gap-3.5">
+                <div className="w-10 h-10 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center shrink-0 text-xl font-bold mt-0.5">
+                  ⚠️
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-rose-950 text-base mb-1">
+                    Deployment Issue Detected
+                  </h3>
+                  <p className="text-sm font-medium text-rose-800 leading-relaxed">
+                    {deployError.message}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 shrink-0 w-full md:w-auto">
+                <button
+                  onClick={onBack}
+                  className="flex-1 md:flex-none bg-rose-600 hover:bg-rose-700 text-white text-xs md:text-sm font-bold px-4 py-2.5 rounded-xl shadow-sm transition-colors flex items-center justify-center gap-1.5"
+                >
+                  ✏️ Edit Users & Retry
+                </button>
+                <button
+                  onClick={handleDeployClick}
+                  className="flex-1 md:flex-none bg-white hover:bg-rose-100 border border-rose-300 text-rose-700 text-xs md:text-sm font-bold px-4 py-2.5 rounded-xl transition-colors flex items-center justify-center gap-1.5"
+                >
+                  🔄 Retry
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ── MAIN GRID (Flex-1 fills remaining space, centers content) ── */}
         <div className="flex-1 w-full max-w-[1240px] mx-auto px-4 sm:px-6 flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-40 relative z-20 mt-4 md:mt-2 pb-10">
