@@ -929,11 +929,7 @@ export default function CleanersPage() {
 
   return (
     <>
-      <div
-        className="min-h-screen"
-        style={{ background: "var(--cleaner-bg)" }}
-      >
-
+      <div className="min-h-screen" style={{ background: "var(--cleaner-bg)" }}>
         {/* Minimal Header */}
         <div
           className="backdrop-blur-sm border-b"
@@ -1020,7 +1016,6 @@ export default function CleanersPage() {
           </div>
         </div>
 
-
         {/* Rest of your content remains exactly the same */}
         <div className="max-w-7xl mx-auto px-6 py-8">
           {/* Enhanced Controls */}
@@ -1075,12 +1070,12 @@ export default function CleanersPage() {
                   color: "var(--cleaner-input-text)",
                 }}
                 onFocus={(e) =>
-                (e.currentTarget.style.borderColor =
-                  "var(--cleaner-input-focus)")
+                  (e.currentTarget.style.borderColor =
+                    "var(--cleaner-input-focus)")
                 }
                 onBlur={(e) =>
-                (e.currentTarget.style.borderColor =
-                  "var(--cleaner-input-border)")
+                  (e.currentTarget.style.borderColor =
+                    "var(--cleaner-input-border)")
                 }
               >
                 <option value="all">All Status</option>
@@ -1110,13 +1105,13 @@ export default function CleanersPage() {
                     style={
                       viewMode === "grid"
                         ? {
-                          background: "var(--cleaner-primary-bg)",
-                          color: "var(--cleaner-primary-text)",
-                          boxShadow: "var(--assignment-primary-shadow)",
-                        }
+                            background: "var(--cleaner-primary-bg)",
+                            color: "var(--cleaner-primary-text)",
+                            boxShadow: "var(--assignment-primary-shadow)",
+                          }
                         : {
-                          color: "var(--cleaner-subtitle)",
-                        }
+                            color: "var(--cleaner-subtitle)",
+                          }
                     }
                   >
                     <Grid3x3 className="h-5 w-5" />
@@ -1128,13 +1123,13 @@ export default function CleanersPage() {
                     style={
                       viewMode === "table"
                         ? {
-                          background: "var(--cleaner-primary-bg)",
-                          color: "var(--cleaner-primary-text)",
-                          boxShadow: "var(--assignment-primary-shadow)",
-                        }
+                            background: "var(--cleaner-primary-bg)",
+                            color: "var(--cleaner-primary-text)",
+                            boxShadow: "var(--assignment-primary-shadow)",
+                          }
                         : {
-                          color: "var(--cleaner-subtitle)",
-                        }
+                            color: "var(--cleaner-subtitle)",
+                          }
                     }
                   >
                     <List className="h-5 w-5" />
@@ -1143,7 +1138,6 @@ export default function CleanersPage() {
               </div>
             </div>
           </div>
-
 
           {/* Content - exactly the same as your original */}
           {filteredAssignments.length === 0 ? (
@@ -1176,10 +1170,7 @@ export default function CleanersPage() {
                   : "No Results Found"}
               </h3>
 
-              <p
-                className="mb-6"
-                style={{ color: "var(--cleaner-subtitle)" }}
-              >
+              <p className="mb-6" style={{ color: "var(--cleaner-subtitle)" }}>
                 {assignments.length === 0
                   ? "Get started by adding your first cleaner to this location"
                   : "Try adjusting your search or filter criteria"}
@@ -1260,19 +1251,21 @@ export default function CleanersPage() {
 
                       {/* Status pill */}
                       <button
-                        onClick={() => setStatusModal({ open: true, assignment })}
+                        onClick={() =>
+                          setStatusModal({ open: true, assignment })
+                        }
                         disabled={togglingStatus === assignment.id}
                         className="cursor-pointer px-3 py-1.5 rounded-full text-xs font-bold transition-all"
                         style={
                           assignment.status?.toLowerCase() === "assigned"
                             ? {
-                              background: "var(--cleaner-status-active-bg)",
-                              color: "var(--cleaner-status-active-text)",
-                            }
+                                background: "var(--cleaner-status-active-bg)",
+                                color: "var(--cleaner-status-active-text)",
+                              }
                             : {
-                              background: "var(--cleaner-status-inactive-bg)",
-                              color: "var(--cleaner-status-inactive-text)",
-                            }
+                                background: "var(--cleaner-status-inactive-bg)",
+                                color: "var(--cleaner-status-inactive-text)",
+                              }
                         }
                       >
                         {togglingStatus === assignment.id
@@ -1342,7 +1335,7 @@ export default function CleanersPage() {
                             month: "short",
                             day: "numeric",
                             year: "numeric",
-                          }
+                          },
                         )}
                       </span>
                     </div>
@@ -1378,8 +1371,8 @@ export default function CleanersPage() {
                         className="cursor-pointer p-2.5 rounded-lg transition-colors"
                         style={{ color: "var(--cleaner-danger-text)" }}
                         onMouseEnter={(e) =>
-                        (e.currentTarget.style.background =
-                          "var(--cleaner-danger-bg)")
+                          (e.currentTarget.style.background =
+                            "var(--cleaner-danger-bg)")
                         }
                         onMouseLeave={(e) =>
                           (e.currentTarget.style.background = "transparent")
@@ -1392,7 +1385,6 @@ export default function CleanersPage() {
                 </div>
               ))}
             </div>
-
           ) : (
             <div
               className="rounded-xl overflow-hidden"
@@ -1411,18 +1403,24 @@ export default function CleanersPage() {
                         borderBottom: "2px solid var(--cleaner-input-focus)",
                       }}
                     >
-                      {["#", "Cleaner Name", "Contact", "Status", "Assigned Date", "Actions"].map(
-                        (h) => (
-                          <th
-                            key={h}
-                            className={`px-6 py-4 text-xs font-bold uppercase tracking-wider ${h === "Actions" ? "text-center" : "text-left"
-                              }`}
-                            style={{ color: "var(--cleaner-subtitle)" }}
-                          >
-                            {h}
-                          </th>
-                        )
-                      )}
+                      {[
+                        "#",
+                        "Cleaner Name",
+                        "Contact",
+                        "Status",
+                        "Assigned Date",
+                        "Actions",
+                      ].map((h) => (
+                        <th
+                          key={h}
+                          className={`px-6 py-4 text-xs font-bold uppercase tracking-wider ${
+                            h === "Actions" ? "text-center" : "text-left"
+                          }`}
+                          style={{ color: "var(--cleaner-subtitle)" }}
+                        >
+                          {h}
+                        </th>
+                      ))}
                     </tr>
                   </thead>
 
@@ -1435,8 +1433,8 @@ export default function CleanersPage() {
                           borderBottom: "1px solid var(--cleaner-border)",
                         }}
                         onMouseEnter={(e) =>
-                        (e.currentTarget.style.background =
-                          "var(--assignment-accent-bg)")
+                          (e.currentTarget.style.background =
+                            "var(--assignment-accent-bg)")
                         }
                         onMouseLeave={(e) =>
                           (e.currentTarget.style.background = "transparent")
@@ -1505,13 +1503,16 @@ export default function CleanersPage() {
                             style={
                               assignment.status?.toLowerCase() === "assigned"
                                 ? {
-                                  background: "var(--cleaner-status-active-bg)",
-                                  color: "var(--cleaner-status-active-text)",
-                                }
+                                    background:
+                                      "var(--cleaner-status-active-bg)",
+                                    color: "var(--cleaner-status-active-text)",
+                                  }
                                 : {
-                                  background: "var(--cleaner-status-inactive-bg)",
-                                  color: "var(--cleaner-status-inactive-text)",
-                                }
+                                    background:
+                                      "var(--cleaner-status-inactive-bg)",
+                                    color:
+                                      "var(--cleaner-status-inactive-text)",
+                                  }
                             }
                           >
                             {togglingStatus === assignment.id
@@ -1530,14 +1531,13 @@ export default function CleanersPage() {
                               className="h-4 w-4"
                               style={{ color: "var(--assignment-accent-text)" }}
                             />
-                            {new Date(assignment.assigned_on).toLocaleDateString(
-                              "en-US",
-                              {
-                                month: "short",
-                                day: "numeric",
-                                year: "numeric",
-                              }
-                            )}
+                            {new Date(
+                              assignment.assigned_on,
+                            ).toLocaleDateString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            })}
                           </div>
                         </td>
 
@@ -1561,11 +1561,12 @@ export default function CleanersPage() {
                                 className="cursor-pointer p-2 rounded-lg transition-colors"
                                 style={{ color: "var(--cleaner-danger-text)" }}
                                 onMouseEnter={(e) =>
-                                (e.currentTarget.style.background =
-                                  "var(--cleaner-danger-bg)")
+                                  (e.currentTarget.style.background =
+                                    "var(--cleaner-danger-bg)")
                                 }
                                 onMouseLeave={(e) =>
-                                  (e.currentTarget.style.background = "transparent")
+                                  (e.currentTarget.style.background =
+                                    "transparent")
                                 }
                               >
                                 <Trash2 className="h-4 w-4" />
@@ -1579,7 +1580,6 @@ export default function CleanersPage() {
                 </table>
               </div>
             </div>
-
           )}
         </div>
       </div>
@@ -1681,7 +1681,6 @@ export default function CleanersPage() {
             </div>
           </div>
         </div>
-
       )}
 
       {deleteModal.open && (
@@ -1784,7 +1783,6 @@ export default function CleanersPage() {
             </div>
           </div>
         </div>
-
       )}
     </>
   );

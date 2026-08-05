@@ -53,14 +53,15 @@ export default function CleanerViewPage() {
   const fetchCleanerDetails = async () => {
     setLoading(true);
     try {
-      // First, get the assignment to extract cleaner_user_id
-      const allAssignments = await AssignmentsApi.getAllAssignments(companyId);
+      // Fetch the specific assignment directly
+      const assignmentRes = await AssignmentsApi.getAssignmentById(
+        assignmentId,
+        companyId,
+      );
 
-      console.log(allAssignments, "all assignemtns 22 ");
-      if (allAssignments.success) {
-        const assignment = allAssignments.data?.data.find(
-          (a) => a.id === assignmentId,
-        );
+      console.log(assignmentRes, "assignment res");
+      if (assignmentRes.success) {
+        const assignment = assignmentRes.data?.data || assignmentRes.data;
         if (!assignment) {
           toast.error("Assignment not found");
           setLoading(false);
@@ -68,8 +69,20 @@ export default function CleanerViewPage() {
         }
         console.log(assignment, "assignment");
 
-        const cleanerUserId = assignment.cleaner_user_id;
-        setCleanerData(assignment.user); // User details from assignment
+        // Safely extract cleaner ID from various possible fields
+        const cleanerUserId =
+          assignment.cleaner_user_id ||
+          assignment.user_id ||
+          assignment.cleaner_user?.id ||
+          assignment.user?.id;
+
+        if (!cleanerUserId) {
+          toast.error("Cleaner ID not found in assignment");
+          setLoading(false);
+          return;
+        }
+
+        setCleanerData(assignment.cleaner_user || assignment.user); // User details from assignment
 
         // Fetch assigned locations
         const assignmentsRes = await AssignmentsApi.getAssignmentsByCleanerId(
@@ -92,6 +105,8 @@ export default function CleanerViewPage() {
           setRecentActivities(reviewsRes.data.reviews.slice(0, 10)); // Last 10 activities
           setStats(reviewsRes.data.stats);
         }
+      } else {
+        toast.error("Failed to fetch assignment details");
       }
     } catch (error) {
       console.error("Error fetching cleaner details:", error);
@@ -157,10 +172,7 @@ export default function CleanerViewPage() {
         style={{ background: "var(--cleaner-bg)" }}
       >
         <div className="text-center">
-          <p
-            className="mb-4"
-            style={{ color: "var(--muted-foreground)" }}
-          >
+          <p className="mb-4" style={{ color: "var(--muted-foreground)" }}>
             Cleaner not found
           </p>
 
@@ -174,9 +186,7 @@ export default function CleanerViewPage() {
             onMouseEnter={(e) =>
               (e.currentTarget.style.filter = "brightness(0.95)")
             }
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.filter = "none")
-            }
+            onMouseLeave={(e) => (e.currentTarget.style.filter = "none")}
           >
             Go Back
           </button>
@@ -193,7 +203,6 @@ export default function CleanerViewPage() {
         className="min-h-screen p-3 sm:p-4 md:p-6"
         style={{ background: "var(--cleaner-bg)" }}
       >
-
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div
@@ -214,8 +223,8 @@ export default function CleanerViewPage() {
                   className="p-2 rounded-lg transition-colors"
                   style={{ color: "var(--cleaner-primary-text)" }}
                   onMouseEnter={(e) =>
-                  (e.currentTarget.style.background =
-                    "rgba(255,255,255,0.12)")
+                    (e.currentTarget.style.background =
+                      "rgba(255,255,255,0.12)")
                   }
                   onMouseLeave={(e) =>
                     (e.currentTarget.style.background = "transparent")
@@ -247,12 +256,10 @@ export default function CleanerViewPage() {
                   >
                     Cleaner Profile & Activity
                   </p>
-
                 </div>
               </div>
             </div>
           </div>
-
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -401,7 +408,6 @@ export default function CleanerViewPage() {
             </div>
           </div>
 
-
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left Column - Cleaner Info & Assigned Locations */}
             <div className="lg:col-span-1 space-y-6">
@@ -529,7 +535,7 @@ export default function CleanerViewPage() {
                         >
                           {new Date(cleanerData.created_at).toLocaleDateString(
                             "en-US",
-                            { year: "numeric", month: "long", day: "numeric" }
+                            { year: "numeric", month: "long", day: "numeric" },
                           )}
                         </p>
                       </div>
@@ -575,8 +581,8 @@ export default function CleanerViewPage() {
                           border: "1px solid var(--cleaner-border)",
                         }}
                         onMouseEnter={(e) =>
-                        (e.currentTarget.style.background =
-                          "var(--assignment-accent-bg)")
+                          (e.currentTarget.style.background =
+                            "var(--assignment-accent-bg)")
                         }
                         onMouseLeave={(e) =>
                           (e.currentTarget.style.background = "transparent")
@@ -606,17 +612,17 @@ export default function CleanerViewPage() {
                                 style={
                                   assignment.status === "assigned"
                                     ? {
-                                      background:
-                                        "var(--cleaner-status-active-bg)",
-                                      color:
-                                        "var(--cleaner-status-active-text)",
-                                    }
+                                        background:
+                                          "var(--cleaner-status-active-bg)",
+                                        color:
+                                          "var(--cleaner-status-active-text)",
+                                      }
                                     : {
-                                      background:
-                                        "var(--cleaner-status-inactive-bg)",
-                                      color:
-                                        "var(--cleaner-status-inactive-text)",
-                                    }
+                                        background:
+                                          "var(--cleaner-status-inactive-bg)",
+                                        color:
+                                          "var(--cleaner-status-inactive-text)",
+                                      }
                                 }
                               >
                                 {assignment.status}
@@ -630,7 +636,7 @@ export default function CleanerViewPage() {
                                 onClick={() =>
                                   handleViewLocation(
                                     assignment.locations.latitude,
-                                    assignment.locations.longitude
+                                    assignment.locations.longitude,
                                   )
                                 }
                                 className="p-2 rounded-lg transition-colors"
@@ -638,12 +644,12 @@ export default function CleanerViewPage() {
                                   color: "var(--assignment-accent-text)",
                                 }}
                                 onMouseEnter={(e) =>
-                                (e.currentTarget.style.background =
-                                  "var(--assignment-accent-bg)")
+                                  (e.currentTarget.style.background =
+                                    "var(--assignment-accent-bg)")
                                 }
                                 onMouseLeave={(e) =>
-                                (e.currentTarget.style.background =
-                                  "transparent")
+                                  (e.currentTarget.style.background =
+                                    "transparent")
                                 }
                                 title="View on Map"
                               >
@@ -657,7 +663,6 @@ export default function CleanerViewPage() {
                 </div>
               </div>
             </div>
-
 
             {/* Right Column - Recent Activities */}
             <div className="lg:col-span-2">
@@ -698,8 +703,8 @@ export default function CleanerViewPage() {
                         className="rounded-lg p-4 transition-colors"
                         style={{ border: "1px solid var(--cleaner-border)" }}
                         onMouseEnter={(e) =>
-                        (e.currentTarget.style.background =
-                          "var(--assignment-accent-bg)")
+                          (e.currentTarget.style.background =
+                            "var(--assignment-accent-bg)")
                         }
                         onMouseLeave={(e) =>
                           (e.currentTarget.style.background = "transparent")
@@ -785,13 +790,16 @@ export default function CleanerViewPage() {
                             >
                               <Calendar className="w-3 h-3" />
                               <span>
-                                {new Date(activity.created_at).toLocaleString("en-US", {
-                                  year: "numeric",
-                                  month: "short",
-                                  day: "numeric",
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                })}
+                                {new Date(activity.created_at).toLocaleString(
+                                  "en-US",
+                                  {
+                                    year: "numeric",
+                                    month: "short",
+                                    day: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  },
+                                )}
                               </span>
                             </div>
                           </div>

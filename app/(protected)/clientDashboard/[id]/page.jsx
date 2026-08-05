@@ -1,4 +1,3 @@
-
 // "use client";
 
 // import { useState } from "react";
@@ -75,7 +74,7 @@
 // }) => (
 //   <div
 //     onClick={onClick}
-//     className={`bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-[32px] border border-slate-200/60 dark:border-slate-700/50 
+//     className={`bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-[32px] border border-slate-200/60 dark:border-slate-700/50
 //     shadow-[0_8px_30px_rgb(0,0,0,0.08)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.4)]
 //     hover:shadow-[0_20px_60px_rgb(6,182,212,0.15)] dark:hover:shadow-[0_20px_60px_rgb(6,182,212,0.25)]
 //     transition-all duration-500 hover:-translate-y-1 ${onClick ? "cursor-pointer" : ""} ${className}
@@ -86,7 +85,7 @@
 //       <div className="flex items-center justify-between mb-4">
 //         <div className="flex items-center gap-4">
 //           <div
-//             className="h-12 w-12 rounded-2xl bg-gradient-to-br from-cyan-400/20 to-blue-500/20 
+//             className="h-12 w-12 rounded-2xl bg-gradient-to-br from-cyan-400/20 to-blue-500/20
 //             flex items-center justify-center text-cyan-600 dark:text-cyan-400
 //             shadow-[0_4px_20px_rgb(6,182,212,0.2)]"
 //           >
@@ -114,13 +113,13 @@
 //   <div
 //     onClick={onClick}
 //     className="
-//       group relative 
-//       bg-white/95 dark:bg-slate-900/95 
-//       backdrop-blur-xl 
-//       rounded-2xl 
+//       group relative
+//       bg-white/95 dark:bg-slate-900/95
+//       backdrop-blur-xl
+//       rounded-2xl
 //       px-4 py-4
-//       border border-slate-200/60 dark:border-slate-700/50 
-//       shadow-sm hover:shadow-lg overflow-hidden 
+//       border border-slate-200/60 dark:border-slate-700/50
+//       shadow-sm hover:shadow-lg overflow-hidden
 //       transition-all duration-300 hover:-translate-y-1 cursor-pointer
 //     "
 //   >
@@ -246,7 +245,7 @@
 //           initial={{ scale: 0.95, opacity: 0 }}
 //           animate={{ scale: 1, opacity: 1 }}
 //           exit={{ scale: 0.95, opacity: 0 }}
-//           className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl w-full max-w-5xl h-[80vh] 
+//           className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl w-full max-w-5xl h-[80vh]
 //           rounded-[32px] shadow-[0_20px_80px_rgb(0,0,0,0.2)] dark:shadow-[0_20px_80px_rgb(0,0,0,0.6)]
 //           overflow-hidden flex flex-col border border-slate-200/50 dark:border-slate-700/50"
 //         >
@@ -509,7 +508,7 @@ import {
   MoreVertical,
   BarChart2,
   UserCheck,
-  Star
+  Star,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Loader from "@/components/ui/Loader";
@@ -525,7 +524,7 @@ import {
   useDashboardAllLocations,
   useDashboardActivities,
   useWashroomScoresSummary,
-  useCleanerPerformance
+  useCleanerPerformance,
 } from "@/features/Dashboard/Dashboard.queries";
 import { useGetWashroomHygieneHeatmap } from "@/features/Dashboard/Dashboard.queries";
 
@@ -549,7 +548,11 @@ const CardHeader = ({ title, subtitle, icon, rightAction }) => (
         <h3 className="text-[13px] font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wide flex items-center gap-2">
           {title}
         </h3>
-        {subtitle && <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{subtitle}</p>}
+        {subtitle && (
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            {subtitle}
+          </p>
+        )}
       </div>
     </div>
     {rightAction && <div className="relative">{rightAction}</div>}
@@ -557,32 +560,67 @@ const CardHeader = ({ title, subtitle, icon, rightAction }) => (
 );
 
 const CardShell = ({ children, className = "" }) => (
-  <div className={`bg-white dark:bg-slate-900 rounded-[20px] border border-slate-200/80 dark:border-slate-800 shadow-sm p-6 ${className}`}>
+  <div
+    className={`bg-white dark:bg-slate-900 rounded-[20px] border border-slate-200/80 dark:border-slate-800 shadow-sm p-6 ${className}`}
+  >
     {children}
   </div>
 );
 
-const StatCard = ({ title, value, icon: Icon, colorClass, trend, trendValue, onClick }) => (
+const StatCard = ({
+  title,
+  value,
+  icon: Icon,
+  colorClass,
+  trend,
+  trendValue,
+  onClick,
+}) => (
   <div
     onClick={onClick}
     className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow cursor-pointer flex flex-col justify-between relative overflow-hidden"
   >
     <div className="flex items-center gap-3">
-      <div className={`h-9 w-9 rounded-lg flex items-center justify-center text-white ${colorClass}`}>
+      <div
+        className={`h-9 w-9 rounded-lg flex items-center justify-center text-white ${colorClass}`}
+      >
         <Icon size={18} strokeWidth={2.5} />
       </div>
       <div>
         {/* ADDED dark:text-white here */}
-        <h4 className="text-xl font-bold text-slate-800 dark:text-white leading-none mb-0.5">{value || 0}</h4>
-        <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{title}</p>
+        <h4 className="text-xl font-bold text-slate-800 dark:text-white leading-none mb-0.5">
+          {value || 0}
+        </h4>
+        <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+          {title}
+        </p>
       </div>
     </div>
 
     <div className="mt-2.5 flex items-center gap-1.5 text-[10px] font-semibold">
-      {trend === "up" && <><ArrowUp size={12} className="text-emerald-500" /><span className="text-emerald-500">{trendValue}</span></>}
-      {trend === "down" && <><ArrowDown size={12} className="text-rose-500" /><span className="text-rose-500">{trendValue}</span></>}
-      {trend === "neutral" && <><span className="text-slate-400 dark:text-slate-500">—</span><span className="text-slate-400 dark:text-slate-500">{trendValue}</span></>}
-      <span className="text-slate-400 dark:text-slate-500 font-medium ml-1 hidden xl:inline">vs last week</span>
+      {trend === "up" && (
+        <>
+          <ArrowUp size={12} className="text-emerald-500" />
+          <span className="text-emerald-500">{trendValue}</span>
+        </>
+      )}
+      {trend === "down" && (
+        <>
+          <ArrowDown size={12} className="text-rose-500" />
+          <span className="text-rose-500">{trendValue}</span>
+        </>
+      )}
+      {trend === "neutral" && (
+        <>
+          <span className="text-slate-400 dark:text-slate-500">—</span>
+          <span className="text-slate-400 dark:text-slate-500">
+            {trendValue}
+          </span>
+        </>
+      )}
+      <span className="text-slate-400 dark:text-slate-500 font-medium ml-1 hidden xl:inline">
+        vs last week
+      </span>
     </div>
   </div>
 );
@@ -592,7 +630,7 @@ const getDatesInRange = (startDate, endDate) => {
   let currentDate = new Date(startDate);
   const stopDate = new Date(endDate);
   while (currentDate <= stopDate) {
-    dates.push(new Date(currentDate).toISOString().split('T')[0]);
+    dates.push(new Date(currentDate).toISOString().split("T")[0]);
     currentDate.setDate(currentDate.getDate() + 1);
   }
   return dates;
@@ -616,9 +654,15 @@ export default function ClientDashboard() {
   const thirtyDaysAgoStr = thirtyDaysAgoObj.toISOString().split("T")[0];
 
   // Filters State
-  const [dateRange, setDateRange] = useState({ startDate: thirtyDaysAgoStr, endDate: todayStr });
+  const [dateRange, setDateRange] = useState({
+    startDate: thirtyDaysAgoStr,
+    endDate: todayStr,
+  });
   const [showFilterMenu, setShowFilterMenu] = useState(false);
-  const [tempDates, setTempDates] = useState({ startDate: thirtyDaysAgoStr, endDate: todayStr });
+  const [tempDates, setTempDates] = useState({
+    startDate: thirtyDaysAgoStr,
+    endDate: todayStr,
+  });
   const [isDarkMode, setIsDarkMode] = useState(false);
   const filterMenuRef = useRef(null);
 
@@ -626,24 +670,28 @@ export default function ClientDashboard() {
   const activeCompanyIdForReviews = canViewCleanerReviews ? companyId : null;
 
   // --- Core Dashboard Data Hooks ---
-  const { data: statsData = {}, isLoading: isCountsLoading } = useDashboardCounts(companyId, todayStr);
-  const { data: topLocations = [], isLoading: isTopLocLoading } = useDashboardAllLocations(activeCompanyIdForLocations, todayStr);
-  const { data: recentActivities = [], isLoading: isActivitiesLoading } = useDashboardActivities(activeCompanyIdForReviews, 5, todayStr);
-  const { data: washroomGraphData = [], isLoading: isWashroomLoading } = useWashroomScoresSummary(activeCompanyIdForLocations);
+  const { data: statsData = {}, isLoading: isCountsLoading } =
+    useDashboardCounts(companyId, todayStr);
+  const { data: topLocations = [], isLoading: isTopLocLoading } =
+    useDashboardAllLocations(activeCompanyIdForLocations, todayStr);
+  const { data: recentActivities = [], isLoading: isActivitiesLoading } =
+    useDashboardActivities(activeCompanyIdForReviews, 5, todayStr);
+  const { data: washroomGraphData = [], isLoading: isWashroomLoading } =
+    useWashroomScoresSummary(activeCompanyIdForLocations);
 
   // Cleaner Performance Hook
-  const { data: cleanerResponse, isLoading: isCleanerLoading } = useCleanerPerformance(activeCompanyIdForReviews);
+  const { data: cleanerResponse, isLoading: isCleanerLoading } =
+    useCleanerPerformance(activeCompanyIdForReviews);
 
   // Safely extract data and stats
   const cleanerGraphData = cleanerResponse?.data || [];
   const cleanerStats = cleanerResponse?.stats || {
     totalTasks: 0,
     averagePerDay: 0,
-    bestDay: '-',
+    bestDay: "-",
     bestDayCount: 0,
-    completionRate: 0
+    completionRate: 0,
   };
-
 
   useEffect(() => {
     // Check initial state
@@ -674,13 +722,17 @@ export default function ClientDashboard() {
   const formattedEndDate = endDate.toISOString().split("T")[0];
 
   // 2. Pass the single object to the hook (API WILL NOW FIRE)
-  const { data: heatmapResponse, isLoading: isHeatmapLoading } = useGetWashroomHygieneHeatmap({
-    company_id: companyId,
-    start_date: formattedStartDate,
-    end_date: formattedEndDate
-  });
+  const { data: heatmapResponse, isLoading: isHeatmapLoading } =
+    useGetWashroomHygieneHeatmap({
+      company_id: companyId,
+      start_date: formattedStartDate,
+      end_date: formattedEndDate,
+    });
   const heatmapData = heatmapResponse?.data || [];
-  const heatmapDatesArray = getDatesInRange(dateRange.startDate, dateRange.endDate);
+  const heatmapDatesArray = getDatesInRange(
+    dateRange.startDate,
+    dateRange.endDate,
+  );
 
   const applyDateFilter = () => {
     setDateRange(tempDates);
@@ -689,7 +741,10 @@ export default function ClientDashboard() {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (filterMenuRef.current && !filterMenuRef.current.contains(event.target)) {
+      if (
+        filterMenuRef.current &&
+        !filterMenuRef.current.contains(event.target)
+      ) {
         setShowFilterMenu(false);
       }
     };
@@ -714,45 +769,113 @@ export default function ClientDashboard() {
   };
 
   const getHeatmapColor = (score) => {
-    if (score === null || score === undefined || score === "") return "bg-slate-50 dark:bg-slate-800/50 text-transparent";
+    if (score === null || score === undefined || score === "")
+      return "bg-slate-50 dark:bg-slate-800/50 text-transparent";
     const num = Number(score);
-    if (num >= 9) return "bg-emerald-200/60 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300";
-    if (num >= 7) return "bg-blue-200/60 dark:bg-blue-500/20 text-blue-800 dark:text-blue-300";
-    if (num >= 5) return "bg-orange-200/60 dark:bg-orange-500/20 text-orange-800 dark:text-orange-300";
+    if (num >= 9)
+      return "bg-emerald-200/60 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300";
+    if (num >= 7)
+      return "bg-blue-200/60 dark:bg-blue-500/20 text-blue-800 dark:text-blue-300";
+    if (num >= 5)
+      return "bg-orange-200/60 dark:bg-orange-500/20 text-orange-800 dark:text-orange-300";
     return "bg-red-200/60 dark:bg-red-500/20 text-red-800 dark:text-red-300";
   };
 
-  if (!canViewLocations && !canViewCleanerReviews && !canViewUsers && !canViewReports) {
-    return <div className="p-8 text-center text-slate-500 dark:text-slate-400">Limited Access</div>;
+  if (
+    !canViewLocations &&
+    !canViewCleanerReviews &&
+    !canViewUsers &&
+    !canViewReports
+  ) {
+    return (
+      <div className="p-8 text-center text-slate-500 dark:text-slate-400">
+        Limited Access
+      </div>
+    );
   }
 
-  const overallScore = washroomGraphData.length > 0
-    ? (washroomGraphData.reduce((acc, curr) => acc + Number(curr.average_score || 0), 0) / washroomGraphData.length).toFixed(2)
-    : "0.0";
+  const overallScore =
+    washroomGraphData.length > 0
+      ? (
+          washroomGraphData.reduce(
+            (acc, curr) => acc + Number(curr.average_score || 0),
+            0,
+          ) / washroomGraphData.length
+        ).toFixed(2)
+      : "0.0";
 
   return (
-   <div className="min-h-screen bg-[#f8fafc] dark:bg-slate-950 p-3 sm:p-4 md:p-6 font-sans md:mt-[-10px]">
-
+    <div className="min-h-screen bg-[#f8fafc] dark:bg-slate-950 p-3 sm:p-4 md:p-6 font-sans md:mt-[-10px]">
       {/* 1. TOP STATS ROW */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4 mb-6 md:mt-[-30px]">
         {isCountsLoading ? (
-          Array(5).fill(0).map((_, i) => <StatSkeleton key={i} />)
+          Array(5)
+            .fill(0)
+            .map((_, i) => <StatSkeleton key={i} />)
         ) : (
           <>
             {canViewLocations && (
-              <StatCard title="Total Toilets" value={statsData.totalLocations} icon={MapPin} colorClass="bg-blue-500" trend="up" trendValue="↑ 8%" onClick={() => router.push(`/washrooms?companyId=${companyId}`)} />
+              <StatCard
+                title="Total Toilets"
+                value={statsData.totalLocations}
+                icon={MapPin}
+                colorClass="bg-blue-500"
+                trend="up"
+                trendValue="↑ 8%"
+                onClick={() => router.push(`/washrooms?companyId=${companyId}`)}
+              />
             )}
             {canViewCleanerReviews && (
-              <StatCard title="Ongoing Tasks" value={statsData.ongoingTasks} icon={ClipboardList} colorClass="bg-emerald-500" trend="neutral" trendValue="No change" onClick={() => router.push(`/cleaners?companyId=${companyId}&status=ongoing`)} />
+              <StatCard
+                title="Ongoing Tasks"
+                value={statsData.ongoingTasks}
+                icon={ClipboardList}
+                colorClass="bg-emerald-500"
+                trend="neutral"
+                trendValue="No change"
+                onClick={() =>
+                  router.push(`/cleaners?companyId=${companyId}&status=ongoing`)
+                }
+              />
             )}
             {canViewCleanerReviews && (
-              <StatCard title="Completed Tasks" value={statsData.completedTasks} icon={CheckCircle2} colorClass="bg-cyan-400" trend="up" trendValue="↑ 25%" onClick={() => router.push(`/cleaners?companyId=${companyId}&status=completed`)} />
+              <StatCard
+                title="Completed Tasks"
+                value={statsData.completedTasks}
+                icon={CheckCircle2}
+                colorClass="bg-cyan-400"
+                trend="up"
+                trendValue="↑ 25%"
+                onClick={() =>
+                  router.push(
+                    `/cleaners?companyId=${companyId}&status=completed`,
+                  )
+                }
+              />
             )}
             {canViewReports && (
-              <StatCard title="Total Repairs" value={statsData.totalRepairs} icon={Wrench} colorClass="bg-amber-500" trend="neutral" trendValue="No change" onClick={() => router.push(`/repairs?companyId=${companyId}`)} />
+              <StatCard
+                title="Total Repairs"
+                value={statsData.totalRepairs}
+                icon={Wrench}
+                colorClass="bg-amber-500"
+                trend="neutral"
+                trendValue="No change"
+                onClick={() => router.push(`/repairs?companyId=${companyId}`)}
+              />
             )}
             {canViewUsers && (
-              <StatCard title="Total Cleaners" value={statsData.totalCleaners} icon={UserCheck} colorClass="bg-purple-500" trend="up" trendValue="↑ 9%" onClick={() => router.push(`/users?flag=cleaner&companyId=${companyId}`)} />
+              <StatCard
+                title="Total Cleaners"
+                value={statsData.totalCleaners}
+                icon={UserCheck}
+                colorClass="bg-purple-500"
+                trend="up"
+                trendValue="↑ 9%"
+                onClick={() =>
+                  router.push(`/users?flag=cleaner&companyId=${companyId}`)
+                }
+              />
             )}
           </>
         )}
@@ -760,63 +883,106 @@ export default function ClientDashboard() {
 
       {/* 2. CHARTS ROW */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 items-stretch md:mt-[-15px]">
-
         {/* Cleanliness Overview */}
         {canViewLocations && (
           <CardShell className="h-full flex flex-col">
             {/* HEADER - Stacks on mobile, row on desktop */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-0 mb-4">
               <div className="flex items-start md:items-center gap-3">
-                <div className="text-cyan-500 mt-0.5 md:mt-0"><Sparkles size={18} /></div>
+                <div className="text-cyan-500 mt-0.5 md:mt-0">
+                  <Sparkles size={18} />
+                </div>
                 <div>
-                  <h3 className="text-[13px] font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wide flex items-center gap-2">CLEANLINESS OVERVIEW</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Top 5 Locations by Cleanliness Score</p>
+                  <h3 className="text-[13px] font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wide flex items-center gap-2">
+                    CLEANLINESS OVERVIEW
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    Top 5 Locations by Cleanliness Score
+                  </p>
                 </div>
               </div>
               {/* Allowed legend to wrap on small screens */}
               <div className="flex flex-wrap gap-4 text-[10px] font-bold text-slate-500 dark:text-slate-400">
-                <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-emerald-500"></div> Current Score</div>
-                <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-blue-400"></div> Average Score</div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500"></div>{" "}
+                  Current Score
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-blue-400"></div>{" "}
+                  Average Score
+                </div>
               </div>
             </div>
 
             {/* MAIN CONTENT - Column on mobile, row on desktop */}
             <div className="flex flex-col md:flex-row items-center justify-between mt-6 flex-1 gap-8 md:gap-0 w-full">
-
               {/* Circular Score - Added shrink-0 so it doesn't get distorted */}
               <div className="relative shrink-0 h-40 w-40 flex items-center justify-center rounded-full border-[12px] border-emerald-400 dark:border-emerald-500 border-r-emerald-200 dark:border-r-emerald-900">
                 <div className="text-center">
-                  <span className="text-4xl font-black text-slate-800 dark:text-white">{overallScore}</span>
-                  <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mt-1">Overall Score</p>
+                  <span className="text-4xl font-black text-slate-800 dark:text-white">
+                    {overallScore}
+                  </span>
+                  <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mt-1">
+                    Overall Score
+                  </p>
                 </div>
               </div>
 
               {/* Bar Charts - Changed ml-8 to md:ml-8 so it doesn't push off-screen on mobile */}
               <div className="flex-1 w-full ml-0 md:ml-8 flex flex-col justify-center space-y-6">
-                {isWashroomLoading ? <Loader /> : washroomGraphData.slice(0, 5).map((loc, i) => (
-                  <div key={loc.location_id || i} className="flex items-center justify-between text-[11px] font-semibold w-full">
-                    <span className="text-slate-600 dark:text-slate-300 w-1/3 truncate pr-2" title={loc.location_name}>{loc.location_name}</span>
-                    <div className="flex-1 flex flex-col gap-1.5 mx-2">
-                      <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden flex">
-                        <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${(Number(loc.current_score || 0) / 10) * 100}%` }} />
+                {isWashroomLoading ? (
+                  <Loader />
+                ) : (
+                  washroomGraphData.slice(0, 5).map((loc, i) => (
+                    <div
+                      key={loc.location_id || i}
+                      className="flex items-center justify-between text-[11px] font-semibold w-full"
+                    >
+                      <span
+                        className="text-slate-600 dark:text-slate-300 w-1/3 truncate pr-2"
+                        title={loc.location_name}
+                      >
+                        {loc.location_name}
+                      </span>
+                      <div className="flex-1 flex flex-col gap-1.5 mx-2">
+                        <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden flex">
+                          <div
+                            className="bg-emerald-500 h-full rounded-full"
+                            style={{
+                              width: `${(Number(loc.current_score || 0) / 10) * 100}%`,
+                            }}
+                          />
+                        </div>
+                        <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden flex">
+                          <div
+                            className="bg-blue-400 h-full rounded-full"
+                            style={{
+                              width: `${(Number(loc.average_score || 0) / 10) * 100}%`,
+                            }}
+                          />
+                        </div>
                       </div>
-                      <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden flex">
-                        <div className="bg-blue-400 h-full rounded-full" style={{ width: `${(Number(loc.average_score || 0) / 10) * 100}%` }} />
+                      {/* Added shrink-0 to prevent number clipping on narrow screens */}
+                      <div className="w-8 text-right shrink-0 flex flex-col gap-0.5">
+                        <span className="text-slate-800 dark:text-slate-100 font-bold leading-none">
+                          {Number(loc.current_score || 0).toFixed(2)}
+                        </span>
+                        <span className="text-slate-400 dark:text-slate-500 font-semibold leading-none text-[9px]">
+                          {Number(loc.average_score || 0).toFixed(2)}
+                        </span>
                       </div>
                     </div>
-                    {/* Added shrink-0 to prevent number clipping on narrow screens */}
-                    <div className="w-8 text-right shrink-0 flex flex-col gap-0.5">
-                      <span className="text-slate-800 dark:text-slate-100 font-bold leading-none">{Number(loc.current_score || 0).toFixed(2)}</span>
-                      <span className="text-slate-400 dark:text-slate-500 font-semibold leading-none text-[9px]">{Number(loc.average_score || 0).toFixed(2)}</span>
-                    </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
 
             {/* FOOTER - Centered on mobile, right-aligned on desktop */}
             <div className="mt-auto text-center md:text-right pt-8 md:pt-6">
-              <button onClick={() => router.push(`/washrooms?companyId=${companyId}`)} className="text-sm font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 inline-flex items-center gap-1">
+              <button
+                onClick={() => router.push(`/washrooms?companyId=${companyId}`)}
+                className="text-sm font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 inline-flex items-center gap-1"
+              >
                 View All Locations <ChevronRight size={16} />
               </button>
             </div>
@@ -828,50 +994,89 @@ export default function ClientDashboard() {
           <CardShell className="h-full flex flex-col">
             <CardHeader
               title="WEEKLY CLEANER PERFORMANCE"
-              icon={<div className="text-violet-500 dark:text-violet-400"><BarChart2 size={18} strokeWidth={2.5} /></div>}
+              icon={
+                <div className="text-violet-500 dark:text-violet-400">
+                  <BarChart2 size={18} strokeWidth={2.5} />
+                </div>
+              }
             />
-            {isCleanerLoading ? <Loader /> : (
+            {isCleanerLoading ? (
+              <Loader />
+            ) : (
               <div className="flex-1 flex flex-col">
                 {/* Chart Area */}
                 <div className="h-[220px] w-full mt-2 relative z-10">
-                  <CleanerPerformanceChart data={cleanerGraphData} isDarkMode={isDarkMode} />
+                  <CleanerPerformanceChart
+                    data={cleanerGraphData}
+                    isDarkMode={isDarkMode}
+                  />
                 </div>
 
                 {/* Stats Grid - Updated to 2 columns on mobile, 4 on desktop */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 gap-y-6 md:gap-y-4 mt-auto pt-6 border-t border-slate-100/60 dark:border-slate-800/60 bg-white dark:bg-slate-900 rounded-b-[20px] -mx-6 -mb-6 px-6 pb-6">
-
                   <div>
-                    <p className="text-[11px] font-bold text-slate-800 dark:text-slate-200 mb-2">Total Tasks<br />Completed</p>
+                    <p className="text-[11px] font-bold text-slate-800 dark:text-slate-200 mb-2">
+                      Total Tasks
+                      <br />
+                      Completed
+                    </p>
                     <div className="flex items-end gap-2">
-                      <span className="text-[26px] font-black text-blue-600 dark:text-blue-400 leading-none">{cleanerStats.totalTasks || 0}</span>
-                      <span className="text-[10px] font-bold text-emerald-500 dark:text-emerald-400 mb-0.5">↑ 18%</span>
+                      <span className="text-[26px] font-black text-blue-600 dark:text-blue-400 leading-none">
+                        {cleanerStats.totalTasks || 0}
+                      </span>
+                      <span className="text-[10px] font-bold text-emerald-500 dark:text-emerald-400 mb-0.5">
+                        ↑ 18%
+                      </span>
                     </div>
                   </div>
 
                   <div>
-                    <p className="text-[11px] font-bold text-slate-800 dark:text-slate-200 mb-2">Average / Day<br />&nbsp;</p>
+                    <p className="text-[11px] font-bold text-slate-800 dark:text-slate-200 mb-2">
+                      Average / Day
+                      <br />
+                      &nbsp;
+                    </p>
                     <div className="flex items-end gap-2">
-                      <span className="text-[26px] font-black text-violet-600 dark:text-violet-400 leading-none">{cleanerStats.averagePerDay || 0}</span>
-                      <span className="text-[10px] font-bold text-emerald-500 dark:text-emerald-400 mb-0.5">↑ 12%</span>
+                      <span className="text-[26px] font-black text-violet-600 dark:text-violet-400 leading-none">
+                        {cleanerStats.averagePerDay || 0}
+                      </span>
+                      <span className="text-[10px] font-bold text-emerald-500 dark:text-emerald-400 mb-0.5">
+                        ↑ 12%
+                      </span>
                     </div>
                   </div>
 
                   <div>
-                    <p className="text-[11px] font-bold text-slate-800 dark:text-slate-200 mb-2">Best Day<br />&nbsp;</p>
+                    <p className="text-[11px] font-bold text-slate-800 dark:text-slate-200 mb-2">
+                      Best Day
+                      <br />
+                      &nbsp;
+                    </p>
                     <div className="flex flex-col justify-end h-[26px]">
-                      <span className="text-lg font-black text-violet-700 dark:text-violet-400 leading-none tracking-tight mb-1">{cleanerStats.bestDay || '-'}</span>
-                      <span className="text-[9px] font-semibold text-slate-500 dark:text-slate-400">{cleanerStats.bestDayCount || 0} Tasks</span>
+                      <span className="text-lg font-black text-violet-700 dark:text-violet-400 leading-none tracking-tight mb-1">
+                        {cleanerStats.bestDay || "-"}
+                      </span>
+                      <span className="text-[9px] font-semibold text-slate-500 dark:text-slate-400">
+                        {cleanerStats.bestDayCount || 0} Tasks
+                      </span>
                     </div>
                   </div>
 
                   <div>
-                    <p className="text-[11px] font-bold text-slate-800 dark:text-slate-200 mb-2">Completion Rate<br />&nbsp;</p>
+                    <p className="text-[11px] font-bold text-slate-800 dark:text-slate-200 mb-2">
+                      Completion Rate
+                      <br />
+                      &nbsp;
+                    </p>
                     <div className="flex items-end gap-2">
-                      <span className="text-[26px] font-black text-violet-600 dark:text-violet-400 leading-none">{cleanerStats.completionRate || 0}%</span>
-                      <span className="text-[10px] font-bold text-emerald-500 dark:text-emerald-400 mb-0.5">↑ 12%</span>
+                      <span className="text-[26px] font-black text-violet-600 dark:text-violet-400 leading-none">
+                        {cleanerStats.completionRate || 0}%
+                      </span>
+                      <span className="text-[10px] font-bold text-emerald-500 dark:text-emerald-400 mb-0.5">
+                        ↑ 12%
+                      </span>
                     </div>
                   </div>
-
                 </div>
               </div>
             )}
@@ -887,10 +1092,17 @@ export default function ClientDashboard() {
             subtitle="Daily hygiene scores by washroom (0-10)"
             icon={<Sparkles size={18} className="text-cyan-500" />}
             rightAction={
-              <div className="flex items-center gap-2 md:gap-3 relative" ref={filterMenuRef}>
+              <div
+                className="flex items-center gap-2 md:gap-3 relative"
+                ref={filterMenuRef}
+              >
                 {/* Hidden on very small screens to prevent overflow */}
                 <div className="hidden md:flex text-xs font-semibold text-slate-600 dark:text-slate-300 items-center gap-1 border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800">
-                  {dateRange.startDate} to {dateRange.endDate} <Calendar size={14} className="ml-2 text-slate-400 dark:text-slate-500" />
+                  {dateRange.startDate} to {dateRange.endDate}{" "}
+                  <Calendar
+                    size={14}
+                    className="ml-2 text-slate-400 dark:text-slate-500"
+                  />
                 </div>
                 <button
                   onClick={() => setShowFilterMenu(!showFilterMenu)}
@@ -898,34 +1110,62 @@ export default function ClientDashboard() {
                 >
                   <Filter size={14} />
                   <span className="hidden sm:inline">Filters</span>
-                  <ChevronRight size={14} className={showFilterMenu ? "rotate-90 transition-transform" : "transition-transform"} />
+                  <ChevronRight
+                    size={14}
+                    className={
+                      showFilterMenu
+                        ? "rotate-90 transition-transform"
+                        : "transition-transform"
+                    }
+                  />
                 </button>
-                <MoreVertical size={16} className="text-slate-400 dark:text-slate-500 cursor-pointer hidden sm:block" />
+                <MoreVertical
+                  size={16}
+                  className="text-slate-400 dark:text-slate-500 cursor-pointer hidden sm:block"
+                />
 
                 {/* Filter Dropdown */}
                 <AnimatePresence>
                   {showFilterMenu && (
                     <motion.div
-                      initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
                       className="absolute right-0 md:right-8 top-10 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl rounded-xl p-4 w-[250px] md:w-72 z-50"
                     >
-                      <h4 className="text-xs font-bold text-slate-800 dark:text-slate-100 mb-3">Custom Date Range</h4>
+                      <h4 className="text-xs font-bold text-slate-800 dark:text-slate-100 mb-3">
+                        Custom Date Range
+                      </h4>
                       <div className="space-y-3">
                         <div>
-                          <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">Start Date</label>
+                          <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">
+                            Start Date
+                          </label>
                           <input
                             type="date"
                             value={tempDates.startDate}
-                            onChange={(e) => setTempDates({ ...tempDates, startDate: e.target.value })}
+                            onChange={(e) =>
+                              setTempDates({
+                                ...tempDates,
+                                startDate: e.target.value,
+                              })
+                            }
                             className="w-full text-sm p-2 border border-slate-200 dark:border-slate-700 bg-transparent text-slate-800 dark:text-slate-200 rounded-lg mt-1 focus:ring-2 focus:ring-blue-500 outline-none"
                           />
                         </div>
                         <div>
-                          <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">End Date</label>
+                          <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">
+                            End Date
+                          </label>
                           <input
                             type="date"
                             value={tempDates.endDate}
-                            onChange={(e) => setTempDates({ ...tempDates, endDate: e.target.value })}
+                            onChange={(e) =>
+                              setTempDates({
+                                ...tempDates,
+                                endDate: e.target.value,
+                              })
+                            }
                             className="w-full text-sm p-2 border border-slate-200 dark:border-slate-700 bg-transparent text-slate-800 dark:text-slate-200 rounded-lg mt-1 focus:ring-2 focus:ring-blue-500 outline-none"
                           />
                         </div>
@@ -945,64 +1185,107 @@ export default function ClientDashboard() {
 
           {/* Heatmap Legend - Reduced gap on mobile */}
           <div className="flex gap-3 md:gap-6 mb-6 text-[11px] font-bold text-slate-600 dark:text-slate-300 justify-center flex-wrap">
-            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-emerald-500 dark:bg-emerald-400"></div> Excellent (9-10)</div>
-            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-blue-400 dark:bg-blue-500"></div> Good (7-8.9)</div>
-            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-amber-400 dark:bg-amber-500"></div> Average (5-6.9)</div>
-            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-rose-400 dark:bg-rose-500"></div> Poor ({`<5`})</div>
-            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-slate-200 dark:bg-slate-700"></div> No Inspection</div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-emerald-500 dark:bg-emerald-400"></div>{" "}
+              Excellent (9-10)
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-blue-400 dark:bg-blue-500"></div>{" "}
+              Good (7-8.9)
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-amber-400 dark:bg-amber-500"></div>{" "}
+              Average (5-6.9)
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-rose-400 dark:bg-rose-500"></div>{" "}
+              Poor ({`<5`})
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-slate-200 dark:bg-slate-700"></div>{" "}
+              No Inspection
+            </div>
           </div>
 
           {isHeatmapLoading ? (
-            <div className="py-12"><Loader /></div>
+            <div className="py-12">
+              <Loader />
+            </div>
           ) : (
             <div className="w-full overflow-x-auto overflow-y-auto max-h-[330px] pb-4 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-200 dark:[&::-webkit-scrollbar-thumb]:bg-slate-700 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-slate-300 dark:hover:[&::-webkit-scrollbar-thumb]:bg-slate-600 transition-colors">
               {/* Container with both X and Y scrolling, max height, and slim scrollbar styling */}
               <div className="w-max min-w-full border border-slate-100 dark:border-slate-800 rounded-xl overflow-hidden text-xs bg-white dark:bg-slate-900 shadow-sm relative">
-
                 {/* Table Header - Now sticky to the top on vertical scroll */}
                 <div className="flex font-bold text-slate-600 dark:text-slate-300 mb-1 border-b border-slate-100 dark:border-slate-800 pb-2 sticky top-0 bg-white dark:bg-slate-900 z-20">
                   {/* Left corner cell (Washroom) needs z-30 to float above both scrolling directions */}
-                  <div className="w-28 md:w-64 flex-shrink-0 pl-3 md:pl-4 sticky left-0 bg-white dark:bg-slate-900 z-30 border-r border-slate-50 dark:border-slate-800">Washroom</div>
+                  <div className="w-28 md:w-64 flex-shrink-0 pl-3 md:pl-4 sticky left-0 bg-white dark:bg-slate-900 z-30 border-r border-slate-50 dark:border-slate-800">
+                    Washroom
+                  </div>
                   {heatmapDatesArray.map((dateStr) => {
                     const day = new Date(dateStr).getDate();
                     return (
-                      <div key={dateStr} className="w-8 flex-shrink-0 text-center">{day}</div>
+                      <div
+                        key={dateStr}
+                        className="w-8 flex-shrink-0 text-center"
+                      >
+                        {day}
+                      </div>
                     );
                   })}
                   {/* Right corner cell (Avg) needs z-30 to float above both scrolling directions */}
-                  <div className="w-14 flex-shrink-0 text-center sticky right-0 bg-white dark:bg-slate-900 z-30 border-l border-slate-100 dark:border-slate-800 shadow-[-4px_0_10px_rgba(0,0,0,0.02)]">Avg</div>
+                  <div className="w-14 flex-shrink-0 text-center sticky right-0 bg-white dark:bg-slate-900 z-30 border-l border-slate-100 dark:border-slate-800 shadow-[-4px_0_10px_rgba(0,0,0,0.02)]">
+                    Avg
+                  </div>
                 </div>
 
                 {/* Table Rows */}
-                {heatmapData.length > 0 ? heatmapData.map((row, i) => {
-                  const rowAvg = row.average_score ? Number(row.average_score).toFixed(1) : "-";
+                {heatmapData.length > 0 ? (
+                  heatmapData.map((row, i) => {
+                    const rowAvg = row.average_score
+                      ? Number(row.average_score).toFixed(1)
+                      : "-";
 
-                  return (
-                    <div key={row.washroom_id || i} className="flex h-10 items-stretch group">
+                    return (
+                      <div
+                        key={row.washroom_id || i}
+                        className="flex h-10 items-stretch group"
+                      >
+                        {/* Left Sticky Column */}
+                        <div
+                          className="w-28 md:w-64 flex-shrink-0 text-[10px] md:text-xs font-bold text-slate-700 dark:text-slate-200 pl-3 md:pl-4 pr-2 truncate flex items-center border-b border-white dark:border-slate-900 sticky left-0 bg-white dark:bg-slate-900 z-10 border-r border-slate-50 dark:border-slate-800 group-hover:bg-slate-50 dark:group-hover:bg-slate-800/50 transition-colors"
+                          title={row.washroom_name}
+                        >
+                          {row.washroom_name}
+                        </div>
 
-                      {/* Left Sticky Column */}
-                      <div className="w-28 md:w-64 flex-shrink-0 text-[10px] md:text-xs font-bold text-slate-700 dark:text-slate-200 pl-3 md:pl-4 pr-2 truncate flex items-center border-b border-white dark:border-slate-900 sticky left-0 bg-white dark:bg-slate-900 z-10 border-r border-slate-50 dark:border-slate-800 group-hover:bg-slate-50 dark:group-hover:bg-slate-800/50 transition-colors" title={row.washroom_name}>
-                        {row.washroom_name}
+                        {/* Solid Grid Cells */}
+                        {heatmapDatesArray.map((dateStr, j) => {
+                          const score = getScoreForDate(row, dateStr);
+                          return (
+                            <div
+                              key={j}
+                              className={`w-8 flex-shrink-0 flex items-center justify-center font-bold text-[10px] border-r border-b border-white dark:border-slate-900 transition-colors hover:brightness-95 cursor-pointer ${getHeatmapColor(score)}`}
+                            >
+                              {score !== null &&
+                              score !== undefined &&
+                              score !== ""
+                                ? Number(score).toFixed(1)
+                                : ""}
+                            </div>
+                          );
+                        })}
+
+                        {/* Right Sticky Column */}
+                        <div className="w-14 flex-shrink-0 flex items-center justify-center font-black text-slate-800 dark:text-slate-100 border-b border-white dark:border-slate-900 sticky right-0 bg-white dark:bg-slate-900 z-10 border-l border-slate-100 dark:border-slate-800 shadow-[-4px_0_10px_rgba(0,0,0,0.02)] group-hover:bg-slate-50 dark:group-hover:bg-slate-800/50 transition-colors">
+                          {rowAvg}
+                        </div>
                       </div>
-
-                      {/* Solid Grid Cells */}
-                      {heatmapDatesArray.map((dateStr, j) => {
-                        const score = getScoreForDate(row, dateStr);
-                        return (
-                          <div key={j} className={`w-8 flex-shrink-0 flex items-center justify-center font-bold text-[10px] border-r border-b border-white dark:border-slate-900 transition-colors hover:brightness-95 cursor-pointer ${getHeatmapColor(score)}`}>
-                            {score !== null && score !== undefined && score !== "" ? Number(score).toFixed(1) : ''}
-                          </div>
-                        )
-                      })}
-
-                      {/* Right Sticky Column */}
-                      <div className="w-14 flex-shrink-0 flex items-center justify-center font-black text-slate-800 dark:text-slate-100 border-b border-white dark:border-slate-900 sticky right-0 bg-white dark:bg-slate-900 z-10 border-l border-slate-100 dark:border-slate-800 shadow-[-4px_0_10px_rgba(0,0,0,0.02)] group-hover:bg-slate-50 dark:group-hover:bg-slate-800/50 transition-colors">
-                        {rowAvg}
-                      </div>
-                    </div>
-                  );
-                }) : (
-                  <div className="p-8 text-center text-slate-400 dark:text-slate-500 font-semibold">No data available for the selected range.</div>
+                    );
+                  })
+                ) : (
+                  <div className="p-8 text-center text-slate-400 dark:text-slate-500 font-semibold">
+                    No data available for the selected range.
+                  </div>
                 )}
               </div>
             </div>
@@ -1012,7 +1295,6 @@ export default function ClientDashboard() {
 
       {/* 4. BOTTOM COLUMNS */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 items-stretch">
-
         {/* 1. TOP RATED WASHROOMS CARD */}
         {canViewLocations && (
           <CardShell className="h-[400px] flex flex-col">
@@ -1033,13 +1315,23 @@ export default function ClientDashboard() {
                     const rating = Math.round(score);
 
                     return (
-                      <div key={loc.id || i} className="flex items-center justify-between pb-3 border-b border-slate-50 dark:border-slate-800/50 last:border-0">
+                      <div
+                        key={loc.id || i}
+                        className="flex items-center justify-between pb-3 border-b border-slate-50 dark:border-slate-800/50 last:border-0"
+                      >
                         <div className="flex items-center gap-3">
-                          <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white ${i === 0 ? 'bg-amber-500' : i === 1 ? 'bg-blue-500' : i === 2 ? 'bg-purple-500' : i === 3 ? 'bg-teal-500' : 'bg-slate-400 dark:bg-slate-600'}`}>
+                          <div
+                            className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white ${i === 0 ? "bg-amber-500" : i === 1 ? "bg-blue-500" : i === 2 ? "bg-purple-500" : i === 3 ? "bg-teal-500" : "bg-slate-400 dark:bg-slate-600"}`}
+                          >
                             {i + 1}
                           </div>
                           <div>
-                            <p className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate w-32" title={loc.name}>{loc.name}</p>
+                            <p
+                              className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate w-32"
+                              title={loc.name}
+                            >
+                              {loc.name}
+                            </p>
 
                             <div className="flex gap-0.5 mt-0.5">
                               {[...Array(10)].map((_, starIndex) => (
@@ -1049,8 +1341,8 @@ export default function ClientDashboard() {
                                   className={
                                     starIndex < rating
                                       ? "text-amber-400 dark:text-amber-500 fill-amber-400 dark:fill-amber-500"
-                                      // Increased contrast for uncolored stars here:
-                                      : "text-slate-300 dark:text-slate-600 fill-slate-300 dark:fill-slate-600"
+                                      : // Increased contrast for uncolored stars here:
+                                        "text-slate-300 dark:text-slate-600 fill-slate-300 dark:fill-slate-600"
                                   }
                                 />
                               ))}
@@ -1058,7 +1350,9 @@ export default function ClientDashboard() {
                           </div>
                         </div>
                         <div className="flex items-center gap-3">
-                          <span className="text-sm font-black text-slate-800 dark:text-slate-100">{score.toFixed(1)}</span>
+                          <span className="text-sm font-black text-slate-800 dark:text-slate-100">
+                            {score.toFixed(1)}
+                          </span>
                         </div>
                       </div>
                     );
@@ -1066,7 +1360,9 @@ export default function ClientDashboard() {
                 )}
 
                 {!isTopLocLoading && topLocations.length === 0 && (
-                  <div className="text-center py-10 text-slate-400 dark:text-slate-500 text-xs font-bold">No washrooms found</div>
+                  <div className="text-center py-10 text-slate-400 dark:text-slate-500 text-xs font-bold">
+                    No washrooms found
+                  </div>
                 )}
               </div>
             </div>
@@ -1078,7 +1374,11 @@ export default function ClientDashboard() {
           <CardShell className="h-[400px] flex flex-col">
             <div className="flex justify-between items-center mb-6 shrink-0">
               <h3 className="text-[13px] font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wide flex items-center gap-2">
-                <Activity size={16} className="text-purple-500 dark:text-purple-400" /> LIVE ACTIVITY FEED
+                <Activity
+                  size={16}
+                  className="text-purple-500 dark:text-purple-400"
+                />{" "}
+                LIVE ACTIVITY FEED
               </h3>
             </div>
 
@@ -1088,23 +1388,33 @@ export default function ClientDashboard() {
                 <Loader />
               ) : (
                 recentActivities.map((activity, i) => {
-                  const typeStr = activity.type?.toLowerCase() || '';
-                  const isCompleted = typeStr.includes('complete') || typeStr.includes('finish');
+                  const typeStr = activity.type?.toLowerCase() || "";
+                  const isCompleted =
+                    typeStr.includes("complete") || typeStr.includes("finish");
 
                   const bgClass = isCompleted
-                    ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-100 dark:border-emerald-900/50'
-                    : 'bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-900/50';
+                    ? "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-100 dark:border-emerald-900/50"
+                    : "bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-900/50";
                   const dotClass = isCompleted
-                    ? 'bg-emerald-500'
-                    : 'bg-blue-500';
+                    ? "bg-emerald-500"
+                    : "bg-blue-500";
 
                   return (
-                    <div key={activity.id || i} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active mb-5">
-                      <div className={`flex items-center justify-center w-3 h-3 rounded-full border-2 border-white dark:border-slate-900 ${dotClass} shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10`}></div>
+                    <div
+                      key={activity.id || i}
+                      className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active mb-5"
+                    >
+                      <div
+                        className={`flex items-center justify-center w-3 h-3 rounded-full border-2 border-white dark:border-slate-900 ${dotClass} shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10`}
+                      ></div>
 
-                      <div className={`w-[calc(100%-2rem)] md:w-[calc(50%-1.5rem)] flex items-center justify-between p-2.5 rounded-xl border ${bgClass}`}>
+                      <div
+                        className={`w-[calc(100%-2rem)] md:w-[calc(50%-1.5rem)] flex items-center justify-between p-2.5 rounded-xl border ${bgClass}`}
+                      >
                         <div>
-                          <p className="text-[11px] font-semibold text-slate-700 dark:text-slate-200 leading-tight line-clamp-2">{activity.text}</p>
+                          <p className="text-[11px] font-semibold text-slate-700 dark:text-slate-200 leading-tight line-clamp-2">
+                            {activity.text}
+                          </p>
                         </div>
                         <div className="text-right ml-2 shrink-0">
                           {activity.score && (
@@ -1112,7 +1422,9 @@ export default function ClientDashboard() {
                               {activity.score}
                             </div>
                           )}
-                          <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500">{formatTime(activity.timestamp)}</span>
+                          <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500">
+                            {formatTime(activity.timestamp)}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -1127,18 +1439,26 @@ export default function ClientDashboard() {
       {/* 5. QUICK ACTIONS */}
       <div className="flex flex-col md:flex-row items-center justify-between bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm p-4">
         <div className="mb-4 md:mb-0">
-          <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">QUICK ACTIONS</h3>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400">Perform common actions quickly</p>
+          <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">
+            QUICK ACTIONS
+          </h3>
+          <p className="text-[11px] text-slate-500 dark:text-slate-400">
+            Perform common actions quickly
+          </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <button
-            onClick={() => router.push(`/washrooms/add-location?companyId=${companyId}`)}
+            onClick={() =>
+              router.push(`/washrooms/add-location?companyId=${companyId}`)
+            }
             className="bg-slate-900 dark:bg-slate-800 text-white hover:bg-slate-800 dark:hover:bg-slate-700 px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-colors"
           >
             <Plus size={14} className="text-emerald-400" /> Add Washroom
           </button>
           <button
-            onClick={() => router.push(`/userMapping/add?companyId=${companyId}`)}
+            onClick={() =>
+              router.push(`/userMapping/add?companyId=${companyId}`)
+            }
             className="bg-slate-900 dark:bg-slate-800 text-white hover:bg-slate-800 dark:hover:bg-slate-700 px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-colors"
           >
             <UserPlus size={14} className="text-blue-400" /> Assign Cleaner

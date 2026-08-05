@@ -56,7 +56,7 @@ export default function LoginPage() {
       const response = await AuthApi.googleLogin(googleResponse.credential);
       if (response.success || response.status === "success") {
         const user = response.user || response.data?.user;
-        handleAuthSuccess(user, response.data || response);
+        await handleAuthSuccess(user, response.data || response);
       } else {
         toast.error(response.error || "Google Authentication failed.");
         dispatch(loginFailure(response.error));
@@ -79,7 +79,7 @@ export default function LoginPage() {
       const response = await AuthApi.login(loginData.phone, loginData.password);
       if (response.success || response.status === "success") {
         const user = response.user || response.data?.user;
-        handleAuthSuccess(user, response);
+        await handleAuthSuccess(user, response);
       } else {
         toast.error(response.error || response.message || "Login failed.");
         dispatch(loginFailure(response.error));
