@@ -180,3 +180,52 @@ export function useUpdateSupervisorScore() {
   });
 }
 
+export function useUpdateManagementScore() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ reviewId, formData }) => {
+      const response = await CleanerReviewApi.updateManagementScore(reviewId, formData);
+      if (!response.success) throw new Error(response.error || "Failed to update score");
+      return response.data;
+    },
+    onMutate: async ({ reviewId, formData }) => {
+      await queryClient.cancelQueries({ queryKey: ["cleaner-reviews"] });
+      const previousReviews = queryClient.getQueriesData({ queryKey: ["cleaner-reviews"] });
+      const previousDetail = queryClient.getQueryData(["cleaner-reviews", "detail", reviewId]);
+
+      const newScore = Number(formData.get("score"));
+
+      queryClient.setQueriesData({ queryKey: ["cleaner-reviews"] }, (oldData) => {
+        if (!oldData) return oldData;
+        return oldData.map((review) =>
+          review.id === reviewId
+            ? { ...review, score: newScore, is_modified: true }
+            : review
+        );
+      });
+
+      queryClient.setQueryData(["cleaner-reviews", "detail", reviewId], (oldData) => {
+        if (!oldData) return oldData;
+        return { ...oldData, score: newScore, is_modified: true };
+      });
+
+      return { previousReviews, previousDetail };
+    },
+    onError: (err, variables, context) => {
+      context.previousReviews.forEach(([queryKey, data]) => {
+        queryClient.setQueryData(queryKey, data);
+      });
+      if (context.previousDetail) {
+        queryClient.setQueryData(
+          ["cleaner-reviews", "detail", variables.reviewId], 
+          context.previousDetail
+        );
+      }
+    },
+    onSettled: (data, error, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["cleaner-reviews"] });
+      queryClient.invalidateQueries({ queryKey: ["cleaner-reviews", "detail", variables.reviewId] });
+    },
+  });
+}

@@ -655,12 +655,12 @@ export default function ClientDashboard() {
 
   // Filters State
   const [dateRange, setDateRange] = useState({
-    startDate: thirtyDaysAgoStr,
+    startDate: todayStr,
     endDate: todayStr,
   });
   const [showFilterMenu, setShowFilterMenu] = useState(false);
   const [tempDates, setTempDates] = useState({
-    startDate: thirtyDaysAgoStr,
+    startDate: todayStr,
     endDate: todayStr,
   });
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -671,17 +671,35 @@ export default function ClientDashboard() {
 
   // --- Core Dashboard Data Hooks ---
   const { data: statsData = {}, isLoading: isCountsLoading } =
-    useDashboardCounts(companyId, todayStr);
+    useDashboardCounts(companyId, dateRange);
   const { data: topLocations = [], isLoading: isTopLocLoading } =
-    useDashboardAllLocations(activeCompanyIdForLocations, todayStr);
+    useDashboardAllLocations(activeCompanyIdForLocations, dateRange);
   const { data: recentActivities = [], isLoading: isActivitiesLoading } =
-    useDashboardActivities(activeCompanyIdForReviews, 5, todayStr);
+    useDashboardActivities(activeCompanyIdForReviews, 500, dateRange);
   const { data: washroomGraphData = [], isLoading: isWashroomLoading } =
-    useWashroomScoresSummary(activeCompanyIdForLocations);
+    useWashroomScoresSummary(activeCompanyIdForLocations, dateRange);
 
   // Cleaner Performance Hook
+  let cleanerStartDateStr = dateRange.startDate;
+  let cleanerEndDateStr = dateRange.endDate;
+
+  const cStart = new Date(cleanerStartDateStr);
+  const cEnd = new Date(cleanerEndDateStr);
+  const diffDaysCleaner = Math.ceil(
+    Math.abs(cEnd - cStart) / (1000 * 60 * 60 * 24),
+  );
+
+  if (diffDaysCleaner < 6) {
+    const forcedStart = new Date(cEnd);
+    forcedStart.setDate(cEnd.getDate() - 6);
+    cleanerStartDateStr = forcedStart.toISOString().split("T")[0];
+  }
+
   const { data: cleanerResponse, isLoading: isCleanerLoading } =
-    useCleanerPerformance(activeCompanyIdForReviews);
+    useCleanerPerformance(activeCompanyIdForReviews, {
+      startDate: cleanerStartDateStr,
+      endDate: cleanerEndDateStr,
+    });
 
   // Safely extract data and stats
   const cleanerGraphData = cleanerResponse?.data || [];
@@ -691,6 +709,20 @@ export default function ClientDashboard() {
     bestDay: "-",
     bestDayCount: 0,
     completionRate: 0,
+  };
+
+  const getCleanerPerformanceTitle = () => {
+    if (!dateRange.startDate || !dateRange.endDate)
+      return "WEEKLY CLEANER PERFORMANCE";
+    const start = new Date(dateRange.startDate);
+    const end = new Date(dateRange.endDate);
+    const diffTime = Math.abs(end - start);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays <= 7) return "WEEKLY CLEANER PERFORMANCE";
+    if (diffDays >= 28) return "MONTHLY CLEANER PERFORMANCE";
+
+    return `CLEANER PERFORMANCE (${start.toLocaleDateString("en-US", { day: "numeric", month: "short" }).toUpperCase()} TO ${end.toLocaleDateString("en-US", { day: "numeric", month: "short" }).toUpperCase()})`;
   };
 
   useEffect(() => {
@@ -714,28 +746,72 @@ export default function ClientDashboard() {
   }, []);
 
   // --- Report Hook for Heatmap ---
-  const endDate = new Date();
-  const startDate = new Date();
-  startDate.setDate(endDate.getDate() - 30);
+  let heatmapStartDateStr = dateRange.startDate;
+  let heatmapEndDateStr = dateRange.endDate;
 
-  const formattedStartDate = startDate.toISOString().split("T")[0];
-  const formattedEndDate = endDate.toISOString().split("T")[0];
+  const hStart = new Date(heatmapStartDateStr);
+  const hEnd = new Date(heatmapEndDateStr);
+  const diffDaysHeatmap = Math.ceil(
+    Math.abs(hEnd - hStart) / (1000 * 60 * 60 * 24),
+  );
+
+  if (diffDaysHeatmap === 0) {
+    const forcedStart = new Date(hEnd);
+    forcedStart.setDate(hEnd.getDate() - 29); // 30 days total including today
+    heatmapStartDateStr = forcedStart.toISOString().split("T")[0];
+  } else if (diffDaysHeatmap < 28) {
+    const forcedEnd = new Date(hStart);
+    forcedEnd.setDate(hStart.getDate() + 29); // 30 days total
+    heatmapEndDateStr = forcedEnd.toISOString().split("T")[0];
+  }
 
   // 2. Pass the single object to the hook (API WILL NOW FIRE)
   const { data: heatmapResponse, isLoading: isHeatmapLoading } =
     useGetWashroomHygieneHeatmap({
       company_id: companyId,
-      start_date: formattedStartDate,
-      end_date: formattedEndDate,
+      start_date: heatmapStartDateStr,
+      end_date: heatmapEndDateStr,
     });
-  const heatmapData = heatmapResponse?.data || [];
+  const rawHeatmapData = heatmapResponse?.data || [];
+  const heatmapData = [...rawHeatmapData].sort((a, b) => {
+    const getCount = (row) =>
+      row.daily_scores
+        ? Object.values(row.daily_scores).filter(
+            (val) => val !== null && val !== undefined && val !== "",
+          ).length
+        : 0;
+    return getCount(b) - getCount(a);
+  });
+  // Reverse the array so the latest dates appear on the left side of the heatmap
   const heatmapDatesArray = getDatesInRange(
-    dateRange.startDate,
-    dateRange.endDate,
-  );
+    heatmapStartDateStr,
+    heatmapEndDateStr,
+  ).reverse();
 
   const applyDateFilter = () => {
     setDateRange(tempDates);
+    setShowFilterMenu(false);
+  };
+
+  const handlePresetSelect = (preset) => {
+    const today = new Date();
+    const endStr = today.toISOString().split("T")[0];
+    let startStr = endStr;
+
+    if (preset === "today") {
+      startStr = endStr;
+    } else if (preset === "week") {
+      const weekStart = new Date(today);
+      weekStart.setDate(today.getDate() - today.getDay());
+      startStr = weekStart.toISOString().split("T")[0];
+    } else if (preset === "month") {
+      const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+      startStr = monthStart.toISOString().split("T")[0];
+    }
+
+    const newRange = { startDate: startStr, endDate: endStr };
+    setTempDates(newRange);
+    setDateRange(newRange);
     setShowFilterMenu(false);
   };
 
@@ -757,8 +833,11 @@ export default function ClientDashboard() {
     const date = new Date(dateString);
     const now = new Date();
     const diffInMinutes = Math.floor((now - date) / (1000 * 60));
-    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
-    return `${Math.floor(diffInMinutes / 60)}h ago`;
+    if (diffInMinutes < 60) return `${Math.max(0, diffInMinutes)}m ago`;
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+    const diffInDays = Math.floor(diffInHours / 24);
+    return `${diffInDays} day${diffInDays > 1 ? "s" : ""} ago`;
   };
 
   const getScoreForDate = (row, dateStr) => {
@@ -803,6 +882,21 @@ export default function ClientDashboard() {
           ) / washroomGraphData.length
         ).toFixed(2)
       : "0.0";
+
+  const groupedActivities = recentActivities.reduce((acc, activity) => {
+    let actDateStr = "Today";
+    if (activity.timestamp) {
+      const d = new Date(activity.timestamp);
+      // if today, show "Today"
+      const isToday = d.toDateString() === new Date().toDateString();
+      actDateStr = isToday
+        ? "Today"
+        : d.toLocaleDateString("en-US", { day: "numeric", month: "short" });
+    }
+    if (!acc[actDateStr]) acc[actDateStr] = [];
+    acc[actDateStr].push(activity);
+    return acc;
+  }, {});
 
   return (
     <div className="min-h-screen bg-[#f8fafc] dark:bg-slate-950 p-3 sm:p-4 md:p-6 font-sans md:mt-[-10px]">
@@ -993,7 +1087,7 @@ export default function ClientDashboard() {
         {canViewCleanerReviews && (
           <CardShell className="h-full flex flex-col">
             <CardHeader
-              title="WEEKLY CLEANER PERFORMANCE"
+              title={getCleanerPerformanceTitle()}
               icon={
                 <div className="text-violet-500 dark:text-violet-400">
                   <BarChart2 size={18} strokeWidth={2.5} />
@@ -1089,98 +1183,20 @@ export default function ClientDashboard() {
         <CardShell className="mb-6">
           <CardHeader
             title={`HYGIENE PERFORMANCE HEATMAP (${heatmapDatesArray.length} DAYS)`}
-            subtitle="Daily hygiene scores by washroom (0-10)"
-            icon={<Sparkles size={18} className="text-cyan-500" />}
-            rightAction={
-              <div
-                className="flex items-center gap-2 md:gap-3 relative"
-                ref={filterMenuRef}
-              >
-                {/* Hidden on very small screens to prevent overflow */}
-                <div className="hidden md:flex text-xs font-semibold text-slate-600 dark:text-slate-300 items-center gap-1 border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800">
-                  {dateRange.startDate} to {dateRange.endDate}{" "}
-                  <Calendar
-                    size={14}
-                    className="ml-2 text-slate-400 dark:text-slate-500"
-                  />
-                </div>
-                <button
-                  onClick={() => setShowFilterMenu(!showFilterMenu)}
-                  className="flex items-center gap-1.5 md:gap-2 px-2.5 md:px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-                >
-                  <Filter size={14} />
-                  <span className="hidden sm:inline">Filters</span>
-                  <ChevronRight
-                    size={14}
-                    className={
-                      showFilterMenu
-                        ? "rotate-90 transition-transform"
-                        : "transition-transform"
-                    }
-                  />
-                </button>
-                <MoreVertical
-                  size={16}
-                  className="text-slate-400 dark:text-slate-500 cursor-pointer hidden sm:block"
-                />
-
-                {/* Filter Dropdown */}
-                <AnimatePresence>
-                  {showFilterMenu && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 10 }}
-                      className="absolute right-0 md:right-8 top-10 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl rounded-xl p-4 w-[250px] md:w-72 z-50"
-                    >
-                      <h4 className="text-xs font-bold text-slate-800 dark:text-slate-100 mb-3">
-                        Custom Date Range
-                      </h4>
-                      <div className="space-y-3">
-                        <div>
-                          <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">
-                            Start Date
-                          </label>
-                          <input
-                            type="date"
-                            value={tempDates.startDate}
-                            onChange={(e) =>
-                              setTempDates({
-                                ...tempDates,
-                                startDate: e.target.value,
-                              })
-                            }
-                            className="w-full text-sm p-2 border border-slate-200 dark:border-slate-700 bg-transparent text-slate-800 dark:text-slate-200 rounded-lg mt-1 focus:ring-2 focus:ring-blue-500 outline-none"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">
-                            End Date
-                          </label>
-                          <input
-                            type="date"
-                            value={tempDates.endDate}
-                            onChange={(e) =>
-                              setTempDates({
-                                ...tempDates,
-                                endDate: e.target.value,
-                              })
-                            }
-                            className="w-full text-sm p-2 border border-slate-200 dark:border-slate-700 bg-transparent text-slate-800 dark:text-slate-200 rounded-lg mt-1 focus:ring-2 focus:ring-blue-500 outline-none"
-                          />
-                        </div>
-                        <button
-                          onClick={applyDateFilter}
-                          className="w-full bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-white font-bold text-xs py-2.5 rounded-lg mt-2 transition-colors"
-                        >
-                          Apply Filter
-                        </button>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+            subtitle={
+              heatmapDatesArray.length > 0
+                ? `Scores by washroom (0-10) • ${new Date(
+                    heatmapDatesArray[heatmapDatesArray.length - 1],
+                  ).toLocaleDateString("en-US", {
+                    day: "numeric",
+                    month: "short",
+                  })} - ${new Date(heatmapDatesArray[0]).toLocaleDateString(
+                    "en-US",
+                    { day: "numeric", month: "short", year: "numeric" },
+                  )}`
+                : "Daily hygiene scores by washroom (0-10)"
             }
+            icon={<Sparkles size={18} className="text-cyan-500" />}
           />
 
           {/* Heatmap Legend - Reduced gap on mobile */}
@@ -1218,22 +1234,36 @@ export default function ClientDashboard() {
                 {/* Table Header - Now sticky to the top on vertical scroll */}
                 <div className="flex font-bold text-slate-600 dark:text-slate-300 mb-1 border-b border-slate-100 dark:border-slate-800 pb-2 sticky top-0 bg-white dark:bg-slate-900 z-20">
                   {/* Left corner cell (Washroom) needs z-30 to float above both scrolling directions */}
-                  <div className="w-28 md:w-64 flex-shrink-0 pl-3 md:pl-4 sticky left-0 bg-white dark:bg-slate-900 z-30 border-r border-slate-50 dark:border-slate-800">
-                    Washroom
+                  <div className="w-36 md:w-72 flex-shrink-0 pl-3 md:pl-4 sticky left-0 bg-white dark:bg-slate-900 z-30 border-r border-slate-50 dark:border-slate-800 flex">
+                    <div className="w-8 mr-2 flex-shrink-0">Sr. No.</div>
+                    <div className="flex-1">Washroom</div>
                   </div>
                   {heatmapDatesArray.map((dateStr) => {
-                    const day = new Date(dateStr).getDate();
+                    const dateObj = new Date(dateStr);
+                    const day = dateObj.getDate();
+                    const month = dateObj.toLocaleDateString("en-US", {
+                      month: "short",
+                    });
                     return (
                       <div
                         key={dateStr}
-                        className="w-8 flex-shrink-0 text-center"
+                        className="w-8 flex-shrink-0 text-center flex flex-col items-center justify-center leading-none pb-[2px]"
+                        title={dateObj.toLocaleDateString("en-US", {
+                          weekday: "short",
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })}
                       >
-                        {day}
+                        <span className="text-[11px] mb-[2px]">{day}</span>
+                        <span className="text-[8px] text-slate-400 dark:text-slate-500 font-medium uppercase tracking-tighter">
+                          {month}
+                        </span>
                       </div>
                     );
                   })}
                   {/* Right corner cell (Avg) needs z-30 to float above both scrolling directions */}
-                  <div className="w-14 flex-shrink-0 text-center sticky right-0 bg-white dark:bg-slate-900 z-30 border-l border-slate-100 dark:border-slate-800 shadow-[-4px_0_10px_rgba(0,0,0,0.02)]">
+                  <div className="w-14 flex-shrink-0 flex items-center justify-center sticky right-0 bg-white dark:bg-slate-900 z-30 border-l border-slate-100 dark:border-slate-800 shadow-[-4px_0_10px_rgba(0,0,0,0.02)]">
                     Avg
                   </div>
                 </div>
@@ -1252,10 +1282,15 @@ export default function ClientDashboard() {
                       >
                         {/* Left Sticky Column */}
                         <div
-                          className="w-28 md:w-64 flex-shrink-0 text-[10px] md:text-xs font-bold text-slate-700 dark:text-slate-200 pl-3 md:pl-4 pr-2 truncate flex items-center border-b border-white dark:border-slate-900 sticky left-0 bg-white dark:bg-slate-900 z-10 border-r border-slate-50 dark:border-slate-800 group-hover:bg-slate-50 dark:group-hover:bg-slate-800/50 transition-colors"
+                          className="w-36 md:w-72 flex-shrink-0 text-[10px] md:text-xs font-bold text-slate-700 dark:text-slate-200 pl-3 md:pl-4 pr-2 truncate flex items-center border-b border-slate-200 dark:border-slate-900 sticky left-0 bg-white dark:bg-slate-900 z-10 border-r border-slate-50 dark:border-slate-800 group-hover:bg-slate-50 dark:group-hover:bg-slate-800/50 transition-colors"
                           title={row.washroom_name}
                         >
-                          {row.washroom_name}
+                          <div className="w-8 mr-2 flex-shrink-0 text-slate-500">
+                            {i + 1}
+                          </div>
+                          <div className="flex-1 truncate">
+                            {row.washroom_name}
+                          </div>
                         </div>
 
                         {/* Solid Grid Cells */}
@@ -1264,19 +1299,19 @@ export default function ClientDashboard() {
                           return (
                             <div
                               key={j}
-                              className={`w-8 flex-shrink-0 flex items-center justify-center font-bold text-[10px] border-r border-b border-white dark:border-slate-900 transition-colors hover:brightness-95 cursor-pointer ${getHeatmapColor(score)}`}
+                              className={`w-8 flex-shrink-0 flex items-center justify-center font-bold text-[10px] border-r border-b border-slate-200 dark:border-slate-900 transition-colors hover:brightness-95 cursor-pointer ${getHeatmapColor(score)}`}
                             >
                               {score !== null &&
                               score !== undefined &&
                               score !== ""
                                 ? Number(score).toFixed(1)
-                                : ""}
+                                : "-"}
                             </div>
                           );
                         })}
 
                         {/* Right Sticky Column */}
-                        <div className="w-14 flex-shrink-0 flex items-center justify-center font-black text-slate-800 dark:text-slate-100 border-b border-white dark:border-slate-900 sticky right-0 bg-white dark:bg-slate-900 z-10 border-l border-slate-100 dark:border-slate-800 shadow-[-4px_0_10px_rgba(0,0,0,0.02)] group-hover:bg-slate-50 dark:group-hover:bg-slate-800/50 transition-colors">
+                        <div className="w-14 flex-shrink-0 flex items-center justify-center font-black text-slate-800 dark:text-slate-100 border-b border-slate-200 dark:border-slate-900 sticky right-0 bg-white dark:bg-slate-900 z-10 border-l border-slate-100 dark:border-slate-800 shadow-[-4px_0_10px_rgba(0,0,0,0.02)] group-hover:bg-slate-50 dark:group-hover:bg-slate-800/50 transition-colors">
                           {rowAvg}
                         </div>
                       </div>
@@ -1383,53 +1418,110 @@ export default function ClientDashboard() {
             </div>
 
             {/* Styled Scrollable Container */}
-            <div className="flex-1 overflow-y-auto pr-2 relative before:absolute before:inset-0 before:ml-1.5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-200 dark:before:via-slate-800 before:to-transparent [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-200 dark:[&::-webkit-scrollbar-thumb]:bg-slate-700 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-slate-300 dark:hover:[&::-webkit-scrollbar-thumb]:bg-slate-600 transition-colors">
+            <div className="flex-1 overflow-y-auto pr-2 relative before:absolute before:inset-0 before:ml-1.5 before:-translate-x-px before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-200 dark:before:via-slate-800 before:to-transparent [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-200 dark:[&::-webkit-scrollbar-thumb]:bg-slate-700 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-slate-300 dark:hover:[&::-webkit-scrollbar-thumb]:bg-slate-600 transition-colors">
               {isActivitiesLoading ? (
                 <Loader />
-              ) : (
-                recentActivities.map((activity, i) => {
-                  const typeStr = activity.type?.toLowerCase() || "";
-                  const isCompleted =
-                    typeStr.includes("complete") || typeStr.includes("finish");
-
-                  const bgClass = isCompleted
-                    ? "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-100 dark:border-emerald-900/50"
-                    : "bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-900/50";
-                  const dotClass = isCompleted
-                    ? "bg-emerald-500"
-                    : "bg-blue-500";
-
-                  return (
-                    <div
-                      key={activity.id || i}
-                      className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active mb-5"
-                    >
-                      <div
-                        className={`flex items-center justify-center w-3 h-3 rounded-full border-2 border-white dark:border-slate-900 ${dotClass} shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10`}
-                      ></div>
-
-                      <div
-                        className={`w-[calc(100%-2rem)] md:w-[calc(50%-1.5rem)] flex items-center justify-between p-2.5 rounded-xl border ${bgClass}`}
-                      >
-                        <div>
-                          <p className="text-[11px] font-semibold text-slate-700 dark:text-slate-200 leading-tight line-clamp-2">
-                            {activity.text}
-                          </p>
-                        </div>
-                        <div className="text-right ml-2 shrink-0">
-                          {activity.score && (
-                            <div className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/50 px-1.5 py-0.5 rounded mb-1">
-                              {activity.score}
-                            </div>
-                          )}
-                          <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500">
-                            {formatTime(activity.timestamp)}
-                          </span>
-                        </div>
+              ) : Object.entries(groupedActivities).length > 0 ? (
+                Object.entries(groupedActivities).map(
+                  ([dateLabel, activitiesForDate], groupIdx) => (
+                    <div key={dateLabel} className="mb-6 last:mb-0">
+                      {/* Date Header sticky */}
+                      <div className="sticky top-0 z-20 bg-[#f8fafc] dark:bg-slate-950/90 py-2 mb-4 backdrop-blur-sm -mx-2 px-2">
+                        <span className="text-xs font-black text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-1 rounded-full shadow-sm">
+                          {dateLabel}
+                        </span>
                       </div>
+                      {activitiesForDate.map((activity, i) => {
+                        const isCleaner = activity.type === "cleaner";
+                        const isCompleted = isCleaner
+                          ? activity.activityType === "success"
+                          : activity.activityType === "success" ||
+                            activity.text?.toLowerCase().includes("complete") ||
+                            activity.text?.toLowerCase().includes("finish");
+
+                        const bgClass = isCompleted
+                          ? "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-100 dark:border-emerald-900/50"
+                          : "bg-orange-50 dark:bg-orange-900/20 border-orange-100 dark:border-orange-900/50";
+                        const dotClass = isCompleted
+                          ? "bg-emerald-500"
+                          : "bg-orange-500";
+
+                        const formatTimeOnly = (isoString) => {
+                          if (!isoString) return "";
+                          return new Date(isoString).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          });
+                        };
+
+                        const scoreVal = activity.score || activity.rating;
+
+                        return (
+                          <div
+                            key={activity.id || i}
+                            className="relative flex items-center justify-between group is-active mb-5"
+                          >
+                            <div
+                              className={`flex items-center justify-center w-3 h-3 rounded-full border-2 border-white dark:border-slate-900 ${dotClass} shadow shrink-0 z-10`}
+                            ></div>
+
+                            <div
+                              className={`w-[calc(100%-2rem)] flex flex-col md:flex-row md:items-center justify-between p-2.5 rounded-xl border ${bgClass}`}
+                            >
+                              <div className="flex flex-col gap-1 w-full md:w-auto flex-1">
+                                {isCleaner ? (
+                                  <>
+                                    <p className="text-[12px] font-bold text-slate-800 dark:text-slate-100 leading-tight">
+                                      {activity.cleanerName} -{" "}
+                                      {activity.locationName}
+                                    </p>
+                                    <div className="flex flex-wrap items-center gap-1.5 text-[10px] font-medium text-slate-500 dark:text-slate-400">
+                                      <span>
+                                        Started:{" "}
+                                        {formatTimeOnly(activity.startedAt)}
+                                      </span>
+                                      {activity.endedAt && (
+                                        <>
+                                          <span className="text-slate-300 dark:text-slate-600">
+                                            •
+                                          </span>
+                                          <span>
+                                            Ended:{" "}
+                                            {formatTimeOnly(activity.endedAt)}
+                                          </span>
+                                        </>
+                                      )}
+                                    </div>
+                                  </>
+                                ) : (
+                                  <p className="text-[11px] font-semibold text-slate-700 dark:text-slate-200 leading-tight">
+                                    {activity.text}
+                                  </p>
+                                )}
+                              </div>
+                              <div className="text-left md:text-right mt-2 md:mt-0 md:ml-4 shrink-0 flex md:block items-center justify-between md:justify-end gap-3 w-full md:w-auto">
+                                <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 whitespace-nowrap">
+                                  {formatTime(activity.timestamp)}
+                                </span>
+                                {scoreVal && (
+                                  <div
+                                    className={`text-[10px] font-bold ${isCompleted ? "text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/50" : "text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/50"} px-2 py-0.5 rounded ml-auto md:ml-0 md:mb-1 inline-block`}
+                                  >
+                                    {Number(scoreVal).toFixed(1)}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                  );
-                })
+                  ),
+                )
+              ) : (
+                <p className="text-slate-400 dark:text-slate-500 text-xs italic text-center mt-4">
+                  No recent activities
+                </p>
               )}
             </div>
           </CardShell>
@@ -1437,33 +1529,150 @@ export default function ClientDashboard() {
       </div>
 
       {/* 5. QUICK ACTIONS */}
-      <div className="flex flex-col md:flex-row items-center justify-between bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm p-4">
-        <div className="mb-4 md:mb-0">
-          <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">
-            QUICK ACTIONS
-          </h3>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400">
-            Perform common actions quickly
-          </p>
+      <div className="mt-8">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900 rounded-2xl p-6">
+          <div>
+            <h3 className="text-white font-black text-lg">QUICK ACTIONS</h3>
+            <p className="text-slate-400 text-xs mt-1">
+              Perform common actions quickly
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <button
+              onClick={() =>
+                router.push(`/washrooms/add-location?companyId=${companyId}`)
+              }
+              className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition-colors"
+            >
+              <Plus size={14} className="text-emerald-400" />
+              Add Washroom
+            </button>
+            <button
+              onClick={() =>
+                router.push(`/userMapping/add?companyId=${companyId}`)
+              }
+              className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition-colors"
+            >
+              <UserPlus size={14} className="text-blue-400" />
+              Assign Cleaner
+            </button>
+          </div>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <button
-            onClick={() =>
-              router.push(`/washrooms/add-location?companyId=${companyId}`)
-            }
-            className="bg-slate-900 dark:bg-slate-800 text-white hover:bg-slate-800 dark:hover:bg-slate-700 px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-colors"
-          >
-            <Plus size={14} className="text-emerald-400" /> Add Washroom
-          </button>
-          <button
-            onClick={() =>
-              router.push(`/userMapping/add?companyId=${companyId}`)
-            }
-            className="bg-slate-900 dark:bg-slate-800 text-white hover:bg-slate-800 dark:hover:bg-slate-700 px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-colors"
-          >
-            <UserPlus size={14} className="text-blue-400" /> Assign Cleaner
-          </button>
-        </div>
+      </div>
+
+      {/* Global Date Filter FAB (Floating Action Button) */}
+      <div
+        className="fixed bottom-6 right-6 z-50 flex flex-col items-end"
+        ref={filterMenuRef}
+      >
+        <AnimatePresence>
+          {showFilterMenu && (
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.9 }}
+              className="mb-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-2xl rounded-2xl p-5 w-[280px]"
+            >
+              <h4 className="text-sm font-black text-slate-800 dark:text-slate-100 mb-3">
+                Dashboard Date Filter
+              </h4>
+              <div className="grid grid-cols-2 gap-2 mb-4">
+                <button
+                  onClick={() => handlePresetSelect("today")}
+                  className="text-xs py-2 px-2 bg-slate-100 dark:bg-slate-800 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold"
+                >
+                  Today
+                </button>
+                <button
+                  onClick={() => handlePresetSelect("week")}
+                  className="text-xs py-2 px-2 bg-slate-100 dark:bg-slate-800 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold"
+                >
+                  This Week
+                </button>
+                <button
+                  onClick={() => handlePresetSelect("month")}
+                  className="text-xs py-2 px-2 bg-slate-100 dark:bg-slate-800 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold"
+                >
+                  This Month
+                </button>
+                <button
+                  onClick={() => handlePresetSelect("today")}
+                  className="text-xs py-2 px-2 bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 rounded-lg hover:bg-rose-100 dark:hover:bg-rose-900/50 font-bold"
+                >
+                  Reset
+                </button>
+              </div>
+
+              <div className="border-t border-slate-200 dark:border-slate-700 pt-4 space-y-3">
+                <h4 className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">
+                  Custom Range
+                </h4>
+                <div>
+                  <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">
+                    Start Date
+                  </label>
+                  <input
+                    type="date"
+                    value={tempDates.startDate}
+                    onChange={(e) =>
+                      setTempDates({
+                        ...tempDates,
+                        startDate: e.target.value,
+                      })
+                    }
+                    className="w-full text-sm p-2 border border-slate-200 dark:border-slate-700 bg-transparent text-slate-800 dark:text-slate-200 rounded-lg mt-1 focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">
+                    End Date
+                  </label>
+                  <input
+                    type="date"
+                    value={tempDates.endDate}
+                    onChange={(e) =>
+                      setTempDates({
+                        ...tempDates,
+                        endDate: e.target.value,
+                      })
+                    }
+                    className="w-full text-sm p-2 border border-slate-200 dark:border-slate-700 bg-transparent text-slate-800 dark:text-slate-200 rounded-lg mt-1 focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                </div>
+                <button
+                  onClick={applyDateFilter}
+                  className="w-full bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-white font-bold text-xs py-2.5 rounded-lg mt-2 transition-colors"
+                >
+                  Apply Filter
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <button
+          onClick={() => setShowFilterMenu(!showFilterMenu)}
+          className={`flex items-center justify-center p-4 rounded-full shadow-lg transition-all ${
+            showFilterMenu
+              ? "bg-slate-700 text-white rotate-180"
+              : dateRange.startDate !== todayStr ||
+                  dateRange.endDate !== todayStr
+                ? "bg-emerald-500 hover:bg-emerald-600 text-white hover:scale-105 shadow-emerald-500/30 ring-4 ring-emerald-500/20"
+                : "bg-blue-600 hover:bg-blue-700 text-white hover:scale-105 shadow-blue-500/30"
+          }`}
+        >
+          {showFilterMenu ? (
+            <ChevronRight size={24} className="rotate-90" />
+          ) : (
+            <Filter size={24} />
+          )}
+          {/* Small dot indicator when active and not open */}
+          {!showFilterMenu &&
+            (dateRange.startDate !== todayStr ||
+              dateRange.endDate !== todayStr) && (
+              <span className="absolute top-0 right-0 w-3 h-3 bg-white rounded-full shadow border-2 border-emerald-500"></span>
+            )}
+        </button>
       </div>
     </div>
   );

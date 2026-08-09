@@ -2,12 +2,17 @@
 import axiosInstance from "@/shared/api/axios.instance";
 export const DashboardApi = {
   // 1. Get counts only
-  getCounts: async (companyId, date) => {
+  getCounts: async (companyId, date, startDate, endDate) => {
     try {
       const params = new URLSearchParams({
         companyId,
-        date: date || new Date().toISOString().split("T")[0],
       });
+      if (startDate && endDate) {
+        params.append("startDate", startDate);
+        params.append("endDate", endDate);
+      } else {
+        params.append("date", date || new Date().toISOString().split("T")[0]);
+      }
 
       const response = await axiosInstance.get(
         `/dashboard/counts?${params.toString()}`,
@@ -24,13 +29,17 @@ export const DashboardApi = {
   },
 
   // 2. Get top locations
-getAllLocationsScores: async (companyId, date) => {
+getAllLocationsScores: async (companyId, date, startDate, endDate) => {
     try {
       const params = new URLSearchParams({
         companyId,
-        // Removed the limit parameter
-        date: date || new Date().toISOString().split("T")[0],
       });
+      if (startDate && endDate) {
+        params.append("startDate", startDate);
+        params.append("endDate", endDate);
+      } else {
+        params.append("date", date || new Date().toISOString().split("T")[0]);
+      }
 
       // Note: Update the endpoint URL here if you also changed your backend route name 
       // (e.g., from '/dashboard/top-locations' to '/dashboard/all-locations')
@@ -48,13 +57,18 @@ getAllLocationsScores: async (companyId, date) => {
     }
   },
   // 3. Get today's activities
-  getActivities: async (companyId, limit = 10, date) => {
+  getActivities: async (companyId, limit = 10, date, startDate, endDate) => {
     try {
       const params = new URLSearchParams({
         companyId,
         limit,
-        date: date || new Date().toISOString().split("T")[0],
       });
+      if (startDate && endDate) {
+        params.append("startDate", startDate);
+        params.append("endDate", endDate);
+      } else {
+        params.append("date", date || new Date().toISOString().split("T")[0]);
+      }
 
       const response = await axiosInstance.get(
         `/dashboard/activities?${params.toString()}`,
@@ -70,10 +84,14 @@ getAllLocationsScores: async (companyId, date) => {
     }
   },
 
-  getWashroomScoresSummary: async (companyId) => {
+  getWashroomScoresSummary: async (companyId, dateRange) => {
     try {
+      let queryParams = `companyId=${companyId}`;
+      if (dateRange && dateRange.startDate && dateRange.endDate) {
+        queryParams += `&startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`;
+      }
       const response = await axiosInstance.get(
-        `/dashboard/graph-washroom-scores?companyId=${companyId}`,
+        `/dashboard/graph-washroom-scores?${queryParams}`,
       );
       return { success: true, data: response.data.data };
     } catch (error) {
@@ -83,22 +101,26 @@ getAllLocationsScores: async (companyId, date) => {
   },
 
   // 2. New API for Cleaner Performance Graph
-getCleanerPerformance: async (companyId) => {
-  try {
-    const response = await axiosInstance.get(
-      `/dashboard/graph-cleaner-performance?companyId=${companyId}`
-    );
-    
-    // Check if the response exists and has data
-    if (response.data) {
-      return response.data; // This returns { success: true, data: [...], stats: {...} }
+  getCleanerPerformance: async (companyId, dateRange) => {
+    try {
+      let queryParams = `companyId=${companyId}`;
+      if (dateRange && dateRange.startDate && dateRange.endDate) {
+        queryParams += `&startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`;
+      }
+      const response = await axiosInstance.get(
+        `/dashboard/graph-cleaner-performance?${queryParams}`
+      );
+      
+      // Check if the response exists and has data
+      if (response.data) {
+        return response.data; // This returns { success: true, data: [...], stats: {...} }
+      }
+      return { success: false, data: [], stats: {} };
+    } catch (error) {
+      console.error("Cleaner performance error:", error);
+      return { success: false, data: [], stats: {} };
     }
-    return { success: false, data: [], stats: {} };
-  } catch (error) {
-    console.error("Cleaner performance error:", error);
-    return { success: false, data: [], stats: {} };
-  }
-},
+  },
 
 getWashroomHygieneHeatmap: async (params) => {
     try {

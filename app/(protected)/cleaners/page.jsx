@@ -314,7 +314,8 @@ import { useCleanerReview } from "@/features/cleaners/cleaners.queries.js";
 import { useCleanersDropdown } from "@/features/dropdownList/dropdownlist.query";
 import { usePermissions } from "@/shared/hooks/usePermission";
 import { useCompanySlaConfig } from "@/features/companies/queries/sla.queries.js";
-import { useUpdateSupervisorScore } from "@/features/cleanerReview/cleanerReview.queries.js";
+import { useUpdateSupervisorScore, useUpdateManagementScore } from "@/features/cleanerReview/cleanerReview.queries.js";
+import SignatureCanvas from "react-signature-canvas";
 
 
 import {
@@ -391,8 +392,12 @@ export default function CleanerReviewPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [reviewToEdit, setReviewToEdit] = useState(null);
   const [newScore, setNewScore] = useState("");
+  const [modificationComment, setModificationComment] = useState("");
+  const [signatureType, setSignatureType] = useState("draw");
+  const [signatureFile, setSignatureFile] = useState(null);
+  const signatureCanvasRef = useRef(null);
 
-  const updateScoreMutation = useUpdateSupervisorScore();
+  const updateScoreMutation = useUpdateManagementScore();
 
   const handleSaveScore = async () => {
     if (!reviewToEdit) return;
@@ -402,15 +407,48 @@ export default function CleanerReviewPage() {
       return;
     }
 
+    if (!modificationComment.trim()) {
+      toast.error("Comment is required to update the score.");
+      return;
+    }
+
+    let finalSignatureFile = null;
+
+    if (signatureType === "draw") {
+      if (!signatureCanvasRef.current || signatureCanvasRef.current.isEmpty()) {
+        toast.error("Signature is required to update the score.");
+        return;
+      }
+      const dataUrl = signatureCanvasRef.current.getTrimmedCanvas().toDataURL("image/png");
+      const res = await fetch(dataUrl);
+      const blob = await res.blob();
+      finalSignatureFile = new File([blob], "signature.png", { type: "image/png" });
+    } else {
+      if (!signatureFile) {
+        toast.error("Signature file is required to update the score.");
+        return;
+      }
+      finalSignatureFile = signatureFile;
+    }
+
+    const formData = new FormData();
+    formData.append("score", newScore);
+    formData.append("modification_comment", modificationComment);
+    formData.append("signature", finalSignatureFile);
+
     try {
       await updateScoreMutation.mutateAsync({
         reviewId: reviewToEdit.id,
-        newScore: Number(newScore),
+        formData,
       });
       toast.success("Score updated successfully.");
       setIsEditModalOpen(false);
       setReviewToEdit(null);
       setNewScore("");
+      setModificationComment("");
+      setSignatureType("draw");
+      setSignatureFile(null);
+      if (signatureCanvasRef.current) signatureCanvasRef.current.clear();
     } catch (err) {
       toast.error(err.message || "Failed to update score.");
     }
@@ -1121,6 +1159,9 @@ export default function CleanerReviewPage() {
             setIsEditModalOpen(false);
             setReviewToEdit(null);
             setNewScore("");
+            setModificationComment("");
+            setSignatureType("draw");
+            setSignatureFile(null);
           }}
         >
           <div
@@ -1135,6 +1176,9 @@ export default function CleanerReviewPage() {
                   setIsEditModalOpen(false);
                   setReviewToEdit(null);
                   setNewScore("");
+                  setModificationComment("");
+                  setSignatureType("draw");
+                  setSignatureFile(null);
                 }}
                 className="text-gray-400 hover:text-gray-600 transition cursor-pointer"
               >
@@ -1143,13 +1187,13 @@ export default function CleanerReviewPage() {
             </div>
 
             {/* Body */}
-            <div className="px-5 py-4 space-y-4">
+            <div className="px-5 py-4 space-y-4 max-h-[70vh] overflow-y-auto">
               <p className="text-sm text-gray-600">
                 Please provide the updated score for this cleaning activity.
                 Only same-day updates are allowed, and limits may apply based on SLA configurations.
               </p>
               <div>
-                <label className="block text-xs font-semibold mb-1 text-gray-700">New Score (0-10)</label>
+                <label className="block text-xs font-semibold mb-1 text-gray-700">New Score (0-10) *</label>
                 <input
                   type="number"
                   step="0.1"
@@ -1161,6 +1205,61 @@ export default function CleanerReviewPage() {
                   placeholder="Enter score between 0 and 10"
                 />
               </div>
+
+              <div>
+                <label className="block text-xs font-semibold mb-1 text-gray-700">Modification Comment *</label>
+                <textarea
+                  value={modificationComment}
+                  onChange={(e) => setModificationComment(e.target.value)}
+                  className="w-full border border-gray-300 rounded-md p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[80px]"
+                  placeholder="Reason for score modification..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold mb-1 text-gray-700">Signature *</label>
+                <div className="flex gap-2 mb-2">
+                  <button
+                    className={`px-3 py-1.5 text-xs font-medium rounded-md cursor-pointer ${signatureType === "draw" ? "bg-blue-100 text-blue-700 border-blue-300 border" : "bg-gray-100 text-gray-600 border border-transparent"}`}
+                    onClick={() => setSignatureType("draw")}
+                  >
+                    Draw
+                  </button>
+                  <button
+                    className={`px-3 py-1.5 text-xs font-medium rounded-md cursor-pointer ${signatureType === "upload" ? "bg-blue-100 text-blue-700 border-blue-300 border" : "bg-gray-100 text-gray-600 border border-transparent"}`}
+                    onClick={() => setSignatureType("upload")}
+                  >
+                    Upload
+                  </button>
+                </div>
+
+                {signatureType === "draw" ? (
+                  <div className="border border-gray-300 rounded-md bg-gray-50 flex flex-col">
+                    <SignatureCanvas 
+                      ref={signatureCanvasRef} 
+                      penColor="black"
+                      canvasProps={{className: "w-full h-32 cursor-crosshair rounded-t-md"}} 
+                    />
+                    <div className="flex justify-end p-1 border-t border-gray-200">
+                      <button 
+                        onClick={() => signatureCanvasRef.current?.clear()}
+                        className="text-xs text-gray-500 hover:text-red-500 px-2 py-1 cursor-pointer"
+                      >
+                        Clear Signature
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setSignatureFile(e.target.files[0])}
+                      className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
+                    />
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Footer */}
@@ -1170,6 +1269,9 @@ export default function CleanerReviewPage() {
                   setIsEditModalOpen(false);
                   setReviewToEdit(null);
                   setNewScore("");
+                  setModificationComment("");
+                  setSignatureType("draw");
+                  setSignatureFile(null);
                 }}
                 className="px-4 py-2 text-sm font-medium border rounded-md text-gray-700 hover:bg-gray-50 cursor-pointer"
               >

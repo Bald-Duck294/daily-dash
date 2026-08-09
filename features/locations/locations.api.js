@@ -591,5 +591,33 @@ export const LocationsApi = {
       };
     }
   },
+
+  downloadLocationQRs: async (id, downloadType) => {
+    try {
+      const response = await axiosInstance.get(`/locations/${id}/qr-codes`, {
+        params: { downloadType },
+        responseType: "blob",
+      });
+      return {
+        success: true,
+        data: response.data,
+        headers: response.headers,
+      };
+    } catch (err) {
+      console.error("Error downloading QRs:", err);
+      let errorMsg = err.message;
+      if (err.response?.data instanceof Blob) {
+        try {
+          const text = await err.response.data.text();
+          const json = JSON.parse(text);
+          errorMsg = json.message || errorMsg;
+        } catch (e) { }
+      }
+      return {
+        success: false,
+        error: errorMsg,
+      };
+    }
+  },
 };
 export default LocationsApi;

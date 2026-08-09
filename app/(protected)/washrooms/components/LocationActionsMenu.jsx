@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import { Users, Trash, Edit, Delete } from "lucide-react";
+import { Users, Trash, Edit, Delete, Download } from "lucide-react";
 import { useSelector } from "react-redux";
 
 import { useCompanyId } from "@/providers/CompanyProvider";
@@ -13,10 +13,12 @@ export default function LocationActionsMenu({
   onClose,
   onDelete,
   onEdit,
+  onDownloadQR,
   location_id,
   canDeleteLocation,
   canEditLocation,
 }) {
+  console.log(item, "item");
   const router = useRouter();
   const { companyId } = useCompanyId();
 
@@ -76,8 +78,8 @@ export default function LocationActionsMenu({
           className="w-full flex items-center gap-2 px-4 py-2 text-left text-sm transition-colors"
           style={{ color: "var(--washroom-text)" }}
           onMouseEnter={(e) =>
-          (e.currentTarget.style.background =
-            "var(--washroom-table-row-hover)")
+            (e.currentTarget.style.background =
+              "var(--washroom-table-row-hover)")
           }
           onMouseLeave={(e) =>
             (e.currentTarget.style.background = "transparent")
@@ -101,8 +103,8 @@ export default function LocationActionsMenu({
             borderTop: "1px solid var(--washroom-border)",
           }}
           onMouseEnter={(e) =>
-          (e.currentTarget.style.background =
-            "var(--washroom-table-row-hover)")
+            (e.currentTarget.style.background =
+              "var(--washroom-table-row-hover)")
           }
           onMouseLeave={(e) =>
             (e.currentTarget.style.background = "transparent")
@@ -127,8 +129,8 @@ export default function LocationActionsMenu({
           className="w-full flex items-center gap-2 px-4 py-2 text-left text-sm transition-colors"
           style={{ color: "var(--washroom-text)" }}
           onMouseEnter={(e) =>
-          (e.currentTarget.style.background =
-            "var(--washroom-table-row-hover)")
+            (e.currentTarget.style.background =
+              "var(--washroom-table-row-hover)")
           }
           onMouseLeave={(e) =>
             (e.currentTarget.style.background = "transparent")
@@ -142,6 +144,32 @@ export default function LocationActionsMenu({
         </button>
       )}
 
+      {/* Download QR Code */}
+      <button
+        onMouseDown={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (onDownloadQR) {
+            onDownloadQR(item);
+          } else {
+            console.warn("QR download handler not provided");
+          }
+          onClose();
+        }}
+        className="w-full flex items-center gap-2 px-4 py-2 text-left text-sm transition-colors"
+        style={{ color: "var(--washroom-text)" }}
+        onMouseEnter={(e) =>
+          (e.currentTarget.style.background = "var(--washroom-table-row-hover)")
+        }
+        onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+      >
+        <Download
+          className="h-4 w-4"
+          style={{ color: "var(--washroom-primary)" }}
+        />
+        Download QR Code
+      </button>
+
       {/* Delete Washroom */}
       {(canViewSupervisor || canDeleteLocation) && (
         <button
@@ -149,8 +177,8 @@ export default function LocationActionsMenu({
           className="w-full flex items-center gap-2 px-4 py-2 text-left text-sm transition-colors"
           style={{ color: "var(--washroom-status-inactive-text)" }}
           onMouseEnter={(e) =>
-          (e.currentTarget.style.background =
-            "var(--washroom-status-inactive-bg)")
+            (e.currentTarget.style.background =
+              "var(--washroom-status-inactive-bg)")
           }
           onMouseLeave={(e) =>
             (e.currentTarget.style.background = "transparent")

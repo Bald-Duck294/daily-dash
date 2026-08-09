@@ -184,13 +184,28 @@ export const CleanerReviewApi = {
   },
 
 
-  updateReviewScore: async (reviewId, newScore) => {
+  updateReviewScore: async (reviewId, newScore, modification_comment, signature) => {
 
     try {
-      const response = await axiosInstance.patch(
-        `/cleaner-reviews/${reviewId}/score`,
+      const formData = new FormData();
+      formData.append("score", newScore);
+      
+      if (modification_comment) {
+        formData.append("modification_comment", modification_comment);
+      }
+      
+      if (signature) {
+        // signature is expected to be a File or Blob object
+        formData.append("signature", signature);
+      }
+
+      const response = await axiosInstance.put(
+        `/cleaner-reviews/${reviewId}/management-score`,
+        formData,
         {
-          score: newScore
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
         }
       );
       return {

@@ -839,8 +839,6 @@
 //             </div>
 //           </div>
 
-
-
 //           {/* Table */}
 //           <div
 //             className="hidden md:block rounded-xl border overflow-hidden"
@@ -1061,7 +1059,10 @@ import "../../../app/globals.css";
 
 // ✅ Import the TanStack Query hooks
 import { useCompanies } from "@/features/companies/queries/companies.queries.js";
-import { useAllCleanerReviews, useUpdateReviewScore } from "@/features/cleanerReview/cleanerReview.queries.js"; // Adjust path as needed
+import {
+  useAllCleanerReviews,
+  useUpdateReviewScore,
+} from "@/features/cleanerReview/cleanerReview.queries.js"; // Adjust path as needed
 
 import {
   Search,
@@ -1291,7 +1292,8 @@ const PhotoModal = ({ photos, onClose }) => {
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
         style={{
-          cursor: zoomLevel > 1 ? (isDragging ? "grabbing" : "grab") : "default",
+          cursor:
+            zoomLevel > 1 ? (isDragging ? "grabbing" : "grab") : "default",
         }}
       >
         <img
@@ -1310,8 +1312,9 @@ const PhotoModal = ({ photos, onClose }) => {
         />
 
         <div
-          className={`absolute top-4 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded-full text-white font-semibold text-lg shadow-lg ${currentPhoto.color === "blue" ? "bg-blue-500" : "bg-green-500"
-            }`}
+          className={`absolute top-4 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded-full text-white font-semibold text-lg shadow-lg ${
+            currentPhoto.color === "blue" ? "bg-blue-500" : "bg-green-500"
+          }`}
         >
           {currentPhoto.label}
         </div>
@@ -1384,13 +1387,13 @@ const PhotoModal = ({ photos, onClose }) => {
               setCurrentIndex(idx);
               resetZoom();
             }}
-            className={`relative cursor-pointer flex-shrink-0 w-14 h-14 rounded overflow-hidden border-2 transition-all ${idx === currentIndex
-              ? photo.color === "blue"
-                ? "border-blue-500 ring-2 ring-blue-400"
-                : "border-green-500 ring-2 ring-green-400"
-              : "border-gray-600 hover:border-gray-400"
-
-              }`}
+            className={`relative cursor-pointer flex-shrink-0 w-14 h-14 rounded overflow-hidden border-2 transition-all ${
+              idx === currentIndex
+                ? photo.color === "blue"
+                  ? "border-blue-500 ring-2 ring-blue-400"
+                  : "border-green-500 ring-2 ring-green-400"
+                : "border-gray-600 hover:border-gray-400"
+            }`}
           >
             <img
               src={photo.url}
@@ -1399,8 +1402,9 @@ const PhotoModal = ({ photos, onClose }) => {
               onError={(e) => (e.target.style.display = "none")}
             />
             <span
-              className={`absolute top-0.5 left-0.5 ${photo.color === "blue" ? "bg-blue-500" : "bg-green-500"
-                } text-white px-1.5 py-0.5 text-[10px] font-bold rounded`}
+              className={`absolute top-0.5 left-0.5 ${
+                photo.color === "blue" ? "bg-blue-500" : "bg-green-500"
+              } text-white px-1.5 py-0.5 text-[10px] font-bold rounded`}
             >
               {photo.label[0]}
             </span>
@@ -1440,7 +1444,12 @@ const EditableScoreCell = ({
     const numericScore = parseFloat(score);
 
     // Check if it's empty, NaN, or out of bounds
-    if (score === "" || isNaN(numericScore) || numericScore < 0 || numericScore > 10) {
+    if (
+      score === "" ||
+      isNaN(numericScore) ||
+      numericScore < 0 ||
+      numericScore > 10
+    ) {
       toast.error("Score must be a valid number between 0 and 10");
       return;
     }
@@ -1456,8 +1465,8 @@ const EditableScoreCell = ({
         onError: (error) => {
           toast.error(error.message || "Failed to update score");
           setScore(review.score ?? ""); // Reset on failure
-        }
-      }
+        },
+      },
     );
   };
 
@@ -1473,8 +1482,9 @@ const EditableScoreCell = ({
     }
     if (isOngoing) {
       toast.error(
-        `Cannot edit ongoing review for ${review.cleaner_user?.name || "cleaner"
-        }. Please wait until it's completed.`
+        `Cannot edit ongoing review for ${
+          review.cleaner_user?.name || "cleaner"
+        }. Please wait until it's completed.`,
       );
       return;
     }
@@ -1521,14 +1531,15 @@ const EditableScoreCell = ({
   return (
     <div className="flex items-center justify-center gap-2">
       <span className={`font-semibold ${getScoreColor(displayScore)}`}>
-        {typeof displayScore === 'number' ? displayScore.toFixed(2) : "N/A"}
+        {typeof displayScore === "number" ? displayScore.toFixed(2) : "N/A"}
       </span>
       <button
         onClick={handleEditClick}
-        className={`cursor-pointer p-1 rounded transition-colors ${!canEdit || isOngoing
-          ? "text-slate-300 cursor-not-allowed"
-          : "text-slate-400 hover:text-indigo-600 hover:bg-indigo-50"
-          }`}
+        className={`cursor-pointer p-1 rounded transition-colors ${
+          !canEdit || isOngoing
+            ? "text-slate-300 cursor-not-allowed"
+            : "text-slate-400 hover:text-indigo-600 hover:bg-indigo-50"
+        }`}
         title={
           !canEdit
             ? "No permission to edit"
@@ -1563,23 +1574,30 @@ const ExplainabilityModal = ({ details, onClose }) => {
 
   // Filter out "consumables" (case-insensitive)
   const filteredKeys = Object.keys(explainability).filter(
-    (key) => key.toLowerCase() !== "consumables"
+    (key) => key.toLowerCase() !== "consumables",
   );
 
   return (
     <div
       className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
-      <div className="bg-white rounded-xl shadow-xl max-w-lg w-full overflow-hidden flex flex-col max-h-[80vh]" style={{ background: "var(--surface)", color: "var(--foreground)" }}>
-
+      <div
+        className="bg-white rounded-xl shadow-xl max-w-lg w-full overflow-hidden flex flex-col max-h-[80vh]"
+        style={{ background: "var(--surface)", color: "var(--foreground)" }}
+      >
         {/* Header */}
         <div className="flex justify-between items-center p-4 border-b border-gray-200">
           <h3 className="text-lg font-bold flex items-center gap-2">
             <Shield className="w-5 h-5 text-indigo-600" />
             Reason for Score
           </h3>
-          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full transition-colors text-gray-500">
+          <button
+            onClick={onClose}
+            className="p-1 hover:bg-gray-100 rounded-full transition-colors text-gray-500"
+          >
             <X size={20} />
           </button>
         </div>
@@ -1587,16 +1605,19 @@ const ExplainabilityModal = ({ details, onClose }) => {
         {/* Content */}
         <div className="p-4 overflow-y-auto flex-1 space-y-3">
           {filteredKeys.length === 0 ? (
-            <p className="text-gray-500 text-sm text-center py-4">No detailed explanation available.</p>
+            <p className="text-gray-500 text-sm text-center py-4">
+              No detailed explanation available.
+            </p>
           ) : (
             filteredKeys.map((key) => (
-              <div key={key} className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+              <div
+                key={key}
+                className="bg-slate-50 p-3 rounded-lg border border-slate-100"
+              >
                 <h4 className="font-semibold text-sm capitalize mb-1 text-slate-800">
-                  {key.replace(/_/g, ' ')}
+                  {key.replace(/_/g, " ")}
                 </h4>
-                <p className="text-sm text-slate-600">
-                  {explainability[key]}
-                </p>
+                <p className="text-sm text-slate-600">{explainability[key]}</p>
               </div>
             ))
           )}
@@ -1639,7 +1660,10 @@ export default function ScoreManagement() {
   /* ================= API Queries ================= */
 
   // 1. Fetch Companies
-  const { data: companiesResponse, isLoading: loadingCompanies } = useCompanies(1, 100);
+  const { data: companiesResponse, isLoading: loadingCompanies } = useCompanies(
+    1,
+    100,
+  );
   const companies = Array.isArray(companiesResponse?.data)
     ? companiesResponse.data
     : Array.isArray(companiesResponse)
@@ -1649,7 +1673,7 @@ export default function ScoreManagement() {
   // 2. Fetch Reviews via TanStack Query
   const { data: rawReviews, isLoading: loadingReviews } = useAllCleanerReviews(
     { date: dateFilter },
-    companyFilter
+    companyFilter,
   );
 
   /* ================= Filter Logic ================= */
@@ -1657,18 +1681,20 @@ export default function ScoreManagement() {
     // 1. Normalize data structure
     let filtered = Array.isArray(rawReviews)
       ? rawReviews.map((r) => ({
-        ...r,
-        photos: {
-          before: r.before_photo || [],
-          after: r.after_photo || [],
-        },
-      }))
+          ...r,
+          photos: {
+            before: r.before_photo || [],
+            after: r.after_photo || [],
+          },
+        }))
       : [];
 
     if (searchTerm) {
       filtered = filtered.filter(
         (r) =>
-          r.cleaner_user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          r.cleaner_user?.name
+            ?.toLowerCase()
+            .includes(searchTerm.toLowerCase()) ||
           r.location?.name?.toLowerCase().includes(searchTerm.toLowerCase()),
       );
     }
@@ -1684,13 +1710,17 @@ export default function ScoreManagement() {
     }
 
     if (scoreFilter === "high") {
-      filtered = filtered.filter((r) => typeof r.score === "number" && r.score >= 8);
+      filtered = filtered.filter(
+        (r) => typeof r.score === "number" && r.score >= 8,
+      );
     } else if (scoreFilter === "medium") {
       filtered = filtered.filter(
         (r) => typeof r.score === "number" && r.score >= 5 && r.score <= 7,
       );
     } else if (scoreFilter === "low") {
-      filtered = filtered.filter((r) => typeof r.score === "number" && r.score < 5);
+      filtered = filtered.filter(
+        (r) => typeof r.score === "number" && r.score < 5,
+      );
     }
 
     return filtered;
@@ -1734,7 +1764,6 @@ export default function ScoreManagement() {
       </div>
     );
   };
-
 
   return (
     <>
@@ -1814,7 +1843,11 @@ export default function ScoreManagement() {
                 <Select value={companyFilter} onValueChange={setCompanyFilter}>
                   <SelectTrigger disabled={loadingCompanies}>
                     <SelectValue
-                      placeholder={loadingCompanies ? "Loading companies..." : "Select company"}
+                      placeholder={
+                        loadingCompanies
+                          ? "Loading companies..."
+                          : "Select company"
+                      }
                     />
                   </SelectTrigger>
 
@@ -1901,7 +1934,10 @@ export default function ScoreManagement() {
               {/* Reset */}
               <button
                 className="px-4 py-2 rounded-lg transition-colors hover:opacity-90"
-                style={{ background: "var(--muted)", color: "var(--foreground)" }}
+                style={{
+                  background: "var(--muted)",
+                  color: "var(--foreground)",
+                }}
                 onClick={() => {
                   setCompanyFilter("");
                   setDateFilter("");
@@ -1974,7 +2010,9 @@ export default function ScoreManagement() {
                         <td className="px-4 py-4 text-center">
                           <PhotoPreviewCell
                             photos={review.photos}
-                            onOpenAt={(idx) => openPhotoModal(review.photos, idx)}
+                            onOpenAt={(idx) =>
+                              openPhotoModal(review.photos, idx)
+                            }
                           />
                         </td>
 
@@ -1989,7 +2027,11 @@ export default function ScoreManagement() {
                             {/* ✅ Button to trigger Reason Modal (Assumes JSON is inside hygiene_score.details) */}
                             {review.hygiene_score?.details && (
                               <button
-                                onClick={() => setExplainModalData(review.hygiene_score.details)}
+                                onClick={() =>
+                                  setExplainModalData(
+                                    review.hygiene_score.details,
+                                  )
+                                }
                                 className="text-[11px] font-medium text-indigo-600 hover:text-indigo-800 flex items-center gap-1 mt-1 transition-colors cursor-pointer"
                               >
                                 <AlertCircle size={12} /> View Reason
@@ -2001,11 +2043,17 @@ export default function ScoreManagement() {
                         {/* MODIFIED SCORE */}
                         <td className="px-4 py-4 text-center">
                           {review.is_modified ? (
-                            <span className={`font-semibold ${getScoreColor(review.score)}`}>
-                              {typeof review.score === "number" ? review.score.toFixed(2) : "—"}
+                            <span
+                              className={`font-semibold ${getScoreColor(review.score)}`}
+                            >
+                              {typeof review.score === "number"
+                                ? review.score.toFixed(2)
+                                : "—"}
                             </span>
                           ) : (
-                            <span className="text-gray-400 font-semibold">—</span>
+                            <span className="text-gray-400 font-semibold">
+                              —
+                            </span>
                           )}
                         </td>
 
@@ -2044,12 +2092,12 @@ export default function ScoreManagement() {
                         {/* DATE */}
                         <td className="px-4 py-4">
                           {new Date(review.created_at).toLocaleString("en-IN", {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            hour12: true
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            hour12: true,
                           })}
                         </td>
                       </tr>
@@ -2099,9 +2147,7 @@ export default function ScoreManagement() {
                           ? "rgba(34,197,94,.15)"
                           : "rgba(234,179,8,.15)",
                       color:
-                        review.status === "completed"
-                          ? "#16a34a"
-                          : "#ca8a04",
+                        review.status === "completed" ? "#16a34a" : "#ca8a04",
                     }}
                   >
                     {review.status}
@@ -2110,7 +2156,9 @@ export default function ScoreManagement() {
 
                 {/* Original Score */}
                 <div className="flex justify-between items-center">
-                  <span className="text-xs text-muted-foreground">Original Score</span>
+                  <span className="text-xs text-muted-foreground">
+                    Original Score
+                  </span>
                   <EditableScoreCell
                     review={review}
                     canEdit={canEditScores}
@@ -2120,13 +2168,21 @@ export default function ScoreManagement() {
 
                 {/* Modified Score */}
                 <div className="flex justify-between items-center">
-                  <span className="text-xs text-muted-foreground">Modified Score</span>
+                  <span className="text-xs text-muted-foreground">
+                    Modified Score
+                  </span>
                   {review.is_modified ? (
-                    <span className={`font-semibold text-sm ${getScoreColor(review.score)}`}>
-                      {typeof review.score === "number" ? review.score.toFixed(2) : "—"}
+                    <span
+                      className={`font-semibold text-sm ${getScoreColor(review.score)}`}
+                    >
+                      {typeof review.score === "number"
+                        ? review.score.toFixed(2)
+                        : "—"}
                     </span>
                   ) : (
-                    <span className="text-gray-400 text-sm font-semibold">—</span>
+                    <span className="text-gray-400 text-sm font-semibold">
+                      —
+                    </span>
                   )}
                 </div>
 
@@ -2138,12 +2194,8 @@ export default function ScoreManagement() {
 
                 {/* Meta */}
                 <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>
-                    {review.is_modified ? "Modified" : "Original"}
-                  </span>
-                  <span>
-                    {new Date(review.created_at).toLocaleString()}
-                  </span>
+                  <span>{review.is_modified ? "Modified" : "Original"}</span>
+                  <span>{new Date(review.created_at).toLocaleString()}</span>
                 </div>
               </div>
             ))

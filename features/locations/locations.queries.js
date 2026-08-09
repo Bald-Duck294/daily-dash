@@ -256,3 +256,41 @@ export const useToggleLocationStatus = () => {
     },
   });
 };
+
+// 14. Download Location QR Codes
+export const useDownloadLocationQRs = () => {
+  return useMutation({
+    mutationFn: async ({ id, downloadType, name }) => {
+      const response = await LocationsApi.downloadLocationQRs(id, downloadType);
+      if (!response.success) throw new Error(response.error || "Failed to download QR codes");
+      
+      // Handle the blob download
+      const blob = new Blob([response.data], { 
+        type: response.headers['content-type'] || 'application/zip' 
+      });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      
+      let filename = `${name || 'location'}_qr`;
+      if (response.headers['content-disposition']) {
+        const filenameMatch = response.headers['content-disposition'].match(/filename="?([^"]+)"?/);
+        if (filenameMatch && filenameMatch.length === 2) {
+          filename = filenameMatch[1];
+        }
+      } else {
+        filename += downloadType === 'washroom_only' ? '.png' : '.zip';
+      }
+      
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      
+      // Cleanup
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(link);
+      
+      return true;
+    }
+  });
+};

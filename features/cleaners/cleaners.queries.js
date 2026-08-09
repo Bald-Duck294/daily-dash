@@ -97,8 +97,8 @@ export const useUpdateCleanerReviewScore = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ reviewId, score }) => {
-      const res = await CleanerReviewApi.updateReviewScore(reviewId, score);
+    mutationFn: async ({ reviewId, score, modification_comment, signature }) => {
+      const res = await CleanerReviewApi.updateReviewScore(reviewId, score, modification_comment, signature);
       if (!res.success) throw new Error(res.error);
       return res.data;
     },

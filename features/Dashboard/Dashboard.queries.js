@@ -2,11 +2,16 @@ import { useQuery } from '@tanstack/react-query';
 import { DashboardApi } from '@/features/Dashboard/Dashboard.api'; // Adjust import path as needed
 
 // 1. Get counts
-export const useDashboardCounts = (companyId, date) => {
+export const useDashboardCounts = (companyId, dateObj) => {
+  const isDateRange = typeof dateObj === 'object' && dateObj !== null;
+  const dateStr = isDateRange ? undefined : dateObj;
+  const startDate = isDateRange ? dateObj.startDate : undefined;
+  const endDate = isDateRange ? dateObj.endDate : undefined;
+
   return useQuery({
-    queryKey: ['dashboard', 'counts', companyId, date],
+    queryKey: ['dashboard', 'counts', companyId, isDateRange ? `${startDate}-${endDate}` : dateStr],
     queryFn: async () => {
-      const response = await DashboardApi.getCounts(companyId, date);
+      const response = await DashboardApi.getCounts(companyId, dateStr, startDate, endDate);
       if (!response.success) throw new Error(response.error || 'Failed to fetch counts');
       return response.data;
     },
@@ -15,13 +20,18 @@ export const useDashboardCounts = (companyId, date) => {
 };
 
 // 2. Get top locations
-export const useDashboardAllLocations = (companyId, date) => {
+export const useDashboardAllLocations = (companyId, dateObj) => {
+  const isDateRange = typeof dateObj === 'object' && dateObj !== null;
+  const dateStr = isDateRange ? undefined : dateObj;
+  const startDate = isDateRange ? dateObj.startDate : undefined;
+  const endDate = isDateRange ? dateObj.endDate : undefined;
+
   return useQuery({
     // Removed 'limit' from the query key array
-    queryKey: ['dashboard', 'allLocationsScores', companyId, date],
+    queryKey: ['dashboard', 'allLocationsScores', companyId, isDateRange ? `${startDate}-${endDate}` : dateStr],
     queryFn: async () => {
       // Calling the updated API function
-      const response = await DashboardApi.getAllLocationsScores(companyId, date);
+      const response = await DashboardApi.getAllLocationsScores(companyId, dateStr, startDate, endDate);
       if (!response.success) throw new Error(response.error || 'Failed to fetch locations scores');
       return response.data;
     },
@@ -30,11 +40,16 @@ export const useDashboardAllLocations = (companyId, date) => {
 };
 
 // 3. Get activities
-export const useDashboardActivities = (companyId, limit = 10, date) => {
+export const useDashboardActivities = (companyId, limit = 10, dateObj) => {
+  const isDateRange = typeof dateObj === 'object' && dateObj !== null;
+  const dateStr = isDateRange ? undefined : dateObj;
+  const startDate = isDateRange ? dateObj.startDate : undefined;
+  const endDate = isDateRange ? dateObj.endDate : undefined;
+
   return useQuery({
-    queryKey: ['dashboard', 'activities', companyId, limit, date],
+    queryKey: ['dashboard', 'activities', companyId, limit, isDateRange ? `${startDate}-${endDate}` : dateStr],
     queryFn: async () => {
-      const response = await DashboardApi.getActivities(companyId, limit, date);
+      const response = await DashboardApi.getActivities(companyId, limit, dateStr, startDate, endDate);
       if (!response.success) throw new Error(response.error || 'Failed to fetch activities');
       return response.data;
     },
@@ -43,11 +58,11 @@ export const useDashboardActivities = (companyId, limit = 10, date) => {
 };
 
 // 4. Get washroom scores summary
-export const useWashroomScoresSummary = (companyId) => {
+export const useWashroomScoresSummary = (companyId, dateRange) => {
   return useQuery({
-    queryKey: ['dashboard', 'washroomScores', companyId],
+    queryKey: ['dashboard', 'washroomScores', companyId, dateRange],
     queryFn: async () => {
-      const response = await DashboardApi.getWashroomScoresSummary(companyId);
+      const response = await DashboardApi.getWashroomScoresSummary(companyId, dateRange);
       if (!response.success) throw new Error('Failed to fetch washroom scores');
       return response.data;
     },
@@ -58,11 +73,11 @@ export const useWashroomScoresSummary = (companyId) => {
 // 5. Get cleaner performance
 // Inside features/Dashboard/Dashboard.queries.js
 // In features/Dashboard/Dashboard.queries.js
-export const useCleanerPerformance = (companyId) => {
+export const useCleanerPerformance = (companyId, dateRange) => {
   return useQuery({
-    queryKey: ['dashboard', 'cleanerPerformance', companyId],
+    queryKey: ['dashboard', 'cleanerPerformance', companyId, dateRange],
     queryFn: async () => {
-      const response = await DashboardApi.getCleanerPerformance(companyId);
+      const response = await DashboardApi.getCleanerPerformance(companyId, dateRange);
       if (!response.success) throw new Error('Failed to fetch');
       
       // Return the whole object so we get { data, stats, success }

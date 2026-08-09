@@ -219,4 +219,28 @@ export const CleanerReviewApi = {
       };
     }
   },
+
+  updateManagementScore: async (reviewId, formData) => {
+    try {
+      const response = await axiosInstance.put(
+        `/cleaner-reviews/${reviewId}/management-score`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        },
+      );
+      return {
+        success: true,
+        data: response.data,
+      };
+    } catch (error) {
+      console.error("Error updating management score:", error);
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message,
+      };
+    }
+  },
 };
