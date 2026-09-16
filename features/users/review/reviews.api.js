@@ -9,7 +9,7 @@ export const fetchUserReviews = async ({
   date,
   limit = 50,
 } = {}) => {
-  const res = await axios.get("/reviews", {
+  const res = await axios.get("/qr-reviews/user-review", {
     params: {
       toilet_id,
       company_id,
@@ -21,24 +21,24 @@ export const fetchUserReviews = async ({
 
   return {
     reviews: res.data.data,
-    count: res.data.count,
+    count: res.data.pagination ? res.data.pagination.total : res.data.data.length,
   };
 };
 
-// GET /api/reviews/:id
+// GET /api/qr-reviews/user-review/:id
 export const fetchUserReviewById = async (id) => {
-  const res = await axios.get(`/reviews/${id}`);
+  const res = await axios.get(`/qr-reviews/user-review/${id}`);
   return res.data.data;
 };
 
-// PUT /api/reviews/:id
+// PUT /api/qr-reviews/user-review/:id
 export const updateUserReview = async ({ id, ...reviewData }) => {
-  const res = await axios.put(`/reviews/${id}`, reviewData);
+  const res = await axios.patch(`/qr-reviews/user-review/${id}`, reviewData);
   return res.data.data;
 };
 
-// DELETE /api/reviews/:id
+// DELETE /api/qr-reviews/user-review/:id
 export const deleteUserReview = async (id) => {
-  const res = await axios.delete(`/reviews/${id}`);
+  const res = await axios.delete(`/qr-reviews/user-review/${id}`);
   return res.data.data;
 };

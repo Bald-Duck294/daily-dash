@@ -1,0 +1,94 @@
+# Washroom Average Calculation Engine
+
+This document explains how we calculate the daily average score for a washroom in very simple terms, how we handle different sections (Feedback, Cleaning, Inspection), and how we can build a flexible "Engine" for future needs like Railways.
+
+## 1. The Simple Logic (How it works)
+
+Imagine a washroom is a student, and it has 3 different "subjects" it gets graded on every day:
+1. **User Feedback** (What normal people say after using it)
+2. **Cleaning Activity** (How well the cleaners and supervisors did their jobs)
+3. **Inspection** (What the inspector recorded)
+
+If we get 30 responses for each of these in one day, we don't just add all 90 responses together. Instead, we:
+1. Find the **Average Score** for Subject 1 (Feedback).
+2. Find the **Average Score** for Subject 2 (Cleaning).
+3. Find the **Average Score** for Subject 3 (Inspection).
+4. Combine these three averages into one **Final Daily Washroom Score**.
+
+---
+
+## 2. The Formula & Current Weights
+
+To make this flexible for the future (like for **Railways**), we use a **Weighted Average Formula**. 
+This means some "subjects" are strictly more important than others based on your business rules.
+
+**Current Approved Weights:**
+- Cleaning Activity (Cleaner & Supervisor) = **50%**
+- User Feedback = **30%**
+- Inspection = **20%**
+
+**Example Scenario (Scored out of 10):**
+If you have 30 responses in each section today, the engine first calculates their individual averages:
+- Average of 30 Cleaning Activities = **9 / 10**
+- Average of 30 User Feedbacks = **8 / 10**
+- Average of 30 Inspections = **7 / 10**
+
+**The Final Math:**
+- Cleaning: `9 * 50% = 4.5`
+- Feedback: `8 * 30% = 2.4`
+- Inspection: `7 * 20% = 1.4`
+- **Final Washroom Score = 4.5 + 2.4 + 1.4 = 8.3 out of 10!**
+
+---
+
+## 3. Flow Diagram of the Calculation Engine
+
+Here is a visual flow of how the Backend Engine will gather data and calculate the score for a single day:
+
+```mermaid
+graph TD
+    A[Start: Calculate Daily Score for Washroom X] --> B[Timeframe: Today 00:00 to 23:59]
+    
+    B --> C1[Fetch 30 Cleaning Activities <br/> from cleaner_review]
+    B --> C2[Fetch 30 User Feedbacks <br/> from user_review_qr]
+    B --> C3[Fetch 30 Inspections <br/> from review]
+    
+    C1 --> D1(Average Cleaning Score)
+    C2 --> D2(Average Feedback Score)
+    C3 --> D3(Average Inspection Score)
+    
+    D1 -. Apply 50% Weight .-> E{Scoring Engine}
+    D2 -. Apply 30% Weight .-> E
+    D3 -. Apply 20% Weight .-> E
+    
+    E --> F((Final Daily Score: 8.3/10))
+    F --> G[Save Daily Score to Database]
+```
+
+---
+
+## 4. How We Deal With "Inspections"
+
+Per your feedback, **we are not creating any new tables for inspections right now.** 
+Instead, we will rely on the existing tables:
+- **Cleaning Activity:** Queried from the `cleaner_review` table.
+- **User Feedback:** Queried from the `user_review` and `user_review_qr` tables.
+- **Inspections:** Queried directly from the existing `review` table, treating those supervisor/admin reviews as the "Inspection" data source.
+
+---
+
+## 5. The Dynamic Weighting System Provision (For Railways & Future)
+
+You asked: *"have u made any provision yet for dynamic weighteg system"*
+
+Yes! The core feature of this Engine will be **Dynamic Configurations**. 
+Instead of hardcoding `0.5`, `0.3`, and `0.2` in the backend code, we will store these percentages in the database (e.g., inside the existing `configurations` table or a new `company_settings` JSON field).
+
+### How the provision works:
+1. **Per-Company Rules:** If Railways wants `Inspections = 60%`, we simply update their specific row in the `configurations` table via an admin dashboard. The code stays exactly the same, but the Engine dynamically pulls their specific 60% rule before doing the math.
+2. **Missing Data Handling (Auto-Balancing):** The Engine is smart. What if a washroom had 30 cleaning activities, but ZERO inspections today? The Engine will automatically redistribute the remaining 20% (e.g., Cleaning becomes 62.5%, Feedback becomes 37.5%) so the final score doesn't unfairly crash to zero!
+3. **Scheduled Jobs (Cron):** The Engine runs automatically at midnight (or on demand) to calculate and lock in the "Daily Average" for every washroom, making your dashboard extremely fast to load since it just reads the pre-calculated final score.
+
+> [!NOTE]
+> **Next Steps**
+> If you approve of this updated architecture, the next step would be to begin writing the code for the `ScoringEngine` module in the backend and setting up the dynamic configuration variables in the database.

@@ -1068,6 +1068,12 @@ const REPORT_TYPES = [
     description: "View daily hygiene scores across all washrooms",
     endpoint: "washroom-daily-scores",
   },
+  {
+    value: "washroom_average",
+    label: "Washroom Average Report",
+    description: "View average scores across activities, inspections, and feedback",
+    endpoint: "washroom-average",
+  },
 ];
 
 const getTodayDate = () => {

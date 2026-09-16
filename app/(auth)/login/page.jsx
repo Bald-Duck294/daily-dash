@@ -202,10 +202,9 @@ export default function LoginPage() {
           )}
         </button>
 
-        <div className="or-divider">OR CONTINUE WITH</div>
+        {/* <div className="or-divider">OR CONTINUE WITH</div>
 
         <div className="social-btn-group">
-          {/* 🔓 GOOGLE LOGIN WITH TRANSPARENT SECURE OVERLAY CONTAINER */}
           <div className="social-btn-wrapper">
             <div id="google-btn-overlay" className="google-iframe-overlay" />
             <button type="button" className="btn-social">
@@ -218,7 +217,7 @@ export default function LoginPage() {
               Google
             </button>
           </div>
-        </div>
+        </div> */}
       </form>
     </div>
   );

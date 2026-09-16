@@ -3837,7 +3837,7 @@ const exportCleanerReportToExcel = (data, metadata) => {
 };
 
 
-export const exportToPDF = (data, metadata, reportType = "zone_wise") => {
+export const exportToPDF = (data, metadata, reportType = "zone_wise", signatureData = null) => {
     if (reportType === "daily_task") {
         exportDailyTaskToPDF(data, metadata);
     } else if (reportType === "zone_wise") {
@@ -3860,6 +3860,9 @@ export const exportToPDF = (data, metadata, reportType = "zone_wise") => {
     else if (reportType === "washroom_hygiene_trend") {
         exportHygieneTrendToPDF(data, metadata);
     }
+    else if (reportType === "washroom_average") {
+        exportWashroomAverageToPDF(data, metadata, signatureData);
+    }
     else {
         console.error("Unknown report type:", reportType);
     }
@@ -3868,7 +3871,7 @@ export const exportToPDF = (data, metadata, reportType = "zone_wise") => {
 /**
  * Main Excel export function
  */
-export const exportToExcel = (data, metadata, reportType = "zone_wise") => {
+export const exportToExcel = (data, metadata, reportType = "zone_wise", signatureData = null) => {
     if (reportType === "daily_task") {
         exportDailyTaskToExcel(data, metadata);
     } else if (reportType === "zone_wise") {
@@ -3892,7 +3895,96 @@ export const exportToExcel = (data, metadata, reportType = "zone_wise") => {
     else if (reportType === "washroom_hygiene_trend") {
         exportHygieneTrendToExcel(data, metadata);
     }
+    else if (reportType === "washroom_average") {
+        exportWashroomAverageToExcel(data, metadata, signatureData);
+    }
     else {
         console.error("Unknown report type:", reportType);
     }
+};
+
+
+
+const exportWashroomAverageToPDF = (data, metadata, signatureData) => {
+    const doc = new jsPDF("landscape");
+    
+    // Header setup
+    try {
+        if (typeof addLogosToHeader === 'function') addLogosToHeader(doc);
+    } catch(e) {}
+    
+    doc.setFontSize(16);
+    doc.setTextColor(33, 37, 41);
+    doc.text("Washroom Average Report", 14, 15);
+    
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    const dateStr = metadata?.date_range ? `${metadata.date_range.start} to ${metadata.date_range.end}` : 'N/A';
+    doc.text(`Organization: ${metadata?.organization || 'N/A'}`, 14, 22);
+    doc.text(`Date Range: ${dateStr}`, 14, 27);
+    
+    // AutoTable
+    const tableColumn = [
+        "Washroom Name",
+        "Cleaning Activity",
+        "Inspection Count",
+        "User Feedback",
+        "Today's Average",
+        "Total Average",
+        "Last Activity"
+    ];
+    
+    const tableRows = data.map(row => {
+        const lastAct = row.last_activity ? new Date(row.last_activity).toLocaleString() : 'No Activity';
+        return [
+            row.washroom_name || "Unknown",
+            row.cleaning_activity_count,
+            row.inspection_count,
+            row.user_feedback_count,
+            row.todays_average,
+            row.total_average,
+            lastAct
+        ];
+    });
+
+    autoTable(doc, {
+        head: [tableColumn],
+        body: tableRows,
+        startY: 35,
+        styles: { fontSize: 8, cellPadding: 3 },
+        headStyles: { fillColor: [41, 128, 185], textColor: 255 }
+    });
+    
+    
+    if (signatureData) {
+        // The last Y position of the table
+        const finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY : 40;
+        
+        doc.setFontSize(10);
+        doc.setTextColor(33, 37, 41);
+        doc.text("Authorized Signature:", 14, finalY + 15);
+        
+        // Add the signature image (DataURL PNG)
+        doc.addImage(signatureData, 'PNG', 14, finalY + 18, 50, 20);
+    }
+    
+    doc.save(`washroom_average_report_${Date.now()}.pdf`);
+
+};
+
+const exportWashroomAverageToExcel = (data, metadata, signatureData) => {
+    const formattedData = data.map(row => ({
+        "Washroom Name": row.washroom_name || "Unknown",
+        "Cleaning Activity Count": row.cleaning_activity_count,
+        "Inspection Count": row.inspection_count,
+        "User Feedback Count": row.user_feedback_count,
+        "Today's Average": row.todays_average,
+        "Total Average": row.total_average,
+        "Last Activity": row.last_activity ? new Date(row.last_activity).toLocaleString() : 'No Activity'
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(formattedData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Washroom Average Report");
+    XLSX.writeFile(wb, `washroom_average_report_${Date.now()}.xlsx`);
 };

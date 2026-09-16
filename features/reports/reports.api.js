@@ -255,3 +255,14 @@ export const ReportsApi = {
 };
 
 export default ReportsApi;
+
+// Get Washroom Average Report
+export const fetchWashroomAverageReport = async (params) => {
+  try {
+    const res = await axiosInstance.get('/reports/washroom-average', { params });
+    return res.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || 'Failed to fetch Washroom Average Report');
+  }
+};
+

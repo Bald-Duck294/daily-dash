@@ -16,6 +16,7 @@ import {
   Image as ImageIcon,
   Eye,
   RotateCcw,
+  Cpu,
 } from "lucide-react";
 import Loader from "@/components/ui/Loader";
 import toast, { Toaster } from "react-hot-toast";
@@ -61,6 +62,7 @@ const ReviewCardSkeleton = () => (
 export default function UserReviewsPage() {
   const router = useRouter();
   const [toiletId, setToiletId] = useState("");
+  const [dateFilter, setDateFilter] = useState("");
   const [limit, setLimit] = useState(50);
   const { companyId } = useCompanyId();
 
@@ -68,6 +70,7 @@ export default function UserReviewsPage() {
   const { data, isLoading, isError, error, refetch, isFetching } =
     useUserReviews({
       ...(toiletId && { toilet_id: toiletId }),
+      ...(dateFilter && { date: dateFilter }),
       limit,
       company_id: companyId,
     });
@@ -76,12 +79,13 @@ export default function UserReviewsPage() {
 
   const handleReset = () => {
     setToiletId("");
+    setDateFilter("");
     setLimit(50);
     toast.success("Filters reset");
   };
 
-  const handleCardClick = (userId) => {
-    router.push(`/users/${userId}/activity?companyId=${companyId}`);
+  const handleCardClick = (reviewId) => {
+    router.push(`/users/review/${reviewId}?companyId=${companyId}`);
   };
 
   // Show loader while fetching
@@ -114,21 +118,64 @@ export default function UserReviewsPage() {
 
   const { reviews, count } = data || { reviews: [], count: 0 };
 
+  // Calculate KPIs
+  const todaysReviews = reviews.filter((r) => {
+    const rDate = new Date(r.created_at).setHours(0, 0, 0, 0);
+    const today = new Date().setHours(0, 0, 0, 0);
+    return rDate === today;
+  }).length;
+
+  const averageRating = reviews.length > 0 
+    ? (reviews.reduce((acc, r) => acc + (r.rating || 0), 0) / reviews.length).toFixed(1)
+    : 0;
+
   return (
     <>
       <Toaster position="top-center" />
 
       <div className="min-h-screen bg-background text-foreground p-4 sm:p-6 md:p-8">
         <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="mb-6">
+          {/* Header & Filters */}
+          <div className="mb-6 space-y-4">
             <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
               <div className="flex items-center gap-3">
                 <MessageSquare className="w-8 h-8 text-primary" />
                 <h1 className="text-3xl font-bold">User Reviews</h1>
               </div>
-              <div className="text-sm text-muted-foreground">
-                Total Reviews: <span className="font-bold">{count}</span>
+              
+              <div className="flex flex-col sm:flex-row gap-3">
+                <input
+                  type="date"
+                  value={dateFilter}
+                  onChange={(e) => setDateFilter(e.target.value)}
+                  className="px-3 py-2 bg-white border border-slate-300 rounded-md text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+                <button
+                  onClick={handleReset}
+                  className="px-4 py-2 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-md text-sm font-medium transition flex items-center gap-2 justify-center"
+                >
+                  <RotateCcw size={16} />
+                  Reset
+                </button>
+              </div>
+            </div>
+            
+            {/* KPI Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pb-4">
+              <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-sm">
+                <p className="text-sm text-slate-500 mb-1">Total Reviews</p>
+                <p className="text-2xl font-bold text-slate-900">{count}</p>
+              </div>
+              <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-sm">
+                <p className="text-sm text-slate-500 mb-1">Today's Reviews</p>
+                <p className="text-2xl font-bold text-indigo-600">{todaysReviews}</p>
+              </div>
+              <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-sm">
+                <p className="text-sm text-slate-500 mb-1">Average Rating</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-2xl font-bold text-slate-900">{averageRating}</p>
+                  <Star size={20} className="text-amber-500 fill-amber-500" />
+                </div>
               </div>
             </div>
           </div>
@@ -157,7 +204,7 @@ export default function UserReviewsPage() {
                 return (
                   <div
                     key={review.id}
-                    onClick={() => handleCardClick(review.user_id)}
+                    onClick={() => handleCardClick(review.id)}
                     className="bg-[var(--surface)] border border-border rounded-lg p-4 cursor-pointer transition hover:shadow-md"
                   >
                     {/* Header */}
@@ -166,29 +213,53 @@ export default function UserReviewsPage() {
                         <h3 className="text-lg font-bold">
                           {cleanString(review.name) || "Anonymous"}
                         </h3>
-                        {review.toilet_id && (
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Toilet Name: {review?.location?.name || "unknown"}
+                        {review.location_id && (
+                          <p className="text-xs text-muted-foreground mt-1 font-medium">
+                            Location: {review?.location?.name || "Unknown"}
                           </p>
                         )}
                       </div>
 
-                      <div
-                        className={`flex items-center gap-1 px-2.5 py-1 rounded-md ${getRatingBg(
-                          review.rating,
-                        )}`}
-                      >
-                        <Star
-                          size={14}
-                          className={`${getRatingColor(review.rating)} fill-current`}
-                        />
-                        <span
-                          className={`text-sm font-bold ${getRatingColor(
+                      <div className="flex flex-col gap-2 items-end">
+                        <div
+                          className={`flex items-center gap-1 px-2.5 py-1 rounded-md ${getRatingBg(
                             review.rating,
                           )}`}
+                          title="User Rating"
                         >
-                          {review.rating}/10
-                        </span>
+                          <Star
+                            size={14}
+                            className={`${getRatingColor(review.rating)} fill-current`}
+                          />
+                          <span
+                            className={`text-sm font-bold ${getRatingColor(
+                              review.rating,
+                            )}`}
+                          >
+                            {review.rating}/10
+                          </span>
+                        </div>
+                        
+                        {review.ai_score !== null && review.ai_score !== undefined && (
+                          <div
+                            className={`flex items-center gap-1 px-2.5 py-1 rounded-md ${getRatingBg(
+                              review.ai_score,
+                            )}`}
+                            title="AI Score"
+                          >
+                            <Cpu
+                              size={14}
+                              className={`${getRatingColor(review.ai_score)}`}
+                            />
+                            <span
+                              className={`text-sm font-bold ${getRatingColor(
+                                review.ai_score,
+                              )}`}
+                            >
+                              {review.ai_score}/10
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </div>
 

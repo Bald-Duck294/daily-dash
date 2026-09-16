@@ -1,0 +1,46 @@
+# Washroom QR Generation — Architecture Review
+
+Before implementing anything, I have thoroughly inspected your backend project (`dash-backend`), focusing on `cloudbuild.yaml`, `Dockerfile`, `package.json`, and `vercel.json`. Here are the findings and my recommendation.
+
+## 1. Is Puppeteer appropriate for this backend?
+**Conclusion: Extremely Risky / Not Recommended.**
+
+Here is what I found in your deployment environment:
+- **Platform:** GCP Cloud Run (via `cloudbuild.yaml`)
+- **Docker Base:** `node:20-alpine` (via `Dockerfile`)
+- **Memory Allocation:** `--memory '512Mi'`
+- **Concurrency:** `--concurrency '80'`
+
+**Why Puppeteer is dangerous here:**
+1. **Memory OOM (Out of Memory):** Puppeteer launches a full headless Chrome instance. Even a single instance can easily consume 150MB - 300MB of RAM. With only `512Mi` allocated and up to `80` concurrent requests allowed by Cloud Run, your container will instantly crash with an OOM (Out Of Memory) error if multiple users download QRs simultaneously.
+2. **Alpine Linux Compatibility:** Your `Dockerfile` uses Alpine. Alpine uses `musl` instead of `glibc`, meaning standard Puppeteer downloads often fail to run. It requires manually installing system-level packages (`chromium`, `nss`, `freetype`, `harfbuzz`, `ttf-freefont`) inside the Dockerfile, which drastically inflates your Docker image size and build times.
+3. **Fonts:** Alpine lacks standard fonts (like Arial or Inter). Unless fonts are manually installed in the Dockerfile, the generated PDF will have broken or missing text.
+
+## 2. Is there a lighter alternative?
+If we must keep **100% of the logic on the backend** and **reliably reproduce the exact HTML/CSS A4 layout**, the alternatives are:
+
+- **Alternative A: The "Sharp + Pre-rendered PNG" Approach (Extremely Light, Highly Recommended)**
+  You already have `sharp: ^0.34.4` installed and working. Instead of having the backend parse raw HTML/CSS dynamically:
+  1. We take your exact HTML template and convert the static parts (the beautiful background, logos, mascot, stars, instructions) into a single high-resolution A4 PNG image (a "base template").
+  2. In the backend, we use `sharp` to composite the dynamically generated QR Code and the dynamic Washroom Name text onto this base PNG template using precise X/Y coordinates.
+  3. *Why this works:* It uses less than 50MB RAM, executes in milliseconds, uses your existing `sharp` dependency, requires zero Dockerfile changes, and guarantees the exact design is preserved.
+
+- **Alternative B: CloudConvert / External API (Light for the server, but introduces external dependency)**
+  Use a service like Api2Pdf or CloudConvert. The backend sends the HTML, the service renders the PDF, and the backend returns it. *Why this is bad:* It costs money, adds latency, and relies on a third party.
+
+- **Alternative C: Upgrade Cloud Run & Docker (Brute Force Puppeteer)**
+  Modify `Dockerfile` to install Chromium and fonts. Modify `cloudbuild.yaml` to increase memory to `--memory '2Gi'` and lower concurrency to `--concurrency '10'`. *Why this is bad:* Increases costs and slows down deployments.
+
+## 3. What would you personally recommend?
+
+**Recommended Approach:** **Alternative A (Sharp + Pre-rendered Background Template)**
+
+- **Why:** It satisfies your architectural rule completely (100% backend logic) without breaking your server. It perfectly reproduces the design because the design is baked into a high-res image.
+- **Deployment concerns:** None. `sharp` is already installed and working in your Docker container. No `Dockerfile` or `cloudbuild.yaml` changes needed.
+- **Performance concerns:** Blazing fast. `sharp` is a C++ backed image processor that runs in milliseconds.
+- **Maintenance concerns:** If the static text/design changes in the future, a designer just provides a new background PNG. The backend code rarely needs to change.
+
+> [!WARNING]
+> If you strictly want the backend to parse raw HTML/CSS into a PDF on the fly (and do not want to use a pre-rendered base image), we **must** proceed with Alternative C (Puppeteer) and I will have to rewrite your `Dockerfile` and `cloudbuild.yaml` to increase memory to 2GB to prevent server crashes.
+
+Please let me know which approach you prefer to proceed with!

@@ -1,6 +1,9 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState, useRef } from "react";
+import SignatureCanvas from "react-signature-canvas";
+import { Edit3, CheckCircle2 } from "lucide-react";
+import toast from "react-hot-toast";
 import { X, Download, Printer, Calendar } from "lucide-react";
 import DailyTaskReportTable from "./tables/DailyTaskReportTable";
 import ZoneWiseReportTable from "./tables/ZoneWiseReportTable";
@@ -10,10 +13,61 @@ import DetailedCleaningReportTable from "./tables/DetailedCleaningReportTable";
 import WashroomReportTable from "./tables/WashroomReportTable";
 import WashroomHygieneTrendTable from "./tables/WashroomHygieneTrendTable";
 import CleanerReportTable from "./tables/CleanerReportTable";
+import WashroomAverageReportTable from "./tables/WashroomAverageReportTable";
 import { exportToPDF, exportToExcel } from "./ExportUtils";
 import DetailedCleaningReportTableVirtualized from "./tables/DetailedCleaningReportTableVirtualized";
 
 export default function ReportModal({ reportType, data, metadata, onClose }) {
+  // Signature State for Washroom Average Report
+  const [isSigned, setIsSigned] = useState(false);
+  const [signatureData, setSignatureData] = useState(null);
+  const [showSignatureModal, setShowSignatureModal] = useState(false);
+  const [pendingAction, setPendingAction] = useState(null);
+  const sigCanvasRef = useRef(null);
+
+  const handleClearSignature = () => {
+    if (sigCanvasRef.current) {
+      sigCanvasRef.current.clear();
+    }
+  };
+
+  const handleConfirmSignature = () => {
+    if (sigCanvasRef.current && sigCanvasRef.current.isEmpty()) {
+      toast.error("Please provide a signature first.");
+      return;
+    }
+    const dataURL = sigCanvasRef.current.getTrimmedCanvas().toDataURL("image/png");
+    setSignatureData(dataURL);
+    setIsSigned(true);
+    setShowSignatureModal(false);
+    toast.success("Signature captured! Starting download...");
+    
+    // Execute pending action automatically
+    if (pendingAction === 'pdf') {
+      exportToPDF(data, metadata, reportType, dataURL);
+    } else if (pendingAction === 'excel') {
+      exportToExcel(data, metadata, reportType, dataURL);
+    }
+    setPendingAction(null);
+  };
+
+  const handleExportPDF = () => {
+    if (reportType === 'washroom_average' && !isSigned) {
+      setPendingAction('pdf');
+      setShowSignatureModal(true);
+      return;
+    }
+    exportToPDF(data, metadata, reportType, signatureData);
+  };
+
+  const handleExportExcel = () => {
+    if (reportType === 'washroom_average' && !isSigned) {
+      setPendingAction('excel');
+      setShowSignatureModal(true);
+      return;
+    }
+    exportToExcel(data, metadata, reportType, signatureData);
+  };
   console.log(reportType, "report type in modal");
 
   // Prevent background scroll when modal is open
@@ -24,8 +78,7 @@ export default function ReportModal({ reportType, data, metadata, onClose }) {
     };
   }, []);
 
-  const handleExportPDF = () => exportToPDF(data, metadata, reportType);
-  const handleExportExcel = () => exportToExcel(data, metadata, reportType);
+
   const handlePrint = () => window.print();
 
   // ✅ Format date range display
@@ -101,6 +154,8 @@ export default function ReportModal({ reportType, data, metadata, onClose }) {
         return <CleanerReportTable data={data} metadata={metadata} />;
       case "washroom_hygiene_trend":
         return <WashroomHygieneTrendTable data={data} metadata={metadata} />;
+      case "washroom_average":
+        return <WashroomAverageReportTable data={data} metadata={metadata} />;
       default:
         return <div className="text-center py-8 text-slate-500">Unknown report type</div>;
     }
@@ -108,6 +163,50 @@ export default function ReportModal({ reportType, data, metadata, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 backdrop-blur-sm">
+      {/* Signature Overlay Modal */}
+      {showSignatureModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-lg relative">
+            <button 
+              onClick={() => setShowSignatureModal(false)}
+              className="absolute top-4 right-4 p-1 hover:bg-slate-100 rounded-lg transition-colors text-slate-500"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <h3 className="text-lg font-bold text-slate-800 mb-2 flex items-center gap-2">
+              <Edit3 size={20} className="text-blue-600" /> Authorized Signature Required
+            </h3>
+            <p className="text-sm text-slate-500 mb-6">Please provide your signature below to authorize the export of this report.</p>
+            
+            <div className="space-y-4">
+              <div className="border-2 border-dashed border-slate-300 bg-slate-50 rounded-xl overflow-hidden relative">
+                <SignatureCanvas
+                  ref={sigCanvasRef}
+                  penColor="black"
+                  canvasProps={{
+                    className: "w-full h-40 cursor-crosshair",
+                  }}
+                />
+              </div>
+              <div className="flex items-center gap-3 justify-end mt-4">
+                <button
+                  onClick={handleClearSignature}
+                  className="px-4 py-2 bg-slate-100 text-slate-700 text-sm font-bold rounded-lg hover:bg-slate-200 transition"
+                >
+                  Clear
+                </button>
+                <button
+                  onClick={handleConfirmSignature}
+                  className="px-4 py-2 bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-blue-700 transition shadow-sm"
+                >
+                  Confirm & Download
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="w-full max-w-7xl h-screen overflow-y-auto py-8 px-4">
         <div className="relative bg-white rounded-2xl shadow-2xl">
           {/* ✅ Enhanced Sticky Header */}
@@ -192,6 +291,7 @@ export default function ReportModal({ reportType, data, metadata, onClose }) {
 
           {/* Report Content */}
           <div className="p-6">
+            
             {renderTable()}
           </div>
         </div>
