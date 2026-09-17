@@ -51,5 +51,26 @@ export const SlaApi = {
     } catch (error) {
       throw error;
     }
+  },
+
+  // GET washroom SLA config
+  getWashroomSlaConfig: async (locationId, { signal } = {}) => {
+    try {
+      const response = await axiosInstance.get(`/sla-config/washroom/${locationId}`, { signal });
+      return response.data;
+    } catch (error) {
+      if (error.name === "CanceledError") return;
+      throw error;
+    }
+  },
+
+  // UPDATE washroom SLA config
+  updateWashroomSlaConfig: async (locationId, configData) => {
+    try {
+      const response = await axiosInstance.put(`/sla-config/washroom/${locationId}`, configData);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
   }
 };

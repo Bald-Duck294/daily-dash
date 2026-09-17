@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
 import { useState, useEffect } from "react";
@@ -21,7 +20,6 @@ import CompaniesHeader from "@/features/companies/components/CompaniesHeader";
 import CompaniesToolbar from "@/features/companies/components/CompaniesToolbar";
 import CompaniesTable from "@/features/companies/components/CompaniesTable";
 import CompaniesCards from "@/features/companies/components/CompaniesCards";
-import SLAConfigModal from "@/features/companies/components/SLAConfigModal";
 import { useSlaStatuses } from "@/features/companies/queries/sla.queries";
 
 export default function CompaniesPage() {
@@ -40,8 +38,6 @@ export default function CompaniesPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
   const [showTopBtn, setShowTopBtn] = useState(false);
-  const [slaModalOpen, setSlaModalOpen] = useState(false);
-  const [selectedCompanyForSla, setSelectedCompanyForSla] = useState(null);
   const PAGE_SIZE = 8;
 
   // Scroll listener for responsive "Go to Top" button (listens to main scroll container)
@@ -288,10 +284,6 @@ export default function CompaniesPage() {
               onToggleStatus={handleStatusToggle}
               onView={handleViewCompany}
               onReset={handleReset}
-              onSlaConfig={(c) => {
-                setSelectedCompanyForSla(c);
-                setSlaModalOpen(true);
-              }}
               slaStatuses={slaStatuses}
               sortField={sortField}
               sortOrder={sortOrder}
@@ -309,10 +301,6 @@ export default function CompaniesPage() {
               onToggleStatus={handleStatusToggle}
               onView={handleViewCompany}
               onReset={handleReset}
-              onSlaConfig={(c) => {
-                setSelectedCompanyForSla(c);
-                setSlaModalOpen(true);
-              }}
               slaStatuses={slaStatuses}
             />
           </div>
@@ -643,14 +631,6 @@ export default function CompaniesPage() {
         </button>
       )}
 
-      <SLAConfigModal
-        isOpen={slaModalOpen}
-        onClose={() => {
-          setSlaModalOpen(false);
-          setSelectedCompanyForSla(null);
-        }}
-        company={selectedCompanyForSla}
-      />
     </>
   );
 }
