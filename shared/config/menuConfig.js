@@ -67,6 +67,11 @@ export function getSuperadminMainMenu() {
     },
     {
       icon: ShieldCheck,
+      label: "SLA Management",
+      href: "/sla-management",
+    },
+    {
+      icon: ShieldCheck,
       label: "Role Management",
       hasDropdown: true,
       key: "role-management",

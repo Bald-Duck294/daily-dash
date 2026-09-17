@@ -1,4 +1,4 @@
-import { Edit, Trash2, RotateCcw, Shield } from "lucide-react";
+import { Edit, Trash2, RotateCcw } from "lucide-react";
 import { formatDate } from "../utils/formatDate";
 import { useRouter } from "next/navigation";
 
@@ -24,7 +24,6 @@ export default function CompaniesTable({
   onDelete,
   onView,
   onReset,
-  onSlaConfig,
   slaStatuses = [],
   sortField,
   sortOrder,
@@ -139,16 +138,6 @@ export default function CompaniesTable({
                     onClick={(e) => {
                       e.stopPropagation();
                       router.push(`/companies/${c.id}`);
-                    }}
-                  />
-
-                  <Shield
-                    size={16}
-                    className="cursor-pointer text-indigo-500 hover:text-indigo-600 transition-all hover:scale-125"
-                    title="SLA Configuration"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onSlaConfig?.(c);
                     }}
                   />
 

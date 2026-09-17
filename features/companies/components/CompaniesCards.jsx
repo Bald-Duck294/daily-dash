@@ -1,4 +1,4 @@
-import { Edit, Trash2, RotateCcw, Mail, Calendar, Shield } from "lucide-react";
+import { Edit, Trash2, RotateCcw, Mail, Calendar } from "lucide-react";
 import { formatDate } from "../utils/formatDate";
 import { useRouter } from "next/navigation";
 
@@ -9,7 +9,7 @@ const CARD_GRADIENTS = [
   "from-emerald-50/80 via-slate-50/40 to-white dark:from-slate-900 dark:via-emerald-950/30 dark:to-slate-900",
 ];
 
-export default function CompaniesCards({ companies, onDelete, onView, onReset, onSlaConfig, slaStatuses = [], currentPage = 1, pageSize = 10 }) {
+export default function CompaniesCards({ companies, onDelete, onView, onReset, slaStatuses = [], currentPage = 1, pageSize = 10 }) {
   const router = useRouter();
 
   const getSlaStatus = (companyId) => {
@@ -104,16 +104,6 @@ export default function CompaniesCards({ companies, onDelete, onView, onReset, o
                   onClick={(e) => {
                     e.stopPropagation();
                     onReset?.(c.id);
-                  }}
-                />
-
-                <Shield
-                  size={16}
-                  className="cursor-pointer text-indigo-500 hover:text-indigo-600 transition-all hover:scale-125"
-                  title="SLA Configuration"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onSlaConfig?.(c);
                   }}
                 />
 
