@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import toast, { Toaster } from "react-hot-toast";
 import { ArrowLeft, Loader2, AlertTriangle } from "lucide-react";
 
@@ -13,12 +13,15 @@ import { usePermissions } from "@/shared/hooks/usePermission";
 
 // TanStack Query Hooks
 import { useGetUserById, useUpdateUser } from "@/features/users/users.queries";
+import { useDropdownLocations } from "@/features/dropdownList/dropdownlist.query";
 
 export default function EditUserPage() {
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const { userId } = params;
   const { companyId } = useCompanyId();
+  const queryCompanyId = searchParams?.get("companyId");
 
   useRequirePermission(MODULES.USERS);
 
@@ -34,19 +37,32 @@ export default function EditUserPage() {
 
   const updateUserMutation = useUpdateUser();
 
+  // Fetch dropdown locations for assigning
+  const effectiveCompanyId = queryCompanyId || companyId || user?.company_id;
+  const { data: locationsResponse = [], isLoading: isLoadingLocations } = useDropdownLocations(effectiveCompanyId);
+
+  const availableLocations = Array.isArray(locationsResponse)
+    ? locationsResponse
+    : (locationsResponse?.data || []);
+
   // Redirect safely if the user fails to load
   useEffect(() => {
     if (isError) {
       toast.error("Failed to fetch user data.");
-      router.push(`/users?companyId=${companyId}`);
+      router.push(`/users?companyId=${effectiveCompanyId || ""}`);
     }
-  }, [isError, router, companyId]);
+  }, [isError, router, effectiveCompanyId]);
 
   // --- HANDLERS ---
   const handleUpdateUser = async (formData) => {
     // Prevent sending an empty password string on update
-    if (formData.password === "") {
+    if (!formData.password || (typeof formData.password === "string" && !formData.password.trim())) {
       delete formData.password;
+    }
+
+    // Ensure email is null instead of empty string
+    if (formData.email === "" || (typeof formData.email === "string" && !formData.email.trim())) {
+      formData.email = null;
     }
 
     const toastId = toast.loading("Updating user...");
@@ -54,7 +70,7 @@ export default function EditUserPage() {
     try {
       await updateUserMutation.mutateAsync({ id: userId, data: formData });
       toast.success("User updated successfully!", { id: toastId });
-      router.push(`/users?companyId=${companyId}`);
+      router.push(`/users?companyId=${effectiveCompanyId || ""}`);
     } catch (error) {
       toast.error(error.message || "Failed to update user.", { id: toastId });
     }
@@ -165,7 +181,9 @@ export default function EditUserPage() {
                   initialData={user}
                   onSubmit={handleUpdateUser}
                   isEditing={true}
-                  canSubmit={canEditUser && !updateUserMutation.isPending} 
+                  canSubmit={canEditUser && !updateUserMutation.isPending}
+                  locations={availableLocations}
+                  isLoadingLocations={isLoadingLocations}
                 />
               ) : (
                 <p 

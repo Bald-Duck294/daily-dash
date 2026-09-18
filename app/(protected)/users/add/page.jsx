@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import toast, { Toaster } from "react-hot-toast";
 import { ArrowLeft } from "lucide-react";
 
@@ -17,7 +17,10 @@ import { useDropdownLocations } from "@/features/dropdownList/dropdownlist.query
 
 export default function AddUserPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { companyId } = useCompanyId();
+  const queryCompanyId = searchParams?.get("companyId");
+  const effectiveCompanyId = queryCompanyId || companyId;
 
   useRequirePermission(MODULES.USERS);
 
@@ -28,7 +31,7 @@ export default function AddUserPage() {
   const createUserMutation = useCreateUser();
 
   // ✅ FETCH LOCATIONS FOR THE FORM DROPDOWN
-  const { data: locationsResponse = [], isLoading: isLoadingLocations } = useDropdownLocations(companyId);
+  const { data: locationsResponse = [], isLoading: isLoadingLocations } = useDropdownLocations(effectiveCompanyId);
 
   // Safely extract the array to pass to the form
   const availableLocations = Array.isArray(locationsResponse)
@@ -36,14 +39,19 @@ export default function AddUserPage() {
     : (locationsResponse?.data || []);
 
   const handleAddUser = async (formData) => {
+    // Ensure email is null instead of empty string
+    if (formData.email === "" || (typeof formData.email === "string" && !formData.email.trim())) {
+      formData.email = null;
+    }
+
     const toastId = toast.loading("Creating user...");
     
     try {
       // Execute the mutation using mutateAsync so we can await its completion
-      await createUserMutation.mutateAsync({ data: formData, companyId });
+      await createUserMutation.mutateAsync({ data: formData, companyId: effectiveCompanyId });
 
       toast.success("User created successfully!", { id: toastId });
-      router.push(`/users?companyId=${companyId}`);
+      router.push(`/users?companyId=${effectiveCompanyId || ""}`);
     } catch (error) {
       // The custom hook throws the error, so we catch it here to update the toast
       toast.error(error.message || "Failed to create user.", { id: toastId });
