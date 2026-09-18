@@ -1,17 +1,18 @@
 export const buildDeploymentPayload = (draft) => {
+  const validHierarchyTempIds = new Set(draft.hierarchy.map(n => n.temp_id));
   const payload = {
     // ❌ discovery is completely removed
     hierarchy: draft.hierarchy.map((n) => ({
       temp_id: n.temp_id,
       name: n.name,
       type: n.type,
-      parent_temp_id: n.parent_temp_id,
+      parent_temp_id: validHierarchyTempIds.has(n.parent_temp_id) ? n.parent_temp_id : null,
     })),
     washrooms: draft.washrooms.map((w) => ({
       temp_id: w.temp_id,
       name: w.name,
       type: w.type,
-      zone_temp_id: w.zone_temp_id,
+      zone_temp_id: validHierarchyTempIds.has(w.zone_temp_id) ? w.zone_temp_id : null,
       wc_count: w.wc_count,
       basin_count: w.basin_count,
     })),

@@ -43,7 +43,21 @@ export default function AuthChecker({ children }) {
       if (user?.role_id === 1) {
         router.push("/dashboard");
       } else if (user?.role_id === 2 && user?.company_id) {
-        router.push(`/clientDashboard/${user.company_id}`);
+        const company = user?.company || user?.companies || {};
+        const isCompleted = Boolean(company.is_onboarding_completed);
+        const hasMetadata = Boolean(
+          company.metadata?.organization_type ||
+          company.onboarding_metadata?.organization_type
+        );
+        const hasName = Boolean(company.name && company.name !== "Pending Setup");
+
+        if (isCompleted) {
+          router.push(`/clientDashboard/${user.company_id}`);
+        } else if (!hasMetadata) {
+          router.push("/company-setup");
+        } else {
+          router.push("/stepper");
+        }
       } else if (user?.role_id === 3 && user?.company_id) {
         router.push(`/clientDashboard/${user.company_id}`);
       } else {

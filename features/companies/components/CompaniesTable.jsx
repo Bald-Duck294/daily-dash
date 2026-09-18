@@ -24,7 +24,7 @@ export default function CompaniesTable({
   onDelete,
   onView,
   onReset,
-  slaStatuses = [],
+  onToggleStepper,
   sortField,
   sortOrder,
   onSortChange,
@@ -32,12 +32,6 @@ export default function CompaniesTable({
   pageSize = 6,
 }) {
   const router = useRouter();
-
-  const getSlaStatus = (companyId) => {
-    if (!Array.isArray(slaStatuses)) return false;
-    const status = slaStatuses.find(s => String(s.company_id) === String(companyId));
-    return status?.enabled ? true : false;
-  };
 
   const handleHeaderClick = (field) => {
     if (!onSortChange) return;
@@ -72,62 +66,106 @@ export default function CompaniesTable({
                 <SortIndicator field={col.key} sortField={sortField} sortOrder={sortOrder} />
               </th>
             ))}
-            <th className="px-4 py-3.5">SLA</th>
+            <th className="px-4 py-3.5 text-center">Stepper</th>
             <th className="px-4 py-3.5 text-right">Actions</th>
           </tr>
         </thead>
 
         {/* ===== TABLE BODY ===== */}
         <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 font-medium text-slate-700 dark:text-slate-300">
-          {companies.map((c, i) => (
-            <tr
-              key={c.id}
-              onClick={() => onView(c.id)}
-              className="
-                group bg-white dark:bg-slate-900
-                hover:bg-blue-50/70 dark:hover:bg-blue-950/40
-                hover:shadow-sm
-                hover:-translate-y-0.5
-                cursor-pointer
-                transition-all duration-200 ease-out
-              "
-            >
-              <td className="px-4 py-3.5 font-mono text-xs text-slate-400 font-bold group-hover:text-blue-600 transition-colors">
-                {(currentPage - 1) * pageSize + i + 1}
-              </td>
+          {companies.map((c, i) => {
+            const hasData = (c._count?.locations ?? 0) > 0;
+            const isStepperEnabled = !c.is_onboarding_completed;
 
-              <td className="px-4 py-3.5 font-semibold text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors">
-                {c.name}
-              </td>
+            return (
+              <tr
+                key={c.id}
+                onClick={() => onView(c.id)}
+                className="
+                  group bg-white dark:bg-slate-900
+                  hover:bg-blue-50/70 dark:hover:bg-blue-950/40
+                  hover:shadow-sm
+                  hover:-translate-y-0.5
+                  cursor-pointer
+                  transition-all duration-200 ease-out
+                "
+              >
+                <td className="px-4 py-3.5 font-mono text-xs text-slate-400 font-bold group-hover:text-blue-600 transition-colors">
+                  {(currentPage - 1) * pageSize + i + 1}
+                </td>
 
-              <td className="px-4 py-3.5 text-slate-500 dark:text-slate-400 text-xs">
-                {c.contact_email || "N/A"}
-              </td>
+                <td className="px-4 py-3.5 font-semibold text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors">
+                  {c.name}
+                </td>
 
-              <td className="px-4 py-3.5">
-                <span
-                  className={`
-                    inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold border
-                    ${c.status
-                      ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800"
-                      : "bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-800"
-                    }
-                  `}
-                >
-                  <span className={`h-1.5 w-1.5 rounded-full ${c.status ? "bg-emerald-500 animate-pulse" : "bg-rose-500"}`} />
-                  {c.status ? "Active" : "Inactive"}
-                </span>
-              </td>
+                <td className="px-4 py-3.5 text-slate-500 dark:text-slate-400 text-xs">
+                  {c.contact_email || "N/A"}
+                </td>
 
-              <td className="px-4 py-3.5 text-slate-500 dark:text-slate-400 text-xs font-mono">
-                {formatDate(c.created_at)}
-              </td>
+                <td className="px-4 py-3.5">
+                  <span
+                    className={`
+                      inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold border
+                      ${c.status
+                        ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800"
+                        : "bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-800"
+                      }
+                    `}
+                  >
+                    <span className={`h-1.5 w-1.5 rounded-full ${c.status ? "bg-emerald-500 animate-pulse" : "bg-rose-500"}`} />
+                    {c.status ? "Active" : "Inactive"}
+                  </span>
+                </td>
 
-              <td className="px-4 py-3.5">
-                <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${getSlaStatus(c.id) ? 'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30' : 'text-slate-600 bg-slate-100 dark:bg-slate-800 dark:text-slate-400'}`}>
-                  {getSlaStatus(c.id) ? "🟢 Enabled" : "🔴 Disabled"}
-                </span>
-              </td>
+                <td className="px-4 py-3.5 text-slate-500 dark:text-slate-400 text-xs font-mono">
+                  {formatDate(c.created_at)}
+                </td>
+
+                {/* ===== STEPPER TOGGLE ===== */}
+                <td className="px-4 py-3.5 text-center" onClick={(e) => e.stopPropagation()}>
+                  {hasData ? (
+                    <span
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 cursor-not-allowed select-none"
+                      title="Stepper locked: Company already has locations/data deployed"
+                    >
+                      <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
+                      Data Present
+                    </span>
+                  ) : (
+                    <div className="flex items-center justify-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => onToggleStepper?.(c.id)}
+                        className={`relative inline-flex h-5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
+                          isStepperEnabled ? "bg-indigo-600" : "bg-slate-300 dark:bg-slate-700"
+                        }`}
+                        role="switch"
+                        aria-checked={isStepperEnabled}
+                        title={
+                          isStepperEnabled
+                            ? "Stepper Active: New user will see onboarding"
+                            : "Stepper Skipped: User will bypass to dashboard directly"
+                        }
+                      >
+                        <span className="sr-only">Toggle Stepper</span>
+                        <span
+                          className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                            isStepperEnabled ? "translate-x-5" : "translate-x-0"
+                          }`}
+                        />
+                      </button>
+                      <span
+                        className={`text-[11px] font-bold ${
+                          isStepperEnabled
+                            ? "text-indigo-600 dark:text-indigo-400"
+                            : "text-slate-400"
+                        }`}
+                      >
+                        {isStepperEnabled ? "Visible" : "Hidden"}
+                      </span>
+                    </div>
+                  )}
+                </td>
 
               {/* ===== ACTIONS ===== */}
               <td className="px-4 py-3.5 text-right">
@@ -162,8 +200,9 @@ export default function CompaniesTable({
                 </div>
               </td>
             </tr>
-          ))}
-        </tbody>
+          );
+        })}
+      </tbody>
       </table>
     </div>
   );

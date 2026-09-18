@@ -9,14 +9,16 @@ const CARD_GRADIENTS = [
   "from-emerald-50/80 via-slate-50/40 to-white dark:from-slate-900 dark:via-emerald-950/30 dark:to-slate-900",
 ];
 
-export default function CompaniesCards({ companies, onDelete, onView, onReset, slaStatuses = [], currentPage = 1, pageSize = 10 }) {
+export default function CompaniesCards({
+  companies,
+  onDelete,
+  onView,
+  onReset,
+  onToggleStepper,
+  currentPage = 1,
+  pageSize = 10,
+}) {
   const router = useRouter();
-
-  const getSlaStatus = (companyId) => {
-    if (!Array.isArray(slaStatuses)) return false;
-    const status = slaStatuses.find(s => String(s.company_id) === String(companyId));
-    return status?.enabled ? true : false;
-  };
 
   return (
     <div className="space-y-3">
@@ -24,6 +26,8 @@ export default function CompaniesCards({ companies, onDelete, onView, onReset, s
         const serialNum = (currentPage - 1) * pageSize + i + 1;
         const formattedSr = String(serialNum).padStart(2, "0");
         const gradientClass = CARD_GRADIENTS[i % CARD_GRADIENTS.length];
+        const hasData = (c._count?.locations ?? 0) > 0;
+        const isStepperEnabled = !c.is_onboarding_completed;
 
         return (
           <div
@@ -58,7 +62,7 @@ export default function CompaniesCards({ companies, onDelete, onView, onReset, s
                 </div>
               </div>
 
-              {/* Status & SLA Badges */}
+              {/* Status & Stepper Badges */}
               <div className="flex flex-col gap-2 shrink-0 items-end">
                 <span
                   className={`
@@ -73,9 +77,45 @@ export default function CompaniesCards({ companies, onDelete, onView, onReset, s
                   {c.status ? "Active" : "Inactive"}
                 </span>
 
-                <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${getSlaStatus(c.id) ? 'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-800' : 'text-slate-600 bg-slate-100 dark:bg-slate-800 dark:text-slate-400 border-slate-200 dark:border-slate-700'}`}>
-                  {getSlaStatus(c.id) ? "🟢 SLA Enabled" : "🔴 SLA Disabled"}
-                </span>
+                {/* Stepper Toggle or Locked Badge */}
+                {hasData ? (
+                  <span
+                    className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 select-none"
+                    title="Stepper locked: Company already has locations/data deployed"
+                  >
+                    <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
+                    Data Present
+                  </span>
+                ) : (
+                  <div
+                    className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-white/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 shadow-2xs"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <span className="text-slate-600 dark:text-slate-300">
+                      Stepper: {isStepperEnabled ? "ON" : "OFF"}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => onToggleStepper?.(c.id)}
+                      className={`relative inline-flex h-4 w-7 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                        isStepperEnabled ? "bg-indigo-600" : "bg-slate-300 dark:bg-slate-600"
+                      }`}
+                      role="switch"
+                      aria-checked={isStepperEnabled}
+                      title={
+                        isStepperEnabled
+                          ? "Stepper Active: New user will see onboarding"
+                          : "Stepper Skipped: User will bypass to dashboard"
+                      }
+                    >
+                      <span
+                        className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                          isStepperEnabled ? "translate-x-3" : "translate-x-0"
+                        }`}
+                      />
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 

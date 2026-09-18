@@ -10,6 +10,7 @@ export default function AddCompanyPage() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [contactEmail, setContactEmail] = useState("");
+  const [enableStepper, setEnableStepper] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
@@ -25,6 +26,7 @@ export default function AddCompanyPage() {
       name,
       description,
       contact_email: contactEmail,
+      enable_stepper: enableStepper,
     });
 
     if (response.success) {
@@ -105,6 +107,33 @@ export default function AddCompanyPage() {
               placeholder="contact@organization.com"
               type="email"
             />
+
+            {/* Stepper Onboarding Toggle */}
+            <div className="flex items-center justify-between p-4 rounded-xl border border-[var(--sidebar-border)] bg-slate-50/60 dark:bg-slate-800/40">
+              <div className="space-y-0.5 pr-4">
+                <label className="text-sm font-semibold text-[var(--foreground)] cursor-pointer select-none">
+                  Enable Onboarding Stepper
+                </label>
+                <p className="text-xs text-[var(--sidebar-muted)]">
+                  When enabled, newly registered admins/users will see the workspace setup stepper. When disabled, they bypass straight to the dashboard.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEnableStepper((prev) => !prev)}
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
+                  enableStepper ? "bg-indigo-600" : "bg-slate-300 dark:bg-slate-700"
+                }`}
+                role="switch"
+                aria-checked={enableStepper}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                    enableStepper ? "translate-x-5" : "translate-x-0"
+                  }`}
+                />
+              </button>
+            </div>
 
             {/* Submit */}
             <div className="pt-4 border-t border-[var(--sidebar-border)]">
