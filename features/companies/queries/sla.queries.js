@@ -38,9 +38,11 @@ export const useEnableSla = () => {
   return useMutation({
     mutationFn: (companyId) => SlaApi.enableSla(companyId),
     onSuccess: (_, companyId) => {
-      queryClient.invalidateQueries({ queryKey: ["sla-statuses"] });
       queryClient.invalidateQueries({ queryKey: ["sla-config", companyId] });
+      queryClient.invalidateQueries({ queryKey: ["sla-statuses"] });
       queryClient.invalidateQueries({ queryKey: ["washroom-sla-config"] });
+      queryClient.invalidateQueries({ queryKey: ["dropdown-locations"] });
+      queryClient.invalidateQueries({ queryKey: ["locations"] });
     },
   });
 };
@@ -50,9 +52,11 @@ export const useDisableSla = () => {
   return useMutation({
     mutationFn: (companyId) => SlaApi.disableSla(companyId),
     onSuccess: (_, companyId) => {
-      queryClient.invalidateQueries({ queryKey: ["sla-statuses"] });
       queryClient.invalidateQueries({ queryKey: ["sla-config", companyId] });
+      queryClient.invalidateQueries({ queryKey: ["sla-statuses"] });
       queryClient.invalidateQueries({ queryKey: ["washroom-sla-config"] });
+      queryClient.invalidateQueries({ queryKey: ["dropdown-locations"] });
+      queryClient.invalidateQueries({ queryKey: ["locations"] });
     },
   });
 };
@@ -64,6 +68,9 @@ export const useUpdateSlaConfig = () => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["sla-config", variables.companyId] });
       queryClient.invalidateQueries({ queryKey: ["sla-statuses"] });
+      queryClient.invalidateQueries({ queryKey: ["washroom-sla-config"] });
+      queryClient.invalidateQueries({ queryKey: ["dropdown-locations"] });
+      queryClient.invalidateQueries({ queryKey: ["locations"] });
     },
   });
 };
@@ -85,7 +92,36 @@ export const useUpdateWashroomSlaConfig = () => {
   return useMutation({
     mutationFn: ({ locationId, configData }) =>
       SlaApi.updateWashroomSlaConfig(locationId, configData),
-    onSuccess: (_, variables) => {
+    onSuccess: (response, variables) => {
+      const respData = response?.data || response;
+      const newConfig = respData?.configuration || variables.configData;
+
+      // 1. Instantly update all dropdown-locations query caches
+      queryClient.setQueriesData({ queryKey: ["dropdown-locations"] }, (oldData) => {
+        if (!Array.isArray(oldData)) return oldData;
+        return oldData.map((loc) => {
+          if (String(loc.id) === String(variables.locationId)) {
+            return {
+              ...loc,
+              sla_config: {
+                ...(loc.sla_config || {}),
+                enabled: variables.configData.enabled,
+                is_active: variables.configData.enabled,
+                threshold_score: variables.configData.threshold_score,
+                notify_cleaner: variables.configData.notify_cleaner,
+                notify_supervisor: variables.configData.notify_supervisor,
+                max_retry_attempts: variables.configData.max_retry_attempts,
+                max_score_updates_per_activity: variables.configData.max_score_updates_per_activity,
+                ...newConfig,
+              },
+            };
+          }
+          return loc;
+        });
+      });
+
+      // 2. Refetch in background to guarantee complete sync
+      queryClient.invalidateQueries({ queryKey: ["dropdown-locations"] });
       queryClient.invalidateQueries({ queryKey: ["washroom-sla-config", variables.locationId] });
       queryClient.invalidateQueries({ queryKey: ["location", variables.locationId] });
       queryClient.invalidateQueries({ queryKey: ["locations"] });

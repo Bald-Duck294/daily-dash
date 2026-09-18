@@ -28,6 +28,7 @@ function WashroomSlaFormContent({
   refetch,
   isSaving,
   updateMutation,
+  onWashroomUpdated,
 }) {
   const [isEnabled, setIsEnabled] = useState(() => Boolean(initialData?.enabled));
   const [thresholdScore, setThresholdScore] = useState(() =>
@@ -80,6 +81,7 @@ function WashroomSlaFormContent({
           : "Washroom custom SLA disabled. Reverted to Organization fallback."
       );
       await refetch();
+      onWashroomUpdated?.();
     } catch (err) {
       toast.error(
         err?.response?.data?.message ||
@@ -323,6 +325,7 @@ export default function WashroomSlaCard({
   selectedWashroom,
   companySlaEnabled = false,
   companyThreshold = 8.0,
+  onWashroomUpdated,
 }) {
   const washroom = selectedWashroom;
   const washroomId = washroom?.id;
@@ -384,6 +387,7 @@ export default function WashroomSlaCard({
           refetch={refetch}
           isSaving={isSaving}
           updateMutation={updateMutation}
+          onWashroomUpdated={onWashroomUpdated}
         />
       )}
     </div>

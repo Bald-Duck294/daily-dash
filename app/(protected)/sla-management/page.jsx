@@ -50,6 +50,7 @@ export default function SlaManagementPage() {
   const {
     data: locations = [],
     isLoading: isLoadingLocations,
+    refetch: refetchLocations,
   } = useDropdownLocations(effectiveCompanyId ? effectiveCompanyId : null);
 
   // Reset washroom when company changes
@@ -207,6 +208,7 @@ export default function SlaManagementPage() {
             selectedWashroom={selectedWashroom}
             companySlaEnabled={companySlaEnabled}
             companyThreshold={companyThreshold}
+            onWashroomUpdated={() => refetchLocations()}
           />
         </div>
       </div>
