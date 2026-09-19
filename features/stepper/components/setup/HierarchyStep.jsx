@@ -166,6 +166,16 @@ export default function HierarchyStep({
     setEditMode(false);
   };
 
+  
+  const handleNext = () => {
+    const validIds = new Set(localNodes.map(n => n.temp_id));
+    const sanitized = localNodes.map(n => ({
+      ...n,
+      parent_temp_id: validIds.has(n.parent_temp_id) ? n.parent_temp_id : null
+    }));
+    onNext(sanitized);
+  };
+
   const parentOptions = localNodes
     .filter((n) => n.temp_id !== editingNodeId) // Prevent a node from being its own parent during edit
     .map((n) => ({ id: n.temp_id, name: n.name, type: n.type }));
@@ -230,7 +240,7 @@ export default function HierarchyStep({
             </button>
           )}
           <button
-            onClick={() => onNext(localNodes)}
+            onClick={handleNext}
             className="flex items-center gap-2 text-sm font-bold text-white px-6 py-2.5 bg-green-600 rounded-lg hover:bg-green-700 transition-colors shadow-sm"
           >
             Continue <ArrowRight className="w-4 h-4" />
@@ -430,7 +440,7 @@ export default function HierarchyStep({
       {/* FOOTER CONTINUE BUTTON */}
       <div className="flex justify-end mt-8 pt-4 border-t border-slate-200">
         <button
-          onClick={() => onNext(localNodes)}
+          onClick={handleNext}
           className="w-full md:w-auto inline-flex items-center justify-center gap-2 font-bold text-sm rounded-lg bg-green-600 text-white px-8 py-3.5 md:py-3 hover:bg-green-700 transition-colors shadow-sm"
         >
           Continue to Washrooms ➔

@@ -18,76 +18,99 @@ export const useAuthSuccess = () => {
     }
 
     if (token) localStorage.setItem("token", token);
-
-    // Fetch latest onboarding status from API
-    let onboardingStatusData = null;
-    try {
-      const obStatus = await AuthApi.getOnboardingStatus();
-      if (obStatus.success && obStatus.data) {
-        onboardingStatusData = obStatus.data;
-      }
-    } catch (e) {
-      console.error("Failed to fetch onboarding status", e);
-    }
-
     dispatch(loginSuccess(user));
 
     const roleId = parseInt(user?.role_id);
 
-    // ✅ Extract company data correctly
-    const companyData =
-      onboardingStatusData?.company ||
-      fullResponse?.company ||
-      user?.companies ||
-      user?.company ||
-      {};
-
-    // Check strict boolean true to ensure it ignores undefined
-    let isOnboardingDone = companyData?.is_onboarding_completed === true;
-
-    if (
-      onboardingStatusData &&
-      onboardingStatusData.is_onboarding_completed !== undefined
-    ) {
-      isOnboardingDone = onboardingStatusData.is_onboarding_completed === true;
+    // 1. Super Admin (Role 1)
+    if (roleId === 1) {
+      toast.success(`Welcome back, ${user.name || "Admin"}!`);
+      router.push("/dashboard");
+      return;
     }
 
-    const hasMetadata =
-      companyData?.metadata?.organization_type ||
-      companyData?.onboarding_metadata?.organization_type;
-    const companyName = companyData?.name;
+    // 2. Client Admin (Role 2) - Smart Onboarding Flow
+    if (roleId === 2) {
+      let nextStep =
+        fullResponse?.nextStep ||
+        fullResponse?.data?.nextStep;
 
-    // OLD COMPANY CHECK:
-    // If it has a real name but metadata is null (and is_onboarding_completed is false/null),
-    // it's an old company already operating. We bypass the stepper.
-    const isOldCompany =
-      companyName && companyName !== "Pending Setup" && !hasMetadata;
+      let onboardingData = null;
+      try {
+        const obStatus = await AuthApi.getOnboardingStatus();
+        if (obStatus.success && obStatus.data) {
+          onboardingData = obStatus.data;
+          if (onboardingData.nextStep) {
+            nextStep = onboardingData.nextStep;
+          }
+        }
+      } catch (e) {
+        console.error("Failed to fetch onboarding status", e);
+      }
 
-    if (isOldCompany) {
-      isOnboardingDone = true;
-    }
+      // Fallback calculation if nextStep wasn't returned
+      if (!nextStep) {
+        const companyData =
+          onboardingData?.company ||
+          fullResponse?.company ||
+          fullResponse?.data?.company ||
+          user?.companies ||
+          user?.company ||
+          {};
 
-    if (roleId === 2 && !isOnboardingDone) {
-      if (!hasMetadata || companyName === "Pending Setup" || !companyName) {
+        const isOnboardingDone =
+          companyData?.is_onboarding_completed === true ||
+          onboardingData?.isOnboardingCompleted === true ||
+          onboardingData?.workspaceExists === true;
+
+        const hasMetadata = Boolean(
+          companyData?.metadata?.organization_type ||
+          companyData?.onboarding_metadata?.organization_type
+        );
+        const companyName = companyData?.name;
+
+        if (isOnboardingDone) {
+          nextStep = "dashboard";
+        } else if (!hasMetadata || companyName === "Pending Setup" || !companyName) {
+          nextStep = "company";
+        } else {
+          nextStep = "workspace";
+        }
+      }
+
+      // 🚀 REDIRECT BASED ON SMART ONBOARDING STATUS
+      if (nextStep === "company") {
         toast("Please complete your company profile.");
-        // router.push("/company-setup");
-      } else {
+        router.push("/company-setup");
+        return;
+      }
+
+      if (nextStep === "workspace") {
         toast("Resuming workspace setup...");
         router.push("/stepper");
+        return;
+      }
+
+      // Complete -> Dashboard
+      toast.success(`Welcome back, ${user.name}!`);
+      if (user?.company_id) {
+        router.push(`/clientDashboard/${user.company_id}`);
+      } else {
+        toast.error("No company assigned. Contact support.");
+        dispatch(loginFailure("No company"));
       }
       return;
     }
 
+    // 3. Any other role (e.g. Supervisor)
     toast.success(`Welcome back, ${user.name}!`);
-    if (roleId === 1) {
-      router.push("/dashboard");
-    } else if (user?.company_id) {
+    if (user?.company_id) {
       router.push(`/clientDashboard/${user.company_id}`);
     } else {
-      toast.error("No company assigned. Contact support.");
-      dispatch(loginFailure("No company"));
+      router.push("/dashboard");
     }
   };
 
   return handleAuthSuccess;
 };
+

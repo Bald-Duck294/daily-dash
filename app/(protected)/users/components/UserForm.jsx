@@ -58,35 +58,32 @@ export default function UserForm({
   // 1. Initialize Form Data
   useEffect(() => {
     if (initialData) {
+      // Safely extract active assigned location IDs as string array
+      const existingLocIds = (initialData.location_assignments || [])
+        .filter((a) => a.is_active !== false && (a.is_active || a.status === "assigned"))
+        .map((a) => {
+          const rawId = a.location_id || a.locations?.id || a.location?.id || a.id;
+          return rawId ? rawId.toString() : null;
+        })
+        .filter(Boolean);
+
       setFormData({
         name: initialData.name || "",
         email: initialData.email || "",
         password: "",
         phone: initialData.phone || "",
-        role_id: initialData.role_id || "",
-        company_id: companyId,
-        location_ids:
-          initialData.location_assignments
-            ?.filter((a) => a.is_active)
-            .map((a) => a.location_id.toString()) || [],
+        role_id: initialData.role_id ? initialData.role_id.toString() : "",
+        company_id: companyId || initialData.company_id,
+        location_ids: existingLocIds,
       });
     }
   }, [initialData, companyId]);
 
   // 2. Handle Location Assignment Visibility
   useEffect(() => {
-    const isSuperadmin = currentUser?.role_id === 1;
-
-    const selectedRole = allRoles.find(
-      (r) => r.id.toString() === formData.role_id.toString(),
-    );
-
-    const hasPermissionToAssign =
-      isSuperadmin ||
-      (selectedRole && ["Admin", "Supervisor"].includes(selectedRole.name));
-
-    setCanAssignLocation(hasPermissionToAssign);
-  }, [formData.role_id, allRoles, currentUser]);
+    // Anyone authorized to manage users can assign locations to staff across all roles
+    setCanAssignLocation(true);
+  }, []);
 
   // --- EVENT HANDLERS ---
   const handleChange = (e) => {
@@ -101,12 +98,17 @@ export default function UserForm({
 
   const handleLocationChange = (e) => {
     const { value, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      location_ids: checked
-        ? [...prev.location_ids, value]
-        : prev.location_ids.filter((id) => id !== value),
-    }));
+    const strVal = value.toString();
+    setFormData((prev) => {
+      const currentList = (prev.location_ids || []).map(String);
+      const updated = checked
+        ? Array.from(new Set([...currentList, strVal]))
+        : currentList.filter((id) => id !== strVal);
+      return {
+        ...prev,
+        location_ids: updated,
+      };
+    });
   };
 
   const isFormValid = () => {
@@ -119,11 +121,30 @@ export default function UserForm({
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    // 🆕 Never send empty string on email: convert empty or whitespace to null
+    const cleanedEmail =
+      formData.email && typeof formData.email === "string" && formData.email.trim().length > 0
+        ? formData.email.trim()
+        : null;
+
+    const cleanedPassword =
+      formData.password && typeof formData.password === "string" && formData.password.trim().length > 0
+        ? formData.password.trim()
+        : undefined;
+
     const dataToSend = {
       ...formData,
-      company_id: companyId,
-      role_id: formData.role_id ? parseInt(formData.role_id) : null,
+      email: cleanedEmail,
+      company_id: companyId || formData.company_id,
+      role_id: formData.role_id ? parseInt(formData.role_id, 10) : null,
+      location_ids: (formData.location_ids || []).map(String),
     };
+
+    if (isEditing && !cleanedPassword) {
+      delete dataToSend.password;
+    }
+
     onSubmit(dataToSend);
   };
 
@@ -223,13 +244,17 @@ export default function UserForm({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className={labelClass} style={{ color: "var(--user-form-label)" }}>
-              Email
+              Email (Optional)
             </label>
             <input
               type="email"
               name="email"
-              value={formData.email}
+              value={formData.email || ""}
               onChange={handleChange}
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck={false}
               className={inputClass}
               style={{
                 background: "var(--user-form-input-bg)",
@@ -394,9 +419,9 @@ export default function UserForm({
                     type="checkbox"
                     name="location_ids"
                     value={loc.id.toString()}
-                    checked={formData.location_ids.includes(loc.id.toString())}
+                    checked={(formData.location_ids || []).map(String).includes(loc.id.toString())}
                     onChange={handleLocationChange}
-                    className="h-4 w-4 rounded"
+                    className="h-4 w-4 rounded cursor-pointer"
                     style={{ accentColor: "var(--user-form-success)" }}
                   />
                   <span className="text-sm font-medium">{loc.name}</span>

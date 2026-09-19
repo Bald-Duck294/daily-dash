@@ -134,3 +134,19 @@ export function useResetCompanyWorkspace() {
     },
   });
 }
+
+// 9. Toggle Stepper Onboarding
+export function useToggleCompanyStepper() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (companyId) => {
+      const response = await CompanyApi.toggleCompanyStepper(companyId);
+      return response.data;
+    },
+    onSuccess: (data, companyId) => {
+      queryClient.invalidateQueries({ queryKey: ["companies"] });
+      queryClient.invalidateQueries({ queryKey: ["company", companyId] });
+    },
+  });
+}

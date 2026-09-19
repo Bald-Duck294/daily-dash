@@ -14,13 +14,13 @@ import {
   useDeleteCompany,
   useToggleCompanyStatus,
   useResetCompanyWorkspace,
+  useToggleCompanyStepper,
 } from "@/features/companies/queries/companies.queries";
 
 import CompaniesHeader from "@/features/companies/components/CompaniesHeader";
 import CompaniesToolbar from "@/features/companies/components/CompaniesToolbar";
 import CompaniesTable from "@/features/companies/components/CompaniesTable";
 import CompaniesCards from "@/features/companies/components/CompaniesCards";
-import { useSlaStatuses } from "@/features/companies/queries/sla.queries";
 
 export default function CompaniesPage() {
   const router = useRouter();
@@ -97,7 +97,23 @@ export default function CompaniesPage() {
   const deleteCompany = useDeleteCompany();
   const toggleStatus = useToggleCompanyStatus();
   const resetWorkspace = useResetCompanyWorkspace();
-  const { data: slaStatuses = [] } = useSlaStatuses();
+  const toggleStepper = useToggleCompanyStepper();
+
+  /* ---------------- HANDLERS: STEPPER TOGGLE ---------------- */
+  const handleToggleStepper = (id) => {
+    toggleStepper.mutate(id, {
+      onSuccess: () => {
+        toast.success("Stepper onboarding setting updated.");
+      },
+      onError: (error) => {
+        const msg =
+          error?.response?.data?.message ||
+          error?.message ||
+          "Failed to update stepper setting.";
+        toast.error(msg);
+      },
+    });
+  };
 
   /* ---------------- HANDLERS: DELETE ---------------- */
   const handleDelete = (id) => setCompanyToDelete(id);
@@ -284,7 +300,7 @@ export default function CompaniesPage() {
               onToggleStatus={handleStatusToggle}
               onView={handleViewCompany}
               onReset={handleReset}
-              slaStatuses={slaStatuses}
+              onToggleStepper={handleToggleStepper}
               sortField={sortField}
               sortOrder={sortOrder}
               onSortChange={handleSortChange}
@@ -301,7 +317,9 @@ export default function CompaniesPage() {
               onToggleStatus={handleStatusToggle}
               onView={handleViewCompany}
               onReset={handleReset}
-              slaStatuses={slaStatuses}
+              onToggleStepper={handleToggleStepper}
+              currentPage={page}
+              pageSize={PAGE_SIZE}
             />
           </div>
 

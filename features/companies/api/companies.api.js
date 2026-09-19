@@ -197,4 +197,14 @@ export const CompanyApi = {
       throw err;
     }
   },
+
+  // TOGGLE STEPPER ONBOARDING (mutation)
+  toggleCompanyStepper: async (id) => {
+    try {
+      const response = await axiosInstance.post(`/companies/${id}/toggle-stepper`);
+      return { success: true, data: response.data };
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  },
 };
