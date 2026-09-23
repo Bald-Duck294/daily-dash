@@ -20,49 +20,47 @@ export default function useNotifications() {
     (state) => state.notifications,
   );
 
-  const isInitialized = useRef(false);
+  const initializedUserId = useRef(null);
   const processedMessageIds = useRef(new Set()); // ✅ Track processed messages
   const [saveFCMToken] = useSaveFCMTokenMutation();
 
   useEffect(() => {
     if (!isAuthenticated || !user || !user.id) {
       console.log("⚠️ User not authenticated, skipping FCM initialization");
-      isInitialized.current = false;
-      return;
-    }
-    if (isInitialized.current) {
-      //  console.log("⏭️ FCM already initialized, skipping...");
+      initializedUserId.current = null;
       return;
     }
 
-    if (!user || !user.id) {
-      console.log("⚠️ User not logged in, skipping FCM initialization");
+    // ✅ Prevent duplicate initialization for the same user (fixes React Strict Mode double-run)
+    if (initializedUserId.current === user.id) {
       return;
     }
 
     console.log("🚀 Initializing FCM for user:", user.id);
-    isInitialized.current = true;
+    initializedUserId.current = user.id;
 
     let unsubscribeFCM = () => { };
 
     const initializeFCM = async () => {
+      console.log("⏳ Requesting FCM token...");
       const token = await requestFCMToken();
-      // console.log("🔑 FCM Token received");
+      console.log("🔑 FCM Token result:", token ? `${token.substring(0, 20)}...` : "null");
 
       if (token) {
         dispatch(setFCMToken(token));
 
         try {
-          await saveFCMToken({
+          console.log("📤 Sending FCM token to backend for user:", user.id);
+          const response = await saveFCMToken({
             fcmToken: token,
             userId: user.id,
-          }).unwrap()
-            .then((payload) => console.log('fulfilled', payload))
-            .catch((error) => console.error('rejected', error));
-          // console.log("✅ FCM token saved to backend");
+          }).unwrap();
+          console.log("✅ FCM token successfully saved to backend:", response);
         } catch (error) {
-          console.error("❌ Error saving FCM token:", error);
+          console.error("❌ Backend rejected FCM token:", error);
         }
+      } else {
+        console.warn("⚠️ FCM token was null. Check notification permissions and SW logs above.");
       }
 
       // ✅ Helper function to add notification (prevents duplicates)
@@ -175,13 +173,10 @@ export default function useNotifications() {
     const cleanupSWListener = initializeFCM();
 
     return () => {
-      //  console.log("🧹 Cleaning up FCM");
       unsubscribeFCM();
       cleanupSWListener?.then((cleanup) => cleanup?.());
-      isInitialized.current = false;
-      processedMessageIds.current.clear();
     };
-  }, [user?.id, isAuthenticated, dispatch, saveFCMToken, router]);
+  }, [user?.id, isAuthenticated]);
 
   return {
     notifications,

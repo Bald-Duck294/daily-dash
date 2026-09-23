@@ -3,8 +3,8 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 // import API_BASE_URL from "@/lib/utils/Constant";
 // 'http://localhost:8000/api'
 // const API_BASE_URL = "https://saaf-ai-backend.vercel.app/api"
-const API_BASE_URL = "https://dash-backend-five.vercel.app/api"
-// const API_BASE_URL = "http://localhost:8000/api"
+// const API_BASE_URL = "https://dash-backend-five.vercel.app/api"
+const API_BASE_URL = "http://localhost:8000/api"
 
 export const notificationApi = createApi({
   reducerPath: "notificationApi",
@@ -34,12 +34,12 @@ export const notificationApi = createApi({
       invalidatesTags: ["FCMToken"],
     }),
     deleteFCMToken: builder.mutation({
-      query: ({ userId }) => {
-        console.log(userId, "userId");
+      query: ({ userId, fcmToken }) => {
+        console.log("🗑️ Deleting FCM token for user:", userId, "Token:", fcmToken);
         return {
           url: "/fcm/delete-fcm-token",
           method: "DELETE",
-          body: { userId },
+          body: { userId, fcm_token: fcmToken },
         };
       },
       invalidatesTags: ["FCMToken"],

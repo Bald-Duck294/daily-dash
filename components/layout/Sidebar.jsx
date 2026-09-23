@@ -7,6 +7,9 @@ import React, { useEffect, useMemo, useState, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useRouter, usePathname } from "next/navigation";
 import { logout } from "@/features/auth/auth.slice";
+import { deleteFCMToken } from "@/shared/firebase/fcm";
+import { useDeleteFCMTokenMutation } from "@/features/notification/notification.api";
+import { resetNotifications } from "@/features/notification/notification.slice";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -39,6 +42,8 @@ const Sidebar = () => {
   const sidebarRef = useRef(null);
 
   const { user } = useSelector((state) => state.auth);
+  const { fcmToken } = useSelector((state) => state.notifications);
+  const [deleteFcmTokenFromBackend] = useDeleteFCMTokenMutation();
   const dispatch = useDispatch();
   const router = useRouter();
   const pathname = usePathname();
@@ -273,9 +278,45 @@ const Sidebar = () => {
   };
 
   // Logout handler
-  const handleLogout = () => {
-    dispatch(logout());
-    router.push("/login");
+  const handleLogout = async () => {
+    try {
+      await deleteFCMToken();
+
+      if (user?.id) {
+        try {
+          await deleteFcmTokenFromBackend({ userId: user?.id, fcmToken }).unwrap();
+          console.log("✅ FCM token deactivated on logout");
+        } catch (error) {
+          console.error("❌ Error deactivating FCM token:", error);
+        }
+
+        dispatch(resetNotifications());
+        dispatch(logout());
+
+        localStorage.removeItem("authToken");
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+
+        if ("serviceWorker" in navigator) {
+          const registrations =
+            await navigator.serviceWorker.getRegistrations();
+          for (const registration of registrations) {
+            if (registration.scope.includes("firebase-cloud-messaging")) {
+              await registration.unregister();
+              console.log("✅ Service worker unregistered");
+            }
+          }
+        }
+      } else {
+        dispatch(logout());
+      }
+
+      router.push("/login");
+    } catch (error) {
+      console.error("❌ Error during logout:", error);
+      dispatch(logout());
+      router.push("/login");
+    }
   };
 
   return (

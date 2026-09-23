@@ -259,6 +259,7 @@ const Header = ({ pageTitle }) => {
   const [deleteFcmTokenFromBackend] = useDeleteFCMTokenMutation();
 
   const { user } = useSelector((state) => state.auth);
+  const { fcmToken } = useSelector((state) => state.notifications);
 
   useNotifications();
 
@@ -286,7 +287,7 @@ const Header = ({ pageTitle }) => {
 
       if (user?.id) {
         try {
-          await deleteFcmTokenFromBackend({ userId: user?.id }).unwrap();
+          await deleteFcmTokenFromBackend({ userId: user?.id, fcmToken }).unwrap();
         } catch (error) {
           console.log(error, "error");
         }

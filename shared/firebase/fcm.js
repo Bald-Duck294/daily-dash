@@ -15,116 +15,115 @@ const VAPID_KEY = "BOXjoc6B-HK4cy2cYKu8IR8ZeOkLmPPkC7wtj1jIt9hSJcKvK53wTNvV2ddlL
  */
 const ensureServiceWorkerReady = async () => {
     if (!('serviceWorker' in navigator)) {
-       // //console.log("⚠️ Service Worker not supported");
+        console.warn("⚠️ Service Worker not supported in this browser");
         return null;
     }
 
     try {
-        //console.log("📝 Registering service worker...");
-        
-        // Register the service worker
+        console.log("📝 Registering service worker /firebase-messaging-sw.js...");
         const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-        //console.log("✅ Service worker registered:", registration.scope);
+        console.log("✅ Service worker registered:", registration.scope);
 
-        // Wait for it to be ready
         await navigator.serviceWorker.ready;
-        //console.log("✅ Service worker is ready");
+        console.log("✅ Service worker is ready");
 
         return registration;
     } catch (error) {
-        //console.error("❌ Service worker registration failed:", error);
+        console.error("❌ Service worker registration failed:", error);
         return null;
     }
 };
+
+let inFlightTokenPromise = null;
 
 /**
  * Request FCM token
  */
 export const requestFCMToken = async () => {
-    //console.log("🎯 requestFCMToken called");
-    
-    if (!messaging) {
-        //console.warn("❌ FCM messaging not available");
-        return null;
+    if (inFlightTokenPromise) {
+        console.log("⏭️ FCM token request already in-flight, reusing existing request...");
+        return inFlightTokenPromise;
     }
 
+    inFlightTokenPromise = (async () => {
+        console.log("🎯 requestFCMToken called");
+        
+        if (!messaging) {
+            console.warn("❌ FCM messaging not available (window is undefined or init failed)");
+            return null;
+        }
+
+        try {
+            // Step 1: Check if Notification API exists
+            if (!("Notification" in window)) {
+                console.error("❌ Browser doesn't support notifications");
+                return null;
+            }
+
+            // Step 2: Check current permission
+            let permission = Notification.permission;
+            console.log("📋 Current notification permission:", permission);
+
+            // Step 3: Handle denied permission
+            if (permission === "denied") {
+                console.error("❌ Notification permission DENIED by user in browser settings. Please allow notifications for this site.");
+                return null;
+            }
+
+            // Step 4: Request permission if needed
+            if (permission === "default") {
+                console.log("📩 Requesting notification permission from user...");
+                permission = await Notification.requestPermission();
+                console.log("📋 Permission result:", permission);
+            }
+
+            // Step 5: If not granted, stop here
+            if (permission !== "granted") {
+                console.warn("❌ Notification permission not granted:", permission);
+                return null;
+            }
+            console.log("✅ Notification permission GRANTED");
+
+            // Step 6: Ensure service worker is ready
+            console.log("⏳ Ensuring service worker is ready...");
+            const registration = await ensureServiceWorkerReady();
+
+            if (!registration) {
+                console.error("❌ Service worker registration returned null");
+                return null;
+            }
+            console.log("✅ Service worker ready, requesting token from Firebase...");
+
+            // Step 7: Get FCM token
+            const token = await getToken(messaging, {
+                vapidKey: VAPID_KEY,
+                serviceWorkerRegistration: registration,
+            });
+
+            if (!token) {
+                console.error("❌ FCM token is null or empty from Firebase");
+                return null;
+            }
+
+            console.log("✅ FCM Token received successfully! (first 25 chars):", token.substring(0, 25) + "...");
+            return token;
+
+        } catch (error) {
+            console.error("❌ Error getting FCM token:", error);
+            console.error("❌ Error details:", { name: error.name, message: error.message, stack: error.stack });
+            
+            if (error.name === 'AbortError') {
+                console.error("💡 Hint: Service worker issue. Try clearing site cache or unregistering previous SW.");
+            }
+            
+            return null;
+        }
+    })();
+
     try {
-        // Step 1: Check if Notification API exists
-        if (!("Notification" in window)) {
-            //console.log("❌ Browser doesn't support notifications");
-            return null;
-        }
-        //console.log("✅ Notification API available");
-
-        // Step 2: Check current permission
-        let permission = Notification.permission;
-        //console.log("📋 Current notification permission:", permission);
-
-        // Step 3: Handle denied permission
-        if (permission === "denied") {
-            //console.log("❌ Notification permission DENIED by user");
-            //console.log("💡 User must manually enable notifications in browser settings");
-            return null;
-        }
-
-        // Step 4: Request permission if needed
-        if (permission === "default") {
-            //console.log("📩 Requesting notification permission...");
-            permission = await Notification.requestPermission();
-            //console.log("📋 Permission result:", permission);
-        }
-
-        // Step 5: If not granted, stop here
-        if (permission !== "granted") {
-            //console.log("❌ Notification permission not granted:", permission);
-            return null;
-        }
-        //console.log("✅ Notification permission GRANTED");
-
-        // Step 6: Ensure service worker is ready
-        //console.log("⏳ Ensuring service worker is ready...");
-        const registration = await ensureServiceWorkerReady();
-
-        if (!registration) {
-            //console.error("❌ Service worker registration failed");
-            return null;
-        }
-        //console.log("✅ Service worker ready, proceeding to get token");
-
-        // Step 7: Get FCM token
-        //console.log("🔑 Requesting FCM token from Firebase...");
-        //console.log("📍 Using VAPID key:", VAPID_KEY.substring(0, 20) + "...");
-        
-        const token = await getToken(messaging, {
-            vapidKey: VAPID_KEY,
-            serviceWorkerRegistration: registration,
-        });
-
-        if (!token) {
-            //console.error("❌ FCM token is null or empty");
-            return null;
-        }
-
-        //console.log("✅ FCM Token received successfully!");
-        //console.log("🔑 Token (first 50 chars):", token.substring(0, 50) + "...");
-        //console.log("📏 Token length:", token.length);
-        
-        return token;
-
-    } catch (error) {
-        //console.error("❌ Error getting FCM token:", error);
-        //console.error("❌ Error name:", error.name);
-        //console.error("❌ Error message:", error.message);
-        //console.error("❌ Error stack:", error.stack);
-        
-        if (error.name === 'AbortError') {
-            //console.error("💡 Hint: Service worker issue. Try:");
-            //console.error("   1. Refresh the page");
-            //console.error("   2. Check if firebase-messaging-sw.js exists in /public");
-            //console.error("   3. Clear cache and reload (Ctrl+Shift+R)");
-        }
-        
-        return null;
+        return await inFlightTokenPromise;
+    } finally {
+        inFlightTokenPromise = null;
     }
 };
 
