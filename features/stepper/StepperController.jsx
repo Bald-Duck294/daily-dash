@@ -17,6 +17,7 @@ export default function StepperController() {
   const { user } = useSelector((state) => state.auth) || {};
 
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isDraftLoaded, setIsDraftLoaded] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [workspaceDraft, setWorkspaceDraft] = useState({
     hierarchy: [],
@@ -49,6 +50,7 @@ export default function StepperController() {
           users: parsed.workspaceDraft?.users || [],
         });
         setCurrentStep(parsed.currentStep || 1);
+        setIsDraftLoaded(true);
       }
     }
     setIsLoaded(true);
@@ -131,7 +133,9 @@ export default function StepperController() {
         {currentStep === 1 && (
           <HierarchyStep
             nodes={hierarchy}
-            companyProfile={user?.company || {}}
+            isDraftLoaded={isDraftLoaded}
+            companyProfile={user?.company || user?.companies || {}}
+            onChange={(updatedNodes) => updateDraft("hierarchy", updatedNodes)}
             onNext={(nodes) => handleNextStep(nodes, "hierarchy")}
           />
         )}

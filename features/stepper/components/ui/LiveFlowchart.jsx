@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/static-components */
 "use client";
 import React, { useState } from "react";
 import { Pencil } from "lucide-react";
@@ -192,9 +193,19 @@ export default function LiveFlowchart({
         }}
       >
         <div className="flex gap-6 md:gap-12 justify-center">
-          {treeData.map((root) => (
-            <TreeNode key={root.id} node={root} isEditable={isEditable} onEditNode={onEditNode} />
-          ))}
+          {treeData && treeData.length > 0 ? (
+            treeData.map((root) => (
+              <TreeNode key={root.id} node={root} isEditable={isEditable} onEditNode={onEditNode} />
+            ))
+          ) : (
+            <div className="flex flex-col items-center justify-center p-6 text-slate-400 bg-white/90 dark:bg-slate-800/90 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 shadow-sm max-w-sm text-center">
+              <span className="text-3xl mb-2">🏢</span>
+              <p className="font-bold text-xs text-slate-700 dark:text-slate-200">No locations added yet</p>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                Add your first location using the form on the left, or select a recommended preset above.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>
