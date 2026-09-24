@@ -9,9 +9,9 @@ import toast from "react-hot-toast";
 
 const axiosInstance = axios.create({
   // baseURL: "https://saaf-ai-backend.vercel.app/api",
-  baseURL: "http://localhost:8001/api",
+  // baseURL: "http://localhost:8001/api",
   // baseURL: "https://dash-backend-five.vercel.app/api",
-  // baseURL: "https://daily-dash-backend-development.vercel.app/api",
+  baseURL: "https://daily-dash-backend-development.vercel.app/api",
   headers: {
     "Content-Type": "application/json",
   },
