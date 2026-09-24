@@ -17,6 +17,7 @@ import { useCompanySlaConfig } from "@/features/companies/queries/sla.queries";
 import CompanySlaCard from "./components/CompanySlaCard";
 import WashroomSlaCard from "./components/WashroomSlaCard";
 import WashroomsSlaList from "./components/WashroomsSlaList";
+import EscalationConfigCard from "./components/escalation/EscalationConfigCard";
 
 export default function SlaManagementPage() {
   const { user } = useSelector((state) => state.auth);
@@ -213,6 +214,11 @@ export default function SlaManagementPage() {
         </div>
       </div>
 
+      {/* SLA Multi-Tier Escalation Hierarchy Section */}
+      <div id="escalation-hierarchy-section">
+        <EscalationConfigCard selectedCompany={selectedCompany} />
+      </div>
+
       {/* List of Active / Setup Washroom SLAs */}
       <WashroomsSlaList
         locations={locations}
@@ -246,9 +252,15 @@ export default function SlaManagementPage() {
               </li>
               <li>
                 <strong className="text-slate-800 dark:text-slate-200">
-                  Clear App Instant Notifications:
+                  Automated Escalation Routing:
                 </strong>{" "}
-                Whenever a cleaner review or user QR feedback generates an inspection score below the effective threshold (e.g. below 7.0 / 10), an immediate breach push notification is sent to the assigned cleaner&apos;s Clear App.
+                When an SLA breach is triggered, the system snapshots the active hierarchy and routes notifications through defined levels (Cleaner &rarr; Supervisor &rarr; Admin) on chronological delay timers.
+              </li>
+              <li>
+                <strong className="text-slate-800 dark:text-slate-200">
+                  Corrective Cleaning Retries:
+                </strong>{" "}
+                Ground staff can submit corrective cleanings up to the configured max retry attempts. Passing inspections immediately resolve and close the escalation.
               </li>
             </ul>
           </div>

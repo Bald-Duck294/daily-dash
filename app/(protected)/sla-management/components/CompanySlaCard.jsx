@@ -23,7 +23,7 @@ function CompanySlaFormContent({
   updateMutation,
 }) {
   const [threshold, setThreshold] = useState(() => Number(config.threshold_score ?? 8.0));
-  const [maxRetries, setMaxRetries] = useState(() => Number(config.max_retry_attempts ?? 1));
+  const [maxRetries, setMaxRetries] = useState(() => Number(config.max_retry_attempts ?? 2));
   const [maxUpdates, setMaxUpdates] = useState(() => Number(config.max_score_updates_per_activity ?? 1));
   const [notifyCleaner, setNotifyCleaner] = useState(() => config.notify_cleaner !== false);
   const [notifySupervisor, setNotifySupervisor] = useState(() => config.notify_supervisor !== false);
@@ -97,6 +97,14 @@ function CompanySlaFormContent({
               >
                 {isEnabled ? "Master SLA: ACTIVE" : "Master SLA: INACTIVE"}
               </span>
+              {config?.escalation?.enabled && (
+                <a
+                  href="#escalation-hierarchy-section"
+                  className="px-2 py-0.5 text-[11px] font-bold rounded-full border bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/50 dark:text-purple-300 dark:border-purple-800 hover:opacity-85 transition-opacity"
+                >
+                  Escalation ({config.escalation.levels?.length || 0} Levels) ↓
+                </a>
+              )}
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
               <span className="font-semibold text-slate-700 dark:text-slate-300">{companyName}</span> &bull; Governs organization-wide cleaning standards and serves as default fallback.
