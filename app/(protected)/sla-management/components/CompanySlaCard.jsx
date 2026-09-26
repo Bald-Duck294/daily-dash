@@ -29,40 +29,72 @@ function CompanySlaFormContent({
   const [notifySupervisor, setNotifySupervisor] = useState(() => config.notify_supervisor !== false);
 
   const handleToggleSla = async (checked) => {
-    if (!companyId) return;
+    if (!companyId) {
+      toast.error("Company not selected");
+      return;
+    }
     try {
       if (checked) {
         await enableMutation.mutateAsync(companyId);
-        toast.success(`SLA enabled for ${companyName}`);
+        toast.success(`Master SLA enabled for ${companyName}`);
       } else {
         await disableMutation.mutateAsync(companyId);
-        toast.success(`SLA disabled for ${companyName}`);
+        toast.success(`Master SLA disabled for ${companyName}`);
       }
       refetch();
     } catch (err) {
-      toast.error(err.message || "Failed to toggle organization SLA");
+      toast.error(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Failed to toggle organization SLA"
+      );
     }
   };
 
   const handleSaveConfig = async (e) => {
     e.preventDefault();
-    if (!companyId) return;
+    if (!companyId) {
+      toast.error("Company not selected");
+      return;
+    }
+
+    const numericThreshold = parseFloat(threshold);
+    if (isNaN(numericThreshold) || numericThreshold < 0 || numericThreshold > 10) {
+      toast.error("Threshold Score must be between 0.0 and 10.0");
+      return;
+    }
+
+    const numericRetries = parseInt(maxRetries, 10);
+    if (isNaN(numericRetries) || numericRetries < 0 || numericRetries > 10) {
+      toast.error("Max Corrective Retries must be between 0 and 10");
+      return;
+    }
+
+    const numericUpdates = parseInt(maxUpdates, 10);
+    if (isNaN(numericUpdates) || numericUpdates < 1 || numericUpdates > 10) {
+      toast.error("Max Score Updates must be between 1 and 10");
+      return;
+    }
 
     try {
       await updateMutation.mutateAsync({
         companyId,
         configData: {
-          threshold_score: parseFloat(threshold),
-          max_retry_attempts: parseInt(maxRetries, 10),
-          max_score_updates_per_activity: parseInt(maxUpdates, 10),
+          threshold_score: numericThreshold,
+          max_retry_attempts: numericRetries,
+          max_score_updates_per_activity: numericUpdates,
           notify_cleaner: notifyCleaner,
           notify_supervisor: notifySupervisor,
         },
       });
-      toast.success("Organization SLA baseline updated!");
+      toast.success("Organization SLA baseline updated successfully!");
       refetch();
     } catch (err) {
-      toast.error(err.message || "Failed to update SLA configuration");
+      toast.error(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Failed to update SLA configuration"
+      );
     }
   };
 

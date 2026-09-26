@@ -63,18 +63,21 @@ function EscalationFormContent({
     const prevDelay = levels.length > 0 ? levels[levels.length - 1].delay_minutes : 0;
     const newLevel = createDefaultLevel(levels.length + 1, prevDelay);
     setLevels((prev) => [...prev, newLevel]);
+    toast.success(`Added Level ${newLevel.level} (${newLevel.target_role})`);
   };
 
   const handleRemoveLevel = (index) => {
     if (levels.length <= 1) {
-      toast.error("At least one level is required");
+      toast.error("At least one escalation level is required");
       return;
     }
+    const removedLevelNum = index + 1;
     setLevels((prev) =>
       prev
         .filter((_, i) => i !== index)
         .map((lvl, idx) => ({ ...lvl, level: idx + 1 }))
     );
+    toast.success(`Removed Level ${removedLevelNum}`);
   };
 
   const handleMoveUp = (index) => {
@@ -107,7 +110,10 @@ function EscalationFormContent({
 
   const handleSave = async (e) => {
     e.preventDefault();
-    if (!companyId) return;
+    if (!companyId) {
+      toast.error("Company not selected");
+      return;
+    }
 
     if (!validation.isValid) {
       toast.error(validation.firstError || "Please resolve validation errors first");
@@ -130,10 +136,14 @@ function EscalationFormContent({
           },
         },
       });
-      toast.success("Escalation hierarchy saved successfully!");
+      toast.success("Escalation ladder updated successfully!");
       refetch();
     } catch (err) {
-      toast.error(err.message || "Failed to update escalation hierarchy");
+      toast.error(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Failed to update escalation hierarchy"
+      );
     }
   };
 

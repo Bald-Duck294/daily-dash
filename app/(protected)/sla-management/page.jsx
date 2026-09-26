@@ -14,6 +14,7 @@ import {
   useDropdownLocations,
 } from "@/features/dropdownList/dropdownlist.query";
 import { useCompanySlaConfig } from "@/features/companies/queries/sla.queries";
+import { Toaster } from "react-hot-toast";
 import CompanySlaCard from "./components/CompanySlaCard";
 import WashroomSlaCard from "./components/WashroomSlaCard";
 import WashroomsSlaList from "./components/WashroomsSlaList";
@@ -266,6 +267,18 @@ export default function SlaManagementPage() {
           </div>
         </div>
       </div>
+
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            fontSize: "13px",
+            fontWeight: "500",
+            borderRadius: "10px",
+          },
+        }}
+      />
     </div>
   );
 }

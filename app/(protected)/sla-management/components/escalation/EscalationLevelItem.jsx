@@ -121,13 +121,14 @@ export default function EscalationLevelItem({
               type="number"
               min="0"
               max="10080"
-              step="5"
+              step="1"
               value={level.delay_minutes}
-              onChange={(e) =>
+              onChange={(e) => {
+                const val = e.target.value === "" ? 0 : parseInt(e.target.value, 10);
                 onUpdate(index, {
-                  delay_minutes: Math.max(0, parseInt(e.target.value, 10) || 0),
-                })
-              }
+                  delay_minutes: isNaN(val) ? 0 : Math.max(0, val),
+                });
+              }}
               disabled={disabled}
               className={`w-full px-2.5 py-1.5 text-xs rounded-lg border bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none ${
                 !isDelayChronological
