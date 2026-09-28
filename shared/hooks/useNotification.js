@@ -40,9 +40,14 @@ export default function useNotifications() {
       return;
     }
 
-    console.log("🚀 [FCM HOOK] Initializing FCM for user:", user.id, "(Role:", user.role_id, ")");
+    console.log(
+      "🚀 [FCM HOOK] Initializing FCM for user:",
+      user.id,
+      "(Role:",
+      user.role_id,
+      ")",
+    );
     isInitialized.current = true;
-http://localhost/adminer/?pgsql=34.93.127.187&username=app_user&db=safai_pg&ns=public&sql=DELETE%20FROM%20%20sla_escalations%20
     let unsubscribeFCM = () => {};
 
     const initializeFCM = async () => {
@@ -53,30 +58,49 @@ http://localhost/adminer/?pgsql=34.93.127.187&username=app_user&db=safai_pg&ns=p
         dispatch(setFCMToken(token));
 
         try {
-          console.log("📤 [FCM HOOK] Dispatching saveFCMToken to backend for userId:", user.id);
+          console.log(
+            "📤 [FCM HOOK] Dispatching saveFCMToken to backend for userId:",
+            user.id,
+          );
           await saveFCMToken({
             fcmToken: token,
             userId: user.id,
           })
             .unwrap()
-            .then((payload) => console.log("✅ [FCM HOOK] FCM Token saved to backend successfully:", payload))
-            .catch((error) => console.error("❌ [FCM HOOK] Rejected saving FCM token:", error));
+            .then((payload) =>
+              console.log(
+                "✅ [FCM HOOK] FCM Token saved to backend successfully:",
+                payload,
+              ),
+            )
+            .catch((error) =>
+              console.error("❌ [FCM HOOK] Rejected saving FCM token:", error),
+            );
         } catch (error) {
           console.error("❌ [FCM HOOK] Error saving FCM token:", error);
         }
       }
 
       // ✅ Helper function to add notification (prevents duplicates)
-      const addNotificationToStore = (title, body, data, messageId, source = "FOREGROUND") => {
+      const addNotificationToStore = (
+        title,
+        body,
+        data,
+        messageId,
+        source = "FOREGROUND",
+      ) => {
         // Check if already processed
         if (messageId && processedMessageIds.current.has(messageId)) {
-          console.log("⏭️ [FCM NOTIFICATION] Duplicate message ignored (already processed):", messageId);
+          console.log(
+            "⏭️ [FCM NOTIFICATION] Duplicate message ignored (already processed):",
+            messageId,
+          );
           return;
         }
 
         console.log(
           `%c🔔 [FCM NOTIFICATION RECEIVED - ${source}]`,
-          "background: #222; color: #00ff88; font-weight: bold; font-size: 13px; padding: 4px 8px; border-radius: 4px;"
+          "background: #222; color: #00ff88; font-weight: bold; font-size: 13px; padding: 4px 8px; border-radius: 4px;",
         );
         console.log("📝 Title:", title);
         console.log("📄 Body:", body);
@@ -102,11 +126,15 @@ http://localhost/adminer/?pgsql=34.93.127.187&username=app_user&db=safai_pg&ns=p
           }
         }
 
-        console.log("✅ [FCM NOTIFICATION] Added to Redux store & Notification Center");
+        console.log(
+          "✅ [FCM NOTIFICATION] Added to Redux store & Notification Center",
+        );
       };
 
       // ✅ 1. Listen for FOREGROUND messages via onMessage
-      console.log("👂 [FCM HOOK] Setting up onMessage listener (foreground only)...");
+      console.log(
+        "👂 [FCM HOOK] Setting up onMessage listener (foreground only)...",
+      );
       unsubscribeFCM = listenToFCMMessages((payload) => {
         const currentAuth = store.getState?.()?.auth?.isAuthenticated;
         if (!currentAuth) {
@@ -114,7 +142,10 @@ http://localhost/adminer/?pgsql=34.93.127.187&username=app_user&db=safai_pg&ns=p
           return;
         }
 
-        console.log("🎉 [FCM HOOK] onMessage fired while tab is active (foreground):", payload);
+        console.log(
+          "🎉 [FCM HOOK] onMessage fired while tab is active (foreground):",
+          payload,
+        );
 
         const title =
           payload.notification?.title ||
@@ -125,13 +156,24 @@ http://localhost/adminer/?pgsql=34.93.127.187&username=app_user&db=safai_pg&ns=p
 
         const messageId = payload.messageId || payload.fcmMessageId;
 
-        addNotificationToStore(title, body, payload.data, messageId, "FOREGROUND");
+        addNotificationToStore(
+          title,
+          body,
+          payload.data,
+          messageId,
+          "FOREGROUND",
+        );
       });
 
       // ✅ 2. Listen for BACKGROUND messages from Service Worker
-      console.log("👂 [FCM HOOK] Setting up Service Worker message listener...");
+      console.log(
+        "👂 [FCM HOOK] Setting up Service Worker message listener...",
+      );
       const handleServiceWorkerMessage = (event) => {
-        console.log("📨 [FCM HOOK] Message received from Service Worker:", event.data);
+        console.log(
+          "📨 [FCM HOOK] Message received from Service Worker:",
+          event.data,
+        );
 
         // Handle background notifications
         if (event.data?.type === "FCM_NOTIFICATION_BACKGROUND") {
@@ -141,7 +183,10 @@ http://localhost/adminer/?pgsql=34.93.127.187&username=app_user&db=safai_pg&ns=p
 
         // Handle notification clicks
         if (event.data?.type === "NOTIFICATION_CLICKED") {
-          console.log("🖱️ [FCM HOOK] Notification clicked from SW:", event.data);
+          console.log(
+            "🖱️ [FCM HOOK] Notification clicked from SW:",
+            event.data,
+          );
           const { targetUrl } = event.data;
           if (targetUrl) {
             router.push(targetUrl);
