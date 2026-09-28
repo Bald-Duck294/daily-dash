@@ -157,19 +157,38 @@ let globalNotificationData = {};
 // ✅ Handle notification clicks - USE GLOBAL DATA
 
 messaging.onBackgroundMessage((payload) => {
-  console.log("[SW] Background message:", payload);
+  console.log("🌙 [SW Background Notification Received]:", payload);
 
-  const { title, body } = payload.notification || {};
+  const title = payload.notification?.title || payload.data?.title || "Cleaning Alert";
+  const body = payload.notification?.body || payload.data?.body || "";
   const data = payload.data || {};
 
   const notificationOptions = {
     body: body,
-    data: { ...data }, // << IMPORTANT
+    data: { ...data },
     icon: "/flo-mascot.webp",
     badge: "/flo-mascot.webp",
   };
 
   self.registration.showNotification(title, notificationOptions);
+
+  // Forward background notification event to all active clients/tabs for console logging & store update
+  self.clients.matchAll({ includeUncontrolled: true, type: "window" })
+    .then((clients) => {
+      clients.forEach((client) => {
+        client.postMessage({
+          type: "FCM_NOTIFICATION_BACKGROUND",
+          payload: {
+            title: title,
+            body: body,
+            data: data,
+            messageId: payload.messageId || payload.fcmMessageId || Date.now().toString(),
+            timestamp: new Date().toISOString(),
+          },
+        });
+      });
+    })
+    .catch((err) => console.error("Error posting message to window clients:", err));
 });
 
 // self.addEventListener('notificationclick', (event) => {

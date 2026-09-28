@@ -411,7 +411,9 @@ const Header = ({ pageTitle }) => {
           </span>
         </div>
 
-        {user?.role_id === 1 ? <NotificationBell className="ml-8" /> : null}
+        {[1, 2, 3, 6, 7, 8].includes(user?.role_id) ? (
+          <NotificationBell className="ml-8" />
+        ) : null}
 
         <div className="flex items-center gap-3">
           <button

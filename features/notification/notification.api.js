@@ -3,8 +3,8 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 // import API_BASE_URL from "@/lib/utils/Constant";
 // 'http://localhost:8000/api'
 // const API_BASE_URL = "https://saaf-ai-backend.vercel.app/api"
-const API_BASE_URL = "https://dash-backend-five.vercel.app/api"
-// const API_BASE_URL = "http://localhost:8000/api"
+// const API_BASE_URL = "https://dash-backend-five.vercel.app/api"
+const API_BASE_URL = "http://localhost:8001/api";
 
 export const notificationApi = createApi({
   reducerPath: "notificationApi",
@@ -12,7 +12,8 @@ export const notificationApi = createApi({
     baseUrl: API_BASE_URL,
     prepareHeaders: (headers, { getState }) => {
       // Get token from auth state
-      const token = getState().auth.token;
+      const state = getState();
+      const token = state.auth.user?.token || state.auth.token;
       if (token) {
         headers.set("authorization", `Bearer ${token}`);
       }
@@ -30,7 +31,8 @@ export const notificationApi = createApi({
           url: "/fcm/save-fcm-token",
           method: "POST",
           body: { fcm_token: fcmToken, user_id: userId },
-        }),
+        }
+      ),
       invalidatesTags: ["FCMToken"],
     }),
     deleteFCMToken: builder.mutation({

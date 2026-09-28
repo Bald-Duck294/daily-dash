@@ -40,40 +40,48 @@ export default function useNotifications() {
       return;
     }
 
-    console.log("🚀 Initializing FCM for user:", user.id);
+    console.log("🚀 [FCM HOOK] Initializing FCM for user:", user.id, "(Role:", user.role_id, ")");
     isInitialized.current = true;
-
-    let unsubscribeFCM = () => { };
+http://localhost/adminer/?pgsql=34.93.127.187&username=app_user&db=safai_pg&ns=public&sql=DELETE%20FROM%20%20sla_escalations%20
+    let unsubscribeFCM = () => {};
 
     const initializeFCM = async () => {
       const token = await requestFCMToken();
-      // console.log("🔑 FCM Token received");
+      console.log("🔑 [FCM HOOK] FCM Token received:", token);
 
       if (token) {
         dispatch(setFCMToken(token));
 
         try {
+          console.log("📤 [FCM HOOK] Dispatching saveFCMToken to backend for userId:", user.id);
           await saveFCMToken({
             fcmToken: token,
             userId: user.id,
-          }).unwrap()
-            .then((payload) => console.log('fulfilled', payload))
-            .catch((error) => console.error('rejected', error));
-          // console.log("✅ FCM token saved to backend");
+          })
+            .unwrap()
+            .then((payload) => console.log("✅ [FCM HOOK] FCM Token saved to backend successfully:", payload))
+            .catch((error) => console.error("❌ [FCM HOOK] Rejected saving FCM token:", error));
         } catch (error) {
-          console.error("❌ Error saving FCM token:", error);
+          console.error("❌ [FCM HOOK] Error saving FCM token:", error);
         }
       }
 
       // ✅ Helper function to add notification (prevents duplicates)
-      const addNotificationToStore = (title, body, data, messageId) => {
+      const addNotificationToStore = (title, body, data, messageId, source = "FOREGROUND") => {
         // Check if already processed
         if (messageId && processedMessageIds.current.has(messageId)) {
-          //  console.log("⏭️ Message already processed:", messageId);
+          console.log("⏭️ [FCM NOTIFICATION] Duplicate message ignored (already processed):", messageId);
           return;
         }
 
-        // console.log("📝 Adding to Redux - Title:", title, "Body:", body);
+        console.log(
+          `%c🔔 [FCM NOTIFICATION RECEIVED - ${source}]`,
+          "background: #222; color: #00ff88; font-weight: bold; font-size: 13px; padding: 4px 8px; border-radius: 4px;"
+        );
+        console.log("📝 Title:", title);
+        console.log("📄 Body:", body);
+        console.log("📦 Data / Payload:", data);
+        console.log("🆔 Message ID:", messageId);
 
         dispatch(
           addNotification({
@@ -94,20 +102,19 @@ export default function useNotifications() {
           }
         }
 
-        //    console.log("✅ Notification added to Redux");
+        console.log("✅ [FCM NOTIFICATION] Added to Redux store & Notification Center");
       };
 
       // ✅ 1. Listen for FOREGROUND messages via onMessage
-      //  console.log("👂 Setting up onMessage listener (foreground only)...");
+      console.log("👂 [FCM HOOK] Setting up onMessage listener (foreground only)...");
       unsubscribeFCM = listenToFCMMessages((payload) => {
         const currentAuth = store.getState?.()?.auth?.isAuthenticated;
         if (!currentAuth) {
-          //      console.log("⚠️ User logged out, ignoring notification");
+          console.log("⚠️ [FCM HOOK] User logged out, ignoring notification");
           return;
         }
 
-        //    console.log("🎉 onMessage FIRED - Tab is ACTIVE (foreground)");
-        //     console.log("📦 Payload:", JSON.stringify(payload, null, 2));
+        console.log("🎉 [FCM HOOK] onMessage fired while tab is active (foreground):", payload);
 
         const title =
           payload.notification?.title ||
@@ -118,38 +125,27 @@ export default function useNotifications() {
 
         const messageId = payload.messageId || payload.fcmMessageId;
 
-        addNotificationToStore(title, body, payload.data, messageId);
+        addNotificationToStore(title, body, payload.data, messageId, "FOREGROUND");
       });
 
       // ✅ 2. Listen for BACKGROUND messages from Service Worker
-      // console.log("👂 Setting up Service Worker message listener (background only)...");
+      console.log("👂 [FCM HOOK] Setting up Service Worker message listener...");
       const handleServiceWorkerMessage = (event) => {
-        //    console.log("📨 Message from SW:", event.data);
+        console.log("📨 [FCM HOOK] Message received from Service Worker:", event.data);
 
         // Handle background notifications
         if (event.data?.type === "FCM_NOTIFICATION_BACKGROUND") {
-          //      console.log("🌙 Background notification from SW (tab was not active)");
           const { title, body, data, messageId } = event.data.payload;
-
-          addNotificationToStore(title, body, data, messageId);
+          addNotificationToStore(title, body, data, messageId, "BACKGROUND_SW");
         }
 
         // Handle notification clicks
         if (event.data?.type === "NOTIFICATION_CLICKED") {
-          //   console.log("🖱️ Notification clicked!");
-          // Handle navigation if needed
-          // e.g., router.push(event.data.data.screen);
-
-          const { data, targetUrl } = event.data;
-          // console.log("🚀 Navigating to:", targetUrl);
-
+          console.log("🖱️ [FCM HOOK] Notification clicked from SW:", event.data);
+          const { targetUrl } = event.data;
           if (targetUrl) {
             router.push(targetUrl);
           }
-          // if (data) {
-          //   console.log("📍 Notification data:", data);
-          //   // Optional: You can dispatch actions or show toast notifications here
-          // }
         }
       };
 
@@ -160,7 +156,7 @@ export default function useNotifications() {
         );
       }
 
-      // console.log("✅ All message listeners setup complete");
+      console.log("✅ [FCM HOOK] All FCM listeners initialized and ready!");
 
       return () => {
         if ("serviceWorker" in navigator) {
@@ -175,7 +171,7 @@ export default function useNotifications() {
     const cleanupSWListener = initializeFCM();
 
     return () => {
-      //  console.log("🧹 Cleaning up FCM");
+      console.log("🧹 [FCM HOOK] Cleaning up FCM hook");
       unsubscribeFCM();
       cleanupSWListener?.then((cleanup) => cleanup?.());
       isInitialized.current = false;

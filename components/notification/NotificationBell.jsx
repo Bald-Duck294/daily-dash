@@ -67,36 +67,31 @@ const NotificationBell = () => {
     setIsOpen(false);
 
     if (notification.data) {
-      // ✅ CORRECT - Access the clicked notification's data
-      const { type, reviewId } = notification.data;
-      //  console.log("notification 💡💡💡", type, " reviewId", reviewId);
+      const { type, reviewId, taskId } = notification.data;
 
-      switch (type) {
-        case "review":
-          if (reviewId && companyId) {
-            const url = `/score-management?reviewId=${reviewId}&autoOpen=true`;
-            //console.log("🚀 Navigating to:", url);
-            router.push(url);
-            // router.push(`/cleaner-review/${reviewId}?companyId=${companyId}`)
-          } else {
-            //console.log('company_id', companyId);
-            //console.log('review_id', reviewId);
-            toast.error("Either reviewId or company id not provided");
-          }
-          break;
-
-        // Add other cases as needed
-        case "task":
-          if (notification.data.taskId && companyId) {
-            router.push(
-              `/tasks/${notification.data.taskId}?companyId=${companyId}`,
-            );
-          }
-          break;
-
-        default:
-          console.log("ℹ️ No navigation defined for type:", type);
-          break;
+      // Handle Review / SLA Breach / SLA Escalations
+      if (
+        type === "review" ||
+        reviewId ||
+        (type && String(type).startsWith("sla")) ||
+        type === "escalation"
+      ) {
+        if (reviewId) {
+          const url = `/score-management?reviewId=${reviewId}&autoOpen=true`;
+          router.push(url);
+        } else {
+          router.push("/score-management");
+        }
+      } else if (type === "task" || taskId) {
+        const tId = taskId || notification.data?.taskId;
+        if (tId) {
+          const query = companyId ? `?companyId=${companyId}` : "";
+          router.push(`/tasks/${tId}${query}`);
+        } else {
+          router.push("/dashboard");
+        }
+      } else {
+        console.log("ℹ️ No navigation defined for notification:", notification.data);
       }
     }
   };
