@@ -178,7 +178,7 @@ export const CleanerReviewApi = {
     }
   },
 
-  updateReviewScore: async (reviewId, newScore, trigger_escalation = true) => {
+  updateReviewScore: async (reviewId, newScore, trigger_escalation = false) => {
     try {
       const response = await axiosInstance.patch(
         `/cleaner-reviews/${reviewId}/score`,

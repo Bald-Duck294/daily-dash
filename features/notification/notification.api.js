@@ -12,8 +12,7 @@ export const notificationApi = createApi({
     baseUrl: API_BASE_URL,
     prepareHeaders: (headers, { getState }) => {
       // Get token from auth state
-      const state = getState();
-      const token = state.auth.user?.token || state.auth.token;
+      const token = getState().auth.token;
       if (token) {
         headers.set("authorization", `Bearer ${token}`);
       }

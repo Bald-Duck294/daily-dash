@@ -72,7 +72,7 @@ export function useUpdateReviewScore() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ reviewId, newScore, trigger_escalation = true }) => {
+    mutationFn: async ({ reviewId, newScore, trigger_escalation = false }) => {
       const response = await CleanerReviewApi.updateReviewScore(reviewId, newScore, trigger_escalation);
       if (!response.success) throw new Error(response.error || "Failed to update score");
       return response.data;

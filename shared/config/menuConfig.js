@@ -339,6 +339,11 @@ export function getSuperadminCompanyMenu(companyId) {
       href: `/cleaners?companyId=${companyId}`,
     },
     {
+      icon: ShieldCheck,
+      label: "SLA Logs",
+      href: `/sla-logs?companyId=${companyId}`,
+    },
+    {
       icon: UserCheck,
       label: "Attendance",
       href: `/attendance?companyId=${companyId}`,
@@ -545,6 +550,11 @@ export function getAdminMenu(companyId) {
       href: `/cleaners?companyId=${companyId}`,
     },
     {
+      icon: ShieldCheck,
+      label: "SLA Logs",
+      href: `/sla-logs?companyId=${companyId}`,
+    },
+    {
       icon: UserCheck,
       label: "Attendance",
       href: `/attendance?companyId=${companyId}`,
@@ -693,6 +703,13 @@ export const getFullCompanyMenuTemplate = (companyId) => [
     simpleLabel: "Cleaner Activity",
     requiredPermission: "cleaner_reviews.view",
     href: `/cleaners?companyId=${companyId}`,
+  },
+  {
+    icon: ShieldCheck,
+    label: "SLA Logs",
+    simpleLabel: "SLA Logs",
+    requiredPermission: "cleaner_reviews.view",
+    href: `/sla-logs?companyId=${companyId}`,
   },
   {
     icon: UserCheck,

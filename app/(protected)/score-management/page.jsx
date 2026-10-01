@@ -1422,7 +1422,7 @@ const PhotoModal = ({ photos, onClose }) => {
 /* ================= EDIT SCORE MODAL ================= */
 const EditScoreModal = ({ review, companyFilter = null, onClose }) => {
   const [score, setScore] = useState(() => Number(review?.score ?? 0));
-  const [triggerEscalation, setTriggerEscalation] = useState(true);
+  const [triggerEscalation, setTriggerEscalation] = useState(false);
   const { mutate: updateScore, isPending: isUpdating } = useUpdateReviewScore();
 
   const companyId = review?.company_id
@@ -1465,20 +1465,28 @@ const EditScoreModal = ({ review, companyFilter = null, onClose }) => {
   // Effective threshold: Washroom override takes precedence if active, otherwise company fallback
   let effectiveThreshold = null;
   let thresholdSource = "None";
+  let isSlaActive = false;
 
   if (!isCompanySlaActive) {
-    thresholdSource = "Company SLA Inactive (Disabled)";
+    thresholdSource = "Company SLA Inactive";
+    isSlaActive = false;
   } else if (isWashroomSlaActive && washroomThreshold != null) {
     effectiveThreshold = washroomThreshold;
-    thresholdSource = "Washroom Custom Override";
+    thresholdSource = "Washroom Custom Threshold";
+    isSlaActive = true;
   } else if (companyThreshold != null) {
     effectiveThreshold = companyThreshold;
-    thresholdSource = "Company Baseline Fallback";
+    thresholdSource = "Company Baseline Policy";
+    isSlaActive = true;
+  } else {
+    effectiveThreshold = 7.5;
+    thresholdSource = "System Default";
+    isSlaActive = true;
   }
 
   const numericScore = parseFloat(score);
   const isValidScore = !isNaN(numericScore) && numericScore >= 0 && numericScore <= 10;
-  const willBreach = isValidScore && effectiveThreshold != null && numericScore < effectiveThreshold;
+  const willBreach = isValidScore && isSlaActive && effectiveThreshold != null && numericScore < effectiveThreshold;
 
   const handleSave = (e) => {
     e.preventDefault();
@@ -1521,7 +1529,7 @@ const EditScoreModal = ({ review, companyFilter = null, onClose }) => {
             </div>
             <div>
               <h3 className="font-bold text-base text-slate-900 dark:text-white">
-                Modify Cleaner Review Score
+                Modify AI Hygiene Score
               </h3>
               <p className="text-xs text-slate-500">
                 Review #{review?.id ? String(review.id) : ""} &bull; {review?.location?.name || "Washroom"}
@@ -1531,14 +1539,14 @@ const EditScoreModal = ({ review, companyFilter = null, onClose }) => {
           <button
             onClick={onClose}
             disabled={isUpdating}
-            className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors text-slate-400 hover:text-slate-600"
+            className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors text-slate-400 hover:text-slate-600 cursor-pointer"
           >
             <X size={18} />
           </button>
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSave} className="p-5 space-y-5">
+        <form onSubmit={handleSave} className="p-5 space-y-4">
           {/* Current vs New Score Input */}
           <div className="space-y-2">
             <div className="flex justify-between items-center text-xs">
@@ -1578,67 +1586,90 @@ const EditScoreModal = ({ review, companyFilter = null, onClose }) => {
             </div>
           </div>
 
-          {/* SLA Thresholds Comparison Card */}
+          {/* SLA Thresholds Standards Card */}
           <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 space-y-2.5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                 <Shield className="w-3.5 h-3.5 text-indigo-500" />
-                SLA Threshold Standards
+                SLA Policy & Thresholds
               </span>
-              <span className="text-[10px] text-slate-400">
-                Source: {thresholdSource}
+              <span
+                className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                  isSlaActive
+                    ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400"
+                    : "bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+                }`}
+              >
+                {loadingCompanySla ? "Checking..." : isSlaActive ? "SLA Active" : "SLA Inactive"}
               </span>
             </div>
 
             <div className="grid grid-cols-2 gap-2 text-xs">
               {/* Company Threshold */}
-              <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800">
-                <span className="text-[10px] text-slate-400 block mb-0.5">Company Baseline:</span>
+              <div className="p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800">
+                <span className="text-[10px] text-slate-400 block mb-0.5">Company Level Threshold:</span>
                 <span className="font-semibold text-slate-800 dark:text-slate-200">
                   {loadingCompanySla
                     ? "Loading..."
                     : !isCompanySlaActive
-                    ? "Disabled / Inactive"
+                    ? "Disabled"
                     : companyThreshold != null
                     ? `${companyThreshold.toFixed(1)} / 10`
-                    : "Not Configured"}
+                    : "Default (7.5 / 10)"}
                 </span>
               </div>
 
               {/* Washroom Threshold */}
-              <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800">
+              <div className="p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800">
                 <span className="text-[10px] text-slate-400 block mb-0.5">Washroom Override:</span>
                 <span className="font-semibold text-slate-800 dark:text-slate-200">
                   {loadingWashroomSla
                     ? "Loading..."
                     : isWashroomSlaActive && washroomThreshold != null
                     ? `${washroomThreshold.toFixed(1)} / 10 (Custom)`
-                    : "Not Configured (Falls back to Org)"}
+                    : "Inherits Company Policy"}
                 </span>
               </div>
             </div>
 
-            {/* Live Impact Preview */}
+            {/* Effective Target Banner */}
+            {isSlaActive && effectiveThreshold != null && (
+              <div className="flex items-center justify-between text-[11px] px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300">
+                <span>Effective Applicable Threshold:</span>
+                <span className="font-bold text-slate-900 dark:text-white">
+                  {effectiveThreshold.toFixed(1)} / 10 ({thresholdSource})
+                </span>
+              </div>
+            )}
+
+            {/* Live Impact Assessment Preview */}
             {effectiveThreshold != null && isValidScore && (
               <div
                 className={`p-2.5 rounded-lg text-xs flex items-center gap-2 border ${
-                  willBreach
-                    ? "bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-900"
+                  !isSlaActive
+                    ? "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700"
+                    : willBreach
+                    ? "bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-900"
                     : "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900"
                 }`}
               >
-                {willBreach ? (
+                {!isSlaActive ? (
                   <>
-                    <AlertCircle className="w-4 h-4 shrink-0 text-rose-600 dark:text-rose-400" />
+                    <Clock className="w-4 h-4 shrink-0 text-slate-500" />
+                    <span>SLA is inactive for this company/location. Score is saved for quality reporting only.</span>
+                  </>
+                ) : willBreach ? (
+                  <>
+                    <AlertCircle className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" />
                     <span>
-                      Score <strong className="font-bold">{numericScore.toFixed(1)}</strong> is <strong>below threshold ({effectiveThreshold.toFixed(1)})</strong>. {triggerEscalation ? "SLA breach ladder will be triggered." : "Escalation toggle is OFF; no breach triggered."}
+                      Score <strong className="font-bold">{numericScore.toFixed(1)}</strong> is below threshold ({effectiveThreshold.toFixed(1)}). {triggerEscalation ? "SLA breach escalation will be triggered." : "Escalation toggle is OFF (Silent Mode)."}
                     </span>
                   </>
                 ) : (
                   <>
                     <CheckCircle className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
                     <span>
-                      Score <strong className="font-bold">{numericScore.toFixed(1)}</strong> meets SLA standard (Threshold: {effectiveThreshold.toFixed(1)}).
+                      Score <strong className="font-bold">{numericScore.toFixed(1)}</strong> meets or exceeds threshold standard ({effectiveThreshold.toFixed(1)}).
                     </span>
                   </>
                 )}
@@ -1646,14 +1677,16 @@ const EditScoreModal = ({ review, companyFilter = null, onClose }) => {
             )}
           </div>
 
-          {/* SLA Escalation Toggle */}
+          {/* Superadmin Escalation Override Toggle */}
           <div className="flex items-center justify-between p-3 rounded-xl bg-purple-50/70 dark:bg-purple-950/30 border border-purple-200/80 dark:border-purple-900/60">
-            <div>
+            <div className="pr-3">
               <span className="text-xs font-bold text-slate-900 dark:text-white block">
                 Trigger SLA Escalation on Breach
               </span>
               <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                Spawns/advances escalation record if modified score is below threshold.
+                {triggerEscalation
+                  ? "ON: If modified score is below threshold, an SLA breach will alert on-ground staff."
+                  : "OFF (Default): Saves score silently for AI quality reporting without alerting staff."}
               </span>
             </div>
             <label className="relative inline-flex items-center cursor-pointer shrink-0">
@@ -1674,7 +1707,7 @@ const EditScoreModal = ({ review, companyFilter = null, onClose }) => {
               type="button"
               onClick={onClose}
               disabled={isUpdating}
-              className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+              className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
             >
               Cancel
             </button>
