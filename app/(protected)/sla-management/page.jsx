@@ -1,31 +1,51 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
   ShieldCheck,
   Building2,
   MapPin,
   AlertCircle,
   HelpCircle,
+  Lock,
+  Sparkles,
+  ArrowLeft,
 } from "lucide-react";
 import {
   useCompaniesDropdown,
   useDropdownLocations,
 } from "@/features/dropdownList/dropdownlist.query";
 import { useCompanySlaConfig } from "@/features/companies/queries/sla.queries";
+import { useCompanyId } from "@/providers/CompanyProvider";
 import { Toaster } from "react-hot-toast";
 import CompanySlaCard from "./components/CompanySlaCard";
 import WashroomSlaCard from "./components/WashroomSlaCard";
 import WashroomsSlaList from "./components/WashroomsSlaList";
 import EscalationConfigCard from "./components/escalation/EscalationConfigCard";
+import Loader from "@/components/ui/Loader";
 
 export default function SlaManagementPage() {
+  const router = useRouter();
   const { user } = useSelector((state) => state.auth);
+  const searchParams = useSearchParams();
+  const urlCompanyId = searchParams.get("companyId");
+  const { companyId: contextCompanyId } = useCompanyId();
+
   const isSuperAdmin = Number(user?.role_id) === 1;
+  const userPermissions = user?.role?.permissions || [];
+  const hasSlaPermission =
+    isSuperAdmin ||
+    userPermissions.includes("sla_management.view") ||
+    Number(user?.role_id) === 2;
+  const canUpdate =
+    isSuperAdmin ||
+    userPermissions.includes("sla_management.update") ||
+    Number(user?.role_id) === 2;
 
   // Selected filters
-  const [selectedCompanyId, setSelectedCompanyId] = useState("");
+  const [selectedCompanyId, setSelectedCompanyId] = useState(() => urlCompanyId || "");
   const [selectedWashroomId, setSelectedWashroomId] = useState("");
 
   // Queries
@@ -34,12 +54,23 @@ export default function SlaManagementPage() {
     isLoading: isLoadingCompanies,
   } = useCompaniesDropdown();
 
-  // Auto-fallback to first company if not explicitly selected
-  const effectiveCompanyId =
-    selectedCompanyId || (companies?.length > 0 ? String(companies[0].id) : "");
+  // Effective company ID based on role
+  const effectiveCompanyId = isSuperAdmin
+    ? selectedCompanyId || urlCompanyId || (companies?.length > 0 ? String(companies[0].id) : "")
+    : String(user?.company_id || contextCompanyId || "");
 
-  // Query parent organization SLA status to derive master switch & baseline threshold
-  const { data: companySlaData } = useCompanySlaConfig(
+  // Update selected company if urlCompanyId changes
+  useEffect(() => {
+    if (isSuperAdmin && urlCompanyId) {
+      setSelectedCompanyId(urlCompanyId);
+    }
+  }, [urlCompanyId, isSuperAdmin]);
+
+  // Query parent organization SLA status
+  const {
+    data: companySlaData,
+    isLoading: isLoadingSlaConfig,
+  } = useCompanySlaConfig(
     effectiveCompanyId,
     Boolean(effectiveCompanyId)
   );
@@ -47,6 +78,9 @@ export default function SlaManagementPage() {
   const companySlaEnabled = Boolean(companySlaData?.enabled);
   const companyThreshold = Number(
     companySlaData?.configuration?.threshold_score ?? 8.0
+  );
+  const companyMaxRetries = Number(
+    companySlaData?.configuration?.max_retry_attempts ?? 2
   );
 
   const {
@@ -62,10 +96,13 @@ export default function SlaManagementPage() {
     setSelectedWashroomId("");
   };
 
-  // Find selected objects
+  // Find selected company object with full name resolution
   const selectedCompany = companies?.find(
     (c) => String(c.id) === String(effectiveCompanyId)
-  );
+  ) || {
+    id: effectiveCompanyId,
+    name: user?.company_name || user?.company?.name || `Organization #${effectiveCompanyId}`,
+  };
 
   const selectedWashroom = locations?.find(
     (l) => String(l.id) === String(selectedWashroomId)
@@ -79,7 +116,16 @@ export default function SlaManagementPage() {
     }
   };
 
-  if (!isSuperAdmin) {
+  const handleBack = () => {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back();
+    } else {
+      router.push(effectiveCompanyId ? `/clientDashboard/${effectiveCompanyId}` : "/dashboard");
+    }
+  };
+
+  // 1. Permission Denied Screen
+  if (!hasSlaPermission) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6">
         <div className="p-4 bg-rose-50 dark:bg-rose-950/40 text-rose-600 rounded-full mb-4">
@@ -89,9 +135,59 @@ export default function SlaManagementPage() {
           Access Restricted
         </h2>
         <p className="text-sm text-slate-500 mt-2 max-w-md">
-          SLA & Threshold Management is strictly reserved for SuperAdmin users.
+          You do not have permission to view or manage SLA & Threshold settings.
           Please contact your administrator if you need access.
         </p>
+        <button
+          onClick={handleBack}
+          className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 text-sm font-medium transition-colors"
+        >
+          <ArrowLeft size={16} /> Go Back
+        </button>
+      </div>
+    );
+  }
+
+  // 2. Non-SuperAdmin Inactive SLA Screen
+  if (!isSuperAdmin && !isLoadingSlaConfig && !companySlaEnabled) {
+    return (
+      <div className="space-y-6 pb-12">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleBack}
+            className="p-2 cursor-pointer bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/80 transition-colors shadow-sm text-slate-600 dark:text-slate-300 flex items-center justify-center"
+            title="Go Back"
+          >
+            <ArrowLeft size={18} />
+          </button>
+          <div className="p-2 bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400 rounded-xl">
+            <ShieldCheck className="w-6 h-6" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-slate-900 dark:text-white">
+              SLA & Threshold Management
+            </h1>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              {selectedCompany?.name ? `${selectedCompany.name} SLA standards and washroom thresholds.` : "Organization SLA standards and washroom thresholds."}
+            </p>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-8 border border-slate-200/80 dark:border-slate-800 text-center max-w-2xl mx-auto shadow-sm my-12">
+          <div className="w-14 h-14 bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-amber-200/60 dark:border-amber-800/40">
+            <Lock className="w-7 h-7" />
+          </div>
+          <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
+            Master SLA Not Activated
+          </h3>
+          <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed mb-6">
+            SLA Management is currently disabled for <span className="font-semibold text-slate-900 dark:text-slate-200">{selectedCompany?.name || "your organization"}</span>. The SaafAi Admin must activate the Master SLA before organization standards, multi-tier escalations, and washroom overrides can be configured.
+          </p>
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-600 dark:text-slate-300">
+            <Sparkles className="w-4 h-4 text-amber-500" />
+            Please request your SaafAi Admin to activate SLA for your organization.
+          </div>
+        </div>
       </div>
     );
   }
@@ -100,7 +196,14 @@ export default function SlaManagementPage() {
     <div className="space-y-6 pb-12">
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleBack}
+            className="p-2 cursor-pointer bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/80 transition-colors shadow-sm text-slate-600 dark:text-slate-300 flex items-center justify-center"
+            title="Go Back"
+          >
+            <ArrowLeft size={18} />
+          </button>
           <div className="flex items-center gap-2.5">
             <div className="p-2 bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400 rounded-xl">
               <ShieldCheck className="w-6 h-6" />
@@ -143,29 +246,38 @@ export default function SlaManagementPage() {
       {/* Filter / Selector Bar */}
       <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Organization Selector */}
+          {/* Organization Selector / Context Info */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-1.5">
               <Building2 className="w-4 h-4 text-blue-500" />
-              Select Organization
+              {isSuperAdmin ? "Select Organization" : "Assigned Organization"}
             </label>
-            <select
-              value={effectiveCompanyId}
-              onChange={handleCompanyChange}
-              disabled={isLoadingCompanies}
-              className="w-full px-3 py-2.5 text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all cursor-pointer"
-            >
-              <option value="" disabled>
-                {isLoadingCompanies
-                  ? "Loading organizations..."
-                  : "Select an Organization"}
-              </option>
-              {companies.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name} 
+            {isSuperAdmin ? (
+              <select
+                value={effectiveCompanyId}
+                onChange={handleCompanyChange}
+                disabled={isLoadingCompanies}
+                className="w-full px-3 py-2.5 text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all cursor-pointer"
+              >
+                <option value="" disabled>
+                  {isLoadingCompanies
+                    ? "Loading organizations..."
+                    : "Select an Organization"}
                 </option>
-              ))}
-            </select>
+                {companies.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name} 
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <div className="w-full px-3 py-2.5 text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white flex items-center justify-between font-medium">
+                <span>{selectedCompany?.name || "Organization"}</span>
+                <span className="text-[11px] px-2 py-0.5 rounded bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 font-semibold">
+                  Company ID: {effectiveCompanyId}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Washroom / Location Selector */}
@@ -202,7 +314,11 @@ export default function SlaManagementPage() {
       {/* Main SLA Configuration Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         {/* Organization Baseline SLA Card */}
-        <CompanySlaCard selectedCompany={selectedCompany} />
+        <CompanySlaCard
+          selectedCompany={selectedCompany}
+          isSuperAdmin={isSuperAdmin}
+          canUpdate={canUpdate}
+        />
 
         {/* Single Washroom Override SLA Card */}
         <div id="single-washroom-sla-card" className="h-full">
@@ -210,6 +326,7 @@ export default function SlaManagementPage() {
             selectedWashroom={selectedWashroom}
             companySlaEnabled={companySlaEnabled}
             companyThreshold={companyThreshold}
+            companyMaxRetries={companyMaxRetries}
             onWashroomUpdated={() => refetchLocations()}
           />
         </div>
@@ -225,9 +342,11 @@ export default function SlaManagementPage() {
         locations={locations}
         companySlaEnabled={companySlaEnabled}
         companyThreshold={companyThreshold}
+        companyMaxRetries={companyMaxRetries}
         selectedWashroomId={selectedWashroomId}
         onSelectWashroom={(loc) => setSelectedWashroomId(String(loc.id))}
         onEditWashroom={handleEditWashroom}
+        canUpdate={canUpdate}
       />
 
       {/* Informational Guidance / Rule Summary Card */}

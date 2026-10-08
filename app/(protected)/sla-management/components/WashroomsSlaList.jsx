@@ -9,61 +9,77 @@ import {
   Sparkles,
   Edit3,
   Eye,
-  Bell,
-  ShieldCheck,
-  ChevronRight,
   X,
+  Power,
+  AlertCircle,
 } from "lucide-react";
+import toast from "react-hot-toast";
+import { useUpdateWashroomSlaConfig } from "@/features/companies/queries/sla.queries";
 
 export default function WashroomsSlaList({
   locations = [],
   companySlaEnabled = false,
   companyThreshold = 8.0,
+  companyMaxRetries = 2,
   selectedWashroomId,
   onSelectWashroom,
   onEditWashroom,
+  canUpdate = true,
 }) {
   const [search, setSearch] = useState("");
   const [filterMode, setFilterMode] = useState("all"); // 'all' | 'custom' | 'inherited' | 'disabled'
   const [viewingWashroom, setViewingWashroom] = useState(null);
+  const [togglingLocationId, setTogglingLocationId] = useState(null);
+
+  const updateMutation = useUpdateWashroomSlaConfig();
 
   // Compute status for each washroom
   const enrichedLocations = useMemo(() => {
     return locations.map((loc) => {
       const cfg = loc.sla_config || {};
-      const hasCustom = Boolean(cfg.enabled || cfg.is_active);
 
       let status = "disabled";
       let effectiveThreshold = 0;
       let label = "Disabled";
+      let isToggleOn = false;
 
       if (!companySlaEnabled) {
         status = "disabled";
         label = "Org SLA Off";
         effectiveThreshold = 0;
-      } else if (hasCustom) {
+        isToggleOn = false;
+      } else if (cfg.enabled === false || cfg.is_active === false) {
+        status = "disabled";
+        label = "SLA Disabled";
+        effectiveThreshold = 0;
+        isToggleOn = false;
+      } else if (cfg.enabled === true || cfg.is_active === true) {
         status = "custom";
         label = "Custom Override";
-        effectiveThreshold = Number(cfg.threshold_score ?? 7.0);
+        effectiveThreshold = Number(cfg.threshold_score ?? companyThreshold ?? 8.0);
+        isToggleOn = true;
       } else {
+        // cfg is null or not customized -> inherits org SLA
         status = "inherited";
         label = "Inheriting Org SLA";
         effectiveThreshold = Number(companyThreshold ?? 8.0);
+        isToggleOn = true;
       }
 
       return {
         ...loc,
-        hasCustom,
+        hasCustom: status === "custom",
         status,
         label,
+        isToggleOn,
         effectiveThreshold,
-        notifyCleaner: cfg.notify_cleaner !== false,
-        notifySupervisor: cfg.notify_supervisor !== false,
-        maxRetries: cfg.max_retry_attempts ?? 1,
-        maxUpdates: cfg.max_score_updates_per_activity ?? 1,
+        maxRetries:
+          status === "custom"
+            ? Number(cfg.max_retry_attempts ?? companyMaxRetries ?? 2)
+            : Number(companyMaxRetries ?? 2),
       };
     });
-  }, [locations, companySlaEnabled, companyThreshold]);
+  }, [locations, companySlaEnabled, companyThreshold, companyMaxRetries]);
 
   // Counts
   const counts = useMemo(() => {
@@ -91,6 +107,52 @@ export default function WashroomsSlaList({
     });
   }, [enrichedLocations, search, filterMode]);
 
+  // Direct toggle SLA on/off for a washroom
+  const handleToggleSla = async (loc, e) => {
+    e.stopPropagation();
+
+    if (!companySlaEnabled) {
+      toast.error("Cannot toggle washroom SLA because Organization Master SLA is OFF.");
+      return;
+    }
+
+    if (!canUpdate) {
+      toast.error("You do not have permission to update SLA settings.");
+      return;
+    }
+
+    const nextState = !loc.isToggleOn;
+    setTogglingLocationId(loc.id);
+
+    try {
+      const payload = {
+        enabled: nextState,
+        is_active: nextState,
+        threshold_score: Number(loc.effectiveThreshold || companyThreshold || 8.0),
+        max_retry_attempts: Number(loc.maxRetries || companyMaxRetries || 2),
+      };
+
+      await updateMutation.mutateAsync({
+        locationId: loc.id,
+        configData: payload,
+      });
+
+      toast.success(
+        nextState
+          ? `SLA Enabled for "${loc.name}" (Active threshold: ${payload.threshold_score}/10)`
+          : `SLA Disabled for "${loc.name}"`
+      );
+    } catch (err) {
+      toast.error(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Failed to toggle SLA for this washroom"
+      );
+    } finally {
+      setTogglingLocationId(null);
+    }
+  };
+
   return (
     <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden">
       {/* Table Header */}
@@ -106,7 +168,7 @@ export default function WashroomsSlaList({
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Review live SLA threshold status across all washrooms. Click <strong>Edit</strong> to configure a single washroom custom override.
+            Toggle SLA status directly on/off per washroom or click <strong>Configure</strong> to adjust threshold overrides.
           </p>
         </div>
 
@@ -136,17 +198,6 @@ export default function WashroomsSlaList({
           All ({counts.total})
         </button>
         <button
-          onClick={() => setFilterMode("custom")}
-          className={`px-3 py-1.5 rounded-lg font-medium transition-all flex items-center gap-1.5 ${
-            filterMode === "custom"
-              ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-300 shadow-sm border border-slate-200/80 dark:border-slate-600"
-              : "text-slate-600 dark:text-slate-400 hover:text-slate-100 cursor-pointer"
-          }`}
-        >
-          <span className="w-2 h-2 rounded-full bg-blue-500" />
-          Custom Overrides ({counts.custom})
-        </button>
-        <button
           onClick={() => setFilterMode("inherited")}
           className={`px-3 py-1.5 rounded-lg font-medium transition-all flex items-center gap-1.5 ${
             filterMode === "inherited"
@@ -158,15 +209,26 @@ export default function WashroomsSlaList({
           Inheriting Org SLA ({counts.inherited})
         </button>
         <button
+          onClick={() => setFilterMode("custom")}
+          className={`px-3 py-1.5 rounded-lg font-medium transition-all flex items-center gap-1.5 ${
+            filterMode === "custom"
+              ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-300 shadow-sm border border-slate-200/80 dark:border-slate-600"
+              : "text-slate-600 dark:text-slate-400 hover:text-slate-100 cursor-pointer"
+          }`}
+        >
+          <span className="w-2 h-2 rounded-full bg-blue-500" />
+          Custom Overrides ({counts.custom})
+        </button>
+        <button
           onClick={() => setFilterMode("disabled")}
           className={`px-3 py-1.5 rounded-lg font-medium transition-all flex items-center gap-1.5 ${
             filterMode === "disabled"
               ? "bg-white dark:bg-slate-700 text-rose-600 dark:text-rose-300 shadow-sm border border-slate-200/80 dark:border-slate-600"
-              : "text-slate-600 dark:text-slate-400 hover:text-slate-100  cursor-pointer"
+              : "text-slate-600 dark:text-slate-400 hover:text-slate-100 cursor-pointer"
           }`}
         >
           <span className="w-2 h-2 rounded-full bg-rose-500" />
-          Disabled / Locked ({counts.disabled})
+          SLA Disabled ({counts.disabled})
         </button>
       </div>
 
@@ -177,22 +239,25 @@ export default function WashroomsSlaList({
             <tr>
               <th className="px-5 py-3 w-28">Location ID</th>
               <th className="px-5 py-3">Washroom Name</th>
+              <th className="px-5 py-3 w-36 text-center">SLA Switch</th>
               <th className="px-5 py-3">SLA Status</th>
-              <th className="px-5 py-3">Breach Threshold</th>
-              <th className="px-5 py-3">Notifications</th>
+              <th className="px-5 py-3">Effective Threshold</th>
+              <th className="px-5 py-3">Max Retries</th>
               <th className="px-5 py-3 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
             {filteredLocations.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-5 py-10 text-center text-slate-400">
+                <td colSpan={7} className="px-5 py-10 text-center text-slate-400">
                   No washrooms found matching your criteria.
                 </td>
               </tr>
             ) : (
               filteredLocations.map((loc) => {
                 const isSelected = String(loc.id) === String(selectedWashroomId);
+                const isToggling = String(loc.id) === String(togglingLocationId);
+
                 return (
                   <tr
                     key={loc.id}
@@ -219,6 +284,38 @@ export default function WashroomsSlaList({
                           Code: {loc.code}
                         </div>
                       )}
+                    </td>
+
+                    {/* Direct SLA Toggle Switch */}
+                    <td className="px-5 py-3.5 text-center">
+                      <div className="inline-flex items-center justify-center gap-2">
+                        <label
+                          className={`relative inline-flex items-center ${
+                            !companySlaEnabled || !canUpdate || isToggling
+                              ? "cursor-not-allowed opacity-50"
+                              : "cursor-pointer"
+                          }`}
+                          title={
+                            !companySlaEnabled
+                              ? "Company SLA is OFF. Enable Company SLA first."
+                              : loc.isToggleOn
+                              ? "Click to switch SLA OFF for this washroom"
+                              : "Click to switch SLA ON for this washroom"
+                          }
+                        >
+                          <input
+                            type="checkbox"
+                            checked={loc.isToggleOn && companySlaEnabled}
+                            disabled={!companySlaEnabled || !canUpdate || isToggling}
+                            onChange={(e) => handleToggleSla(loc, e)}
+                            className="sr-only peer"
+                          />
+                          <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                        </label>
+                        <span className="text-[10px] font-bold text-slate-500 w-7 text-left">
+                          {loc.isToggleOn && companySlaEnabled ? "ON" : "OFF"}
+                        </span>
+                      </div>
                     </td>
 
                     {/* SLA Status Badge */}
@@ -262,20 +359,15 @@ export default function WashroomsSlaList({
                       )}
                     </td>
 
-                    {/* Notification badges */}
+                    {/* Max Retries */}
                     <td className="px-5 py-3.5">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        {loc.notifyCleaner ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 text-[10px] border border-emerald-200 dark:border-emerald-800">
-                            <Bell className="w-3 h-3" /> Cleaner App
-                          </span>
-                        ) : null}
-                        {loc.notifySupervisor ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 text-[10px] border border-blue-200 dark:border-blue-800">
-                            Supervisor
-                          </span>
-                        ) : null}
-                      </div>
+                      {loc.status === "disabled" ? (
+                        <span className="text-slate-400 text-xs">-</span>
+                      ) : (
+                        <span className="font-medium text-slate-700 dark:text-slate-300 text-xs">
+                          {loc.maxRetries} {loc.maxRetries === 1 ? "retry" : "retries"}
+                        </span>
+                      )}
                     </td>
 
                     {/* Actions */}
@@ -285,17 +377,17 @@ export default function WashroomsSlaList({
                           type="button"
                           onClick={() => setViewingWashroom(loc)}
                           title="View SLA Details"
-                          className="p-1.5 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                          className="p-1.5 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
                         >
                           <Eye className="w-4 h-4" />
                         </button>
                         <button
                           type="button"
                           onClick={() => onEditWashroom?.(loc)}
-                          className="px-2.5 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition-all flex items-center gap-1"
+                          className="px-2.5 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition-all flex items-center gap-1 cursor-pointer"
                         >
                           <Edit3 className="w-3.5 h-3.5" />
-                          <span>Edit</span>
+                          <span>Configure</span>
                         </button>
                       </div>
                     </td>
@@ -322,7 +414,7 @@ export default function WashroomsSlaList({
               </div>
               <button
                 onClick={() => setViewingWashroom(null)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -336,7 +428,7 @@ export default function WashroomsSlaList({
                 </span>
               </div>
               <div className="flex justify-between py-1.5 border-b border-slate-100 dark:border-slate-800">
-                <span className="text-slate-500">SLA Mode:</span>
+                <span className="text-slate-500">SLA Status:</span>
                 <span className="font-semibold text-slate-800 dark:text-slate-200">
                   {viewingWashroom.label}
                 </span>
@@ -350,15 +442,9 @@ export default function WashroomsSlaList({
                 </span>
               </div>
               <div className="flex justify-between py-1.5 border-b border-slate-100 dark:border-slate-800">
-                <span className="text-slate-500">Cleaner Push Alerts:</span>
-                <span className="font-semibold text-slate-800 dark:text-slate-200">
-                  {viewingWashroom.notifyCleaner ? "Enabled" : "Disabled"}
-                </span>
-              </div>
-              <div className="flex justify-between py-1.5 border-b border-slate-100 dark:border-slate-800">
                 <span className="text-slate-500">Max Retry Attempts:</span>
                 <span className="font-semibold text-slate-800 dark:text-slate-200">
-                  {viewingWashroom.maxRetries}
+                  {viewingWashroom.status === "disabled" ? "0" : viewingWashroom.maxRetries}
                 </span>
               </div>
             </div>
@@ -366,7 +452,7 @@ export default function WashroomsSlaList({
             <div className="pt-2 flex justify-end gap-2">
               <button
                 onClick={() => setViewingWashroom(null)}
-                className="px-3.5 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                className="px-3.5 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
               >
                 Close
               </button>
@@ -376,7 +462,7 @@ export default function WashroomsSlaList({
                   setViewingWashroom(null);
                   onEditWashroom?.(target);
                 }}
-                className="px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition-all flex items-center gap-1.5"
+                className="px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
               >
                 <Edit3 className="w-3.5 h-3.5" />
                 Configure / Edit SLA

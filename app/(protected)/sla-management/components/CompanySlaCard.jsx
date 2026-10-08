@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Shield, ShieldAlert, ShieldCheck, Save, Bell, RefreshCw } from "lucide-react";
+import { Shield, ShieldAlert, ShieldCheck, Save, RefreshCw } from "lucide-react";
 import toast from "react-hot-toast";
 import Loader from "@/components/ui/Loader";
 import {
@@ -18,15 +18,14 @@ function CompanySlaFormContent({
   config,
   refetch,
   isSaving,
+  isSuperAdmin = true,
+  canUpdate = true,
   enableMutation,
   disableMutation,
   updateMutation,
 }) {
   const [threshold, setThreshold] = useState(() => Number(config.threshold_score ?? 8.0));
   const [maxRetries, setMaxRetries] = useState(() => Number(config.max_retry_attempts ?? 2));
-  const [maxUpdates, setMaxUpdates] = useState(() => Number(config.max_score_updates_per_activity ?? 1));
-  const [notifyCleaner, setNotifyCleaner] = useState(() => config.notify_cleaner !== false);
-  const [notifySupervisor, setNotifySupervisor] = useState(() => config.notify_supervisor !== false);
 
   const handleToggleSla = async (checked) => {
     if (!companyId) {
@@ -70,21 +69,12 @@ function CompanySlaFormContent({
       return;
     }
 
-    const numericUpdates = parseInt(maxUpdates, 10);
-    if (isNaN(numericUpdates) || numericUpdates < 1 || numericUpdates > 10) {
-      toast.error("Max Score Updates must be between 1 and 10");
-      return;
-    }
-
     try {
       await updateMutation.mutateAsync({
         companyId,
         configData: {
           threshold_score: numericThreshold,
           max_retry_attempts: numericRetries,
-          max_score_updates_per_activity: numericUpdates,
-          notify_cleaner: notifyCleaner,
-          notify_supervisor: notifySupervisor,
         },
       });
       toast.success("Organization SLA baseline updated successfully!");
@@ -144,17 +134,34 @@ function CompanySlaFormContent({
           </div>
         </div>
 
-        {/* Master Toggle Switch */}
-        <label className="relative inline-flex items-center cursor-pointer">
-          <input
-            type="checkbox"
-            checked={isEnabled}
-            onChange={(e) => handleToggleSla(e.target.checked)}
-            disabled={isSaving}
-            className="sr-only peer"
-          />
-          <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
-        </label>
+        {/* Master Toggle Switch / Status */}
+        {isSuperAdmin ? (
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={isEnabled}
+              onChange={(e) => handleToggleSla(e.target.checked)}
+              disabled={isSaving}
+              className="sr-only peer"
+            />
+            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+          </label>
+        ) : (
+          <span
+            className={`px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5 ${
+              isEnabled
+                ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+                : "bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300 border border-rose-200 dark:border-rose-800"
+            }`}
+          >
+            <span
+              className={`w-2 h-2 rounded-full ${
+                isEnabled ? "bg-emerald-500 animate-pulse" : "bg-rose-500"
+              }`}
+            />
+            {isEnabled ? "Master SLA Active" : "Master SLA Inactive"}
+          </span>
+        )}
       </div>
 
       {/* Form Body */}
@@ -186,62 +193,22 @@ function CompanySlaFormContent({
             </div>
           </div>
 
-          {/* Numbers Grid */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                Max Retry Attempts
-              </label>
-              <input
-                type="number"
-                min="0"
-                max="10"
-                value={maxRetries}
-                onChange={(e) => setMaxRetries(e.target.value)}
-                className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                Score Updates Allowed
-              </label>
-              <input
-                type="number"
-                min="1"
-                max="5"
-                value={maxUpdates}
-                onChange={(e) => setMaxUpdates(e.target.value)}
-                className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              />
-            </div>
-          </div>
-
-          {/* Notification Checkboxes */}
-          <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-2 flex items-center gap-1.5">
-              <Bell className="w-3.5 h-3.5 text-blue-500" />
-              Notifications
+          {/* Max Retry Attempts */}
+          <div>
+            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+              Max Retry Attempts Allowed
             </label>
-
-            <label className="flex items-center gap-2.5 cursor-pointer text-xs text-slate-700 dark:text-slate-300">
-              <input
-                type="checkbox"
-                checked={notifyCleaner}
-                onChange={(e) => setNotifyCleaner(e.target.checked)}
-                className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
-              />
-              <span>Notify Cleaner on Clear App</span>
-            </label>
-
-            <label className="flex items-center gap-2.5 cursor-pointer text-xs text-slate-700 dark:text-slate-300">
-              <input
-                type="checkbox"
-                checked={notifySupervisor}
-                onChange={(e) => setNotifySupervisor(e.target.checked)}
-                className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
-              />
-              <span>Notify Supervisor</span>
-            </label>
+            <input
+              type="number"
+              min="0"
+              max="10"
+              value={maxRetries}
+              onChange={(e) => setMaxRetries(e.target.value)}
+              className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            />
+            <p className="text-[11px] text-slate-500 mt-1">
+              Number of corrective cleaning attempts permitted before an active breach escalates to higher management tiers.
+            </p>
           </div>
         </div>
 
@@ -270,7 +237,7 @@ function CompanySlaFormContent({
   );
 }
 
-export default function CompanySlaCard({ selectedCompany }) {
+export default function CompanySlaCard({ selectedCompany, isSuperAdmin = true, canUpdate = true }) {
   const companyId = selectedCompany?.id ? String(selectedCompany.id) : null;
   const companyName = selectedCompany?.name || "Selected Organization";
 
@@ -314,6 +281,8 @@ export default function CompanySlaCard({ selectedCompany }) {
           config={config}
           refetch={refetch}
           isSaving={isSaving}
+          isSuperAdmin={isSuperAdmin}
+          canUpdate={canUpdate}
           enableMutation={enableMutation}
           disableMutation={disableMutation}
           updateMutation={updateMutation}

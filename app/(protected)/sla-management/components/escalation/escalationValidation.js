@@ -2,20 +2,14 @@
  * Client-side validation helper for Escalation Hierarchy.
  */
 
-export const validateEscalationLadder = (levels, isEnabled = true, maxRetries = 2) => {
+export const validateEscalationLadder = (levels, isEnabled = true) => {
   const errors = [];
-
-  // Validate max retries
-  const retries = Number(maxRetries);
-  if (isNaN(retries) || !Number.isInteger(retries) || retries < 0 || retries > 10) {
-    errors.push("Max retry attempts must be a whole number between 0 and 10.");
-  }
 
   if (!isEnabled) {
     return {
-      isValid: errors.length === 0,
-      errors,
-      firstError: errors[0] || null,
+      isValid: true,
+      errors: [],
+      firstError: null,
     };
   }
 

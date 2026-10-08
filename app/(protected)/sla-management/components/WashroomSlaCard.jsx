@@ -6,10 +6,10 @@ import {
   AlertTriangle,
   Lock,
   Save,
-  Bell,
   RefreshCw,
   Info,
   CheckCircle2,
+  XCircle,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import Loader from "@/components/ui/Loader";
@@ -24,6 +24,7 @@ function WashroomSlaFormContent({
   washroomCode,
   companySlaEnabled,
   companyThreshold,
+  companyMaxRetries,
   initialData,
   refetch,
   isSaving,
@@ -32,19 +33,10 @@ function WashroomSlaFormContent({
 }) {
   const [isEnabled, setIsEnabled] = useState(() => Boolean(initialData?.enabled));
   const [thresholdScore, setThresholdScore] = useState(() =>
-    Number(initialData?.threshold_score ?? 7.0)
+    Number(initialData?.threshold_score ?? companyThreshold ?? 8.0)
   );
   const [maxRetryAttempts, setMaxRetryAttempts] = useState(() =>
-    Number(initialData?.max_retry_attempts ?? 1)
-  );
-  const [maxScoreUpdates, setMaxScoreUpdates] = useState(() =>
-    Number(initialData?.max_score_updates_per_activity ?? 1)
-  );
-  const [notifyCleaner, setNotifyCleaner] = useState(
-    () => initialData?.notify_cleaner !== false
-  );
-  const [notifySupervisor, setNotifySupervisor] = useState(
-    () => initialData?.notify_supervisor !== false
+    Number(initialData?.max_retry_attempts ?? companyMaxRetries ?? 2)
   );
 
   const handleSave = async (e) => {
@@ -57,9 +49,17 @@ function WashroomSlaFormContent({
       return;
     }
 
-    if (thresholdScore < 0 || thresholdScore > 10) {
-      toast.error("Threshold Score must be between 0.0 and 10.0");
-      return;
+    if (isEnabled) {
+      if (thresholdScore < 0 || thresholdScore > 10) {
+        toast.error("Threshold Score must be between 0.0 and 10.0");
+        return;
+      }
+
+      const numericRetries = parseInt(maxRetryAttempts, 10);
+      if (isNaN(numericRetries) || numericRetries < 0 || numericRetries > 10) {
+        toast.error("Max Retry Attempts must be between 0 and 10");
+        return;
+      }
     }
 
     try {
@@ -67,18 +67,16 @@ function WashroomSlaFormContent({
         locationId: washroomId,
         configData: {
           enabled: isEnabled,
+          is_active: isEnabled,
           threshold_score: parseFloat(thresholdScore),
           max_retry_attempts: parseInt(maxRetryAttempts, 10),
-          max_score_updates_per_activity: parseInt(maxScoreUpdates, 10),
-          notify_cleaner: notifyCleaner,
-          notify_supervisor: notifySupervisor,
         },
       });
 
       toast.success(
         isEnabled
-          ? `Washroom SLA updated: ${thresholdScore.toFixed(1)}/10 threshold active!`
-          : "Washroom custom SLA disabled. Reverted to Organization fallback."
+          ? `Washroom SLA active: ${parseFloat(thresholdScore).toFixed(1)}/10 threshold.`
+          : "Washroom SLA switched OFF."
       );
       await refetch();
       onWashroomUpdated?.();
@@ -89,6 +87,13 @@ function WashroomSlaFormContent({
           "Failed to update washroom SLA configuration"
       );
     }
+  };
+
+  const handleResetToCompanyDefault = () => {
+    setThresholdScore(Number(companyThreshold ?? 8.0));
+    setMaxRetryAttempts(Number(companyMaxRetries ?? 2));
+    setIsEnabled(true);
+    toast.success("Applied organization default values");
   };
 
   return (
@@ -102,7 +107,7 @@ function WashroomSlaFormContent({
                 ? "bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500"
                 : isEnabled
                 ? "bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400"
-                : "bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400"
+                : "bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400"
             }`}
           >
             {!companySlaEnabled ? (
@@ -110,16 +115,16 @@ function WashroomSlaFormContent({
             ) : isEnabled ? (
               <CheckCircle2 className="w-6 h-6" />
             ) : (
-              <Sparkles className="w-6 h-6" />
+              <XCircle className="w-6 h-6" />
             )}
           </div>
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                Single Washroom SLA
+                Washroom SLA Configuration
               </h3>
               <span className="px-2 py-0.5 text-[11px] font-mono font-bold rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-               ID: #{washroomId}
+                ID: #{washroomId}
               </span>
               <span
                 className={`px-2 py-0.5 text-[11px] font-bold rounded-full border ${
@@ -127,14 +132,14 @@ function WashroomSlaFormContent({
                     ? "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700"
                     : isEnabled
                     ? "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800"
-                    : "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800"
+                    : "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/50 dark:text-rose-300 dark:border-rose-800"
                 }`}
               >
                 {!companySlaEnabled
-                  ? "LOCKED"
+                  ? "LOCKED (ORG OFF)"
                   : isEnabled
-                  ? "CUSTOM OVERRIDE"
-                  : "INHERITING ORG SLA"}
+                  ? "SLA ACTIVE"
+                  : "SLA DISABLED"}
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-0.5 truncate max-w-sm">
@@ -143,7 +148,7 @@ function WashroomSlaFormContent({
           </div>
         </div>
 
-        {/* Custom Override Toggle Switch */}
+        {/* SLA On/Off Toggle Switch */}
         <div className="flex flex-col items-end gap-1">
           <label
             className={`relative inline-flex items-center ${
@@ -163,7 +168,7 @@ function WashroomSlaFormContent({
             <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
           </label>
           <span className="text-[10px] text-slate-400 font-medium">
-            {isEnabled && companySlaEnabled ? "Override ON" : "Override OFF"}
+            {isEnabled && companySlaEnabled ? "SLA ON" : "SLA OFF"}
           </span>
         </div>
       </div>
@@ -175,7 +180,7 @@ function WashroomSlaFormContent({
           <div className="text-xs text-amber-800 dark:text-amber-300 space-y-1">
             <p className="font-semibold">Organization Master SLA is Disabled</p>
             <p className="text-[11px] leading-relaxed text-amber-700 dark:text-amber-400">
-              Single washroom SLA can only be enabled when the parent organization’s Master SLA is active.
+              Single washroom SLA can only be active when the parent organization’s Master SLA is active.
               Toggle the Master SLA switch on the left to unlock this washroom configuration.
             </p>
           </div>
@@ -189,132 +194,101 @@ function WashroomSlaFormContent({
         }`}
       >
         <div className="space-y-4">
-          {/* Inheritance Banner when Override is OFF but Org SLA is ON */}
-          {companySlaEnabled && !isEnabled && (
-            <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 flex items-start gap-2.5">
-              <Info className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
-              <p className="text-xs text-slate-600 dark:text-slate-400">
-                This washroom currently inherits the organization baseline threshold of{" "}
-                <strong className="text-slate-900 dark:text-white">
-                  {companyThreshold.toFixed(1)} / 10
-                </strong>
-                . Turn on the switch above to set a custom threshold for this washroom.
-              </p>
+          {!isEnabled && companySlaEnabled ? (
+            <div className="p-4 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 flex items-start gap-3">
+              <XCircle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
+              <div className="text-xs text-rose-800 dark:text-rose-300">
+                <p className="font-semibold">SLA is Turned OFF for this Washroom</p>
+                <p className="text-[11px] text-rose-700 dark:text-rose-400 mt-0.5">
+                  Cleanings in this washroom will not trigger SLA breaches or require corrective retries.
+                  Turn the switch ON above to activate SLA monitoring.
+                </p>
+              </div>
             </div>
+          ) : (
+            <>
+              {/* Threshold Slider */}
+              <div>
+                <div className="flex justify-between items-center mb-1.5">
+                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                    Washroom Breach Threshold (1.0 – 10.0)
+                  </label>
+                  <span className="text-xs font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 border border-blue-200/80 dark:border-blue-800">
+                    {Number(thresholdScore).toFixed(1)} / 10
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min="1"
+                  max="10"
+                  step="0.5"
+                  value={thresholdScore}
+                  disabled={!isEnabled || !companySlaEnabled}
+                  onChange={(e) => setThresholdScore(parseFloat(e.target.value))}
+                  className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-600 disabled:opacity-50"
+                />
+                <div className="flex justify-between text-[10px] text-slate-400 mt-1">
+                  <span>1.0 (Strict)</span>
+                  <span className="font-medium text-blue-600 dark:text-blue-400">
+                    Trigger below {Number(thresholdScore).toFixed(1)}
+                  </span>
+                  <span>10.0 (Lenient)</span>
+                </div>
+              </div>
+
+              {/* Max Retry Attempts */}
+              <div>
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                  Max Retry Attempts Allowed
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="10"
+                  disabled={!isEnabled || !companySlaEnabled}
+                  value={maxRetryAttempts}
+                  onChange={(e) => setMaxRetryAttempts(e.target.value)}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:opacity-50"
+                />
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Corrective retry attempts before an active breach escalates to supervisors.
+                </p>
+              </div>
+            </>
           )}
-
-          {/* Threshold Slider */}
-          <div>
-            <div className="flex justify-between items-center mb-1.5">
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                Washroom Breach Threshold (1.0 – 10.0)
-              </label>
-              <span className="text-xs font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 border border-blue-200/80 dark:border-blue-800">
-                {Number(thresholdScore).toFixed(1)} / 10
-              </span>
-            </div>
-            <input
-              type="range"
-              min="1"
-              max="10"
-              step="0.5"
-              value={thresholdScore}
-              disabled={!isEnabled || !companySlaEnabled}
-              onChange={(e) => setThresholdScore(parseFloat(e.target.value))}
-              className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-600 disabled:opacity-50"
-            />
-            <div className="flex justify-between text-[10px] text-slate-400 mt-1">
-              <span>1.0 (Strict)</span>
-              <span className="font-medium text-blue-600 dark:text-blue-400">
-                {Number(thresholdScore).toFixed(1)} (Trigger threshold)
-              </span>
-              <span>10.0 (Lenient)</span>
-            </div>
-          
-          </div>
-
-          {/* Numbers Grid */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                Max Retry Attempts
-              </label>
-              <input
-                type="number"
-                min="0"
-                max="10"
-                disabled={!isEnabled || !companySlaEnabled}
-                value={maxRetryAttempts}
-                onChange={(e) => setMaxRetryAttempts(e.target.value)}
-                className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:opacity-50"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                Score Updates Allowed
-              </label>
-              <input
-                type="number"
-                min="1"
-                max="5"
-                disabled={!isEnabled || !companySlaEnabled}
-                value={maxScoreUpdates}
-                onChange={(e) => setMaxScoreUpdates(e.target.value)}
-                className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:opacity-50"
-              />
-            </div>
-          </div>
-
-          {/* Notification Checkboxes */}
-          <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-2 flex items-center gap-1.5">
-              <Bell className="w-3.5 h-3.5 text-blue-500" />
-              SLA Breach Notifications
-            </label>
-
-            <label className="flex items-center gap-2.5 cursor-pointer text-xs text-slate-700 dark:text-slate-300">
-              <input
-                type="checkbox"
-                checked={notifyCleaner}
-                disabled={!isEnabled || !companySlaEnabled}
-                onChange={(e) => setNotifyCleaner(e.target.checked)}
-                className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 disabled:opacity-50"
-              />
-              <span>Notify Assigned Cleaner (Push Alert via Clear App)</span>
-            </label>
-
-            <label className="flex items-center gap-2.5 cursor-pointer text-xs text-slate-700 dark:text-slate-300">
-              <input
-                type="checkbox"
-                checked={notifySupervisor}
-                disabled={!isEnabled || !companySlaEnabled}
-                onChange={(e) => setNotifySupervisor(e.target.checked)}
-                className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 disabled:opacity-50"
-              />
-              <span>Notify Shift Supervisor</span>
-            </label>
-          </div>
         </div>
 
         {/* Action Footer */}
-        <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={() => refetch()}
-            disabled={isSaving}
-            className="px-3 py-2 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors flex items-center gap-1.5"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-            Reset
-          </button>
-          <button
-            type="submit"
-            disabled={isSaving || !companySlaEnabled}
-            className="px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 dark:disabled:bg-slate-700 rounded-lg shadow-sm transition-all flex items-center gap-1.5"
-          >
-            <Save className="w-3.5 h-3.5" />
-            {isSaving ? "Saving..." : "Save Washroom SLA"}
-          </button>
+        <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center gap-2">
+          {companySlaEnabled && (
+            <button
+              type="button"
+              onClick={handleResetToCompanyDefault}
+              disabled={isSaving}
+              className="text-xs text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 font-medium underline underline-offset-2 cursor-pointer"
+            >
+              Use Company Default ({companyThreshold.toFixed(1)}/10)
+            </button>
+          )}
+          <div className="flex items-center gap-2 ml-auto">
+            <button
+              type="button"
+              onClick={() => refetch()}
+              disabled={isSaving}
+              className="px-3 py-2 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              Reset
+            </button>
+            <button
+              type="submit"
+              disabled={isSaving || !companySlaEnabled}
+              className="px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 dark:disabled:bg-slate-700 rounded-lg shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
+            >
+              <Save className="w-3.5 h-3.5" />
+              {isSaving ? "Saving..." : "Save Washroom SLA"}
+            </button>
+          </div>
         </div>
       </form>
     </div>
@@ -325,6 +299,7 @@ export default function WashroomSlaCard({
   selectedWashroom,
   companySlaEnabled = false,
   companyThreshold = 8.0,
+  companyMaxRetries = 2,
   onWashroomUpdated,
 }) {
   const washroom = selectedWashroom;
@@ -348,7 +323,7 @@ export default function WashroomSlaCard({
           No Washroom Selected
         </h3>
         <p className="text-xs text-slate-500 mt-1 max-w-sm">
-          Select a washroom from the dropdown above to view or customize its dedicated SLA threshold and alerts.
+          Select a washroom from the table on the right to view or configure its individual SLA settings.
         </p>
       </div>
     );
@@ -358,15 +333,17 @@ export default function WashroomSlaCard({
 
   // Extract initial values from slaData or washroom.sla_config
   const resolvedConfig = slaData?.configuration || slaData || washroom?.sla_config || {};
-  const isCustomEnabled = slaData?.enabled !== undefined ? Boolean(slaData.enabled) : Boolean(washroom?.sla_config?.enabled);
+  const isCustomEnabled =
+    slaData?.enabled !== undefined
+      ? Boolean(slaData.enabled)
+      : (washroom?.sla_config?.enabled !== undefined
+          ? Boolean(washroom?.sla_config?.enabled)
+          : Boolean(companySlaEnabled));
 
   const initialData = {
     enabled: isCustomEnabled,
-    threshold_score: resolvedConfig.threshold_score ?? 7.0,
-    max_retry_attempts: resolvedConfig.max_retry_attempts ?? 1,
-    max_score_updates_per_activity: resolvedConfig.max_score_updates_per_activity ?? 1,
-    notify_cleaner: resolvedConfig.notify_cleaner !== false,
-    notify_supervisor: resolvedConfig.notify_supervisor !== false,
+    threshold_score: resolvedConfig.threshold_score ?? companyThreshold ?? 8.0,
+    max_retry_attempts: resolvedConfig.max_retry_attempts ?? companyMaxRetries ?? 2,
   };
 
   return (
@@ -383,6 +360,7 @@ export default function WashroomSlaCard({
           washroomCode={washroomCode}
           companySlaEnabled={companySlaEnabled}
           companyThreshold={companyThreshold}
+          companyMaxRetries={companyMaxRetries}
           initialData={initialData}
           refetch={refetch}
           isSaving={isSaving}

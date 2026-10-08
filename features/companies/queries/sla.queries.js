@@ -106,12 +106,9 @@ export const useUpdateWashroomSlaConfig = () => {
               sla_config: {
                 ...(loc.sla_config || {}),
                 enabled: variables.configData.enabled,
-                is_active: variables.configData.enabled,
+                is_active: variables.configData.is_active !== undefined ? variables.configData.is_active : variables.configData.enabled,
                 threshold_score: variables.configData.threshold_score,
-                notify_cleaner: variables.configData.notify_cleaner,
-                notify_supervisor: variables.configData.notify_supervisor,
                 max_retry_attempts: variables.configData.max_retry_attempts,
-                max_score_updates_per_activity: variables.configData.max_score_updates_per_activity,
                 ...newConfig,
               },
             };

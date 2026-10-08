@@ -1,489 +1,3 @@
-// "use client";
-
-// import { useState } from "react";
-// import { motion, AnimatePresence } from "framer-motion";
-// import {
-//   MapPin,
-//   Users,
-//   ClipboardList,
-//   CheckCircle2,
-//   Activity,
-//   Wrench,
-//   Sparkles,
-//   TrendingUp,
-//   ChevronRight,
-//   X,
-//   UserCheck,
-// } from "lucide-react";
-// import { useRouter } from "next/navigation";
-// // Loader imported but removed from full-page block
-// import Loader from "@/components/ui/Loader";
-// import { usePermissions } from "@/shared/hooks/usePermission";
-// import { MODULES } from "@/shared/constants/permissions";
-// import { useCompanyId } from "@/providers/CompanyProvider";
-// import {
-//   WashroomCleanlinessChart,
-//   CleanerPerformanceChart,
-// } from "@/components/graphs/dashboard/dashboardCharts";
-// import {
-//   useDashboardCounts,
-//   useDashboardAllLocations,
-//   useDashboardActivities,
-//   useWashroomScoresSummary,
-//   useCleanerPerformance
-// } from "@/features/Dashboard/Dashboard.queries";
-
-// // --- SKELETON COMPONENTS ---
-
-// const StatSkeleton = () => (
-//   <div className="bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl rounded-2xl px-4 py-4 border border-slate-200/40 dark:border-slate-700/40 animate-pulse flex items-center gap-3">
-//     <div className="h-12 w-12 rounded-xl bg-slate-200 dark:bg-slate-800" />
-//     <div className="flex-1 space-y-2">
-//       <div className="h-6 bg-slate-200 dark:bg-slate-800 rounded w-1/2" />
-//       <div className="h-3 bg-slate-200 dark:bg-slate-800 rounded w-3/4" />
-//     </div>
-//   </div>
-// );
-
-// const CardShellSkeleton = ({ heightClass = "h-[300px]" }) => (
-//   <div className="bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl rounded-[32px] border border-slate-200/40 dark:border-slate-700/40 p-6 animate-pulse">
-//     <div className="flex items-center justify-between mb-4">
-//       <div className="flex items-center gap-4">
-//         <div className="h-12 w-12 rounded-2xl bg-slate-200 dark:bg-slate-800" />
-//         <div className="space-y-2">
-//           <div className="h-3 w-20 bg-slate-200 dark:bg-slate-800 rounded" />
-//           <div className="h-6 w-40 bg-slate-200 dark:bg-slate-800 rounded" />
-//         </div>
-//       </div>
-//       <div className="h-10 w-10 bg-slate-200 dark:bg-slate-800 rounded-xl" />
-//     </div>
-//     <div className={`w-full bg-slate-200/50 dark:bg-slate-800/50 rounded-2xl ${heightClass}`} />
-//   </div>
-// );
-
-// // --- EXISTING UI COMPONENTS ---
-
-// const CardShell = ({
-//   title,
-//   subtitle,
-//   icon,
-//   headerRight,
-//   children,
-//   onClick,
-//   className = "",
-// }) => (
-//   <div
-//     onClick={onClick}
-//     className={`bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-[32px] border border-slate-200/60 dark:border-slate-700/50
-//     shadow-[0_8px_30px_rgb(0,0,0,0.08)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.4)]
-//     hover:shadow-[0_20px_60px_rgb(6,182,212,0.15)] dark:hover:shadow-[0_20px_60px_rgb(6,182,212,0.25)]
-//     transition-all duration-500 hover:-translate-y-1 ${onClick ? "cursor-pointer" : ""} ${className}
-//     relative overflow-hidden p-6`}
-//   >
-//     <div className="absolute -top-24 -right-24 w-48 h-48 bg-cyan-400/10 dark:bg-cyan-400/5 rounded-full blur-3xl" />
-//     <div className="relative z-10">
-//       <div className="flex items-center justify-between mb-4">
-//         <div className="flex items-center gap-4">
-//           <div
-//             className="h-12 w-12 rounded-2xl bg-gradient-to-br from-cyan-400/20 to-blue-500/20
-//             flex items-center justify-center text-cyan-600 dark:text-cyan-400
-//             shadow-[0_4px_20px_rgb(6,182,212,0.2)]"
-//           >
-//             {icon}
-//           </div>
-//           <div>
-//             {subtitle && (
-//               <p className="text-[10px] font-bold text-cyan-500 uppercase tracking-[0.2em] mb-0.5">
-//                 {subtitle}
-//               </p>
-//             )}
-//             <h3 className="text-xl font-bold text-slate-800 dark:text-white tracking-tight">
-//               {title}
-//             </h3>
-//           </div>
-//         </div>
-//         {headerRight}
-//       </div>
-//       {children}
-//     </div>
-//   </div>
-// );
-
-// const SummaryCard = ({ label, value, icon: Icon, color, onClick }) => (
-//   <div
-//     onClick={onClick}
-//     className="
-//       group relative
-//       bg-white/95 dark:bg-slate-900/95
-//       backdrop-blur-xl
-//       rounded-2xl
-//       px-4 py-4
-//       border border-slate-200/60 dark:border-slate-700/50
-//       shadow-sm hover:shadow-lg overflow-hidden
-//       transition-all duration-300 hover:-translate-y-1 cursor-pointer
-//     "
-//   >
-//     <div
-//       className={`absolute -right-6 -top-6 h-24 w-24 rounded-full bg-gradient-to-br ${color} opacity-10 group-hover:opacity-20 blur-2xl transition-all duration-300`}
-//     />
-//     <div className="relative z-10 flex items-center gap-3">
-//       <div
-//         className={`h-12 w-12 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center text-white shadow-md`}
-//       >
-//         <Icon size={18} strokeWidth={2.5} />
-//       </div>
-//       <div>
-//         <p className="text-2xl font-bold text-slate-800 dark:text-white leading-none">
-//           {value}
-//         </p>
-//         <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-//           {label}
-//         </p>
-//       </div>
-//     </div>
-//   </div>
-// );
-
-// const HighlightsCard = ({ locations, onViewAll }) => {
-//   const getRankStyle = (index) => {
-//     if (index === 0) return "bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 shadow-[0_4px_16px_rgb(251,191,36,0.4)] text-white ring-2 ring-amber-300/50";
-//     if (index === 1) return "bg-gradient-to-br from-slate-300 via-slate-400 to-slate-500 shadow-[0_4px_16px_rgb(148,163,184,0.4)] text-white ring-2 ring-slate-300/50";
-//     if (index === 2) return "bg-gradient-to-br from-orange-400 via-orange-500 to-orange-600 shadow-[0_4px_16px_rgb(251,146,60,0.4)] text-white ring-2 ring-orange-300/50";
-//     return "bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-600 text-slate-700 dark:text-slate-200 font-bold shadow-[0_2px_8px_rgb(0,0,0,0.1)]";
-//   };
-
-//   return (
-//     <CardShell
-//       title="Top Rated Washrooms"
-//       subtitle="Today's Performance"
-//       icon={<Sparkles size={20} />}
-//       headerRight={
-//         <button
-//           onClick={onViewAll}
-//           className="p-2.5 rounded-xl bg-slate-100/80 dark:bg-slate-800/80 text-cyan-600 dark:text-cyan-400 hover:bg-cyan-500 hover:text-white shadow-sm hover:shadow-lg transition-all duration-300"
-//         >
-//           <ChevronRight size={18} />
-//         </button>
-//       }
-//     >
-//       <div className="space-y-3 mt-2 max-h-[420px] overflow-y-auto pr-2 custom-scrollbar">
-//         {locations.length === 0 ? (
-//           <div className="text-center py-8 text-slate-400 text-sm font-bold">No data available</div>
-//         ) : (
-//           locations.map((loc, i) => (
-//             <div
-//               key={loc.id}
-//               className="flex items-center justify-between p-4 rounded-2xl bg-gradient-to-r from-slate-50/80 to-slate-100/40 dark:from-slate-800/40 dark:to-slate-800/20 border border-slate-200/50 dark:border-slate-700/50 hover:border-cyan-400/40 hover:shadow-[0_4px_20px_rgb(6,182,212,0.1)] transition-all duration-300 backdrop-blur-sm"
-//             >
-//               <div className="flex items-center gap-4">
-//                 <div className={`h-10 w-10 min-w-[40px] rounded-full flex items-center justify-center text-sm font-extrabold ${getRankStyle(i)}`}>
-//                   {i + 1}
-//                 </div>
-//                 <div>
-//                   <p className="text-sm font-bold text-slate-700 dark:text-slate-200 line-clamp-1">{loc.name}</p>
-//                 </div>
-//               </div>
-//               <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/90 dark:bg-slate-800/90 shadow-[0_2px_12px_rgb(0,0,0,0.06)] border border-slate-200/50 dark:border-slate-700/50 backdrop-blur-sm">
-//                 <span className="text-sm font-black text-cyan-600 dark:text-cyan-400">{parseFloat(loc.currentScore || 0).toFixed(1)}</span>
-//                 <TrendingUp size={14} className="text-amber-500" />
-//               </div>
-//             </div>
-//           ))
-//         )}
-//       </div>
-//     </CardShell>
-//   );
-// };
-
-// const ActivityCard = ({ items, formatTime, onItemClick }) => (
-//   <CardShell title="Cleaner Activity" subtitle="Field Updates" icon={<Activity size={20} />}>
-//     <div className="space-y-4 max-h-[420px] overflow-y-auto pr-2 custom-scrollbar mt-2">
-//       {items.length === 0 ? (
-//         <div className="text-center py-8 text-slate-400 text-sm font-bold">No activities today</div>
-//       ) : (
-//         items.map((item, i) => (
-//           <div
-//             key={`${item.type}-${item.id}`}
-//             onClick={() => onItemClick && onItemClick(item)}
-//             className="flex gap-4 group cursor-pointer p-3 rounded-xl hover:bg-gradient-to-r hover:from-cyan-50/50 hover:to-blue-50/30 dark:hover:from-cyan-900/10 dark:hover:to-blue-900/10 transition-all duration-300 hover:shadow-sm"
-//           >
-//             <div className="relative flex flex-col items-center mt-1">
-//               <div
-//                 className={`h-3.5 w-3.5 rounded-full shadow-[0_0_12px] ${
-//                   item?.score >= 4 ? "bg-emerald-400 shadow-emerald-400/60" : "bg-cyan-400 shadow-cyan-400/60"
-//                 }`}
-//               />
-//               {i !== items.length - 1 && (
-//                 <div className="w-[2px] h-full bg-gradient-to-b from-slate-200 to-transparent dark:from-slate-700 my-1.5" />
-//               )}
-//             </div>
-//             <div className="pb-2 flex-1">
-//               <p className="text-sm font-bold text-slate-700 dark:text-slate-300 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors line-clamp-2">
-//                 {item?.text}
-//               </p>
-//               <div className="flex items-center gap-2 mt-1.5">
-//                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{formatTime(item.timestamp)}</span>
-//                 {item.score && (
-//                   <span className="text-[10px] font-bold px-2 py-0.5 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 text-amber-600 dark:text-amber-400 rounded-md shadow-sm">
-//                     ★ {item.score}
-//                   </span>
-//                 )}
-//               </div>
-//             </div>
-//           </div>
-//         ))
-//       )}
-//     </div>
-//   </CardShell>
-// );
-
-// const ChartModal = ({ isOpen, onClose, title, children }) => (
-//   <AnimatePresence>
-//     {isOpen && (
-//       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-md">
-//         <motion.div
-//           initial={{ scale: 0.95, opacity: 0 }}
-//           animate={{ scale: 1, opacity: 1 }}
-//           exit={{ scale: 0.95, opacity: 0 }}
-//           className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl w-full max-w-5xl h-[80vh]
-//           rounded-[32px] shadow-[0_20px_80px_rgb(0,0,0,0.2)] dark:shadow-[0_20px_80px_rgb(0,0,0,0.6)]
-//           overflow-hidden flex flex-col border border-slate-200/50 dark:border-slate-700/50"
-//         >
-//           <div className="p-6 border-b border-slate-200/60 dark:border-slate-700/60 flex justify-between items-center backdrop-blur-sm">
-//             <h2 className="text-2xl font-black text-slate-800 dark:text-white">{title}</h2>
-//             <button
-//               onClick={onClose}
-//               className="p-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-all duration-300 hover:shadow-lg"
-//             >
-//               <X size={24} />
-//             </button>
-//           </div>
-//           <div className="p-6 flex-1 bg-gradient-to-br from-slate-50/50 to-slate-100/30 dark:from-slate-900/50 dark:to-slate-800/30">
-//             {children}
-//           </div>
-//         </motion.div>
-//       </div>
-//     )}
-//   </AnimatePresence>
-// );
-
-// export default function ClientDashboard() {
-//   const { canView, user } = usePermissions();
-//   const router = useRouter();
-//   const { companyId } = useCompanyId();
-
-//   // Permissions
-//   const canViewLocations = canView(MODULES.LOCATIONS);
-//   const canViewCleanerReviews = canView(MODULES.CLEANER_REVIEWS);
-//   const canViewUsers = canView(MODULES.USERS);
-//   const canViewReports = canView(MODULES.REPORTS);
-
-//   const [activeChartModal, setActiveChartModal] = useState(null);
-//   const today = new Date().toISOString().split("T")[0];
-
-//   const activeCompanyIdForLocations = canViewLocations ? companyId : null;
-//   const activeCompanyIdForReviews = canViewCleanerReviews ? companyId : null;
-
-//   // --- TanStack Queries ---
-//   const { data: statsData = { totalLocations: 0, ongoingTasks: 0, completedTasks: 0, totalRepairs: 0, totalCleaners: 0 }, isLoading: isCountsLoading } = useDashboardCounts(companyId, today);
-//   const { data: topLocations = [], isLoading: isTopLocLoading } = useDashboardAllLocations(activeCompanyIdForLocations, today);
-//   const { data: recentActivities = [], isLoading: isActivitiesLoading } = useDashboardActivities(activeCompanyIdForReviews, 10, today);
-//   const { data: washroomGraphData = [], isLoading: isWashroomLoading } = useWashroomScoresSummary(activeCompanyIdForLocations);
-//   const { data: cleanerGraphData = { data: [], today_completed_tasks: 0 }, isLoading: isCleanerLoading } = useCleanerPerformance(activeCompanyIdForReviews);
-
-//   // --- Helpers ---
-//   const formatTime = (dateString) => {
-//     const date = new Date(dateString);
-//     const now = new Date();
-//     const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
-//     if (diffInHours < 1) {
-//       const diffInMinutes = Math.floor((now - date) / (1000 * 60));
-//       return diffInMinutes <= 1 ? "Just now" : `${diffInMinutes}m ago`;
-//     }
-//     return diffInHours < 24 ? `${diffInHours}h ago` : date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
-//   };
-
-//   const handleActivityClick = (item) => {
-//     const reviewId = item.reviewId || item.id;
-//     if (reviewId) router.push(`/cleaners/${reviewId}?companyId=${companyId}`);
-//   };
-
-//   // Check empty permissions first
-//   if (!canViewLocations && !canViewCleanerReviews && !canViewUsers && !canViewReports) {
-//     return (
-//       <div className="flex flex-col justify-center items-center h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-//         <div className="text-center p-8 bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-slate-200/60 max-w-md">
-//           <Activity className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-//           <h2 className="text-xl font-black text-slate-800 mb-2">Limited Access</h2>
-//         </div>
-//       </div>
-//     );
-//   }
-
-//   return (
-//     <div className="min-h-screen p-4 md:p-8">
-//       {/* 1. Stats Grid */}
-//       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-8 lg:mt-[-40px]">
-//         {isCountsLoading ? (
-//           <>
-//             {canViewLocations && <StatSkeleton />}
-//             {canViewCleanerReviews && <StatSkeleton />}
-//             {canViewCleanerReviews && <StatSkeleton />}
-//             {canViewReports && <StatSkeleton />}
-//             {canViewUsers && <StatSkeleton />}
-//           </>
-//         ) : (
-//           <>
-//             {canViewLocations && (
-//               <SummaryCard
-//                 label="Total Toilets"
-//                 value={statsData.totalLocations}
-//                 icon={MapPin}
-//                 color="from-blue-500 to-cyan-400"
-//                 onClick={() => router.push(`/washrooms?companyId=${companyId}`)}
-//               />
-//             )}
-//             {canViewCleanerReviews && (
-//               <SummaryCard
-//                 label="Ongoing Tasks"
-//                 value={statsData.ongoingTasks}
-//                 icon={ClipboardList}
-//                 color="from-cyan-400 to-teal-400"
-//                 onClick={() => router.push(`/cleaners?companyId=${companyId}&status=ongoing`)}
-//               />
-//             )}
-//             {canViewCleanerReviews && (
-//               <SummaryCard
-//                 label="Completed Tasks"
-//                 value={`${statsData.completedTasks}`}
-//                 icon={CheckCircle2}
-//                 color="from-emerald-400 to-teal-500"
-//                 onClick={() => router.push(`/cleaners?companyId=${companyId}&status=completed`)}
-//               />
-//             )}
-//             {canViewReports && (
-//               <SummaryCard
-//                 label="Total Repairs"
-//                 value={statsData.totalRepairs}
-//                 icon={Wrench}
-//                 color="from-rose-400 to-orange-400"
-//                 onClick={() => router.push(`/repairs?companyId=${companyId}`)}
-//               />
-//             )}
-//             {canViewUsers && (
-//               <SummaryCard
-//                 label="Total Cleaners"
-//                 value={statsData.totalCleaners}
-//                 icon={UserCheck}
-//                 color="from-indigo-400 to-purple-400"
-//                 onClick={() => router.push(`/users?flag=cleaner&companyId=${companyId}`)}
-//               />
-//             )}
-//           </>
-//         )}
-//       </div>
-
-//       {/* 2. Charts Section */}
-//       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-//         {canViewLocations && (
-//           isWashroomLoading ? (
-//             <CardShellSkeleton heightClass="h-[300px]" />
-//           ) : (
-//             <CardShell
-//               title="Cleanliness Trends"
-//               subtitle="LAST 7 DAYS PERFORMANCE"
-//               icon={<TrendingUp size={20} className="text-blue-500" />}
-//               onClick={() => setActiveChartModal("cleanliness")}
-//               headerRight={
-//                 <button className="p-2.5 bg-blue-50/80 dark:bg-slate-800/80 rounded-xl text-blue-500 hover:bg-blue-500 hover:text-white shadow-sm hover:shadow-lg transition-all duration-300">
-//                   <TrendingUp size={18} />
-//                 </button>
-//               }
-//             >
-//               <div className="mt-4 border-[1.5px] border-slate-200 dark:border-slate-700 rounded-2xl p-4">
-//                 <h3 className="text-center text-slate-400 dark:text-slate-500 font-semibold text-lg mb-4">
-//                   Washroom Cleanliness Impact
-//                 </h3>
-//                 <div className="h-[250px] w-full">
-//                   <WashroomCleanlinessChart data={washroomGraphData.slice(0, 4)} />
-//                 </div>
-//               </div>
-//             </CardShell>
-//           )
-//         )}
-
-//         {canViewCleanerReviews && (
-//           isCleanerLoading ? (
-//             <CardShellSkeleton heightClass="h-[300px]" />
-//           ) : (
-//             <CardShell
-//               title="Top Cleaners"
-//               subtitle="EFFICIENCY METRICS"
-//               icon={<Users size={20} className="text-teal-500" />}
-//               onClick={() => setActiveChartModal("performance")}
-//               headerRight={
-//                 <button className="p-2.5 bg-teal-50/80 dark:bg-slate-800/80 rounded-xl text-teal-500 hover:bg-teal-500 hover:text-white shadow-sm hover:shadow-lg transition-all duration-300">
-//                   <Users size={18} />
-//                 </button>
-//               }
-//             >
-//               <div className="mt-4 border-[1.5px] border-slate-200 dark:border-slate-700 rounded-2xl p-4">
-//                 <h3 className="text-center text-slate-400 dark:text-slate-500 font-semibold text-lg mb-4">
-//                   Cleaner Performance This Week
-//                 </h3>
-//                 <div className="h-[250px] w-full relative">
-//                   <CleanerPerformanceChart
-//                     data={cleanerGraphData.data}
-//                     todayCount={cleanerGraphData.today_completed_tasks}
-//                   />
-//                 </div>
-//               </div>
-//             </CardShell>
-//           )
-//         )}
-//       </div>
-
-//       {/* 3. Bottom Lists */}
-//       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-//         {canViewLocations && (
-//           isTopLocLoading ? (
-//             <CardShellSkeleton heightClass="h-[420px]" />
-//           ) : (
-//             <HighlightsCard
-//               locations={topLocations}
-//               onViewAll={() => router.push(`/washrooms?companyId=${companyId}&sortBy=currentScore`)}
-//             />
-//           )
-//         )}
-//         {canViewCleanerReviews && (
-//           isActivitiesLoading ? (
-//             <CardShellSkeleton heightClass="h-[420px]" />
-//           ) : (
-//             <ActivityCard
-//               items={recentActivities}
-//               formatTime={formatTime}
-//               onItemClick={handleActivityClick}
-//             />
-//           )
-//         )}
-//       </div>
-
-//       {/* Modals */}
-//       <ChartModal isOpen={activeChartModal === "cleanliness"} onClose={() => setActiveChartModal(null)} title="Detailed Cleanliness Analysis">
-//         <div className="h-full w-full">
-//           <WashroomCleanlinessChart data={washroomGraphData.slice(0, 15)} />
-//         </div>
-//       </ChartModal>
-
-//       <ChartModal isOpen={activeChartModal === "performance"} onClose={() => setActiveChartModal(null)} title="Weekly Cleaner Performance">
-//         <div className="h-full w-full">
-//           <CleanerPerformanceChart data={cleanerGraphData.data} todayCount={cleanerGraphData.today_completed_tasks} />
-//         </div>
-//       </ChartModal>
-//     </div>
-//   );
-// }
-
 "use client";
 
 import { useState, useRef, useEffect } from "react";
@@ -509,6 +23,9 @@ import {
   BarChart2,
   UserCheck,
   Star,
+  ShieldCheck,
+  RotateCcw,
+  AlertTriangle,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Loader from "@/components/ui/Loader";
@@ -525,8 +42,8 @@ import {
   useDashboardActivities,
   useWashroomScoresSummary,
   useCleanerPerformance,
+  useGetWashroomHygieneHeatmap,
 } from "@/features/Dashboard/Dashboard.queries";
-import { useGetWashroomHygieneHeatmap } from "@/features/Dashboard/Dashboard.queries";
 
 // --- SKELETON COMPONENTS ---
 const StatSkeleton = () => (
@@ -587,7 +104,6 @@ const StatCard = ({
         <Icon size={18} strokeWidth={2.5} />
       </div>
       <div>
-        {/* ADDED dark:text-white here */}
         <h4 className="text-xl font-bold text-slate-800 dark:text-white leading-none mb-0.5">
           {value || 0}
         </h4>
@@ -624,6 +140,7 @@ const StatCard = ({
     </div>
   </div>
 );
+
 // --- HELPERS ---
 const getDatesInRange = (startDate, endDate) => {
   const dates = [];
@@ -649,9 +166,6 @@ export default function ClientDashboard() {
 
   const todayDate = new Date();
   const todayStr = todayDate.toISOString().split("T")[0];
-  const thirtyDaysAgoObj = new Date();
-  thirtyDaysAgoObj.setDate(todayDate.getDate() - 30);
-  const thirtyDaysAgoStr = thirtyDaysAgoObj.toISOString().split("T")[0];
 
   // Filters State
   const [dateRange, setDateRange] = useState({
@@ -701,7 +215,6 @@ export default function ClientDashboard() {
       endDate: cleanerEndDateStr,
     });
 
-  // Safely extract data and stats
   const cleanerGraphData = cleanerResponse?.data || [];
   const cleanerStats = cleanerResponse?.stats || {
     totalTasks: 0,
@@ -726,13 +239,11 @@ export default function ClientDashboard() {
   };
 
   useEffect(() => {
-    // Check initial state
     const checkTheme = () => {
       setIsDarkMode(document.documentElement.classList.contains("dark"));
     };
     checkTheme();
 
-    // Watch for changes to the 'class' attribute on the <html> tag
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         if (mutation.attributeName === "class") {
@@ -757,15 +268,14 @@ export default function ClientDashboard() {
 
   if (diffDaysHeatmap === 0) {
     const forcedStart = new Date(hEnd);
-    forcedStart.setDate(hEnd.getDate() - 29); // 30 days total including today
+    forcedStart.setDate(hEnd.getDate() - 29);
     heatmapStartDateStr = forcedStart.toISOString().split("T")[0];
   } else if (diffDaysHeatmap < 28) {
     const forcedEnd = new Date(hStart);
-    forcedEnd.setDate(hStart.getDate() + 29); // 30 days total
+    forcedEnd.setDate(hStart.getDate() + 29);
     heatmapEndDateStr = forcedEnd.toISOString().split("T")[0];
   }
 
-  // 2. Pass the single object to the hook (API WILL NOW FIRE)
   const { data: heatmapResponse, isLoading: isHeatmapLoading } =
     useGetWashroomHygieneHeatmap({
       company_id: companyId,
@@ -782,7 +292,6 @@ export default function ClientDashboard() {
         : 0;
     return getCount(b) - getCount(a);
   });
-  // Reverse the array so the latest dates appear on the left side of the heatmap
   const heatmapDatesArray = getDatesInRange(
     heatmapStartDateStr,
     heatmapEndDateStr,
@@ -798,53 +307,38 @@ export default function ClientDashboard() {
     const endStr = today.toISOString().split("T")[0];
     let startStr = endStr;
 
-    if (preset === "today") {
-      startStr = endStr;
-    } else if (preset === "week") {
-      const weekStart = new Date(today);
-      weekStart.setDate(today.getDate() - today.getDay());
-      startStr = weekStart.toISOString().split("T")[0];
+    if (preset === "week") {
+      const d = new Date();
+      d.setDate(today.getDate() - 7);
+      startStr = d.toISOString().split("T")[0];
     } else if (preset === "month") {
-      const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-      startStr = monthStart.toISOString().split("T")[0];
+      const d = new Date();
+      d.setDate(today.getDate() - 30);
+      startStr = d.toISOString().split("T")[0];
     }
 
     const newRange = { startDate: startStr, endDate: endStr };
-    setTempDates(newRange);
     setDateRange(newRange);
+    setTempDates(newRange);
     setShowFilterMenu(false);
   };
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (
-        filterMenuRef.current &&
-        !filterMenuRef.current.contains(event.target)
-      ) {
-        setShowFilterMenu(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const formatTime = (dateString) => {
-    if (!dateString) return "Just now";
-    const date = new Date(dateString);
+  const formatTime = (isoString) => {
+    if (!isoString) return "";
+    const date = new Date(isoString);
     const now = new Date();
     const diffInMinutes = Math.floor((now - date) / (1000 * 60));
-    if (diffInMinutes < 60) return `${Math.max(0, diffInMinutes)}m ago`;
+
+    if (diffInMinutes < 1) return "Just now";
+    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
     const diffInHours = Math.floor(diffInMinutes / 60);
     if (diffInHours < 24) return `${diffInHours}h ago`;
-    const diffInDays = Math.floor(diffInHours / 24);
-    return `${diffInDays} day${diffInDays > 1 ? "s" : ""} ago`;
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   };
 
   const getScoreForDate = (row, dateStr) => {
-    if (row.daily_scores && row.daily_scores[dateStr] !== undefined) {
-      return row.daily_scores[dateStr];
-    }
-    return null;
+    if (!row.daily_scores) return null;
+    return row.daily_scores[dateStr] ?? null;
   };
 
   const getHeatmapColor = (score) => {
@@ -887,7 +381,6 @@ export default function ClientDashboard() {
     let actDateStr = "Today";
     if (activity.timestamp) {
       const d = new Date(activity.timestamp);
-      // if today, show "Today"
       const isToday = d.toDateString() === new Date().toDateString();
       actDateStr = isToday
         ? "Today"
@@ -898,8 +391,37 @@ export default function ClientDashboard() {
     return acc;
   }, {});
 
+  const isSlaEnabled = Boolean(statsData?.isSlaEnabled);
+
   return (
     <div className="min-h-screen bg-[#f8fafc] dark:bg-slate-950 p-3 sm:p-4 md:p-6 font-sans md:mt-[-10px]">
+      {/* SLA Status Header Badge (Displayed only if company SLA is ON) */}
+      {isSlaEnabled && (
+        <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-cyan-500/10 to-blue-500/10 border border-emerald-500/20 mb-4 shadow-sm">
+          <div className="flex items-center gap-2 text-xs font-bold text-emerald-800 dark:text-emerald-300">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+            </span>
+            <span>SLA Management Active</span>
+            <span className="text-slate-400 dark:text-slate-600 font-normal">|</span>
+            <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">
+              Pass Threshold: <strong className="text-emerald-700 dark:text-emerald-300">{statsData.slaThreshold || 8.0}/10</strong>
+            </span>
+            <span className="text-slate-400 dark:text-slate-600 font-normal">|</span>
+            <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">
+              Max Retries: <strong className="text-cyan-700 dark:text-cyan-300">{statsData.slaMaxRetries || 2}</strong>
+            </span>
+          </div>
+          <button
+            onClick={() => router.push(`/sla-management?companyId=${companyId}`)}
+            className="text-[11px] font-bold text-emerald-700 dark:text-emerald-300 hover:text-emerald-900 dark:hover:text-white underline underline-offset-2 inline-flex items-center gap-1 transition-colors"
+          >
+            Manage SLA <ChevronRight size={13} />
+          </button>
+        </div>
+      )}
+
       {/* 1. TOP STATS ROW */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4 mb-6 md:mt-[-30px]">
         {isCountsLoading ? (
@@ -980,7 +502,6 @@ export default function ClientDashboard() {
         {/* Cleanliness Overview */}
         {canViewLocations && (
           <CardShell className="h-full flex flex-col">
-            {/* HEADER - Stacks on mobile, row on desktop */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-0 mb-4">
               <div className="flex items-start md:items-center gap-3">
                 <div className="text-cyan-500 mt-0.5 md:mt-0">
@@ -995,7 +516,6 @@ export default function ClientDashboard() {
                   </p>
                 </div>
               </div>
-              {/* Allowed legend to wrap on small screens */}
               <div className="flex flex-wrap gap-4 text-[10px] font-bold text-slate-500 dark:text-slate-400">
                 <div className="flex items-center gap-1.5">
                   <div className="w-2 h-2 rounded-full bg-emerald-500"></div>{" "}
@@ -1008,9 +528,7 @@ export default function ClientDashboard() {
               </div>
             </div>
 
-            {/* MAIN CONTENT - Column on mobile, row on desktop */}
             <div className="flex flex-col md:flex-row items-center justify-between mt-6 flex-1 gap-8 md:gap-0 w-full">
-              {/* Circular Score - Added shrink-0 so it doesn't get distorted */}
               <div className="relative shrink-0 h-40 w-40 flex items-center justify-center rounded-full border-[12px] border-emerald-400 dark:border-emerald-500 border-r-emerald-200 dark:border-r-emerald-900">
                 <div className="text-center">
                   <span className="text-4xl font-black text-slate-800 dark:text-white">
@@ -1022,7 +540,6 @@ export default function ClientDashboard() {
                 </div>
               </div>
 
-              {/* Bar Charts - Changed ml-8 to md:ml-8 so it doesn't push off-screen on mobile */}
               <div className="flex-1 w-full ml-0 md:ml-8 flex flex-col justify-center space-y-6">
                 {isWashroomLoading ? (
                   <Loader />
@@ -1056,7 +573,6 @@ export default function ClientDashboard() {
                           />
                         </div>
                       </div>
-                      {/* Added shrink-0 to prevent number clipping on narrow screens */}
                       <div className="w-8 text-right shrink-0 flex flex-col gap-0.5">
                         <span className="text-slate-800 dark:text-slate-100 font-bold leading-none">
                           {Number(loc.current_score || 0).toFixed(2)}
@@ -1071,7 +587,6 @@ export default function ClientDashboard() {
               </div>
             </div>
 
-            {/* FOOTER - Centered on mobile, right-aligned on desktop */}
             <div className="mt-auto text-center md:text-right pt-8 md:pt-6">
               <button
                 onClick={() => router.push(`/washrooms?companyId=${companyId}`)}
@@ -1098,7 +613,6 @@ export default function ClientDashboard() {
               <Loader />
             ) : (
               <div className="flex-1 flex flex-col">
-                {/* Chart Area */}
                 <div className="h-[220px] w-full mt-2 relative z-10">
                   <CleanerPerformanceChart
                     data={cleanerGraphData}
@@ -1106,7 +620,6 @@ export default function ClientDashboard() {
                   />
                 </div>
 
-                {/* Stats Grid - Updated to 2 columns on mobile, 4 on desktop */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 gap-y-6 md:gap-y-4 mt-auto pt-6 border-t border-slate-100/60 dark:border-slate-800/60 bg-white dark:bg-slate-900 rounded-b-[20px] -mx-6 -mb-6 px-6 pb-6">
                   <div>
                     <p className="text-[11px] font-bold text-slate-800 dark:text-slate-200 mb-2">
@@ -1199,7 +712,6 @@ export default function ClientDashboard() {
             icon={<Sparkles size={18} className="text-cyan-500" />}
           />
 
-          {/* Heatmap Legend - Reduced gap on mobile */}
           <div className="flex gap-3 md:gap-6 mb-6 text-[11px] font-bold text-slate-600 dark:text-slate-300 justify-center flex-wrap">
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-3 rounded-full bg-emerald-500 dark:bg-emerald-400"></div>{" "}
@@ -1229,11 +741,8 @@ export default function ClientDashboard() {
             </div>
           ) : (
             <div className="w-full overflow-x-auto overflow-y-auto max-h-[330px] pb-4 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-200 dark:[&::-webkit-scrollbar-thumb]:bg-slate-700 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-slate-300 dark:hover:[&::-webkit-scrollbar-thumb]:bg-slate-600 transition-colors">
-              {/* Container with both X and Y scrolling, max height, and slim scrollbar styling */}
               <div className="w-max min-w-full border border-slate-100 dark:border-slate-800 rounded-xl overflow-hidden text-xs bg-white dark:bg-slate-900 shadow-sm relative">
-                {/* Table Header - Now sticky to the top on vertical scroll */}
                 <div className="flex font-bold text-slate-600 dark:text-slate-300 mb-1 border-b border-slate-100 dark:border-slate-800 pb-2 sticky top-0 bg-white dark:bg-slate-900 z-20">
-                  {/* Left corner cell (Washroom) needs z-30 to float above both scrolling directions */}
                   <div className="w-36 md:w-72 flex-shrink-0 pl-3 md:pl-4 sticky left-0 bg-white dark:bg-slate-900 z-30 border-r border-slate-50 dark:border-slate-800 flex">
                     <div className="w-8 mr-2 flex-shrink-0">Sr. No.</div>
                     <div className="flex-1">Washroom</div>
@@ -1262,13 +771,11 @@ export default function ClientDashboard() {
                       </div>
                     );
                   })}
-                  {/* Right corner cell (Avg) needs z-30 to float above both scrolling directions */}
                   <div className="w-14 flex-shrink-0 flex items-center justify-center sticky right-0 bg-white dark:bg-slate-900 z-30 border-l border-slate-100 dark:border-slate-800 shadow-[-4px_0_10px_rgba(0,0,0,0.02)]">
                     Avg
                   </div>
                 </div>
 
-                {/* Table Rows */}
                 {heatmapData.length > 0 ? (
                   heatmapData.map((row, i) => {
                     const rowAvg = row.average_score
@@ -1280,7 +787,6 @@ export default function ClientDashboard() {
                         key={row.washroom_id || i}
                         className="flex h-10 items-stretch group"
                       >
-                        {/* Left Sticky Column */}
                         <div
                           className="w-36 md:w-72 flex-shrink-0 text-[10px] md:text-xs font-bold text-slate-700 dark:text-slate-200 pl-3 md:pl-4 pr-2 truncate flex items-center border-b border-slate-200 dark:border-slate-900 sticky left-0 bg-white dark:bg-slate-900 z-10 border-r border-slate-50 dark:border-slate-800 group-hover:bg-slate-50 dark:group-hover:bg-slate-800/50 transition-colors"
                           title={row.washroom_name}
@@ -1293,7 +799,6 @@ export default function ClientDashboard() {
                           </div>
                         </div>
 
-                        {/* Solid Grid Cells */}
                         {heatmapDatesArray.map((dateStr, j) => {
                           const score = getScoreForDate(row, dateStr);
                           return (
@@ -1310,7 +815,6 @@ export default function ClientDashboard() {
                           );
                         })}
 
-                        {/* Right Sticky Column */}
                         <div className="w-14 flex-shrink-0 flex items-center justify-center font-black text-slate-800 dark:text-slate-100 border-b border-slate-200 dark:border-slate-900 sticky right-0 bg-white dark:bg-slate-900 z-10 border-l border-slate-100 dark:border-slate-800 shadow-[-4px_0_10px_rgba(0,0,0,0.02)] group-hover:bg-slate-50 dark:group-hover:bg-slate-800/50 transition-colors">
                           {rowAvg}
                         </div>
@@ -1339,7 +843,6 @@ export default function ClientDashboard() {
               </h3>
             </div>
 
-            {/* Styled Scrollable Container */}
             <div className="flex-1 overflow-y-auto pr-2 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-200 dark:[&::-webkit-scrollbar-thumb]:bg-slate-700 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-slate-300 dark:hover:[&::-webkit-scrollbar-thumb]:bg-slate-600 transition-colors">
               <div className="space-y-4">
                 {isTopLocLoading ? (
@@ -1376,8 +879,7 @@ export default function ClientDashboard() {
                                   className={
                                     starIndex < rating
                                       ? "text-amber-400 dark:text-amber-500 fill-amber-400 dark:fill-amber-500"
-                                      : // Increased contrast for uncolored stars here:
-                                        "text-slate-300 dark:text-slate-600 fill-slate-300 dark:fill-slate-600"
+                                      : "text-slate-300 dark:text-slate-600 fill-slate-300 dark:fill-slate-600"
                                   }
                                 />
                               ))}
@@ -1417,15 +919,13 @@ export default function ClientDashboard() {
               </h3>
             </div>
 
-            {/* Styled Scrollable Container */}
             <div className="flex-1 overflow-y-auto pr-2 relative before:absolute before:inset-0 before:ml-1.5 before:-translate-x-px before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-200 dark:before:via-slate-800 before:to-transparent [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-200 dark:[&::-webkit-scrollbar-thumb]:bg-slate-700 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-slate-300 dark:hover:[&::-webkit-scrollbar-thumb]:bg-slate-600 transition-colors">
               {isActivitiesLoading ? (
                 <Loader />
               ) : Object.entries(groupedActivities).length > 0 ? (
                 Object.entries(groupedActivities).map(
-                  ([dateLabel, activitiesForDate], groupIdx) => (
+                  ([dateLabel, activitiesForDate]) => (
                     <div key={dateLabel} className="mb-6 last:mb-0">
-                      {/* Date Header sticky */}
                       <div className="sticky top-0 z-20 bg-[#f8fafc] dark:bg-slate-950/90 py-2 mb-4 backdrop-blur-sm -mx-2 px-2">
                         <span className="text-xs font-black text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-1 rounded-full shadow-sm">
                           {dateLabel}
@@ -1471,10 +971,27 @@ export default function ClientDashboard() {
                               <div className="flex flex-col gap-1 w-full md:w-auto flex-1">
                                 {isCleaner ? (
                                   <>
-                                    <p className="text-[12px] font-bold text-slate-800 dark:text-slate-100 leading-tight">
-                                      {activity.cleanerName} -{" "}
-                                      {activity.locationName}
-                                    </p>
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      <p className="text-[12px] font-bold text-slate-800 dark:text-slate-100 leading-tight">
+                                        {activity.cleanerName} -{" "}
+                                        {activity.locationName}
+                                      </p>
+                                      {/* SLA Badges (Only rendered when SLA is active for this washroom) */}
+                                      {activity.is_sla_enabled && activity.sla_tag && (
+                                        <span
+                                          className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold border ${
+                                            activity.is_retry
+                                              ? "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 border-amber-300 dark:border-amber-700/50"
+                                              : activity.is_breached
+                                                ? "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300 border-rose-300 dark:border-rose-700/50"
+                                                : "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700/50"
+                                          }`}
+                                        >
+                                          {activity.is_retry ? "🔄 " : activity.is_breached ? "⚠️ " : "✓ "}
+                                          {activity.sla_tag}
+                                        </span>
+                                      )}
+                                    </div>
                                     <div className="flex flex-wrap items-center gap-1.5 text-[10px] font-medium text-slate-500 dark:text-slate-400">
                                       <span>
                                         Started:{" "}
@@ -1560,7 +1077,7 @@ export default function ClientDashboard() {
         </div>
       </div>
 
-      {/* Global Date Filter FAB (Floating Action Button) */}
+      {/* Global Date Filter FAB */}
       <div
         className="fixed bottom-6 right-6 z-50 flex flex-col items-end"
         ref={filterMenuRef}
@@ -1666,7 +1183,6 @@ export default function ClientDashboard() {
           ) : (
             <Filter size={24} />
           )}
-          {/* Small dot indicator when active and not open */}
           {!showFilterMenu &&
             (dateRange.startDate !== todayStr ||
               dateRange.endDate !== todayStr) && (

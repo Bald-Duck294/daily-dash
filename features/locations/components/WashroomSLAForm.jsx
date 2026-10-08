@@ -16,7 +16,7 @@ export default function WashroomSLAForm({
             Enable SLA
           </h3>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Activate SLA engine for this washroom
+            Activate SLA monitoring and retry rules for this washroom
           </p>
         </div>
         <label className="relative inline-flex items-center cursor-pointer">
@@ -71,6 +71,7 @@ export default function WashroomSLAForm({
                 <input
                   type="number"
                   min="0"
+                  max="10"
                   value={config.max_retry_attempts}
                   onChange={(e) =>
                     setConfig({
@@ -81,74 +82,6 @@ export default function WashroomSLAForm({
                   className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                 />
               </div>
-            </div>
-          </div>
-
-          {/* Supervisor Rules Section */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-              Supervisor Rules
-            </h3>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                Max Score Updates Per Activity
-              </label>
-              <input
-                type="number"
-                min="1"
-                value={config.max_score_updates_per_activity}
-                onChange={(e) =>
-                  setConfig({
-                    ...config,
-                    max_score_updates_per_activity: Number(e.target.value),
-                  })
-                }
-                className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-              />
-            </div>
-          </div>
-
-          {/* Notifications Section */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-              Notifications
-            </h3>
-
-            <div className="space-y-3">
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={config.notify_cleaner}
-                  onChange={(e) =>
-                    setConfig({
-                      ...config,
-                      notify_cleaner: e.target.checked,
-                    })
-                  }
-                  className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
-                />
-                <span className="text-sm text-slate-700 dark:text-slate-300">
-                  Notify Cleaner
-                </span>
-              </label>
-
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={config.notify_supervisor}
-                  onChange={(e) =>
-                    setConfig({
-                      ...config,
-                      notify_supervisor: e.target.checked,
-                    })
-                  }
-                  className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
-                />
-                <span className="text-sm text-slate-700 dark:text-slate-300">
-                  Notify Supervisor
-                </span>
-              </label>
             </div>
           </div>
         </div>

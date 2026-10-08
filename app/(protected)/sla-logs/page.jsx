@@ -45,6 +45,7 @@ import {
 import {
   useCleanersDropdown,
   useDropdownLocations,
+  useCompaniesDropdown,
 } from "@/features/dropdownList/dropdownlist.query.js";
 import Loader from "@/components/ui/Loader.jsx";
 
@@ -162,10 +163,28 @@ const STATE_BADGE_CONFIG = {
   },
 };
 
+import { useSelector } from "react-redux";
+import { useCompanySlaConfig } from "@/features/companies/queries/sla.queries";
+
 export default function SlaLogsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { companyId } = useCompanyId();
+  const { user } = useSelector((state) => state.auth);
+
+  const isSuperAdmin = Number(user?.role_id) === 1;
+  const userPermissions = user?.role?.permissions || [];
+  const hasSlaPermission =
+    isSuperAdmin ||
+    userPermissions.includes("sla_management.view") ||
+    Number(user?.role_id) === 2;
+
+  // Query company master SLA status
+  const { data: companySlaData, isLoading: isLoadingSlaConfig } = useCompanySlaConfig(
+    companyId,
+    Boolean(companyId)
+  );
+  const companySlaEnabled = Boolean(companySlaData?.enabled);
 
   // View Mode: "incidents" (default) or "stream" (raw audit logs)
   const [viewMode, setViewMode] = useState("incidents");
@@ -283,6 +302,54 @@ export default function SlaLogsPage() {
       router.push(`/cleaners/${reviewId}?companyId=${companyId}`);
     }
   };
+
+  if (!hasSlaPermission) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6">
+        <div className="p-4 bg-rose-50 dark:bg-rose-950/40 text-rose-600 rounded-full mb-4">
+          <AlertTriangle className="w-10 h-10" />
+        </div>
+        <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+          Access Restricted
+        </h2>
+        <p className="text-sm text-slate-500 mt-2 max-w-md">
+          You do not have permission to view SLA logs or incidents. Please contact your administrator.
+        </p>
+      </div>
+    );
+  }
+
+  const { data: companies = [] } = useCompaniesDropdown();
+  const selectedCompany = companies?.find(
+    (c) => String(c.id) === String(companyId)
+  ) || {
+    id: companyId,
+    name: user?.company_name || user?.company?.name || `Organization #${companyId}`,
+  };
+
+  if (!isSuperAdmin && !isLoadingSlaConfig && !companySlaEnabled) {
+    return (
+      <div className="flex-1 w-full min-h-[calc(100vh-4rem)] p-4 sm:p-6 lg:p-8 space-y-6">
+        <div className="flex items-center gap-2 pb-4 border-b border-[var(--border)]">
+          <ShieldCheck className="w-6 h-6 text-blue-500" />
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[var(--foreground)]">
+            SLA Incident Logs
+          </h1>
+        </div>
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-8 border border-slate-200/80 dark:border-slate-800 text-center max-w-2xl mx-auto shadow-sm my-12">
+          <div className="w-14 h-14 bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-amber-200/60 dark:border-amber-800/40">
+            <ShieldCheck className="w-7 h-7" />
+          </div>
+          <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
+            Master SLA Not Activated
+          </h3>
+          <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed mb-4">
+            SLA tracking and incident logging are currently inactive for <span className="font-semibold text-slate-900 dark:text-slate-200">{selectedCompany?.name || "your organization"}</span>. Once activated by the SaafAi Admin, all real-time breaches and escalation journeys will appear here.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 w-full min-h-[calc(100vh-4rem)] bg-[var(--background)] text-[var(--foreground)] p-4 sm:p-6 lg:p-8 space-y-6">

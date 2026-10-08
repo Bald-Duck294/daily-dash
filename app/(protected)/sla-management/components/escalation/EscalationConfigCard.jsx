@@ -7,8 +7,6 @@ import {
   Save,
   RefreshCw,
   AlertTriangle,
-  RotateCcw,
-  CheckCircle2,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import Loader from "@/components/ui/Loader";
@@ -48,11 +46,7 @@ function EscalationFormContent({
     ];
   });
 
-  const [maxRetries, setMaxRetries] = useState(
-    () => Number(config.max_retry_attempts ?? 2)
-  );
-
-  const validation = validateEscalationLadder(levels, isEnabled, maxRetries);
+  const validation = validateEscalationLadder(levels, isEnabled);
   const isSaving = updateMutation.isPending;
 
   const handleAddLevel = () => {
@@ -124,7 +118,6 @@ function EscalationFormContent({
       await updateMutation.mutateAsync({
         companyId,
         configData: {
-          max_retry_attempts: parseInt(maxRetries, 10),
           escalation: {
             enabled: isEnabled,
             levels: levels.map((lvl, idx) => ({
@@ -191,39 +184,6 @@ function EscalationFormContent({
             />
             <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
           </label>
-        </div>
-      </div>
-
-      {/* Global Retry Parameters */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/80">
-        <div>
-          <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1 flex items-center gap-1.5">
-            <RotateCcw className="w-3.5 h-3.5 text-blue-500" />
-            Max Corrective Retries Allowed
-          </label>
-          <input
-            type="number"
-            min="0"
-            max="10"
-            value={maxRetries}
-            onChange={(e) => setMaxRetries(e.target.value)}
-            disabled={isSaving}
-            className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
-          />
-          <p className="text-[11px] text-slate-500 mt-1">
-            Max physical corrective attempts on Clear App before state changes to EXHAUSTED.
-          </p>
-        </div>
-
-        <div className="flex flex-col justify-center">
-          <div className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300">
-            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-            <span>Active Ladder Summary</span>
-          </div>
-          <p className="text-xs text-slate-500 mt-1">
-            {levels.length} Escalation Level{levels.length > 1 ? "s" : ""} configured &bull; Max delay:{" "}
-            {levels.length > 0 ? `${levels[levels.length - 1].delay_minutes} mins` : "None"}
-          </p>
         </div>
       </div>
 

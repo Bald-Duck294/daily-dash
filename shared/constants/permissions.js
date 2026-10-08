@@ -11,6 +11,7 @@ export const MODULES = {
   CLEANER_REVIEWS: "cleaner_reviews",
   SCORE_MANAGEMENT: "score_management",
   ROLE_MANAGEMENT: "role_management",
+  SLA_MANAGEMENT: "sla_management",
 };
 
 export const ACTIONS = {
@@ -76,5 +77,10 @@ export const MODULE_CONFIG = [
     key: MODULES.ROLE_MANAGEMENT,
     label: "Role Management",
     description: "Manage roles and permissions",
+  },
+  {
+    key: MODULES.SLA_MANAGEMENT,
+    label: "SLA Management",
+    description: "Configure and monitor SLA thresholds, escalations, and incident logs",
   },
 ];

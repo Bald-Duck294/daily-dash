@@ -29,6 +29,7 @@ import {
 } from "@/shared/config/menuConfig";
 import { filterMenuByPermissions } from "@/shared/utils/menuFilter";
 import { useCompanyId } from "@/providers/CompanyProvider";
+import { useCompanySlaConfig } from "@/features/companies/queries/sla.queries";
 
 const Sidebar = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -46,6 +47,13 @@ const Sidebar = () => {
 
   const { companyId, hasCompanyContext } = useCompanyId();
 
+  // Query parent company master SLA status
+  const { data: companySlaData } = useCompanySlaConfig(
+    companyId,
+    Boolean(companyId)
+  );
+  const isCompanySlaActive = Boolean(companySlaData?.enabled);
+
   // Memoize menu items to prevent infinite loop
   const menuItems = useMemo(() => {
     if (user?.role_id === 1 && !hasCompanyContext) {
@@ -55,13 +63,23 @@ const Sidebar = () => {
       return getSuperadminCompanyMenu(companyId);
     }
     if (user?.role_id === 2 && hasCompanyContext) {
-      return getAdminMenu(companyId);
+      let items = getAdminMenu(companyId);
+      if (!isCompanySlaActive) {
+        items = items.filter((item) => item.key !== "sla-management");
+      }
+      return items;
     }
     if (hasCompanyContext && user?.role?.permissions) {
       let menuTemplate = getFullCompanyMenuTemplate(companyId);
       if (user.role_id === 6) {
         menuTemplate = menuTemplate.filter(
           (item) => item.key !== "locationTypes",
+        );
+      }
+      // If company SLA is not active, strip SLA Management from menuTemplate
+      if (!isCompanySlaActive) {
+        menuTemplate = menuTemplate.filter(
+          (item) => item.key !== "sla-management"
         );
       }
       const filteredMenu = filterMenuByPermissions(
@@ -81,7 +99,7 @@ const Sidebar = () => {
       return filteredMenu;
     }
     return [];
-  }, [user?.role_id, user?.role?.permissions, hasCompanyContext, companyId]);
+  }, [user?.role_id, user?.role?.permissions, hasCompanyContext, companyId, isCompanySlaActive]);
 
   const getRoleText = (roleId) => {
     switch (roleId) {

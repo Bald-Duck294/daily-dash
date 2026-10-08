@@ -64,10 +64,43 @@ export const useCleanerReviewsByLocationId = (locationId, companyId, take) => {
 };
 
 // ==========================================
+// 🆕 SLA CLEANER ACTIVITY LIFECYCLE QUERIES
+// ==========================================
+
+// 5. Get Paginated SLA Cleaner Activities (Grouped by Activity Lifecycle)
+export const useSlaCleanerActivities = (params = {}, companyId) => {
+  return useQuery({
+    queryKey: ["sla-cleaner-activities", "list", params, companyId],
+    queryFn: async () => {
+      const response = await CleanerReviewApi.getSlaCleanerActivities(params, companyId);
+      if (!response.success) throw new Error(response.error || "Failed to fetch SLA cleaner activities");
+      return response;
+    },
+    enabled: !!companyId && companyId !== "null",
+    staleTime: 30 * 1000,
+    keepPreviousData: true,
+  });
+};
+
+// 6. Get Single SLA Cleaner Activity by Activity/Review ID
+export const useSlaCleanerActivityById = (activityId) => {
+  return useQuery({
+    queryKey: ["sla-cleaner-activity", "detail", activityId],
+    queryFn: async () => {
+      const response = await CleanerReviewApi.getSlaCleanerActivityById(activityId);
+      if (!response.success) throw new Error(response.error || "Failed to fetch SLA activity detail");
+      return response.data;
+    },
+    enabled: !!activityId,
+    staleTime: 30 * 1000,
+  });
+};
+
+// ==========================================
 // MUTATIONS (Modifying Data)
 // ==========================================
 
-// 5. Update Review Score
+// 7. Update Review Score
 export function useUpdateReviewScore() {
   const queryClient = useQueryClient();
 
@@ -80,43 +113,35 @@ export function useUpdateReviewScore() {
 
     // 1. onMutate fires immediately when mutate() is called, before the network trip
     onMutate: async ({ reviewId, newScore }) => {
-      // Cancel any outgoing refetches so they don't overwrite our optimistic update
       await queryClient.cancelQueries({ queryKey: ["cleaner-reviews"] });
+      await queryClient.cancelQueries({ queryKey: ["sla-cleaner-activities"] });
 
-      // Snapshot the previous cache state (to roll back if the API fails)
-      // getQueriesData gets all variations of the list (e.g., different filters/pages)
       const previousReviews = queryClient.getQueriesData({ queryKey: ["cleaner-reviews"] });
       const previousDetail = queryClient.getQueryData(["cleaner-reviews", "detail", reviewId]);
 
-      // Optimistically update all cached lists with the new score
       queryClient.setQueriesData({ queryKey: ["cleaner-reviews"] }, (oldData) => {
         if (!oldData) return oldData;
         
         return oldData.map((review) =>
           review.id === reviewId
-            ? { ...review, score: newScore, is_modified: true } // Inject new values
+            ? { ...review, score: newScore, is_modified: true }
             : review
         );
       });
 
-      // Optimistically update the specific detail query (if it exists)
       queryClient.setQueryData(["cleaner-reviews", "detail", reviewId], (oldData) => {
         if (!oldData) return oldData;
         return { ...oldData, score: newScore, is_modified: true };
       });
 
-      // Return the snapshots so we have them if things go wrong
       return { previousReviews, previousDetail };
     },
 
-    // 2. If the API fails, use the snapshots to roll the UI back
     onError: (err, variables, context) => {
-      // Restore all list queries
       context.previousReviews.forEach(([queryKey, data]) => {
         queryClient.setQueryData(queryKey, data);
       });
       
-      // Restore the detail query
       if (context.previousDetail) {
         queryClient.setQueryData(
           ["cleaner-reviews", "detail", variables.reviewId], 
@@ -125,13 +150,15 @@ export function useUpdateReviewScore() {
       }
     },
 
-    // 3. Regardless of success or failure, invalidate to ensure true sync with the server
     onSettled: (data, error, variables) => {
       queryClient.invalidateQueries({ queryKey: ["cleaner-reviews"] });
       queryClient.invalidateQueries({ queryKey: ["cleaner-reviews", "detail", variables.reviewId] });
+      queryClient.invalidateQueries({ queryKey: ["sla-cleaner-activities"] });
+      queryClient.invalidateQueries({ queryKey: ["sla-cleaner-activity"] });
     },
   });
 }
+
 export function useUpdateSupervisorScore() {
   const queryClient = useQueryClient();
 
@@ -143,6 +170,8 @@ export function useUpdateSupervisorScore() {
     },
     onMutate: async ({ reviewId, newScore }) => {
       await queryClient.cancelQueries({ queryKey: ["cleaner-reviews"] });
+      await queryClient.cancelQueries({ queryKey: ["sla-cleaner-activities"] });
+
       const previousReviews = queryClient.getQueriesData({ queryKey: ["cleaner-reviews"] });
       const previousDetail = queryClient.getQueryData(["cleaner-reviews", "detail", reviewId]);
 
@@ -176,6 +205,8 @@ export function useUpdateSupervisorScore() {
     onSettled: (data, error, variables) => {
       queryClient.invalidateQueries({ queryKey: ["cleaner-reviews"] });
       queryClient.invalidateQueries({ queryKey: ["cleaner-reviews", "detail", variables.reviewId] });
+      queryClient.invalidateQueries({ queryKey: ["sla-cleaner-activities"] });
+      queryClient.invalidateQueries({ queryKey: ["sla-cleaner-activity"] });
     },
   });
 }
@@ -191,6 +222,8 @@ export function useUpdateManagementScore() {
     },
     onMutate: async ({ reviewId, formData }) => {
       await queryClient.cancelQueries({ queryKey: ["cleaner-reviews"] });
+      await queryClient.cancelQueries({ queryKey: ["sla-cleaner-activities"] });
+
       const previousReviews = queryClient.getQueriesData({ queryKey: ["cleaner-reviews"] });
       const previousDetail = queryClient.getQueryData(["cleaner-reviews", "detail", reviewId]);
 
@@ -226,6 +259,8 @@ export function useUpdateManagementScore() {
     onSettled: (data, error, variables) => {
       queryClient.invalidateQueries({ queryKey: ["cleaner-reviews"] });
       queryClient.invalidateQueries({ queryKey: ["cleaner-reviews", "detail", variables.reviewId] });
+      queryClient.invalidateQueries({ queryKey: ["sla-cleaner-activities"] });
+      queryClient.invalidateQueries({ queryKey: ["sla-cleaner-activity"] });
     },
   });
 }

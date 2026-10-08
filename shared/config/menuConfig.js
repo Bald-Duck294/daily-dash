@@ -340,8 +340,26 @@ export function getSuperadminCompanyMenu(companyId) {
     },
     {
       icon: ShieldCheck,
-      label: "SLA Logs",
-      href: `/sla-logs?companyId=${companyId}`,
+      label: "SLA Management",
+      hasDropdown: true,
+      key: "sla-management",
+      children: [
+        {
+          icon: Cog,
+          label: "SLA Configuration",
+          href: `/sla-management?companyId=${companyId}`,
+        },
+        {
+          icon: Activity,
+          label: "SLA Cleaner Activity",
+          href: `/slaCleanerActivity?companyId=${companyId}`,
+        },
+        {
+          icon: List,
+          label: "SLA Logs",
+          href: `/sla-logs?companyId=${companyId}`,
+        },
+      ],
     },
     {
       icon: UserCheck,
@@ -551,8 +569,26 @@ export function getAdminMenu(companyId) {
     },
     {
       icon: ShieldCheck,
-      label: "SLA Logs",
-      href: `/sla-logs?companyId=${companyId}`,
+      label: "SLA Management",
+      hasDropdown: true,
+      key: "sla-management",
+      children: [
+        {
+          icon: Cog,
+          label: "SLA Configuration",
+          href: `/sla-management?companyId=${companyId}`,
+        },
+        {
+          icon: Activity,
+          label: "SLA Cleaner Activity",
+          href: `/slaCleanerActivity?companyId=${companyId}`,
+        },
+        {
+          icon: List,
+          label: "SLA Logs",
+          href: `/sla-logs?companyId=${companyId}`,
+        },
+      ],
     },
     {
       icon: UserCheck,
@@ -706,10 +742,34 @@ export const getFullCompanyMenuTemplate = (companyId) => [
   },
   {
     icon: ShieldCheck,
-    label: "SLA Logs",
-    simpleLabel: "SLA Logs",
-    requiredPermission: "cleaner_reviews.view",
-    href: `/sla-logs?companyId=${companyId}`,
+    label: "SLA Management",
+    simpleLabel: "SLA Management",
+    requiredPermission: "sla_management.view",
+    key: "sla-management",
+    hasDropdown: true,
+    children: [
+      {
+        icon: Cog,
+        label: "SLA Configuration",
+        simpleLabel: "SLA Configuration",
+        requiredPermission: "sla_management.view",
+        href: `/sla-management?companyId=${companyId}`,
+      },
+      {
+        icon: Activity,
+        label: "SLA Cleaner Activity",
+        simpleLabel: "SLA Cleaner Activity",
+        requiredPermission: "sla_management.view",
+        href: `/slaCleanerActivity?companyId=${companyId}`,
+      },
+      {
+        icon: List,
+        label: "SLA Logs",
+        simpleLabel: "SLA Logs",
+        requiredPermission: "sla_management.view",
+        href: `/sla-logs?companyId=${companyId}`,
+      },
+    ],
   },
   {
     icon: UserCheck,
