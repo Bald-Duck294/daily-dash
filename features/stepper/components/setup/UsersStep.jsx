@@ -343,7 +343,7 @@ export default function UsersStep({
     if (cleaners.length === 0) {
       return showDialog(
         "Setup Incomplete",
-        "You must add at least 1 Cleaner to continue. Cleaners are essential for the Safai system to function.",
+        "You must add at least 1 Cleaner to continue. Cleaners are essential for the SaafAI system to function.",
         "warning",
       );
     }
@@ -416,7 +416,7 @@ export default function UsersStep({
         <div className="space-y-6">
           <p className="text-slate-600 font-medium leading-relaxed">
             Welcome to the User Directory. Here you will define who uses the
-            Safai system and what locations they are responsible for. It is
+            SaafAI system and what locations they are responsible for. It is
             crucial to set this up correctly so tasks generate properly.
           </p>
           <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100">
@@ -424,7 +424,7 @@ export default function UsersStep({
               Phone Numbers are Logins
             </h3>
             <p>
-              We designed Safai to be easy for field staff. They do not need an
+              We designed SaafAI to be easy for field staff. They do not need an
               email or a complex password. Their{" "}
               <strong>10-digit mobile number</strong> is their unique ID to log
               into the mobile app.

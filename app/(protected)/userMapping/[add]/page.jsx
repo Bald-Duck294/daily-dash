@@ -2218,7 +2218,6 @@ const AddAssignmentPage = () => {
   const [selectedZones, setSelectedZones] = useState([]);
   const [zoneSearchTerm, setZoneSearchTerm] = useState("");
   const [isZoneDropdownOpen, setIsZoneDropdownOpen] = useState(false);
-  const [selectAllZoneLocations, setSelectAllZoneLocations] = useState(false);
 
   const [userSearchTerm, setUserSearchTerm] = useState("");
   const [locationSearchTerm, setLocationSearchTerm] = useState("");
@@ -2285,12 +2284,6 @@ const AddAssignmentPage = () => {
     return user ? parseInt(user.role_id) === 6 : false;
   }, [assignmentMode, selectedUsers, singleUser, assignableUsers]);
 
-  const isSupervisorSelected = useMemo(() => {
-    if (assignmentMode === "multi") return selectedUsers.some((u) => parseInt(u.role_id) === 3);
-    const user = assignableUsers.find((u) => u.id === singleUser);
-    return user ? parseInt(user.role_id) === 3 : false;
-  }, [assignmentMode, selectedUsers, singleUser, assignableUsers]);
-
   const userAssignedLocations = useMemo(() => {
     if (assignmentMode !== "single" || !singleUser) return [];
     return singleUserAssignmentsData.map((a) => a.location_id);
@@ -2299,18 +2292,12 @@ const AddAssignmentPage = () => {
   const baseLocations = useMemo(() => {
     let locs = allLocations;
 
-    if (isSupervisorSelected) {
-      if (selectedZones.length === 0) return [];
-      const selectedZoneIds = selectedZones.map((z) => z.id.toString());
-      locs = locs.filter((loc) => selectedZoneIds.includes(loc.type_id?.toString()));
-    }
-
     if (assignmentMode === "single" && singleUser) {
       locs = locs.filter((loc) => !userAssignedLocations.includes(loc.id));
     }
 
     return locs;
-  }, [allLocations, isSupervisorSelected, selectedZones, assignmentMode, singleUser, userAssignedLocations]);
+  }, [allLocations, assignmentMode, singleUser, userAssignedLocations]);
 
   const hierarchicalZones = useMemo(() => buildHierarchicalList(allZones), [allZones]);
 
@@ -2333,8 +2320,8 @@ const AddAssignmentPage = () => {
 
 
   // --- VISIBILITY FLAGS ---
-  const showZoneDropdown = isZonalAdminSelected || isSupervisorSelected;
-  const showLocationDropdown = !isZonalAdminSelected && !(isSupervisorSelected && selectAllZoneLocations);
+  const showZoneDropdown = isZonalAdminSelected;
+  const showLocationDropdown = !isZonalAdminSelected;
   const isDataLoading = isLoadingUsers || isLoadingLocations || isLoadingRoles || isLoadingZones;
 
   const allLocationsSelected = selectedLocations.length === baseLocations.length && baseLocations.length > 0;
@@ -2489,20 +2476,12 @@ const AddAssignmentPage = () => {
 
     const generatePayload = (userObj) => {
       const isZonal = parseInt(userObj.role_id) === 6;
-      const isSupv = parseInt(userObj.role_id) === 3;
 
       let finalLocationIds = selectedLocations.map(loc => loc.id);
       let finalTypeIds = selectedZones.map(z => z.id);
 
       if (isZonal) {
         finalLocationIds = []; 
-      } else if (isSupv) {
-        finalTypeIds = []; 
-        if (selectAllZoneLocations) {
-          const selectedZoneIds = selectedZones.map(z => z.id.toString());
-          const matchingLocs = allLocations.filter(loc => selectedZoneIds.includes(loc.type_id?.toString()));
-          finalLocationIds = matchingLocs.map(loc => loc.id);
-        }
       } else {
         finalTypeIds = [];
       }
@@ -2903,38 +2882,6 @@ const AddAssignmentPage = () => {
                     )}
                   </div>
                 )}
-              </div>
-
-              {/* 🔥 HORIZONTAL ROW 3: Supervisor Checkbox & Location Selection */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-                {isSupervisorSelected && (
-                  <div
-                    className="w-full flex items-center p-4 rounded-xl border transition-all"
-                    style={{
-                      borderColor: selectAllZoneLocations ? "var(--assignment-accent-border)" : "var(--assignment-border)",
-                      background: selectAllZoneLocations ? "var(--assignment-accent-bg)" : "var(--assignment-surface)",
-                      boxShadow: selectAllZoneLocations ? "var(--assignment-shadow)" : "none"
-                    }}
-                  >
-                    <label className="flex items-center gap-3 cursor-pointer w-full">
-                      <div className="relative flex items-center">
-                        <input
-                          type="checkbox"
-                          className="peer sr-opacity w-5 h-5 opacity-0 absolute"
-                          checked={selectAllZoneLocations}
-                          onChange={(e) => setSelectAllZoneLocations(e.target.checked)}
-                        />
-                        <div className="w-5 h-5 rounded border-2 flex items-center justify-center transition-all" style={{ borderColor: selectAllZoneLocations ? "var(--assignment-accent-text)" : "var(--assignment-subtitle)", background: selectAllZoneLocations ? "var(--assignment-accent-text)" : "transparent" }}>
-                          {selectAllZoneLocations && <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3 text-white"><polyline points="20 6 9 17 4 12" /></svg>}
-                        </div>
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-sm font-bold" style={{ color: selectAllZoneLocations ? "var(--assignment-accent-text)" : "var(--assignment-title)" }}>Assign all locations in selected zones</span>
-                        <span className="text-xs font-medium" style={{ color: "var(--assignment-subtitle)", opacity: 0.8 }}>Automatically selects all matching washrooms in background.</span>
-                      </div>
-                    </label>
-                  </div>
-                )}
 
                 {showLocationDropdown && (
                   <div className="text-left space-y-2 relative" ref={locationDropdownRef}>
@@ -3067,7 +3014,7 @@ const AddAssignmentPage = () => {
                       <Check size={20} strokeWidth={3} />
                       <span>
                         {assignmentMode === "multi"
-                          ? `Create ${selectedUsers.length > 0 && (selectedLocations.length > 0 || (isSupervisorSelected && selectAllZoneLocations) || isZonalAdminSelected) ? selectedUsers.length : 0} Assignments`
+                          ? `Create ${selectedUsers.length > 0 && (selectedLocations.length > 0 || isZonalAdminSelected) ? selectedUsers.length : 0} Assignments`
                           : `Confirm Assignment`}
                       </span>
                     </>

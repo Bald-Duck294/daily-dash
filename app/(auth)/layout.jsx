@@ -53,22 +53,22 @@ export default function AuthLayout({ children }) {
         .left-brand-logo {
           display: flex;
           align-items: center;
-          gap: 0.5rem;
+          gap: 0.6rem;
           padding: 0.25rem 0;
         }
         .left-brand-logo .logo-mark {
           width: 34px;
           height: 34px;
-          background: linear-gradient(135deg, #3b4df2, #5c6eff);
-          border-radius: 9px;
           display: flex;
           align-items: center;
           justify-content: center;
-          box-shadow: 0 4px 12px rgba(59,77,242,0.3);
         }
-        .left-brand-logo .logo-mark svg { color: white; }
-        .left-brand-logo .logo-name { font-size: 1.1rem; font-weight: 800; color: #0f172a; letter-spacing: -0.5px; }
-        .left-brand-logo .logo-name span { color: #3b4df2; }
+        .left-brand-logo .logo-name { font-size: 1.25rem; font-weight: 800; color: #0f172a; letter-spacing: -0.5px; }
+        .left-brand-logo .logo-name span {
+          background: linear-gradient(90deg, #6C5CE7 0%, #00D2D3 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+        }
 
         .mascot-container {
           position: relative;
@@ -250,7 +250,7 @@ export default function AuthLayout({ children }) {
 
         .brand-header { text-align: center; margin-bottom: clamp(1rem, 2.5vh, 1.5rem); }
         .brand-title { font-size: clamp(2rem, 3vw, 2.5rem); font-weight: 800; color: #0f172a; letter-spacing: -1.5px; line-height: 1; }
-        .brand-title span { background: linear-gradient(135deg, #3b4df2 0%, #5c6eff 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .brand-title span { background: linear-gradient(90deg, #6C5CE7 0%, #00D2D3 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .brand-divider { display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin: 0.25rem 0; }
         .brand-divider .line { width: 28px; height: 1.5px; background: linear-gradient(90deg, transparent, #3b4df2, transparent); }
         .brand-divider .text { font-size: 0.65rem; font-weight: 700; color: #94a3b8; letter-spacing: 0.5em; text-indent: 0.5em; }
@@ -418,18 +418,11 @@ export default function AuthLayout({ children }) {
           <div className="left-panel">
             <div className="left-brand-logo">
               <div className="logo-mark">
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                </svg>
+                <img
+                  src="/flo-mascot.webp"
+                  alt="SaafAI Logo"
+                  style={{ width: "34px", height: "34px", objectFit: "contain" }}
+                />
               </div>
               <div className="logo-name">
                 Saaf<span>AI</span>
@@ -503,7 +496,7 @@ export default function AuthLayout({ children }) {
                   Saaf
                   <span
                     style={{
-                      background: "linear-gradient(135deg, #3b4df2 0%, #5c6eff 100%)",
+                      background: "linear-gradient(90deg, #6C5CE7 0%, #00D2D3 100%)",
                       WebkitBackgroundClip: "text",
                       WebkitTextFillColor: "transparent",
                     }}

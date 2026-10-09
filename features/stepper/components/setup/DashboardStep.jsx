@@ -73,7 +73,7 @@ export default function DashboardStep({ onBack }) {
             Dashboard Preview
           </h1>
           <p className="text-sm mt-1 text-slate-500">
-            Your Safai workspace has been compiled and deployed. Your live
+            Your SaafAI workspace has been compiled and deployed. Your live
             client dashboard is ready.
           </p>
         </div>

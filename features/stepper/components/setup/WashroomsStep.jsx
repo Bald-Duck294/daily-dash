@@ -424,7 +424,7 @@ export default function WashroomsStep({
               Why do we create Washrooms?
             </h3>
             <p>
-              Washrooms are the core operational units in Safai. Cleaners are
+              Washrooms are the core operational units in SaafAI. Cleaners are
               assigned to these specific locations to receive their daily tasks
               and checklists.
             </p>

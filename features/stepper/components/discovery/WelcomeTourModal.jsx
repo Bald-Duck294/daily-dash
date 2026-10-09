@@ -36,7 +36,7 @@ export default function WelcomeTourModal({ onComplete }) {
           {currentSlide === 0 && (
             <div className="flex flex-col items-center text-center animate-in slide-in-from-right-4 fade-in duration-300">
               <div className="w-16 h-16 rounded-2xl bg-[#E8F0F9] flex items-center justify-center text-3xl mb-5 shadow-sm">🌿</div>
-              <h2 className="text-2xl font-black text-slate-900 mb-2">Welcome to Safai</h2>
+              <h2 className="text-2xl font-black text-slate-900 mb-2">Welcome to SaafAI</h2>
               <p className="text-sm text-slate-500 leading-relaxed max-w-[300px]">A simple 5-step setup to digitise your facility's cleaning operations. Takes under 10 minutes.</p>
               <div className="flex gap-2 mt-6 flex-wrap justify-center">
                 {['✈️ Airports', '🏥 Hospitals', '🏢 Offices', '🚉 Railways'].map(badge => (

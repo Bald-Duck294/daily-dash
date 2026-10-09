@@ -15,17 +15,13 @@ export default function StepperNav({ currentStep, onStepChange }) {
       <div className="flex items-center justify-between px-3 md:px-6 py-3.5 gap-2 md:gap-4 mx-auto w-full">
         {/* ── LEFT: Branding ── */}
         <div className="flex items-center gap-2.5 shrink-0">
-          <div className="w-8 h-8 rounded-full flex items-center justify-center bg-[#1a4b6c] shadow-sm">
-            <svg
-              className="w-4 h-4 text-white"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-            >
-              <path d="M17.5 2c-2.3 0-6 1.3-8.8 3.8C5.5 8.7 3.6 13 3.1 16.5c-.1.7.5 1.3 1.2 1.2 3.5-.5 7.8-2.4 10.7-5.6 2.5-2.8 3.8-6.5 3.8-8.8 0-.8-.5-1.3-1.3-1.3zm-1.8 8.4c-2.2 2.4-5.3 4-8 4.6 1-2.1 2.8-4.6 5.3-6.8 1.9-1.7 4.1-2.8 5.7-3.3-.3 1.9-1.2 3.9-3 5.5z" />
-            </svg>
-          </div>
-          <span className="font-black text-xl text-[#1a4b6c] hidden lg:block tracking-tight">
-            Safai
+          <img
+            src="/flo-mascot.webp"
+            alt="SaafAI Mascot"
+            className="w-8 h-8 object-contain shrink-0"
+          />
+          <span className="font-black text-xl text-[#0f172a] hidden sm:block tracking-tight">
+            Saaf<span className="bg-gradient-to-r from-[#6C5CE7] to-[#00D2D3] bg-clip-text text-transparent">AI</span>
           </span>
           <span className="hidden lg:block text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-md">
             Onboarding
