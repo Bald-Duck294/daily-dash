@@ -27,6 +27,7 @@ export default function StepperController() {
 
   const deployMutation = useDeployWorkspace();
 
+  console.log(workspaceDraft, "workspace draft");
   // ─── 1. LOAD DRAFT ON MOUNT (With DB Verification) ─────────────
   useEffect(() => {
     StorageManager.purgeLegacyDrafts();

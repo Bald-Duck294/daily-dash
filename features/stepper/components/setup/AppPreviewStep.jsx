@@ -235,7 +235,7 @@ export default function AppPreviewStep({
               isHandicapAccessible: w.type === "accessible",
               hasBabyChangingStation: w.type === "female",
             },
-            usage_category: {
+            usage_category: w.usage_category || {
               men: {
                 wc:
                   w.type === "male" || w.type === "unisex"

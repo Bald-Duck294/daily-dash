@@ -148,6 +148,27 @@ export default function WashroomsStep({
       totalBasin += formData.fixtures.handicap.bas;
     }
 
+    const targetCategories =
+      formData.type === "male"
+        ? ["men"]
+        : formData.type === "female"
+          ? ["women"]
+          : formData.type === "handicap"
+            ? ["handicap"]
+            : ["men", "women"];
+
+    const usageCategory = {};
+    targetCategories.forEach((catKey) => {
+      const src = formData.fixtures[catKey] || {};
+      usageCategory[catKey] = {
+        wc: Number(src.wc ?? 0),
+        indian: Number(src.ind ?? src.indian ?? 0),
+        urinals: Number(src.uri ?? src.urinals ?? 0),
+        basin: Number(src.bas ?? src.basin ?? 0),
+        shower: Number(src.sho ?? src.shower ?? 0),
+      };
+    });
+
     const washroomRecord = {
       temp_id: editingId || generateTempId("wash"),
       name: formData.name,
@@ -157,6 +178,7 @@ export default function WashroomsStep({
       wc_count: totalWc || 1,
       basin_count: totalBasin || 1,
       rawFixtures: JSON.parse(JSON.stringify(formData.fixtures)),
+      usage_category: usageCategory,
     };
 
     let updatedList;
@@ -196,12 +218,38 @@ export default function WashroomsStep({
   };
 
   const handleEdit = (w) => {
+    let fixtures = w.rawFixtures;
+    if (!fixtures && w.usage_category) {
+      fixtures = JSON.parse(JSON.stringify(defaultFixtures));
+      Object.keys(w.usage_category).forEach((k) => {
+        if (fixtures[k]) {
+          fixtures[k].wc = w.usage_category[k].wc ?? fixtures[k].wc;
+          fixtures[k].ind =
+            w.usage_category[k].indian ??
+            w.usage_category[k].ind ??
+            fixtures[k].ind;
+          fixtures[k].uri =
+            w.usage_category[k].urinals ??
+            w.usage_category[k].uri ??
+            fixtures[k].uri;
+          fixtures[k].bas =
+            w.usage_category[k].basin ??
+            w.usage_category[k].bas ??
+            fixtures[k].bas;
+          fixtures[k].sho =
+            w.usage_category[k].shower ??
+            w.usage_category[k].sho ??
+            fixtures[k].sho;
+        }
+      });
+    }
+
     setFormData({
       name: w.name,
       zone_temp_id: w.zone_temp_id,
       type: w.type,
       is_public: w.is_public || false,
-      fixtures: w.rawFixtures || JSON.parse(JSON.stringify(defaultFixtures)),
+      fixtures: fixtures || JSON.parse(JSON.stringify(defaultFixtures)),
     });
     setEditingId(w.temp_id);
     setActiveTab("manual");
@@ -284,6 +332,16 @@ export default function WashroomsStep({
           plb: template.fixtures.plb || 1,
         };
 
+        const usageCategory = {
+          [catKey]: {
+            wc: Number(template.fixtures.wc || 0),
+            indian: Number(template.fixtures.ind || 0),
+            urinals: Number(template.fixtures.uri || 0),
+            basin: Number(template.fixtures.bas || 0),
+            shower: Number(template.fixtures.sho || 0),
+          },
+        };
+
         generated.push({
           temp_id: generateTempId("wash"),
           name: namePrefix,
@@ -293,6 +351,7 @@ export default function WashroomsStep({
           wc_count: template.fixtures.wc || 1,
           basin_count: template.fixtures.bas || 1,
           rawFixtures,
+          usage_category: usageCategory,
         });
       });
     });
@@ -345,6 +404,9 @@ export default function WashroomsStep({
             women: defaultFixtures.women,
             handicap: defaultFixtures.handicap,
           },
+          usage_category: {
+            men: { wc: 3, indian: 0, urinals: 3, basin: 3, shower: 0 },
+          },
         });
       if (autoConfig.female)
         generated.push({
@@ -360,6 +422,9 @@ export default function WashroomsStep({
             women: { wc: 3, ind: 0, uri: 0, bas: 3, sho: 0, plb: 1 },
             handicap: defaultFixtures.handicap,
           },
+          usage_category: {
+            women: { wc: 3, indian: 0, urinals: 0, basin: 3, shower: 0 },
+          },
         });
       if (autoConfig.handicap)
         generated.push({
@@ -374,6 +439,9 @@ export default function WashroomsStep({
             men: defaultFixtures.men,
             women: defaultFixtures.women,
             handicap: { wc: 1, ind: 0, uri: 0, bas: 1, sho: 0, plb: 1 },
+          },
+          usage_category: {
+            handicap: { wc: 1, indian: 0, urinals: 0, basin: 1, shower: 0 },
           },
         });
     });
