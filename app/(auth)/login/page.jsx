@@ -98,7 +98,7 @@ export default function LoginPage() {
         <div className="brand-title">Saaf<span>AI</span></div>
         <div className="brand-divider">
           <div className="line"></div>
-          <div className="text">PORTAL-1</div>
+          <div className="text">PORTAL</div>
           <div className="line"></div>
         </div>
         <div className="brand-tagline">Smart Waste Management Platform</div>
