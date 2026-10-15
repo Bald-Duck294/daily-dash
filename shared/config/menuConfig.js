@@ -336,9 +336,7 @@ export function getSuperadminCompanyMenu(companyId, isCompanySlaActive = false) 
     {
       icon: Activity,
       label: "Cleaner Activity",
-      href: isCompanySlaActive
-        ? `/slaCleanerActivity?companyId=${companyId}`
-        : `/cleaners?companyId=${companyId}`,
+      href: `/cleaners?companyId=${companyId}`,
     },
     {
       icon: ShieldCheck,
@@ -562,9 +560,7 @@ export function getAdminMenu(companyId, isCompanySlaActive = false) {
     {
       icon: Activity,
       label: "Cleaner Activity",
-      href: isCompanySlaActive
-        ? `/slaCleanerActivity?companyId=${companyId}`
-        : `/cleaners?companyId=${companyId}`,
+      href: `/cleaners?companyId=${companyId}`,
     },
     {
       icon: ShieldCheck,
@@ -732,9 +728,7 @@ export const getFullCompanyMenuTemplate = (companyId, isCompanySlaActive = false
     label: "Cleaner Activity",
     simpleLabel: "Cleaner Activity",
     requiredPermission: "cleaner_reviews.view",
-    href: isCompanySlaActive
-      ? `/slaCleanerActivity?companyId=${companyId}`
-      : `/cleaners?companyId=${companyId}`,
+    href: `/cleaners?companyId=${companyId}`,
   },
   {
     icon: ShieldCheck,

@@ -1,26 +1,24 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCompanyId } from "@/providers/CompanyProvider";
-import { useCompanySlaConfig } from "@/features/companies/queries/sla.queries";
-import SlaCleanerActivityList from "@/features/slaCleanerActivity/components/SlaCleanerActivityList";
+import Loader from "@/components/ui/Loader";
 
 export default function SlaCleanerActivityPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { companyId } = useCompanyId();
-  const { data: slaConfig, isLoading: isSlaLoading } = useCompanySlaConfig(
-    companyId,
-    Boolean(companyId)
-  );
-  const isSlaEnabled = Boolean(slaConfig?.enabled);
 
-  // Auto-redirect to standard Cleaner Activity if SLA is disabled for this company
+  // Forward to unified Cleaner Activity route, preserving existing query parameters
   useEffect(() => {
-    if (companyId && !isSlaLoading && slaConfig !== undefined && !isSlaEnabled) {
-      router.replace(`/cleaners?companyId=${companyId}`);
+    const params = new URLSearchParams(searchParams?.toString() || "");
+    if (companyId && !params.has("companyId")) {
+      params.set("companyId", companyId);
     }
-  }, [companyId, isSlaLoading, slaConfig, isSlaEnabled, router]);
+    const query = params.toString();
+    router.replace(query ? `/cleaners?${query}` : "/cleaners");
+  }, [companyId, router, searchParams]);
 
-  return <SlaCleanerActivityList />;
+  return <Loader label="Redirecting to Cleaner Activity..." />;
 }

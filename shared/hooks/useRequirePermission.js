@@ -15,6 +15,7 @@ export const useRequirePermission = (module, options = {}) => {
     return Array.isArray(user.role.permissions) ? user.role.permissions : [];
   }, [user?.role?.permissions]);
 
+  console.log(permissions, "permissions");
   const { action = "view", errorMessage, redirectTo } = options;
 
   useEffect(() => {

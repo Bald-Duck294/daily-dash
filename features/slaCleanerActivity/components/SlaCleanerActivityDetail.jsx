@@ -88,11 +88,11 @@ export default function SlaCleanerActivityDetail({ activityId, companyId }) {
             The requested SLA cleaning activity could not be found or may have been removed.
           </p>
           <button
-            onClick={() => router.push(companyId ? `/slaCleanerActivity?companyId=${companyId}` : "/slaCleanerActivity")}
+            onClick={() => router.push(companyId ? `/cleaners?companyId=${companyId}` : "/cleaners")}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold bg-primary text-primary-foreground hover:opacity-90 transition cursor-pointer"
           >
             <ArrowLeft size={14} />
-            Back to SLA Cleaner Activity
+            Back to Cleaner Activity
           </button>
         </div>
       </div>
@@ -138,11 +138,11 @@ export default function SlaCleanerActivityDetail({ activityId, companyId }) {
           >
             {/* Back button */}
             <button
-              onClick={() => router.push(companyId ? `/slaCleanerActivity?companyId=${companyId}` : "/slaCleanerActivity")}
+              onClick={() => router.push(companyId ? `/cleaners?companyId=${companyId}` : "/cleaners")}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition mb-3 cursor-pointer border bg-muted/40 hover:bg-muted"
             >
               <ArrowLeft size={13} />
-              Back to SLA Cleaner Activity
+              Back to Cleaner Activity
             </button>
 
             {/* Title & SLA Badge */}

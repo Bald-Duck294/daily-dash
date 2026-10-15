@@ -1,0 +1,982 @@
+/* eslint-disable react-hooks/static-components */
+"use client";
+
+import { useState, useEffect, useMemo, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import toast, { Toaster } from "react-hot-toast";
+
+import { useCompanyId } from "@/providers/CompanyProvider";
+import { useRequirePermission } from "@/shared/hooks/useRequirePermission.js";
+import { MODULES } from "@/shared/constants/permissions";
+
+import { useCleanerReview } from "@/features/cleaners/cleaners.queries.js";
+import { useCleanersDropdown } from "@/features/dropdownList/dropdownlist.query";
+import { usePermissions } from "@/shared/hooks/usePermission";
+import { useCompanySlaConfig } from "@/features/companies/queries/sla.queries.js";
+import { useUpdateSupervisorScore, useUpdateManagementScore } from "@/features/cleanerReview/cleanerReview.queries.js";
+import SignatureCanvas from "react-signature-canvas";
+
+
+import {
+  ListChecks,
+  Clock,
+  Calendar,
+  MapPin,
+  RotateCcw,
+  User,
+  ChevronDown,
+  Edit2,
+  X,
+} from "lucide-react";
+
+/* ---------------- helpers ---------------- */
+
+const cleanString = (str) =>
+  str
+    ? String(str)
+      .replace(/^["'\s]+|["'\s,]+$/g, "")
+      .trim()
+    : "";
+
+const getTimeElapsed = (startTime) => {
+  const diff = Date.now() - new Date(startTime);
+  const h = Math.floor(diff / 3_600_000);
+  const m = Math.floor((diff % 3_600_000) / 60_000);
+  return h > 0 ? `${h}h ${m}m ago` : `${m}m ago`;
+};
+
+const getLocalDateString = () => {
+  const now = new Date();
+  const offset = now.getTimezoneOffset();
+  const localDate = new Date(now.getTime() - offset * 60 * 1000);
+  return localDate.toISOString().split("T")[0];
+};
+
+/* ---------------- page ---------------- */
+
+export default function StandardCleanerActivityList() {
+  useRequirePermission(MODULES.CLEANER_REVIEWS);
+
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { companyId } = useCompanyId();
+
+  // Basic Filters
+  const [filter, setFilter] = useState(searchParams.get("status") || "all");
+  const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || "");
+  const [datePreset, setDatePreset] = useState(searchParams.get("datePreset") || "today");
+  const [startDate, setStartDate] = useState(searchParams.get("startDate") || getLocalDateString());
+  const [endDate, setEndDate] = useState(searchParams.get("endDate") || getLocalDateString());
+  const [selectedCleanerId, setSelectedCleanerId] = useState(searchParams.get("cleanerId") || "all");
+  const [page, setPage] = useState(Number(searchParams.get("page")) || 1);
+  const [limit, setLimit] = useState(Number(searchParams.get("limit")) || 15);
+
+  // SLA and Permissions
+  const { hasPermission, userPermissions } = usePermissions();
+  const canManageReviews = hasPermission("cleaner_reviews", "manage");
+  const { data: slaConfig, error: slaError, isLoading: isSlaLoading } = useCompanySlaConfig(companyId, true);
+  const isSlaEnabled = slaConfig?.enabled || false;
+
+      // Modal State
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [reviewToEdit, setReviewToEdit] = useState(null);
+  const [newScore, setNewScore] = useState("");
+  const [modificationComment, setModificationComment] = useState("");
+  const [signatureType, setSignatureType] = useState("draw");
+  const [signatureFile, setSignatureFile] = useState(null);
+  const signatureCanvasRef = useRef(null);
+
+  const updateScoreMutation = useUpdateManagementScore();
+
+  const handleSaveScore = async () => {
+    if (!reviewToEdit) return;
+
+    if (newScore === "" || isNaN(Number(newScore)) || Number(newScore) < 0 || Number(newScore) > 10) {
+      toast.error("Please enter a valid score between 0 and 10.");
+      return;
+    }
+
+    if (!modificationComment.trim()) {
+      toast.error("Comment is required to update the score.");
+      return;
+    }
+
+    let finalSignatureFile = null;
+
+    if (signatureType === "draw") {
+      if (!signatureCanvasRef.current || signatureCanvasRef.current.isEmpty()) {
+        toast.error("Signature is required to update the score.");
+        return;
+      }
+      const dataUrl = signatureCanvasRef.current.getTrimmedCanvas().toDataURL("image/png");
+      const res = await fetch(dataUrl);
+      const blob = await res.blob();
+      finalSignatureFile = new File([blob], "signature.png", { type: "image/png" });
+    } else {
+      if (!signatureFile) {
+        toast.error("Signature file is required to update the score.");
+        return;
+      }
+      finalSignatureFile = signatureFile;
+    }
+
+    const formData = new FormData();
+    formData.append("score", newScore);
+    formData.append("modification_comment", modificationComment);
+    formData.append("signature", finalSignatureFile);
+
+    try {
+      await updateScoreMutation.mutateAsync({
+        reviewId: reviewToEdit.id,
+        formData,
+      });
+      toast.success("Score updated successfully.");
+      setIsEditModalOpen(false);
+      setReviewToEdit(null);
+      setNewScore("");
+      setModificationComment("");
+      setSignatureType("draw");
+      setSignatureFile(null);
+      if (signatureCanvasRef.current) signatureCanvasRef.current.clear();
+    } catch (err) {
+      toast.error(err.message || "Failed to update score.");
+    }
+  };
+
+  const [isCleanerDropdownOpen, setIsCleanerDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  /* ---------------- TanStack Queries ---------------- */
+
+  const { data: response, isLoading, isError, error } = useCleanerReview(
+    {
+      status: filter === "all" ? null : filter,
+      start_date: startDate || null,
+      end_date: endDate || startDate || null,
+      cleaner_id: selectedCleanerId === "all" ? null : selectedCleanerId,
+      page,
+      limit
+    },
+    companyId,
+  );
+
+  const { data: cleanersDropdownList = [] } = useCleanersDropdown(companyId);
+
+  const rawReviews = response?.data || [];
+  const pagination = response?.pagination || {};
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsCleanerDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  /* ---------------- derived data ---------------- */
+  const reviews = useMemo(() => {
+    if (!rawReviews || rawReviews.length === 0) return [];
+
+    let cleaned = rawReviews.map((r) => ({
+      ...r,
+      name: cleanString(r?.cleaner_user?.name),
+      address: cleanString(r?.address),
+    }));
+
+    if (selectedCleanerId !== "all") {
+      cleaned = cleaned.filter(r => String(r.cleaner_user?.id) === String(selectedCleanerId));
+    }
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      cleaned = cleaned.filter(
+        (r) =>
+          r?.cleaner_user?.name?.toLowerCase().includes(q) ||
+          r?.location?.name?.toLowerCase().includes(q),
+      );
+    }
+
+    return cleaned;
+  }, [rawReviews, searchQuery, selectedCleanerId]);
+
+  /* ---------------- ui helpers ---------------- */
+  const handleReset = () => {
+    setFilter("all");
+    setDatePreset("all");
+    setSearchQuery("");
+    setSelectedCleanerId("all");
+    setPage(1);
+    toast.success("Filters reset");
+  };
+
+  if (isError) {
+    toast.error(error?.message || "Failed to load cleaner activity");
+  }
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+
+    params.set("status", filter);
+    params.set("cleanerId", selectedCleanerId);
+    params.set("datePreset", datePreset);
+    params.set("startDate", startDate);
+    params.set("endDate", endDate);
+    params.set("page", page.toString());
+    params.set("limit", limit.toString());
+
+    if (searchQuery) {
+      params.set("search", searchQuery);
+    }
+
+    const newQueryString = `?${params.toString()}`;
+
+    if (window.location.search !== newQueryString) {
+      router.replace(newQueryString, { scroll: false });
+    }
+  }, [filter, selectedCleanerId, datePreset, startDate, endDate, page, limit, searchQuery, router]);
+
+  useEffect(() => {
+    const todayStr = getLocalDateString();
+    const todayObj = new Date();
+
+    if (datePreset === "today") {
+      setStartDate((prev) => prev !== todayStr ? todayStr : prev);
+      setEndDate((prev) => prev !== todayStr ? todayStr : prev);
+    } else if (datePreset === "this_month") {
+      const firstDay = new Date(todayObj.getFullYear(), todayObj.getMonth(), 1);
+      const lastDay = new Date(todayObj.getFullYear(), todayObj.getMonth() + 1, 0);
+      const formatLocal = (d) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().split("T")[0];
+
+      const newStart = formatLocal(firstDay);
+      const newEnd = formatLocal(lastDay);
+
+      setStartDate((prev) => prev !== newStart ? newStart : prev);
+      setEndDate((prev) => prev !== newEnd ? newEnd : prev);
+    } else if (datePreset === "all") {
+      setStartDate((prev) => prev !== "" ? "" : prev);
+      setEndDate((prev) => prev !== "" ? "" : prev);
+    }
+  }, [datePreset]);
+
+  useEffect(() => {
+    setPage((prevPage) => (prevPage !== 1 ? 1 : prevPage));
+  }, [filter, datePreset, startDate, endDate, selectedCleanerId]);
+
+  /* ---------------- render ---------------- */
+  return (
+    <>
+      <Toaster position="top-center" />
+
+      {/* CHANGED: Adjusted padding for mobile (p-2 sm:p-4) and desktop (lg:p-6) */}
+      <div
+        className="min-h-screen p-2 sm:p-4 lg:p-6 md:mt-[-25px]"
+        style={{
+          background: "var(--cleaner-bg)",
+          color: "var(--cleaner-title)",
+        }}
+      >
+        {/* CHANGED: Removed max-w-7xl, replaced with w-full to let it expand naturally */}
+        <div className="w-full 2xl:max-w-[1800px] mx-auto space-y-4">
+
+          {/* ================= HEADER CARD ================= */}
+          <div
+            className="rounded-xl p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3"
+            style={{
+              background: "var(--cleaner-header-bg)",
+              border: "1px solid var(--cleaner-header-border)",
+              backdropFilter: "blur(6px)",
+            }}
+          >
+            {/* LEFT */}
+            <div className="flex items-center gap-3">
+              <div
+                className="
+                  flex items-center justify-center
+                  p-2.5 rounded-xl
+                  bg-[var(--cleaner-header-icon-bg)]
+                  border border-[var(--cleaner-header-icon-border)]
+                  shadow-[var(--cleaner-header-icon-shadow)]
+                "
+              >
+                <ListChecks
+                  size={18}
+                  className="text-[var(--cleaner-header-icon-fg)]"
+                />
+              </div>
+
+              <div>
+                <h1
+                  className="text-lg font-bold leading-none mb-1"
+                  style={{ color: "var(--cleaner-title)" }}
+                >
+                  CLEANERS ACTIVITY
+                </h1>
+                <p
+                  className="text-xs"
+                  style={{ color: "var(--cleaner-subtitle)" }}
+                >
+                  Monitor real-time daily cleaning tasks and progress
+                </p>
+              </div>
+            </div>
+
+            {/* STATUS TOGGLE */}
+            <div
+              className="flex gap-1.5 p-1 rounded-lg self-start md:self-auto"
+              style={{
+                background: "var(--cleaner-input-bg)",
+                border: "1px solid var(--cleaner-border)",
+              }}
+            >
+              {["all", "ongoing", "completed"].map((v) => {
+                const active = filter === v;
+                return (
+                  <button
+                    key={v}
+                    onClick={() => setFilter(v)}
+                    className="px-3 py-1.5 rounded-md text-xs font-medium transition cursor-pointer flex-1 md:flex-auto text-center"
+                    style={{
+                      background: active
+                        ? "var(--cleaner-primary-bg)"
+                        : "transparent",
+                      color: active
+                        ? "var(--cleaner-primary-text)"
+                        : "var(--cleaner-subtitle)",
+                    }}
+                  >
+                    {v === "all" ? "All Tasks" : v.charAt(0).toUpperCase() + v.slice(1)}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* ================= FILTER CARD ================= */}
+          <div
+            className="rounded-xl p-4 flex flex-col xl:flex-row xl:items-center justify-between gap-4"
+            style={{
+              background: "var(--cleaner-surface)",
+              border: "1px solid var(--cleaner-border)",
+              boxShadow: "var(--cleaner-shadow)",
+            }}
+          >
+            {/* TITLE - Left Side */}
+            <div className="flex items-center gap-2 text-xs font-semibold">
+              <div
+                className="flex items-center justify-center p-1.5 rounded-lg"
+                style={{
+                  background: "var(--cleaner-header-icon-bg)",
+                  border: "1px solid var(--cleaner-header-icon-border)",
+                }}
+              >
+                <Calendar
+                  size={14}
+                  style={{ color: "var(--cleaner-header-icon-fg)" }}
+                />
+              </div>
+              <span style={{ color: "var(--cleaner-title)" }}>
+                ACTIVITY FILTERS
+              </span>
+            </div>
+
+            {/* CONTROLS - Right Side */}
+            <div className="flex flex-wrap items-end gap-3 w-full xl:w-auto">
+
+              {/* Cleaner Dropdown */}
+              <div className="flex flex-col gap-1 flex-grow sm:flex-grow-0" ref={dropdownRef}>
+                <label className="text-[11px] font-medium" style={{ color: "var(--cleaner-subtitle)" }}>
+                  Cleaner
+                </label>
+                <div className="relative w-full sm:w-44">
+                  <div
+                    onClick={() => setIsCleanerDropdownOpen(!isCleanerDropdownOpen)}
+                    className="w-full rounded-md px-2.5 py-1.5 text-xs flex justify-between items-center cursor-pointer select-none"
+                    style={{
+                      background: "var(--cleaner-input-bg)",
+                      border: "1px solid var(--cleaner-input-border)",
+                      color: "var(--cleaner-title)",
+                    }}
+                  >
+                    <span className="truncate">
+                      {selectedCleanerId === "all"
+                        ? "All Cleaners"
+                        : cleanersDropdownList.find((c) => c.id === selectedCleanerId)?.name || "All Cleaners"}
+                    </span>
+                    <ChevronDown
+                      size={12}
+                      className={`transition-transform duration-200 ${isCleanerDropdownOpen ? "rotate-180" : ""}`}
+                      style={{ color: "var(--cleaner-subtitle)" }}
+                    />
+                  </div>
+
+                  {isCleanerDropdownOpen && (
+                    <div
+                      className="absolute left-0 top-full mt-1 w-full rounded-md shadow-lg z-50 overflow-hidden"
+                      style={{
+                        background: "var(--cleaner-surface)",
+                        border: "1px solid var(--cleaner-border)",
+                      }}
+                    >
+                      <ul className="max-h-60 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-transparent">
+                        <li
+                          onClick={() => {
+                            setSelectedCleanerId("all");
+                            setIsCleanerDropdownOpen(false);
+                          }}
+                          className="px-3 py-2 text-xs cursor-pointer transition-colors hover:opacity-80"
+                          style={{
+                            color: "var(--cleaner-title)",
+                            background: selectedCleanerId === "all" ? "var(--cleaner-input-bg)" : "transparent",
+                          }}
+                        >
+                          All Cleaners
+                        </li>
+                        {cleanersDropdownList.map((c) => (
+                          <li
+                            key={c.id}
+                            onClick={() => {
+                              setSelectedCleanerId(c.id);
+                              setIsCleanerDropdownOpen(false);
+                            }}
+                            className="px-3 py-2 text-xs cursor-pointer transition-colors hover:opacity-80"
+                            style={{
+                              color: "var(--cleaner-title)",
+                              background: selectedCleanerId === c.id ? "var(--cleaner-input-bg)" : "transparent",
+                            }}
+                          >
+                            {c.name}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Date Preset Dropdown */}
+              <div className="flex flex-col gap-1 flex-grow sm:flex-grow-0">
+                <label className="text-[11px] font-medium" style={{ color: "var(--cleaner-subtitle)" }}>
+                  Date Range
+                </label>
+                <div className="relative w-full sm:w-36">
+                  <select
+                    value={datePreset}
+                    onChange={(e) => setDatePreset(e.target.value)}
+                    className="w-full rounded-md px-2.5 py-1.5 text-xs appearance-none outline-none cursor-pointer"
+                    style={{
+                      background: "var(--cleaner-input-bg)",
+                      border: "1px solid var(--cleaner-input-border)",
+                      color: "var(--cleaner-title)",
+                    }}
+                  >
+                    <option value="today">Today</option>
+                    <option value="this_month">This Month</option>
+                    <option value="all">All Time</option>
+                    <option value="custom">Custom Date</option>
+                  </select>
+                  <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: "var(--cleaner-subtitle)" }} />
+                </div>
+              </div>
+
+              {/* Custom Date Inputs */}
+              {datePreset === "custom" && (
+                <>
+                  <div className="flex flex-col gap-1 flex-grow sm:flex-grow-0">
+                    <label className="text-[11px] font-medium" style={{ color: "var(--cleaner-subtitle)" }}>
+                      Start Date
+                    </label>
+                    <input
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      className="w-full sm:w-32 rounded-md px-2.5 py-1.5 text-xs outline-none"
+                      style={{
+                        background: "var(--cleaner-input-bg)",
+                        border: "1px solid var(--cleaner-input-border)",
+                        color: "var(--cleaner-input-text)",
+                      }}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1 flex-grow sm:flex-grow-0">
+                    <label className="text-[11px] font-medium" style={{ color: "var(--cleaner-subtitle)" }}>
+                      End Date
+                    </label>
+                    <input
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      min={startDate}
+                      className="w-full sm:w-32 rounded-md px-2.5 py-1.5 text-xs outline-none"
+                      style={{
+                        background: "var(--cleaner-input-bg)",
+                        border: "1px solid var(--cleaner-input-border)",
+                        color: "var(--cleaner-input-text)",
+                      }}
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* Reset Button */}
+              <button
+                onClick={handleReset}
+                className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition h-[28px] cursor-pointer flex-grow sm:flex-grow-0 mt-2 sm:mt-0"
+                style={{
+                  background: "var(--cleaner-danger-bg)",
+                  color: "var(--cleaner-danger-text)",
+                  border: "1px solid var(--cleaner-border)",
+                }}
+              >
+                <RotateCcw size={12} />
+                Reset
+              </button>
+            </div>
+          </div>
+
+          {/* ================= MAIN GRID ================= */}
+          {/* CHANGED: Replaced the double-nested grid with a single responsive layout for Tablet (sm:grid-cols-2) and Desktop (lg:grid-cols-3, 2xl:grid-cols-4) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 mt-4">
+            {isLoading ? (
+              <div className="col-span-full flex flex-col items-center justify-center py-12">
+                <div
+                  className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin mb-3"
+                  style={{
+                    borderColor: "var(--cleaner-kpi-value)",
+                    borderTopColor: "transparent",
+                  }}
+                />
+                <p className="text-sm font-medium" style={{ color: "var(--cleaner-title)" }}>
+                  Loading cleaner activity
+                </p>
+              </div>
+            ) : reviews.length ? (
+              <>
+                {reviews.map((r) => {
+                  const active = r.status === "completed";
+
+                  const allPhotos = [...(r.before_photo || []), ...(r.after_photo || [])];
+                  const totalPhotos = allPhotos.length;
+                  const displayPhotos = allPhotos.slice(0, 2);
+                  const remainingCount = totalPhotos - 2;
+
+                  return (
+                    <div
+                      key={r.id}
+                      className="rounded-xl p-4 flex flex-col h-full"
+                      style={{
+                        background: "var(--cleaner-surface)",
+                        border: "1px solid var(--cleaner-border)",
+                        boxShadow: "var(--cleaner-shadow)",
+                      }}
+                    >
+                      {/* HEADER */}
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-2.5">
+                          <div
+                            className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
+                            style={{
+                              background: "var(--cleaner-header-icon-bg)",
+                              border: "1px solid var(--cleaner-header-icon-border)",
+                            }}
+                          >
+                            <User
+                              size={14}
+                              style={{ color: "var(--cleaner-header-icon-fg)" }}
+                            />
+                          </div>
+                          <div className="min-w-0">
+                            <p
+                              className="text-sm font-semibold truncate max-w-[120px] sm:max-w-[150px]"
+                              style={{ color: "var(--cleaner-title)" }}
+                              title={r.cleaner_user?.name || "Cleaner"}
+                            >
+                              {r.cleaner_user?.name || "Cleaner"}
+                            </p>
+                            <p
+                              className="text-[10px]"
+                              style={{ color: "var(--cleaner-subtitle)" }}
+                            >
+                              STAFF MEMBER
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* STATUS & SCORE */}
+                        <div className="flex flex-col items-end gap-1.5 shrink-0">
+                          <span
+                            className="px-2 py-0.5 rounded text-[10px] font-bold uppercase"
+                            style={{
+                              background: active
+                                ? "var(--cleaner-status-active-bg)"
+                                : "var(--cleaner-status-inactive-bg)",
+                              color: active
+                                ? "var(--cleaner-status-active-text)"
+                                : "var(--cleaner-status-inactive-text)",
+                            }}
+                          >
+                            {r.status}
+                          </span>
+
+                          {typeof r.score === "number" && (
+                            <div className="flex flex-col items-end gap-1">
+                              <span
+                                className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wide flex items-center gap-1"
+                                style={{
+                                  background: "var(--cleaner-input-bg)",
+                                  color: "var(--cleaner-title)",
+                                  border: "1px solid var(--cleaner-border)",
+                                }}
+                              >
+                                ⭐ {r.score.toFixed(2)} / <b>10</b>
+                              </span>
+                              <span
+                                className="text-[9px] uppercase tracking-wide opacity-80"
+                                style={{ color: "var(--cleaner-subtitle)" }}
+                              >
+                                Review Type: Original
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* EVIDENCE */}
+                      <p
+                        className="text-[10px] mb-1.5 uppercase tracking-wide"
+                        style={{ color: "var(--cleaner-subtitle)" }}
+                      >
+                        EVIDENCE LOGS ({totalPhotos})
+                      </p>
+
+                      <div className="flex items-center gap-1.5 mb-3">
+                        {displayPhotos.map((img, i) => (
+                          <img
+                            key={i}
+                            src={img}
+                            alt="Evidence"
+                            className="w-8 h-8 rounded-full object-cover shrink-0"
+                            style={{ border: "1px solid var(--cleaner-border)" }}
+                          />
+                        ))}
+
+                        {remainingCount > 0 && (
+                          <div
+                            className="w-8 h-8 rounded-full text-[10px] font-bold flex items-center justify-center shrink-0"
+                            style={{
+                              background: "var(--cleaner-kpi-value, #FFB800)",
+                              color: "#000000",
+                            }}
+                          >
+                            +{remainingCount}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* LOCATION */}
+                      <div
+                        className="rounded-lg p-2.5 mb-3 mt-auto"
+                        style={{
+                          background: "var(--cleaner-input-bg)",
+                          border: "1px solid var(--cleaner-border)",
+                        }}
+                      >
+                        <p
+                          className="text-xs font-medium flex items-center gap-1.5"
+                          style={{ color: "var(--cleaner-title)" }}
+                        >
+                          <MapPin size={12} className="flex-shrink-0" />
+                          <span className="truncate">{r.location?.name}</span>
+                        </p>
+                        <p
+                          className="text-[10px] mt-1 pl-4"
+                          style={{ color: "var(--cleaner-subtitle)" }}
+                        >
+                          Started: {new Date(r.created_at).toLocaleString()}
+                        </p>
+                        {r.status === "ongoing" && (
+                          <p
+                            className="text-[10px] mt-0.5 pl-4 flex items-center gap-1"
+                            style={{ color: "var(--cleaner-primary-text)" }}
+                          >
+                            <Clock size={10} />
+                            {getTimeElapsed(r.created_at)}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* ACTION */}
+                      <div className="mt-auto flex gap-2">
+                        <button
+                          onClick={() =>
+                            router.push(`/cleaners/${r.id}?companyId=${companyId}`)
+                          }
+                          className="flex-1 py-1.5 rounded-md text-xs font-medium transition cursor-pointer"
+                          style={{
+                            background: "var(--cleaner-primary-bg)",
+                            color: "var(--cleaner-primary-text)",
+                          }}
+                        >
+                          Detailed Report →
+                        </button>
+
+                        {canManageReviews && isSlaEnabled && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setReviewToEdit(r);
+                              setNewScore(r.score || "");
+                              setIsEditModalOpen(true);
+                            }}
+                            className="p-1.5 rounded-md transition cursor-pointer flex items-center justify-center border"
+                            style={{
+                              background: "transparent",
+                              borderColor: "var(--cleaner-primary-bg)",
+                              color: "var(--cleaner-title)",
+                            }}
+                            title="Edit Score"
+                          >
+                            <Edit2 size={14} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {/* ================= PAGINATION CONTROLS ================= */}
+                <div
+                  className="col-span-full flex flex-col sm:flex-row items-center justify-between gap-3 mt-2 p-3 rounded-xl"
+                  style={{
+                    background: "var(--cleaner-surface)",
+                    border: "1px solid var(--cleaner-border)",
+                  }}
+                >
+                  {/* Limit Dropdown */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px]" style={{ color: "var(--cleaner-subtitle)" }}>
+                      Rows per page:
+                    </span>
+                    <select
+                      value={limit}
+                      onChange={(e) => {
+                        setLimit(Number(e.target.value));
+                        setPage(1);
+                      }}
+                      className="rounded px-1.5 py-0.5 text-xs outline-none cursor-pointer"
+                      style={{
+                        background: "var(--cleaner-input-bg)",
+                        border: "1px solid var(--cleaner-input-border)",
+                        color: "var(--cleaner-title)",
+                      }}
+                    >
+                      <option value={15}>15</option>
+                      <option value={30}>30</option>
+                      <option value={50}>50</option>
+                    </select>
+                  </div>
+
+                  {/* Metadata */}
+                  <div className="text-[11px]" style={{ color: "var(--cleaner-subtitle)" }}>
+                    Showing {pagination.total_items === 0 ? 0 : (page - 1) * limit + 1} to {Math.min(page * limit, pagination.total_items || 0)} of {pagination.total_items || 0} entries
+                  </div>
+
+                  {/* Page Navigation */}
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      disabled={!pagination.has_prev_page}
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      className="px-2 py-1 rounded text-[11px] font-medium transition disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                      style={{
+                        background: "var(--cleaner-input-bg)",
+                        border: "1px solid var(--cleaner-border)",
+                        color: "var(--cleaner-title)",
+                      }}
+                    >
+                      Previous
+                    </button>
+
+                    <div className="text-[11px] font-medium px-1" style={{ color: "var(--cleaner-title)" }}>
+                      Page {page} of {pagination.total_pages || 1}
+                    </div>
+
+                    <button
+                      disabled={!pagination.has_next_page}
+                      onClick={() => setPage((p) => p + 1)}
+                      className="px-2 py-1 rounded text-[11px] font-medium transition disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                      style={{
+                        background: "var(--cleaner-input-bg)",
+                        border: "1px solid var(--cleaner-border)",
+                        color: "var(--cleaner-title)",
+                      }}
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="col-span-full flex flex-col items-center justify-center py-12">
+                <div
+                  className="w-12 h-12 rounded-full flex items-center justify-center mb-3"
+                  style={{
+                    background: "var(--cleaner-input-bg)",
+                    border: "1px solid var(--cleaner-border)",
+                  }}
+                >
+                  <ListChecks size={18} style={{ color: "var(--cleaner-header-icon-fg)" }} />
+                </div>
+                <p className="text-sm font-semibold mb-1" style={{ color: "var(--cleaner-title)" }}>
+                  No cleaner activity found
+                </p>
+                <p className="text-xs max-w-xs text-center" style={{ color: "var(--cleaner-subtitle)" }}>
+                  There are no cleaning tasks matching your current filters. Try changing the date or resetting filters.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Edit Score Modal */}
+      {isEditModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ background: "rgba(0,0,0,0.5)" }}
+          onClick={() => {
+            setIsEditModalOpen(false);
+            setReviewToEdit(null);
+            setNewScore("");
+            setModificationComment("");
+            setSignatureType("draw");
+            setSignatureFile(null);
+          }}
+        >
+          <div
+            className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b">
+              <h2 className="text-base font-bold text-gray-800">Update Activity Score</h2>
+              <button
+                onClick={() => {
+                  setIsEditModalOpen(false);
+                  setReviewToEdit(null);
+                  setNewScore("");
+                  setModificationComment("");
+                  setSignatureType("draw");
+                  setSignatureFile(null);
+                }}
+                className="text-gray-400 hover:text-gray-600 transition cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="px-5 py-4 space-y-4 max-h-[70vh] overflow-y-auto">
+              <p className="text-sm text-gray-600">
+                Please provide the updated score for this cleaning activity.
+                Only same-day updates are allowed, and limits may apply based on SLA configurations.
+              </p>
+              <div>
+                <label className="block text-xs font-semibold mb-1 text-gray-700">New Score (0-10) *</label>
+                <input
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  max="10"
+                  value={newScore}
+                  onChange={(e) => setNewScore(e.target.value)}
+                  className="w-full border border-gray-300 rounded-md p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Enter score between 0 and 10"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold mb-1 text-gray-700">Modification Comment *</label>
+                <textarea
+                  value={modificationComment}
+                  onChange={(e) => setModificationComment(e.target.value)}
+                  className="w-full border border-gray-300 rounded-md p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[80px]"
+                  placeholder="Reason for score modification..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold mb-1 text-gray-700">Signature *</label>
+                <div className="flex gap-2 mb-2">
+                  <button
+                    className={`px-3 py-1.5 text-xs font-medium rounded-md cursor-pointer ${signatureType === "draw" ? "bg-blue-100 text-blue-700 border-blue-300 border" : "bg-gray-100 text-gray-600 border border-transparent"}`}
+                    onClick={() => setSignatureType("draw")}
+                  >
+                    Draw
+                  </button>
+                  <button
+                    className={`px-3 py-1.5 text-xs font-medium rounded-md cursor-pointer ${signatureType === "upload" ? "bg-blue-100 text-blue-700 border-blue-300 border" : "bg-gray-100 text-gray-600 border border-transparent"}`}
+                    onClick={() => setSignatureType("upload")}
+                  >
+                    Upload
+                  </button>
+                </div>
+
+                {signatureType === "draw" ? (
+                  <div className="border border-gray-300 rounded-md bg-gray-50 flex flex-col">
+                    <SignatureCanvas 
+                      ref={signatureCanvasRef} 
+                      penColor="black"
+                      canvasProps={{className: "w-full h-32 cursor-crosshair rounded-t-md"}} 
+                    />
+                    <div className="flex justify-end p-1 border-t border-gray-200">
+                      <button 
+                        onClick={() => signatureCanvasRef.current?.clear()}
+                        className="text-xs text-gray-500 hover:text-red-500 px-2 py-1 cursor-pointer"
+                      >
+                        Clear Signature
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setSignatureFile(e.target.files[0])}
+                      className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex justify-end gap-2 px-5 py-4 border-t">
+              <button
+                onClick={() => {
+                  setIsEditModalOpen(false);
+                  setReviewToEdit(null);
+                  setNewScore("");
+                  setModificationComment("");
+                  setSignatureType("draw");
+                  setSignatureFile(null);
+                }}
+                className="px-4 py-2 text-sm font-medium border rounded-md text-gray-700 hover:bg-gray-50 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveScore}
+                disabled={updateScoreMutation.isPending}
+                className="px-4 py-2 text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 cursor-pointer"
+              >
+                {updateScoreMutation.isPending ? "Saving..." : "Save Score"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
