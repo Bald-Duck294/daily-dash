@@ -1650,6 +1650,9 @@ import {
   Building2,
   LayoutGrid,
   List,
+  X,
+  ExternalLink,
+  CheckCircle2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -1676,19 +1679,53 @@ const ROLE_LEVELS = {
 
 // 2. Define the UI aesthetics for each Role ID
 const ROLE_UI_CONFIG = {
-  2: { icon: Shield, color: "blue", activeClass: "bg-gradient-to-br from-blue-500 to-blue-600 border-blue-600 text-white shadow-blue-200" },
-  6: { icon: MapPin, color: "purple", activeClass: "bg-gradient-to-br from-purple-500 to-purple-600 border-purple-600 text-white shadow-purple-200" },
-  8: { icon: Building2, color: "indigo", activeClass: "bg-gradient-to-br from-indigo-500 to-indigo-600 border-indigo-600 text-white shadow-indigo-200" },
-  3: { icon: UserCog, color: "teal", activeClass: "bg-gradient-to-br from-teal-500 to-teal-600 border-teal-600 text-white shadow-teal-200" },
-  7: { icon: Users, color: "cyan", activeClass: "bg-gradient-to-br from-cyan-500 to-cyan-600 border-cyan-600 text-white shadow-cyan-200" },
-  5: { icon: HardHat, color: "orange", activeClass: "bg-gradient-to-br from-orange-500 to-orange-600 border-orange-600 text-white shadow-orange-200" },
+  2: {
+    icon: Shield,
+    color: "blue",
+    activeClass:
+      "bg-gradient-to-br from-blue-500 to-blue-600 border-blue-600 text-white shadow-blue-200",
+  },
+  6: {
+    icon: MapPin,
+    color: "purple",
+    activeClass:
+      "bg-gradient-to-br from-purple-500 to-purple-600 border-purple-600 text-white shadow-purple-200",
+  },
+  8: {
+    icon: Building2,
+    color: "indigo",
+    activeClass:
+      "bg-gradient-to-br from-indigo-500 to-indigo-600 border-indigo-600 text-white shadow-indigo-200",
+  },
+  3: {
+    icon: UserCog,
+    color: "teal",
+    activeClass:
+      "bg-gradient-to-br from-teal-500 to-teal-600 border-teal-600 text-white shadow-teal-200",
+  },
+  7: {
+    icon: Users,
+    color: "cyan",
+    activeClass:
+      "bg-gradient-to-br from-cyan-500 to-cyan-600 border-cyan-600 text-white shadow-cyan-200",
+  },
+  5: {
+    icon: HardHat,
+    color: "orange",
+    activeClass:
+      "bg-gradient-to-br from-orange-500 to-orange-600 border-orange-600 text-white shadow-orange-200",
+  },
 };
 
-const DEFAULT_UI = { icon: Users, color: "gray", activeClass: "bg-slate-500 border-slate-600 text-white" };
+const DEFAULT_UI = {
+  icon: Users,
+  color: "gray",
+  activeClass: "bg-slate-500 border-slate-600 text-white",
+};
 
 const TableRowSkeleton = () => (
   <tr className="animate-pulse border-b border-slate-100 dark:border-slate-800">
-    {[...Array(5)].map((_, i) => (
+    {[...Array(6)].map((_, i) => (
       <td key={i} className="p-4">
         <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-full" />
       </td>
@@ -1720,7 +1757,7 @@ export default function UsersPage() {
   const { companyId } = useCompanyId();
   const router = useRouter();
   const currentUser = useSelector((state) => state.auth.user);
-  
+
   const currentUserRoleId = parseInt(currentUser?.role_id || 4);
   const currentUserLevel = ROLE_LEVELS[currentUserRoleId] || 99; // Get logged in user's level
 
@@ -1730,8 +1767,10 @@ export default function UsersPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRole, setSelectedRole] = useState("all");
   const [viewMode, setViewMode] = useState("table");
+  const [selectedUserForAssignments, setSelectedUserForAssignments] =
+    useState(null);
 
-useEffect(() => {
+  useEffect(() => {
     if (typeof window === "undefined") return;
 
     const handleResize = () => {
@@ -1760,13 +1799,17 @@ useEffect(() => {
       roleId: selectedRole !== "all" ? selectedRole : null,
       page: currentPage,
       limit: limit,
-      search: searchTerm
+      search: searchTerm,
     },
-    { enabled: !!companyId }
+    { enabled: !!companyId },
   );
 
   const users = data?.data || [];
-  const pagination = data?.meta || { totalPages: 1, currentPage: 1, totalCount: 0 };
+  const pagination = data?.meta || {
+    totalPages: 1,
+    currentPage: 1,
+    totalCount: 0,
+  };
   const deleteUserMutation = useDeleteUser();
   const [cachedRoleCounts, setCachedRoleCounts] = useState({});
 
@@ -1780,25 +1823,33 @@ useEffect(() => {
 
   // --- DYNAMIC ROLE FILTERING ---
   const visibleRoles = useMemo(() => {
-    const allRoles = Array.isArray(rolesResponse) ? rolesResponse : (rolesResponse?.data || []);
-    
+    const allRoles = Array.isArray(rolesResponse)
+      ? rolesResponse
+      : rolesResponse?.data || [];
+
     // Filter roles: Users only see roles that have a HIGHER level number (lower authority) than themselves
     return allRoles.filter((role) => {
       const roleLevel = ROLE_LEVELS[role.id] || 99;
-      return currentUserRoleId === 1 ? role.id !== 1 : roleLevel > currentUserLevel;
+      return currentUserRoleId === 1
+        ? role.id !== 1
+        : roleLevel > currentUserLevel;
     });
   }, [rolesResponse, currentUserLevel, currentUserRoleId]);
 
   // Calculate global total ONLY for the roles the user is allowed to see
   const globalTotalUsers = useMemo(() => {
-    return visibleRoles.reduce((sum, role) => sum + (roleCounts[role.id] || 0), 0);
+    return visibleRoles.reduce(
+      (sum, role) => sum + (roleCounts[role.id] || 0),
+      0,
+    );
   }, [roleCounts, visibleRoles]);
-
 
   // --- UI HELPERS ---
   const canManageUser = (targetUser) => {
     if (currentUserRoleId === 1) return true;
-    const targetUserRoleId = parseInt(targetUser.role_id || targetUser.role?.id || 4);
+    const targetUserRoleId = parseInt(
+      targetUser.role_id || targetUser.role?.id || 4,
+    );
     const targetUserRoleLevel = ROLE_LEVELS[targetUserRoleId] || 99;
     return targetUserRoleLevel > currentUserLevel;
   };
@@ -1812,13 +1863,19 @@ useEffect(() => {
     const colorMap = {
       blue: "text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-700",
       teal: "text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-900/30 border-teal-200 dark:border-teal-700",
-      orange: "text-orange-700 dark:text-orange-300 bg-orange-50 dark:bg-orange-900/30 border-orange-200 dark:border-orange-700",
-      purple: "text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-900/30 border-purple-200 dark:border-purple-700",
-      indigo: "text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-900/30 border-indigo-200 dark:border-indigo-700",
+      orange:
+        "text-orange-700 dark:text-orange-300 bg-orange-50 dark:bg-orange-900/30 border-orange-200 dark:border-orange-700",
+      purple:
+        "text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-900/30 border-purple-200 dark:border-purple-700",
+      indigo:
+        "text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-900/30 border-indigo-200 dark:border-indigo-700",
       cyan: "text-cyan-700 dark:text-cyan-300 bg-cyan-50 dark:bg-cyan-900/30 border-cyan-200 dark:border-cyan-700",
     };
     const color = ROLE_UI_CONFIG[roleId]?.color || "gray";
-    return colorMap[color] || "text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-600";
+    return (
+      colorMap[color] ||
+      "text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-600"
+    );
   };
 
   const performDelete = async (id) => {
@@ -1844,7 +1901,10 @@ useEffect(() => {
           </p>
           <div className="flex gap-4">
             <button
-              onClick={() => { toast.dismiss(t.id); performDelete(user.id); }}
+              onClick={() => {
+                toast.dismiss(t.id);
+                performDelete(user.id);
+              }}
               className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition-all"
             >
               Delete
@@ -1862,70 +1922,295 @@ useEffect(() => {
     );
   };
 
-  // --- Render Components ---
-  const UserCard = ({ user }) => (
-    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-5 hover:shadow-md transition-all duration-300 group cursor-pointer relative overflow-hidden">
-      <div className="absolute top-0 left-0 w-full h-1 bg-orange-500 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
+  // Helper to extract assignments safely
+  const getUserAssignments = (u) => {
+    if (!u) return [];
+    if (Array.isArray(u.assignments) && u.assignments.length > 0) {
+      return u.assignments;
+    }
+    if (
+      Array.isArray(u.cleaner_assignments_as_cleaner) &&
+      u.cleaner_assignments_as_cleaner.length > 0
+    ) {
+      return u.cleaner_assignments_as_cleaner.map((a) => ({
+        id: a.id,
+        location_id: a.location_id,
+        type_id: a.type_id,
+        name: a.locations?.name || a.name || "Assigned Location",
+        status: a.status || "assigned",
+      }));
+    }
+    return [];
+  };
 
-      <div className="flex justify-between items-start mb-4">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 font-bold text-lg">
-            {user.name.charAt(0).toUpperCase()}
-          </div>
-          <div>
-            <h3 className="font-bold text-slate-900 dark:text-white text-base leading-tight">{user.name}</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">ID: #{user.id}</p>
-          </div>
-        </div>
-        <span className={`inline-flex px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded border ${getRoleColorClass(user)}`}>
-          {getRoleDisplayName(user)}
-        </span>
-      </div>
+  // --- Location Assignments Modal ---
+  const UserAssignmentsModal = ({ user, isOpen, onClose }) => {
+    const [modalSearch, setModalSearch] = useState("");
 
-      <div className="space-y-2 mb-5">
-        <div className="text-sm text-slate-600 dark:text-slate-300 flex items-center gap-2">
-          <div className="w-8 text-xs font-semibold uppercase text-slate-400">Email</div>
-          <span className="truncate">{user.email || "N/A"}</span>
-        </div>
-        <div className="text-sm text-slate-600 dark:text-slate-300 flex items-center gap-2">
-          <div className="w-8 text-xs font-semibold uppercase text-slate-400">Phone</div>
-          <span>{user.phone || "N/A"}</span>
-        </div>
-      </div>
+    if (!isOpen || !user) return null;
 
-      <div className="flex gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
-        <button
-          onClick={() => router.push(`/users/view/${user.id}?companyId=${companyId}`)}
-          className="flex-1 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-medium text-xs hover:bg-orange-50 dark:hover:bg-orange-900/20 hover:text-orange-600 dark:hover:text-orange-400 transition-colors flex items-center justify-center gap-2"
+    const assignments = getUserAssignments(user);
+    const filtered = assignments.filter(
+      (a) =>
+        (a.name || "").toLowerCase().includes(modalSearch.toLowerCase()) ||
+        (a.location_id ? String(a.location_id).includes(modalSearch) : false),
+    );
+
+    return (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200"
+        onClick={onClose}
+      >
+        <div
+          className="bg-white dark:bg-slate-900 rounded-2xl max-w-lg w-full border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200"
+          onClick={(e) => e.stopPropagation()}
         >
-          <Eye size={14} /> View
-        </button>
+          {/* Header */}
+          <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-start justify-between bg-slate-50/50 dark:bg-slate-800/30">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center border border-orange-200 dark:border-orange-800/50 text-orange-600 dark:text-orange-400">
+                <MapPin size={20} />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base font-black text-slate-900 dark:text-white uppercase tracking-tight">
+                    Location Assignments
+                  </h3>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-800/60">
+                    {assignments.length}{" "}
+                    {assignments.length === 1 ? "Location" : "Locations"}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                  {user.name} • {getRoleDisplayName(user)} • ID #{user.id}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            >
+              <X size={18} />
+            </button>
+          </div>
 
-        {canManageUser(user) && (
-          <div className="flex gap-2">
-            {canEditUser && (
-              <button
-                onClick={() => router.push(`/users/${user.id}/edit?companyId=${companyId}`)}
-                className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-blue-50 hover:text-blue-600 transition-colors"
-                title="Edit"
-              >
-                <Edit size={16} />
-              </button>
-            )}
-            {canDeleteUser && (
-              <button
-                onClick={() => handleDelete(user)}
-                className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-red-50 hover:text-red-600 transition-colors"
-                title="Delete"
-              >
-                <Trash2 size={16} />
-              </button>
+          {/* Search if multiple assignments */}
+          {assignments.length > 3 && (
+            <div className="p-3 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search locations..."
+                  value={modalSearch}
+                  onChange={(e) => setModalSearch(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Assignments List */}
+          <div className="p-5 overflow-y-auto space-y-2.5 flex-1">
+            {filtered.length > 0 ? (
+              filtered.map((assignment, idx) => (
+                <div
+                  key={assignment.id || idx}
+                  className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:bg-white dark:hover:bg-slate-800 hover:border-orange-200 dark:hover:border-orange-800/60 transition-all flex items-center justify-between gap-3 group"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-8 h-8 rounded-lg bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0 border border-orange-200/50 dark:border-orange-800/40">
+                      <Building2 size={16} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">
+                        {assignment.name}
+                      </p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        {assignment.location_id && (
+                          <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                            ID: #{assignment.location_id}
+                          </span>
+                        )}
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full border border-emerald-200/60 dark:border-emerald-800/40">
+                          <CheckCircle2 size={10} />{" "}
+                          {assignment.status || "Assigned"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {assignment.location_id && (
+                    <a
+                      href={`/washrooms/item/${assignment.location_id}?companyId=${companyId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-2 rounded-lg bg-white dark:bg-slate-700 text-slate-400 hover:text-orange-600 dark:hover:text-orange-400 border border-slate-200 dark:border-slate-600 hover:border-orange-200 dark:hover:border-orange-800 transition-all opacity-80 group-hover:opacity-100 shrink-0"
+                      title="View washroom details"
+                    >
+                      <ExternalLink size={14} />
+                    </a>
+                  )}
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-8">
+                <MapPin className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+                <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                  {assignments.length === 0
+                    ? "No locations assigned"
+                    : "No matching locations"}
+                </p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  {assignments.length === 0
+                    ? "This user has not been assigned to any locations yet."
+                    : "Try a different search query."}
+                </p>
+              </div>
             )}
           </div>
-        )}
+
+          {/* Footer */}
+          <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex items-center justify-between gap-3">
+            <a
+              href={`/userMapping?companyId=${companyId}`}
+              className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/40 hover:bg-orange-100 rounded-lg border border-orange-200 dark:border-orange-800/50 transition-colors"
+            >
+              <Plus size={14} strokeWidth={2.5} /> Manage Assignments
+            </a>
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+            >
+              Close
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
+
+  // --- Render Components ---
+  const UserCard = ({ user }) => {
+    const userAssignments = getUserAssignments(user);
+
+    return (
+      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-5 hover:shadow-md transition-all duration-300 group cursor-pointer relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-1 bg-orange-500 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
+
+        <div className="flex justify-between items-start mb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 font-bold text-lg">
+              {user.name.charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <h3 className="font-bold text-slate-900 dark:text-white text-base leading-tight">
+                {user.name}
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                ID: #{user.id}
+              </p>
+            </div>
+          </div>
+          <span
+            className={`inline-flex px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded border ${getRoleColorClass(user)}`}
+          >
+            {getRoleDisplayName(user)}
+          </span>
+        </div>
+
+        <div className="space-y-2 mb-5">
+          <div className="text-sm text-slate-600 dark:text-slate-300 flex items-center gap-2">
+            <div className="w-16 text-xs font-semibold uppercase text-slate-400">
+              Email
+            </div>
+            <span className="truncate">{user.email || "N/A"}</span>
+          </div>
+          <div className="text-sm text-slate-600 dark:text-slate-300 flex items-center gap-2">
+            <div className="w-16 text-xs font-semibold uppercase text-slate-400">
+              Phone
+            </div>
+            <span>{user.phone || "N/A"}</span>
+          </div>
+          <div className="text-sm text-slate-600 dark:text-slate-300 flex items-start gap-2 pt-1">
+            <div className="w-16 text-xs font-semibold uppercase text-slate-400 mt-1 shrink-0">
+              Locations
+            </div>
+            <div className="flex-1 flex flex-wrap gap-1.5 items-center">
+              {userAssignments.length === 0 ? (
+                <span className="text-xs text-slate-400 italic">None</span>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedUserForAssignments(user);
+                    }}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold bg-orange-50 dark:bg-orange-950/30 text-orange-700 dark:text-orange-300 border border-orange-200/60 dark:border-orange-800/40 hover:bg-orange-100 transition-colors"
+                  >
+                    <MapPin size={11} className="text-orange-500 shrink-0" />
+                    <span className="max-w-[110px] truncate">
+                      {userAssignments[0].name}
+                    </span>
+                  </button>
+                  {userAssignments.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedUserForAssignments(user);
+                      }}
+                      className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-orange-500 hover:text-white transition-colors"
+                    >
+                      +{userAssignments.length - 1} more
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
+          <button
+            onClick={() =>
+              router.push(`/users/view/${user.id}?companyId=${companyId}`)
+            }
+            className="flex-1 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-medium text-xs hover:bg-orange-50 dark:hover:bg-orange-900/20 hover:text-orange-600 dark:hover:text-orange-400 transition-colors flex items-center justify-center gap-2"
+          >
+            <Eye size={14} /> View
+          </button>
+
+          {canManageUser(user) && (
+            <div className="flex gap-2">
+              {canEditUser && (
+                <button
+                  onClick={() =>
+                    router.push(`/users/${user.id}/edit?companyId=${companyId}`)
+                  }
+                  className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                  title="Edit"
+                >
+                  <Edit size={16} />
+                </button>
+              )}
+              {canDeleteUser && (
+                <button
+                  onClick={() => handleDelete(user)}
+                  className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-red-50 hover:text-red-600 transition-colors"
+                  title="Delete"
+                >
+                  <Trash2 size={16} />
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <>
@@ -1933,7 +2218,7 @@ useEffect(() => {
       <div className="min-h-screen  transition-colors duration-300 p-4 sm:p-6 md:p-8">
         <div className="max-w-7xl mx-auto md:mt-[-40px] ">
           {/* Header Card */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-4 mb-5 ">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-4 mb-5 ">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 bg-orange-50 dark:bg-orange-900/20 rounded-xl flex items-center justify-center border border-orange-100 dark:border-orange-800/50">
@@ -1970,18 +2255,30 @@ useEffect(() => {
           {/* Stats Cards Row (Dynamic Rendering) */}
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2 mb-5">
             <button
-              onClick={() => { setSelectedRole("all"); setCurrentPage(1); }}
-              className={`group relative overflow-hidden rounded-xl p-3 transition-all duration-300 cursor-pointer text-left border ${selectedRole === "all"
-                ? "bg-slate-800 dark:bg-slate-700 border-slate-700 text-white shadow-sm ring-1 ring-slate-700 dark:ring-slate-600"
-                : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:border-orange-400"
-                }`}
+              onClick={() => {
+                setSelectedRole("all");
+                setCurrentPage(1);
+              }}
+              className={`group relative overflow-hidden rounded-xl p-3 transition-all duration-300 cursor-pointer text-left border ${
+                selectedRole === "all"
+                  ? "bg-slate-800 dark:bg-slate-700 border-slate-700 text-white shadow-sm ring-1 ring-slate-700 dark:ring-slate-600"
+                  : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:border-orange-400"
+              }`}
             >
               <div className="flex justify-between items-start mb-1">
-                <Users className={`w-4 h-4 ${selectedRole === "all" ? "text-orange-400" : "text-slate-400"}`} />
-                {selectedRole === "all" && <div className="h-1.5 w-1.5 rounded-full bg-orange-400" />}
+                <Users
+                  className={`w-4 h-4 ${selectedRole === "all" ? "text-orange-400" : "text-slate-400"}`}
+                />
+                {selectedRole === "all" && (
+                  <div className="h-1.5 w-1.5 rounded-full bg-orange-400" />
+                )}
               </div>
-              <p className="text-xl font-black leading-none mt-1">{globalTotalUsers}</p>
-              <p className="text-[9px] font-bold uppercase tracking-wider opacity-70 mt-1">Total Users</p>
+              <p className="text-xl font-black leading-none mt-1">
+                {globalTotalUsers}
+              </p>
+              <p className="text-[9px] font-bold uppercase tracking-wider opacity-70 mt-1">
+                Total Users
+              </p>
             </button>
 
             {/* Render dynamic roles based on user permissions */}
@@ -1999,13 +2296,20 @@ useEffect(() => {
               return (
                 <button
                   key={roleId}
-                  onClick={() => { setSelectedRole(isSelected ? "all" : roleId); setCurrentPage(1); }}
+                  onClick={() => {
+                    setSelectedRole(isSelected ? "all" : roleId);
+                    setCurrentPage(1);
+                  }}
                   className={`group relative overflow-hidden rounded-xl p-3 transition-all duration-300 text-left border ${activeClasses}`}
                 >
                   <div className="flex justify-between items-start mb-1">
-                    <Icon className={`w-4 h-4 ${isSelected ? "text-white" : "text-slate-400"}`} />
+                    <Icon
+                      className={`w-4 h-4 ${isSelected ? "text-white" : "text-slate-400"}`}
+                    />
                   </div>
-                  <p className="text-xl font-black leading-none mt-1">{count}</p>
+                  <p className="text-xl font-black leading-none mt-1">
+                    {count}
+                  </p>
                   <p className="text-[9px] font-bold uppercase tracking-wider truncate mt-1">
                     {role.name}
                   </p>
@@ -2022,7 +2326,10 @@ useEffect(() => {
                 type="text"
                 placeholder="Search by name, email or phone..."
                 value={searchTerm}
-                onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
                 className="w-full pl-12 pr-4 py-3.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
               />
             </div>
@@ -2045,14 +2352,20 @@ useEffect(() => {
 
           {/* Content Area */}
           {isLoading ? (
-            <div className={`grid gap-4 ${viewMode === "grid" ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" : "grid-cols-1"}`}>
+            <div
+              className={`grid gap-4 ${viewMode === "grid" ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" : "grid-cols-1"}`}
+            >
               {viewMode === "grid" ? (
-                Array.from({ length: 8 }).map((_, i) => <CardSkeleton key={i} />)
+                Array.from({ length: 8 }).map((_, i) => (
+                  <CardSkeleton key={i} />
+                ))
               ) : (
                 <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
                   <table className="w-full">
                     <tbody>
-                      {Array.from({ length: 5 }).map((_, i) => <TableRowSkeleton key={i} />)}
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <TableRowSkeleton key={i} />
+                      ))}
                     </tbody>
                   </table>
                 </div>
@@ -2061,7 +2374,9 @@ useEffect(() => {
           ) : users.length > 0 ? (
             <>
               {/* Grid View */}
-              <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 ${viewMode === "table" ? "hidden md:hidden" : ""}`}>
+              <div
+                className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 ${viewMode === "table" ? "hidden md:hidden" : ""}`}
+              >
                 {users.map((user) => (
                   <UserCard key={user.id} user={user} />
                 ))}
@@ -2074,18 +2389,33 @@ useEffect(() => {
                     <thead>
                       <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 text-left">
                         {/* 1. Added Index Header */}
-                        <th className="p-5 w-16 text-center text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">#</th>
-                        <th className="p-5 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Staff Member</th>
-                        <th className="p-5 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Contact Info</th>
-                        <th className="p-5 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Permission Level</th>
-                        <th className="p-5 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right">Actions</th>
+                        <th className="p-5 w-16 text-center text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                          #
+                        </th>
+                        <th className="p-5 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                          Staff Member
+                        </th>
+                        <th className="p-5 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                          Contact Info
+                        </th>
+                        <th className="p-5 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                          Permission Level
+                        </th>
+                        <th className="p-5 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                          Assigned Locations
+                        </th>
+                        <th className="p-5 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right">
+                          Actions
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                       {/* 2. Added `index` to the map function */}
                       {users.map((user, index) => (
-                        <tr key={user.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
-                          
+                        <tr
+                          key={user.id}
+                          className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group"
+                        >
                           {/* 3. Added Continuous Index Cell */}
                           <td className="p-5 text-center text-sm font-semibold text-slate-500 dark:text-slate-400">
                             {(currentPage - 1) * limit + index + 1}
@@ -2097,19 +2427,78 @@ useEffect(() => {
                                 {(user?.name?.[0] || "U").toUpperCase()}
                               </div>
                               <div>
-                                <div className="font-bold text-slate-900 dark:text-slate-100">{user.name}</div>
-                                <div className="text-xs text-slate-500">ID: #{user.id}</div>
+                                <div className="font-bold text-slate-900 dark:text-slate-100">
+                                  {user.name}
+                                </div>
+                                <div className="text-xs text-slate-500">
+                                  ID: #{user.id}
+                                </div>
                               </div>
                             </div>
                           </td>
                           <td className="p-5">
-                            <div className="text-sm text-slate-700 dark:text-slate-300 font-medium">{user.email || "N/A"}</div>
-                            <div className="text-xs text-slate-500 mt-0.5">{user.phone || "N/A"}</div>
+                            <div className="text-sm text-slate-700 dark:text-slate-300 font-medium">
+                              {user.email || "N/A"}
+                            </div>
+                            <div className="text-xs text-slate-500 mt-0.5">
+                              {user.phone || "N/A"}
+                            </div>
                           </td>
                           <td className="p-5">
-                            <span className={`inline-flex px-3 py-1 text-xs font-bold uppercase tracking-wide rounded border ${getRoleColorClass(user)}`}>
+                            <span
+                              className={`inline-flex px-3 py-1 text-xs font-bold uppercase tracking-wide rounded border ${getRoleColorClass(user)}`}
+                            >
                               {getRoleDisplayName(user)}
                             </span>
+                          </td>
+                          <td className="p-5">
+                            {(() => {
+                              const userAssignments = getUserAssignments(user);
+                              if (userAssignments.length === 0) {
+                                return (
+                                  <span className="text-xs text-slate-400 dark:text-slate-500 italic">
+                                    None
+                                  </span>
+                                );
+                              }
+
+                              const firstAssignment = userAssignments[0];
+                              const hasMore = userAssignments.length > 1;
+
+                              return (
+                                <div className="flex items-center gap-1.5 flex-wrap max-w-xs">
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setSelectedUserForAssignments(user)
+                                    }
+                                    className="group inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-orange-50 dark:bg-orange-950/30 text-orange-700 dark:text-orange-300 border border-orange-200/60 dark:border-orange-800/40 hover:bg-orange-100 dark:hover:bg-orange-900/40 hover:border-orange-300 transition-all cursor-pointer text-left"
+                                    title="Click to view all assigned locations"
+                                  >
+                                    <MapPin
+                                      size={12}
+                                      className="text-orange-500 shrink-0"
+                                    />
+                                    <span className="max-w-[130px] truncate">
+                                      {firstAssignment.name}
+                                    </span>
+                                  </button>
+
+                                  {hasMore && (
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setSelectedUserForAssignments(user)
+                                      }
+                                      className="inline-flex items-center px-2 py-1 rounded-lg text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-orange-500 hover:text-white hover:border-orange-500 dark:hover:bg-orange-600 dark:hover:border-orange-600 transition-all cursor-pointer shadow-xs"
+                                      title={`View all ${userAssignments.length} assignments`}
+                                    >
+                                      +{userAssignments.length - 1} more
+                                    </button>
+                                  )}
+                                </div>
+                              );
+                            })()}
                           </td>
                           <td className="p-5 text-right">
                             {/* 4. Removed hover opacity classes to keep buttons always visible */}
@@ -2124,7 +2513,11 @@ useEffect(() => {
                                 <>
                                   {canEditUser && (
                                     <button
-                                      onClick={() => router.push(`/users/${user.id}/edit?companyId=${companyId}`)}
+                                      onClick={() =>
+                                        router.push(
+                                          `/users/${user.id}/edit?companyId=${companyId}`,
+                                        )
+                                      }
                                       className="p-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm"
                                     >
                                       <Edit size={16} />
@@ -2166,7 +2559,6 @@ useEffect(() => {
           {/* DYNAMIC PAGINATION FOOTER */}
           {pagination?.totalCount > 0 && (
             <div className="flex flex-col md:flex-row justify-between items-center mt-6 p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 gap-4">
-              
               {/* Dropdown for Items Per Page */}
               <div className="w-full md:w-auto flex items-center gap-2">
                 <span className="text-xs font-bold uppercase text-slate-500 whitespace-nowrap">
@@ -2188,7 +2580,15 @@ useEffect(() => {
 
               {/* Status Text */}
               <div className="text-center text-sm text-slate-500 dark:text-slate-400 font-medium">
-                Showing <span className="text-slate-900 dark:text-white font-bold">{users.length}</span> of <span className="text-slate-900 dark:text-white font-bold">{pagination.totalCount}</span> staff
+                Showing{" "}
+                <span className="text-slate-900 dark:text-white font-bold">
+                  {users.length}
+                </span>{" "}
+                of{" "}
+                <span className="text-slate-900 dark:text-white font-bold">
+                  {pagination.totalCount}
+                </span>{" "}
+                staff
               </div>
 
               {/* Next/Prev Controls */}
@@ -2206,8 +2606,15 @@ useEffect(() => {
                 </span>
 
                 <button
-                  onClick={() => setCurrentPage((p) => (p < pagination.totalPages ? p + 1 : p))}
-                  disabled={currentPage >= pagination.totalPages || pagination.totalPages === 0}
+                  onClick={() =>
+                    setCurrentPage((p) =>
+                      p < pagination.totalPages ? p + 1 : p,
+                    )
+                  }
+                  disabled={
+                    currentPage >= pagination.totalPages ||
+                    pagination.totalPages === 0
+                  }
                   className="px-4 py-2 rounded-lg font-bold text-xs uppercase tracking-wider disabled:opacity-30 transition-all bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
                 >
                   Next
@@ -2215,9 +2622,15 @@ useEffect(() => {
               </div>
             </div>
           )}
-
         </div>
       </div>
+
+      {/* Location Assignments Modal */}
+      <UserAssignmentsModal
+        user={selectedUserForAssignments}
+        isOpen={!!selectedUserForAssignments}
+        onClose={() => setSelectedUserForAssignments(null)}
+      />
     </>
   );
 }

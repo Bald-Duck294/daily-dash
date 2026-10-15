@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import toast, { Toaster } from "react-hot-toast";
 import { useRouter } from "next/navigation";
 
 import TreeView from "@/features/locationTypes/components/TreeView";
+import { VisualArchitectureMap } from "@/features/locationTypes/components/VisualArchitectureMap";
 import { useCompanyId } from "@/providers/CompanyProvider";
 
 import { usePermissions } from "@/shared/hooks/usePermission";
@@ -27,6 +28,8 @@ import {
   MapPin,
   Pencil,
   Trash2,
+  Network,
+  X,
 } from "lucide-react";
 
 export default function LocationTypesPage() {
@@ -37,7 +40,7 @@ export default function LocationTypesPage() {
   const { canAdd, canUpdate, canDelete } = usePermissions();
 
   const [deleteModal, setDeleteModal] = useState({ open: false, type: null });
-  const [showTree, setShowTree] = useState(false);
+  const [showHierarchyModal, setShowHierarchyModal] = useState(false);
   const [search, setSearch] = useState("");
 
   /* =======================
@@ -45,6 +48,27 @@ export default function LocationTypesPage() {
   ======================= */
 
   const { data: types = [], isLoading: loading } = useLocationTypes(companyId);
+
+  const hierarchicalTypes = useMemo(() => {
+    if (!types || !Array.isArray(types)) return [];
+
+    const tree = [];
+    const lookup = {};
+
+    types.forEach((item) => {
+      lookup[item.id] = { ...item, children: [] };
+    });
+
+    types.forEach((item) => {
+      if (item.parent_id && lookup[item.parent_id]) {
+        lookup[item.parent_id].children.push(lookup[item.id]);
+      } else {
+        tree.push(lookup[item.id]);
+      }
+    });
+
+    return tree;
+  }, [types]);
 
   const deleteMutation = useDeleteLocationType(companyId);
   const updateMutation = useUpdateLocationType(companyId);
@@ -144,14 +168,15 @@ export default function LocationTypesPage() {
               "
             >
               <button
-                onClick={() => setShowTree((v) => !v)}
+                onClick={() => setShowHierarchyModal(true)}
                 className="
                   w-full sm:w-auto
                   rounded-lg border border-primary/40
                   px-4 py-2 text-sm font-medium
-                  text-primary hover:bg-primary/10
+                  text-primary hover:bg-primary/10 flex items-center justify-center gap-2 cursor-pointer
                 "
               >
+                <Network className="h-4 w-4" />
                 Show Hierarchy
               </button>
 
@@ -189,8 +214,7 @@ export default function LocationTypesPage() {
           {/* Table Card */}
           <div className="rounded-2xl bg-background shadow-sm border border-border overflow-hidden">
 
-            {!showTree ? (
-              <>
+            {/* Main table view */}
                 {/* ================= DESKTOP TABLE ================= */}
                 <div className="hidden md:block overflow-x-auto">
                   <table className="w-full">
@@ -333,18 +357,19 @@ export default function LocationTypesPage() {
                     </div>
                   ))}
                 </div>
-              </>
-            ) : (
-              <div className="p-6">
-                <TreeView
-                  types={types}
-                  onUpdate={() => { }}
-                  flag={false}
-                  canUpdate={canUpdate}
-                  canDelete={canDelete}
-                />
-              </div>
-            )}
+            {/* 
+              // may need in the future - imp
+              // Previous inline TreeView with update actions:
+              // <div className="p-6">
+              //   <TreeView
+              //     types={types}
+              //     onUpdate={() => { }}
+              //     flag={false}
+              //     canUpdate={canUpdate}
+              //     canDelete={canDelete}
+              //   />
+              // </div>
+            */}
           </div>
 
 
@@ -385,6 +410,39 @@ export default function LocationTypesPage() {
                 {deleteMutation.isPending ? "Deleting..." : "Yes, Delete"}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================= ARCHITECTURE HIERARCHICAL MAP MODAL ================= */}
+      {showHierarchyModal && (
+        <div className="fixed inset-0 z-50 flex flex-col bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="flex items-center justify-between px-6 py-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center">
+                <Network className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+              </div>
+              <div>
+                <h2 className="text-sm font-bold tracking-widest text-slate-800 dark:text-slate-100 uppercase">
+                  Architecture Hierarchical Map
+                </h2>
+                <p className="text-[11px] text-muted-foreground">
+                  Interactive hierarchical visualization of organization zones & locations
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowHierarchyModal(false)}
+              className="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
+              title="Close Map"
+            >
+              <X size={22} />
+            </button>
+          </div>
+
+          <div className="flex-1 relative bg-slate-50/50 dark:bg-slate-900/30 overflow-hidden min-h-[500px]">
+            <VisualArchitectureMap data={hierarchicalTypes} />
           </div>
         </div>
       )}

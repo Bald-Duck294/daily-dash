@@ -20,9 +20,7 @@ import { usePermissions } from "@/shared/hooks/usePermission";
 import { useCompanySlaConfig } from "@/features/companies/queries/sla.queries";
 import { useCleanersDropdown } from "@/features/dropdownList/dropdownlist.query";
 
-import {
-  useSlaCleanerActivities,
-} from "../slaCleanerActivity.queries";
+import { useSlaCleanerActivities } from "../slaCleanerActivity.queries";
 import SlaCleanerActivityCard from "./SlaCleanerActivityCard";
 import { getLocalDateString } from "../utils/slaActivityUtils";
 
@@ -35,17 +33,23 @@ export default function SlaCleanerActivityList() {
 
   // Filters State
   const [filter, setFilter] = useState(searchParams.get("status") || "all");
-  const [slaStatus, setSlaStatus] = useState(searchParams.get("sla_status") || "all");
-  const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || "");
-  const [datePreset, setDatePreset] = useState(searchParams.get("datePreset") || "today");
+  const [slaStatus, setSlaStatus] = useState(
+    searchParams.get("sla_status") || "all",
+  );
+  const [searchQuery, setSearchQuery] = useState(
+    searchParams.get("search") || "",
+  );
+  const [datePreset, setDatePreset] = useState(
+    searchParams.get("datePreset") || "today",
+  );
   const [startDate, setStartDate] = useState(
-    searchParams.get("startDate") || getLocalDateString()
+    searchParams.get("startDate") || getLocalDateString(),
   );
   const [endDate, setEndDate] = useState(
-    searchParams.get("endDate") || getLocalDateString()
+    searchParams.get("endDate") || getLocalDateString(),
   );
   const [selectedCleanerId, setSelectedCleanerId] = useState(
-    searchParams.get("cleanerId") || "all"
+    searchParams.get("cleanerId") || "all",
   );
   const [page, setPage] = useState(Number(searchParams.get("page")) || 1);
   const [limit, setLimit] = useState(Number(searchParams.get("limit")) || 15);
@@ -77,7 +81,7 @@ export default function SlaCleanerActivityList() {
       page,
       limit,
     },
-    companyId
+    companyId,
   );
 
   const { data: cleanersDropdownList = [] } = useCleanersDropdown(companyId);
@@ -142,7 +146,11 @@ export default function SlaCleanerActivityList() {
       setEndDate((prev) => (prev !== todayStr ? todayStr : prev));
     } else if (datePreset === "this_month") {
       const firstDay = new Date(todayObj.getFullYear(), todayObj.getMonth(), 1);
-      const lastDay = new Date(todayObj.getFullYear(), todayObj.getMonth() + 1, 0);
+      const lastDay = new Date(
+        todayObj.getFullYear(),
+        todayObj.getMonth() + 1,
+        0,
+      );
       const formatLocal = (d) =>
         new Date(d.getTime() - d.getTimezoneOffset() * 60000)
           .toISOString()
@@ -162,7 +170,15 @@ export default function SlaCleanerActivityList() {
   // Reset pagination on filter change
   useEffect(() => {
     setPage((prev) => (prev !== 1 ? 1 : prev));
-  }, [filter, slaStatus, datePreset, startDate, endDate, selectedCleanerId, searchQuery]);
+  }, [
+    filter,
+    slaStatus,
+    datePreset,
+    startDate,
+    endDate,
+    selectedCleanerId,
+    searchQuery,
+  ]);
 
   const handleReset = () => {
     setFilter("all");
@@ -205,7 +221,8 @@ export default function SlaCleanerActivityList() {
                 className="flex items-center justify-center p-2.5 rounded-xl shrink-0"
                 style={{
                   background: "var(--cleaner-header-icon-bg, #FFF7ED)",
-                  border: "1px solid var(--cleaner-header-icon-border, #FFEDD5)",
+                  border:
+                    "1px solid var(--cleaner-header-icon-border, #FFEDD5)",
                 }}
               >
                 <ShieldCheck
@@ -219,7 +236,7 @@ export default function SlaCleanerActivityList() {
                   className="text-lg font-bold leading-none mb-1 flex items-center gap-2"
                   style={{ color: "var(--cleaner-title, #111827)" }}
                 >
-                  SLA CLEANER ACTIVITY
+                  CLEANER ACTIVITY
                   <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20">
                     SLA + Retry Mode
                   </span>
@@ -228,7 +245,8 @@ export default function SlaCleanerActivityList() {
                   className="text-xs"
                   style={{ color: "var(--cleaner-subtitle, #6B7280)" }}
                 >
-                  Grouped cleaning lifecycles, real-time SLA breach monitoring, and retry progression
+                  Grouped cleaning lifecycles, real-time SLA breach monitoring,
+                  and retry progression
                 </p>
               </div>
             </div>
@@ -257,7 +275,9 @@ export default function SlaCleanerActivityList() {
                         : "var(--cleaner-subtitle, #6B7280)",
                     }}
                   >
-                    {v === "all" ? "All Tasks" : v.charAt(0).toUpperCase() + v.slice(1)}
+                    {v === "all"
+                      ? "All Tasks"
+                      : v.charAt(0).toUpperCase() + v.slice(1)}
                   </button>
                 );
               })}
@@ -279,7 +299,8 @@ export default function SlaCleanerActivityList() {
                 className="flex items-center justify-center p-1.5 rounded-lg"
                 style={{
                   background: "var(--cleaner-header-icon-bg, #FFF7ED)",
-                  border: "1px solid var(--cleaner-header-icon-border, #FFEDD5)",
+                  border:
+                    "1px solid var(--cleaner-header-icon-border, #FFEDD5)",
                 }}
               >
                 <Calendar
@@ -340,7 +361,9 @@ export default function SlaCleanerActivityList() {
                 </label>
                 <div className="relative w-full sm:w-44">
                   <div
-                    onClick={() => setIsCleanerDropdownOpen(!isCleanerDropdownOpen)}
+                    onClick={() =>
+                      setIsCleanerDropdownOpen(!isCleanerDropdownOpen)
+                    }
                     className="w-full rounded-md px-2.5 py-1.5 text-xs flex justify-between items-center cursor-pointer select-none"
                     style={{
                       background: "var(--cleaner-input-bg, #F9FAFB)",
@@ -352,7 +375,7 @@ export default function SlaCleanerActivityList() {
                       {selectedCleanerId === "all"
                         ? "All Cleaners"
                         : cleanersDropdownList.find(
-                            (c) => String(c.id) === String(selectedCleanerId)
+                            (c) => String(c.id) === String(selectedCleanerId),
                           )?.name || "All Cleaners"}
                     </span>
                     <ChevronDown
@@ -461,7 +484,8 @@ export default function SlaCleanerActivityList() {
                       className="w-full sm:w-32 rounded-md px-2.5 py-1.5 text-xs outline-none"
                       style={{
                         background: "var(--cleaner-input-bg, #F9FAFB)",
-                        border: "1px solid var(--cleaner-input-border, #E5E7EB)",
+                        border:
+                          "1px solid var(--cleaner-input-border, #E5E7EB)",
                         color: "var(--cleaner-title, #111827)",
                       }}
                     />
@@ -481,7 +505,8 @@ export default function SlaCleanerActivityList() {
                       className="w-full sm:w-32 rounded-md px-2.5 py-1.5 text-xs outline-none"
                       style={{
                         background: "var(--cleaner-input-bg, #F9FAFB)",
-                        border: "1px solid var(--cleaner-input-border, #E5E7EB)",
+                        border:
+                          "1px solid var(--cleaner-input-border, #E5E7EB)",
                         color: "var(--cleaner-title, #111827)",
                       }}
                     />
@@ -561,7 +586,9 @@ export default function SlaCleanerActivityList() {
                     canManageReviews={canManageReviews}
                     isSlaEnabled={isSlaEnabled}
                     onNavigateDetail={(id) =>
-                      router.push(`/slaCleanerActivity/${id}?companyId=${companyId}`)
+                      router.push(
+                        `/slaCleanerActivity/${id}?companyId=${companyId}`,
+                      )
                     }
                   />
                 ))}
@@ -607,11 +634,8 @@ export default function SlaCleanerActivityList() {
                     style={{ color: "var(--cleaner-subtitle, #6B7280)" }}
                   >
                     Showing{" "}
-                    {pagination.total_items === 0
-                      ? 0
-                      : (page - 1) * limit + 1}{" "}
-                    to{" "}
-                    {Math.min(page * limit, pagination.total_items || 0)} of{" "}
+                    {pagination.total_items === 0 ? 0 : (page - 1) * limit + 1}{" "}
+                    to {Math.min(page * limit, pagination.total_items || 0)} of{" "}
                     {pagination.total_items || 0} lifecycles
                   </div>
 
@@ -676,7 +700,8 @@ export default function SlaCleanerActivityList() {
                   className="text-xs max-w-xs text-center"
                   style={{ color: "var(--cleaner-subtitle, #6B7280)" }}
                 >
-                  There are no cleaning activity lifecycles matching your current filters. Try adjusting date or resetting filters.
+                  There are no cleaning activity lifecycles matching your
+                  current filters. Try adjusting date or resetting filters.
                 </p>
               </div>
             )}

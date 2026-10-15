@@ -540,10 +540,6 @@ const EditLocationPage = () => {
 
   const handleSave = async () => {
     if (!formData.name.trim()) return toast.error("Location name required");
-    // ✅ 1. NEW: Prevent saving if they deleted/moved the cover without uploading a new one
-    if (!newCoverImage && !existingCover) {
-      return toast.error("A Cover Image is required.");
-    }
     setSaving(true);
 
     try {
@@ -683,11 +679,11 @@ const EditLocationPage = () => {
         {/* HEADER */}
         <div className="flex flex-col sm:flex-row items-center justify-start gap-4">
           <button
-           onClick={() => router.back()}
+            onClick={() => router.back()}
             className="flex items-center p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-slate-600 dark:text-slate-300 transition-colors"
           >
             <ArrowLeft size={20} strokeWidth={2.5} />
-            <span className="ml-2 font-bold text-sm uppercase tracking-wider">
+            <span className="cursor-pointer ml-2 font-bold text-sm uppercase tracking-wider">
               Back to Listings
             </span>
           </button>
@@ -1226,7 +1222,10 @@ const EditLocationPage = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="col-span-1 space-y-3">
                   <label className="text-[11px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-wider block ml-1">
-                    Cover Image <span className="text-rose-500">*</span>
+                    Cover Image{" "}
+                    <span className="text-[10px] font-normal text-slate-400 lowercase">
+                      (optional)
+                    </span>
                   </label>
                   {!newCoverImage && !existingCover ? (
                     <div className="group relative border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl p-6 text-center bg-slate-50/50 dark:bg-slate-800/50 hover:bg-cyan-400/5 transition-all h-40 flex flex-col justify-center items-center">
@@ -1449,7 +1448,7 @@ const EditLocationPage = () => {
             type="button"
             onClick={() => router.back()}
             disabled={saving || updateLocationMutation.isPending}
-            className="flex items-center gap-2 px-8 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-xs font-black uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-95 shadow-sm"
+            className="cursor-pointer flex items-center gap-2 px-8 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-xs font-black uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-95 shadow-sm"
           >
             Cancel
           </button>
@@ -1467,9 +1466,9 @@ const EditLocationPage = () => {
                 Saving...
               </>
             ) : (
-              <>
-                <Save size={16} /> Save Changes
-              </>
+              <div className="cursor-pointer flex items-center gap-2">
+                <Save size={16} /> <span> Save Changes</span>
+              </div>
             )}
           </button>
         </div>

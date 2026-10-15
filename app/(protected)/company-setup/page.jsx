@@ -110,7 +110,7 @@ export default function CompanySetupPage() {
         setFormData(parsed.formData);
         // Check if the loaded type is a custom one (not in the standard list)
         const isStandardType = ORGANIZATION_TYPES.some(
-          (t) => t.id === parsed.formData.organization_type
+          (t) => t.id === parsed.formData.organization_type,
         );
         if (
           parsed.formData.organization_type &&
@@ -209,7 +209,7 @@ export default function CompanySetupPage() {
     } catch (error) {
       console.error(error);
       toast.error(
-        error?.response?.data?.error || "Failed to save company profile."
+        error?.response?.data?.error || "Failed to save company profile.",
       );
       setIsLoading(false);
       setStep(3);
@@ -237,7 +237,7 @@ export default function CompanySetupPage() {
             <Building2 className="w-5 h-5 text-white" />
           </div>
           <span className="font-extrabold text-xl tracking-tight text-slate-900 dark:text-white">
-            Safai
+            Saafai
           </span>
         </div>
 
@@ -315,7 +315,8 @@ export default function CompanySetupPage() {
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {ORGANIZATION_TYPES.map((type) => {
                   const isSelected =
-                    (formData.organization_type === type.id && !showOtherInput) ||
+                    (formData.organization_type === type.id &&
+                      !showOtherInput) ||
                     (type.id === "Other" && showOtherInput);
 
                   const IconComponent = type.Icon;
@@ -325,9 +326,10 @@ export default function CompanySetupPage() {
                       key={type.id}
                       onClick={() => handleTypeSelect(type.id)}
                       className={`relative p-5 rounded-2xl border-2 text-left transition-all duration-200 group flex flex-col gap-4
-                        ${isSelected
-                          ? "border-blue-600 bg-blue-50 dark:bg-blue-900/20 shadow-sm scale-[0.98]"
-                          : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-md"
+                        ${
+                          isSelected
+                            ? "border-blue-600 bg-blue-50 dark:bg-blue-900/20 shadow-sm scale-[0.98]"
+                            : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-md"
                         }`}
                     >
                       <div
@@ -408,7 +410,8 @@ export default function CompanySetupPage() {
                     How is your operation structured?
                   </h1>
                   <p className="text-slate-500 dark:text-slate-400 mb-8 font-medium">
-                    This helps us generate the correct hierarchy map for your setup.
+                    This helps us generate the correct hierarchy map for your
+                    setup.
                   </p>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {OPERATION_STRUCTURES.map((struct) => {
@@ -421,9 +424,10 @@ export default function CompanySetupPage() {
                           key={struct.id}
                           onClick={() => handleStructureSelect(struct.id)}
                           className={`relative p-5 rounded-2xl border-2 text-left transition-all duration-200 group flex items-center gap-4
-                            ${isSelected
-                              ? "border-blue-600 bg-blue-50 dark:bg-blue-900/20 shadow-sm scale-[0.98]"
-                              : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-md"
+                            ${
+                              isSelected
+                                ? "border-blue-600 bg-blue-50 dark:bg-blue-900/20 shadow-sm scale-[0.98]"
+                                : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-md"
                             }`}
                         >
                           <div className="w-12 h-12 rounded-xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform shadow-sm border border-slate-100 dark:border-slate-700">
