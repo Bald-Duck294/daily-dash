@@ -1,4 +1,4 @@
-import { Edit, Trash2, RotateCcw, Mail, Calendar } from "lucide-react";
+import { Edit, Trash2, RotateCcw, Mail, Calendar, Pin } from "lucide-react";
 import { formatDate } from "../utils/formatDate";
 import { useRouter } from "next/navigation";
 
@@ -26,7 +26,8 @@ export default function CompaniesCards({
         const serialNum = (currentPage - 1) * pageSize + i + 1;
         const formattedSr = String(serialNum).padStart(2, "0");
         const gradientClass = CARD_GRADIENTS[i % CARD_GRADIENTS.length];
-        const hasData = (c._count?.locations ?? 0) > 0;
+        const isPinned = [24, 27, 95].some((pid) => String(pid) === String(c.id));
+        const hasData = isPinned || (c._count?.locations ?? 0) > 0;
         const isStepperEnabled = !c.is_onboarding_completed;
 
         return (
@@ -35,7 +36,7 @@ export default function CompaniesCards({
             onClick={() => onView(c.id)}
             className={`
               rounded-2xl p-4.5
-              border border-slate-200/80 dark:border-slate-800
+              border ${isPinned ? "border-amber-400/80 dark:border-amber-700/80 ring-1 ring-amber-400/40" : "border-slate-200/80 dark:border-slate-800"}
               bg-gradient-to-br ${gradientClass}
               shadow-2xs hover:shadow-md
               hover:-translate-y-0.5
@@ -52,9 +53,25 @@ export default function CompaniesCards({
                 </span>
 
                 <div>
-                  <h3 className="font-bold text-slate-900 dark:text-white text-base leading-snug">
-                    {c.name}
-                  </h3>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="font-bold text-slate-900 dark:text-white text-base leading-snug">
+                      {c.name}
+                    </h3>
+                    {isPinned && (
+                      <span
+                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300 dark:border-amber-700 shadow-2xs"
+                        title="Pinned Organization"
+                      >
+                        <Pin className="w-2.5 h-2.5 fill-amber-500 text-amber-500 -rotate-45" />
+                        Pinned
+                      </span>
+                    )}
+                  </div>
+                  {c.id && (
+                    <div className="text-xs font-mono text-slate-400 dark:text-slate-500 font-normal mt-0.5">
+                      ID: #{c.id}
+                    </div>
+                  )}
                   <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                     <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                     <span>{c.contact_email || "N/A"}</span>

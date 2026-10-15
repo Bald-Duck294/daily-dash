@@ -185,7 +185,7 @@ export function getSuperadminMainMenu() {
 //   ];
 // }
 
-export function getSuperadminCompanyMenu(companyId) {
+export function getSuperadminCompanyMenu(companyId, isCompanySlaActive = false) {
   return [
     {
       icon: BarChart3,
@@ -336,7 +336,9 @@ export function getSuperadminCompanyMenu(companyId) {
     {
       icon: Activity,
       label: "Cleaner Activity",
-      href: `/cleaners?companyId=${companyId}`,
+      href: isCompanySlaActive
+        ? `/slaCleanerActivity?companyId=${companyId}`
+        : `/cleaners?companyId=${companyId}`,
     },
     {
       icon: ShieldCheck,
@@ -348,11 +350,6 @@ export function getSuperadminCompanyMenu(companyId) {
           icon: Cog,
           label: "SLA Configuration",
           href: `/sla-management?companyId=${companyId}`,
-        },
-        {
-          icon: Activity,
-          label: "SLA Cleaner Activity",
-          href: `/slaCleanerActivity?companyId=${companyId}`,
         },
         {
           icon: List,
@@ -417,7 +414,7 @@ export function getSuperadminCompanyMenu(companyId) {
 //   ];
 // }
 
-export function getAdminMenu(companyId) {
+export function getAdminMenu(companyId, isCompanySlaActive = false) {
   return [
     {
       icon: BarChart3,
@@ -565,7 +562,9 @@ export function getAdminMenu(companyId) {
     {
       icon: Activity,
       label: "Cleaner Activity",
-      href: `/cleaners?companyId=${companyId}`,
+      href: isCompanySlaActive
+        ? `/slaCleanerActivity?companyId=${companyId}`
+        : `/cleaners?companyId=${companyId}`,
     },
     {
       icon: ShieldCheck,
@@ -577,11 +576,6 @@ export function getAdminMenu(companyId) {
           icon: Cog,
           label: "SLA Configuration",
           href: `/sla-management?companyId=${companyId}`,
-        },
-        {
-          icon: Activity,
-          label: "SLA Cleaner Activity",
-          href: `/slaCleanerActivity?companyId=${companyId}`,
         },
         {
           icon: List,
@@ -613,7 +607,7 @@ export function getAdminMenu(companyId) {
   ];
 }
 /* ---------------- FULL TEMPLATE (PERMISSION-BASED ROLES) ---------------- */
-export const getFullCompanyMenuTemplate = (companyId) => [
+export const getFullCompanyMenuTemplate = (companyId, isCompanySlaActive = false) => [
   {
     icon: BarChart3,
     label: "Dashboard",
@@ -738,7 +732,9 @@ export const getFullCompanyMenuTemplate = (companyId) => [
     label: "Cleaner Activity",
     simpleLabel: "Cleaner Activity",
     requiredPermission: "cleaner_reviews.view",
-    href: `/cleaners?companyId=${companyId}`,
+    href: isCompanySlaActive
+      ? `/slaCleanerActivity?companyId=${companyId}`
+      : `/cleaners?companyId=${companyId}`,
   },
   {
     icon: ShieldCheck,
@@ -754,13 +750,6 @@ export const getFullCompanyMenuTemplate = (companyId) => [
         simpleLabel: "SLA Configuration",
         requiredPermission: "sla_management.view",
         href: `/sla-management?companyId=${companyId}`,
-      },
-      {
-        icon: Activity,
-        label: "SLA Cleaner Activity",
-        simpleLabel: "SLA Cleaner Activity",
-        requiredPermission: "sla_management.view",
-        href: `/slaCleanerActivity?companyId=${companyId}`,
       },
       {
         icon: List,

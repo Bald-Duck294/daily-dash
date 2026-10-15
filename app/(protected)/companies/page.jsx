@@ -3,11 +3,12 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import toast, { Toaster } from "react-hot-toast";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowUp } from "lucide-react";
 
 import Loader from "@/components/ui/Loader";
 import { useCompanyId } from "@/providers/CompanyProvider";
+import { CompanyApi } from "@/features/companies/api/companies.api";
 
 import {
   useCompanies,
@@ -87,8 +88,55 @@ export default function CompaniesPage() {
     isFetching,
   } = useCompanies(page, PAGE_SIZE, debouncedSearch, sortField, sortOrder);
 
+  const PINNED_IDS = [24, 27, 95];
+
+  // Fetch pinned companies specifically so they are always at the top regardless of backend pagination
+  const { data: pinnedCompanies = [] } = useQuery({
+    queryKey: ["pinnedCompanies", PINNED_IDS],
+    queryFn: async () => {
+      const results = await Promise.all(
+        PINNED_IDS.map(async (id) => {
+          try {
+            const res = await CompanyApi.getCompanyById(id);
+            if (res.success && res.data) {
+              return {
+                ...res.data,
+                _count: res.data._count || { locations: 1 },
+              };
+            }
+            return null;
+          } catch {
+            return null;
+          }
+        })
+      );
+      return results.filter(Boolean);
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
   // Extract from unified response (totalCount now comes from getAllCompanies)
-  const companies = data?.data ?? [];
+  const rawCompanies = data?.data ?? [];
+
+  // Filter pinned companies if user has typed a search term
+  const activePinned = debouncedSearch
+    ? pinnedCompanies.filter(
+        (p) =>
+          p.name?.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+          p.contact_email?.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+          String(p.id).includes(debouncedSearch)
+      )
+    : pinnedCompanies;
+
+  // Prepend pinned companies at the top on page 1, removing duplicates from the regular page data
+  const companies = page === 1
+    ? [
+        ...activePinned,
+        ...rawCompanies.filter(
+          (c) => !activePinned.some((p) => String(p.id) === String(c.id))
+        ),
+      ]
+    : rawCompanies;
   const totalCount = data?.totalCount ?? 0;
   const totalPages = Math.ceil(totalCount / PAGE_SIZE) || 1;
   const hasNextPage = page < totalPages;

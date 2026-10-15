@@ -3,6 +3,7 @@ import { formatDate } from "./formatDate";
 export function exportCompaniesCSV(companies) {
   const headers = [
     "Sr No",
+    "ID",
     "Organization",
     "Email",
     "Status",
@@ -12,6 +13,7 @@ export function exportCompaniesCSV(companies) {
 
   const rows = companies.map((c, i) => [
     i + 1,
+    c.id || "",
     c.name || "",
     c.contact_email || "",
     c.status ? "Active" : "Inactive",
@@ -19,7 +21,7 @@ export function exportCompaniesCSV(companies) {
     formatDate(c.updated_at),
   ]);
 
-  const csv = [headers, ...rows].map(r => r.join(",")).join("\n");
+  const csv = [headers, ...rows].map((r) => r.join(",")).join("\n");
   const blob = new Blob([csv], { type: "text/csv" });
 
   const link = document.createElement("a");

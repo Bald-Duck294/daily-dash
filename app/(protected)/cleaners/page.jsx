@@ -375,8 +375,15 @@ export default function CleanerReviewPage() {
   // SLA and Permissions
   const { hasPermission, userPermissions } = usePermissions();
   const canManageReviews = hasPermission("cleaner_reviews", "manage");
-  const { data: slaConfig, error: slaError } = useCompanySlaConfig(companyId, true);
+  const { data: slaConfig, error: slaError, isLoading: isSlaLoading } = useCompanySlaConfig(companyId, true);
   const isSlaEnabled = slaConfig?.enabled || false;
+
+  // Auto-redirect to SLA Cleaner Activity if SLA is enabled for this company
+  useEffect(() => {
+    if (companyId && !isSlaLoading && isSlaEnabled) {
+      router.replace(`/slaCleanerActivity?companyId=${companyId}`);
+    }
+  }, [companyId, isSlaLoading, isSlaEnabled, router]);
 
   console.log("=== SLA EDIT BUTTON DEBUG ===");
   console.log("userPermissions:", userPermissions);

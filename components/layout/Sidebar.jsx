@@ -60,17 +60,17 @@ const Sidebar = () => {
       return getSuperadminMainMenu();
     }
     if (user?.role_id === 1 && hasCompanyContext) {
-      return getSuperadminCompanyMenu(companyId);
+      return getSuperadminCompanyMenu(companyId, isCompanySlaActive);
     }
     if (user?.role_id === 2 && hasCompanyContext) {
-      let items = getAdminMenu(companyId);
+      let items = getAdminMenu(companyId, isCompanySlaActive);
       if (!isCompanySlaActive) {
         items = items.filter((item) => item.key !== "sla-management");
       }
       return items;
     }
     if (hasCompanyContext && user?.role?.permissions) {
-      let menuTemplate = getFullCompanyMenuTemplate(companyId);
+      let menuTemplate = getFullCompanyMenuTemplate(companyId, isCompanySlaActive);
       if (user.role_id === 6) {
         menuTemplate = menuTemplate.filter(
           (item) => item.key !== "locationTypes",
@@ -194,15 +194,16 @@ const Sidebar = () => {
 
     const [basePath] = href.split("?");
 
-    const active = pathname === basePath || pathname.startsWith(basePath + "/");
+    if (basePath === "/cleaners" || basePath === "/slaCleanerActivity") {
+      return (
+        pathname === "/cleaners" ||
+        pathname.startsWith("/cleaners/") ||
+        pathname === "/slaCleanerActivity" ||
+        pathname.startsWith("/slaCleanerActivity/")
+      );
+    }
 
-    // if (active) {
-    //   console.log("ACTIVE MATCH:", {
-    //     pathname,
-    //     href,
-    //     basePath,
-    //   });
-    // }
+    const active = pathname === basePath || pathname.startsWith(basePath + "/");
 
     return active;
   };

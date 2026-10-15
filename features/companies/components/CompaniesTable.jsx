@@ -1,4 +1,4 @@
-import { Edit, Trash2, RotateCcw } from "lucide-react";
+import { Edit, Trash2, RotateCcw, Pin } from "lucide-react";
 import { formatDate } from "../utils/formatDate";
 import { useRouter } from "next/navigation";
 
@@ -74,28 +74,48 @@ export default function CompaniesTable({
         {/* ===== TABLE BODY ===== */}
         <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 font-medium text-slate-700 dark:text-slate-300">
           {companies.map((c, i) => {
-            const hasData = (c._count?.locations ?? 0) > 0;
+            const isPinned = [24, 27, 95].some((pid) => String(pid) === String(c.id));
+            const hasData = isPinned || (c._count?.locations ?? 0) > 0;
             const isStepperEnabled = !c.is_onboarding_completed;
 
             return (
               <tr
                 key={c.id}
                 onClick={() => onView(c.id)}
-                className="
-                  group bg-white dark:bg-slate-900
+                className={`
+                  group
+                  ${isPinned ? "bg-amber-50/40 dark:bg-amber-950/20 border-l-4 border-l-amber-500" : "bg-white dark:bg-slate-900"}
                   hover:bg-blue-50/70 dark:hover:bg-blue-950/40
                   hover:shadow-sm
                   hover:-translate-y-0.5
                   cursor-pointer
                   transition-all duration-200 ease-out
-                "
+                `}
               >
                 <td className="px-4 py-3.5 font-mono text-xs text-slate-400 font-bold group-hover:text-blue-600 transition-colors">
                   {(currentPage - 1) * pageSize + i + 1}
                 </td>
 
-                <td className="px-4 py-3.5 font-semibold text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors">
-                  {c.name}
+                <td className="px-4 py-3.5">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-semibold text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors">
+                      {c.name}
+                    </span>
+                    {isPinned && (
+                      <span
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300 dark:border-amber-700 shadow-2xs"
+                        title="Pinned Organization"
+                      >
+                        <Pin className="w-3 h-3 fill-amber-500 text-amber-500 -rotate-45" />
+                        Pinned
+                      </span>
+                    )}
+                  </div>
+                  {c.id && (
+                    <div className="text-xs font-mono text-slate-400 dark:text-slate-500 font-normal mt-0.5">
+                      ID: #{c.id}
+                    </div>
+                  )}
                 </td>
 
                 <td className="px-4 py-3.5 text-slate-500 dark:text-slate-400 text-xs">
