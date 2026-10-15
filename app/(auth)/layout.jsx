@@ -506,7 +506,7 @@ export default function AuthLayout({ children }) {
                 </div>
                 <div className="brand-divider" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", margin: "0.25rem 0" }}>
                   <div className="line" style={{ width: "28px", height: "1.5px", background: "linear-gradient(90deg, transparent, #3b4df2, transparent)" }}></div>
-                  <div className="text" style={{ fontSize: "0.65rem", fontWeight: 700, color: "#94a3b8", letterSpacing: "0.5em", textIndent: "0.5em" }}>PORTAL-1</div>
+                  <div className="text" style={{ fontSize: "0.65rem", fontWeight: 700, color: "#94a3b8", letterSpacing: "0.5em", textIndent: "0.5em" }}>PORTAL</div>
                   <div className="line" style={{ width: "28px", height: "1.5px", background: "linear-gradient(90deg, transparent, #3b4df2, transparent)" }}></div>
                 </div>
                 <div className="brand-tagline" style={{ fontSize: "0.82rem", color: "#94a3b8", fontWeight: 500, marginBottom: "0.5rem" }}>
