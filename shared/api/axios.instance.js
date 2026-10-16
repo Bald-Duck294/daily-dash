@@ -6,12 +6,9 @@ import { logout } from "@/features/auth/auth.slice.js";
 import { resetNotifications } from "@/features/notification/notification.slice.js";
 import { deleteFCMToken } from "@/shared/firebase/fcm.js";
 import toast from "react-hot-toast";
-
+import API_BASE_URL from "../constants/Constant";
 const axiosInstance = axios.create({
-  // baseURL: "https://saaf-ai-backend.vercel.app/api",
-  // baseURL: "http://localhost:8001/api",
-  // baseURL: "https://dash-backend-five.vercel.app/api",
-  baseURL: "https://daily-dash-backend-development.vercel.app/api",
+  baseURL: API_BASE_URL,
   headers: {
     "Content-Type": "application/json",
   },
@@ -75,7 +72,7 @@ axiosInstance.interceptors.response.use(
           if (!userId) return;
           try {
             const baseURL =
-              axiosInstance.defaults.baseURL || "http://localhost:8000/api";
+              axiosInstance.defaults.baseURL || API_BASE_URL;
             await axios.delete(`${baseURL}/fcm/delete-fcm-token`, {
               data: {
                 userId,
