@@ -71,8 +71,7 @@ axiosInstance.interceptors.response.use(
         const deleteBackendTokenPromise = (async () => {
           if (!userId) return;
           try {
-            const baseURL =
-              axiosInstance.defaults.baseURL || API_BASE_URL;
+            const baseURL = axiosInstance.defaults.baseURL || API_BASE_URL;
             await axios.delete(`${baseURL}/fcm/delete-fcm-token`, {
               data: {
                 userId,

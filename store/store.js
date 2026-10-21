@@ -9,6 +9,7 @@ import authReducer from "@/features/auth/auth.slice.js";
 // import notificationReducer from './slices/notificationSlice';
 import notificationReducer from "@/features/notification/notification.slice";
 import { notificationApi } from "@/features/notification/notification.api";
+import feedbackReducer from "@/features/feedback/feedback.slice";
 // ✅ Persist config for auth only
 const persistConfig = {
   key: "auth",
@@ -23,6 +24,7 @@ export const store = configureStore({
   reducer: {
     auth: persistedAuthReducer,
     notifications: notificationReducer,
+    feedback: feedbackReducer,
     // [configurationApi.reducerPath]: configurationApi.reducer,
     // [reviewApi.reducerPath]: reviewApi.reducer,
     // [shiftApi.reducerPath]: shiftApi.reducer,

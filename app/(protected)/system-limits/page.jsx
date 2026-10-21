@@ -2,7 +2,7 @@ import React from "react";
 import LimitsDashboard from "@/features/systemLimits/components/LimitsDashboard";
 
 export const metadata = {
-  title: "System Limits | Safai AI",
+  title: "System Limits | Saaf Ai",
   description: "Manage quotas and enforce system limits across the platform.",
 };
 
