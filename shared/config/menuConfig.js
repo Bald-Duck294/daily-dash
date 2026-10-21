@@ -131,6 +131,11 @@ export function getSuperadminMainMenu() {
       label: "Photo Gallary",
       href: "/photo",
     },
+    {
+      icon: MessageSquare,
+      label: "Feedback Form",
+      href: "/feedback/tadoba",
+    },
   ];
 }
 /* ---------------- SUPERADMIN (INSIDE COMPANY) ---------------- */
@@ -369,7 +374,20 @@ export function getSuperadminCompanyMenu(companyId, isCompanySlaActive = false) 
     {
       icon: MessageSquare,
       label: "User Review",
-      href: `/users/review?companyId=${companyId}`,
+      hasDropdown: true,
+      key: "user-review-menu",
+      children: [
+        {
+          icon: List,
+          label: "Reviews List",
+          href: `/users/review?companyId=${companyId}`,
+        },
+        {
+          icon: PlusCircle,
+          label: "Feedback Form",
+          href: `/feedback/tadoba?companyId=${companyId}`,
+        },
+      ],
     },
     {
       icon: FileText,
@@ -593,7 +611,20 @@ export function getAdminMenu(companyId, isCompanySlaActive = false) {
     {
       icon: MessageSquare,
       label: "User Review",
-      href: `/users/review?companyId=${companyId}`,
+      hasDropdown: true,
+      key: "company-admin-user-review-menu",
+      children: [
+        {
+          icon: List,
+          label: "Reviews List",
+          href: `/users/review?companyId=${companyId}`,
+        },
+        {
+          icon: PlusCircle,
+          label: "Feedback Form",
+          href: `/feedback/tadoba?companyId=${companyId}`,
+        },
+      ],
     },
     {
       icon: FileText,

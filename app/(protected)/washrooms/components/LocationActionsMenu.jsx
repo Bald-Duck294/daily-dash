@@ -2,12 +2,22 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import { Users, Trash, Edit, Delete, Download } from "lucide-react";
+import {
+  Users,
+  Trash,
+  Edit,
+  Delete,
+  Download,
+  ExternalLink,
+  Copy,
+} from "lucide-react";
+import toast from "react-hot-toast";
 import { useSelector } from "react-redux";
 
 import { useCompanyId } from "@/providers/CompanyProvider";
 import { usePermissions } from "@/shared/hooks/usePermission";
 import { MODULES } from "@/shared/constants/permissions";
+import { getFeedbackFormUrl } from "@/shared/constants/formConstants";
 export default function LocationActionsMenu({
   item,
   onClose,
@@ -58,6 +68,41 @@ export default function LocationActionsMenu({
 
     if (onDelete) {
       onDelete(item);
+    }
+    onClose();
+  };
+
+  const handleOpenForm = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const locId = location_id || item?.id;
+    const compId = companyId || item?.company_id;
+    const formUrl = getFeedbackFormUrl(locId, compId);
+    window.open(formUrl, "_blank", "noopener,noreferrer");
+    onClose();
+  };
+
+  const handleCopyFormUrl = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const locId = location_id || item?.id;
+    const compId = companyId || item?.company_id;
+    const formUrl = getFeedbackFormUrl(locId, compId);
+
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(formUrl);
+      } else {
+        const textArea = document.createElement("textarea");
+        textArea.value = formUrl;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textArea);
+      }
+      toast.success("Feedback URL copied to clipboard!");
+    } catch (err) {
+      toast.error("Failed to copy URL");
     }
     onClose();
   };
@@ -168,6 +213,40 @@ export default function LocationActionsMenu({
           style={{ color: "var(--washroom-primary)" }}
         />
         Download QR Code
+      </button>
+
+      {/* Feedback Form Link */}
+      <button
+        onMouseDown={handleOpenForm}
+        className="w-full flex items-center gap-2 px-4 py-2 text-left text-sm transition-colors"
+        style={{ color: "var(--washroom-text)" }}
+        onMouseEnter={(e) =>
+          (e.currentTarget.style.background = "var(--washroom-table-row-hover)")
+        }
+        onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+      >
+        <ExternalLink
+          className="h-4 w-4"
+          style={{ color: "var(--washroom-primary)" }}
+        />
+        Feedback Form
+      </button>
+
+      {/* Copy Feedback URL */}
+      <button
+        onMouseDown={handleCopyFormUrl}
+        className="w-full flex items-center gap-2 px-4 py-2 text-left text-sm transition-colors"
+        style={{ color: "var(--washroom-text)" }}
+        onMouseEnter={(e) =>
+          (e.currentTarget.style.background = "var(--washroom-table-row-hover)")
+        }
+        onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+      >
+        <Copy
+          className="h-4 w-4"
+          style={{ color: "var(--washroom-primary)" }}
+        />
+        Copy Feedback URL
       </button>
 
       {/* Delete Washroom */}

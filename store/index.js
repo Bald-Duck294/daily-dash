@@ -5,11 +5,14 @@ import { persistStore, persistReducer } from "redux-persist";
 import storage from "redux-persist/lib/storage"; // uses localStorage
 import { notificationApi } from "@/features/notification/notification.api";
 import notificationReducer from "@/features/notification/notification.slice";
+import feedbackReducer from "@/features/feedback/feedback.slice";
+
 export const store = configureStore({
   reducer: {  
     auth: authReducer,
     ui: uiReducer,
     notifications: notificationReducer,
+    feedback: feedbackReducer,
     [notificationApi.reducerPath]: notificationApi.reducer,
   },    
   middleware: (getDefaultMiddleware) =>
