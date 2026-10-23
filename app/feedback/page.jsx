@@ -3,7 +3,12 @@
 import { Suspense, useEffect } from "react";
 import Image from "next/image";
 import { useSearchParams, useRouter } from "next/navigation";
-import { MessageSquare, Sparkles, ShieldCheck, CheckCircle2 } from "lucide-react";
+import {
+  MessageSquare,
+  Sparkles,
+  ShieldCheck,
+  CheckCircle2,
+} from "lucide-react";
 
 function GenericFeedbackContent() {
   const searchParams = useSearchParams();
@@ -30,7 +35,9 @@ function GenericFeedbackContent() {
       <div className="min-h-screen bg-[#faf8f4] flex items-center justify-center p-6">
         <div className="flex flex-col items-center gap-3 text-[#284e3a]">
           <div className="w-6 h-6 border-2 border-[#284e3a]/20 border-t-[#284e3a] rounded-full animate-spin" />
-          <span className="text-sm font-semibold">Redirecting to Tadoba Review...</span>
+          <span className="text-sm font-semibold">
+            Redirecting to Tadoba Review...
+          </span>
         </div>
       </div>
     );
@@ -72,12 +79,16 @@ function GenericFeedbackContent() {
             <span>Digital Feedback Portal Under Activation</span>
           </div>
           <p className="text-xs text-slate-500 leading-normal pl-6">
-            The generic feedback form for this facility will be activated shortly. Your presence and intent to share your experience are highly appreciated.
+            The generic feedback form for this facility will be activated
+            shortly. Your presence and intent to share your experience are
+            highly appreciated.
           </p>
           {locationId && (
             <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between text-[11px] text-slate-500 font-mono">
               <span>Facility ID:</span>
-              <span className="font-semibold text-slate-700">#{locationId}</span>
+              <span className="font-semibold text-slate-700">
+                #{locationId}
+              </span>
             </div>
           )}
         </div>
