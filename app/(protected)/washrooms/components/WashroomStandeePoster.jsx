@@ -7,7 +7,9 @@ const WashroomStandeePoster = React.forwardRef(({ location, style }, ref) => {
   const isTadoba = String(companyId).trim() === '95';
 
   // Dynamic feedback URL pointing to user-review with locationId and companyId
-  const feedbackUrl = `https://portal.saafai.in/feedback/tadoba?locationId=${location?.id || ''}&companyId=${companyId}`;
+  const feedbackUrl = isTadoba
+    ? `https://portal.saafai.in/feedback/tadoba?locationId=${location?.id || ''}&companyId=${companyId}`
+    : `https://portal.saafai.in/feedback?locationId=${location?.id || ''}&companyId=${companyId}`;
 
   // Image template selection: Tadoba (company 95) vs Default
   const posterSrc = isTadoba

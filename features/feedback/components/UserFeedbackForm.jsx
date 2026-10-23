@@ -295,6 +295,7 @@ export default function UserFeedbackForm() {
   const [description, setDescription] = useState("");
   const [lang, setLang] = useState("en");
   const [submittedOnce, setSubmittedOnce] = useState(false);
+  const isKioskMode = searchParams.get("kiosk") === "true";
 
   // Redux status
   const feedbackState = useSelector((state) => state?.feedback) || {};
@@ -401,52 +402,56 @@ export default function UserFeedbackForm() {
 
   return (
     <>
-      <div className="min-h-screen bg-[#faf8f4] font-sans flex flex-col justify-start items-center sm:py-6 sm:px-3">
-        <div className="w-full max-w-[640px] mx-auto">
+      <div className="min-h-screen bg-[#faf8f4] font-sans flex flex-col justify-start items-center py-4 px-3 sm:py-8 sm:px-4">
+        <div
+          className={`w-full max-w-[620px] mx-auto transition-all duration-300 tadoba-kiosk-container ${
+            isKioskMode ? "tadoba-force-kiosk" : ""
+          }`}
+        >
           {/* Main Card */}
-          <div className="relative bg-[#faf8f4] sm:rounded-3xl sm:shadow-lg sm:border sm:border-stone-200/70 overflow-hidden">
+          <div className="relative bg-[#faf8f4] rounded-2xl sm:rounded-3xl shadow-sm sm:shadow-md border border-stone-200/80 overflow-hidden">
             {/* TOP HEADER: Co-Brand Bar */}
-            <div className="relative z-10 bg-white px-3.5 py-3 sm:px-8 sm:py-4 border-b border-stone-150">
-              <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+            <div className="relative z-10 bg-white px-3.5 py-3 sm:px-6 sm:py-3.5 border-b border-stone-200/70 tadoba-kiosk-header">
+              <div className="flex items-center justify-between gap-2.5 sm:gap-4">
                 {/* Partner Logos Strip */}
-                <div className="flex items-center justify-between sm:justify-start gap-2 xs:gap-3.5 sm:gap-6 flex-nowrap w-full sm:w-auto min-w-0">
+                <div className="flex items-center gap-2 xs:gap-3 sm:gap-4 flex-nowrap min-w-0">
                   {/* Tadoba TATR Logo */}
                   <div className="flex items-center flex-shrink-0">
                     <Image
                       src="/tadoba_logo.jpeg"
                       alt="Tadoba-Andhari Tiger Reserve"
-                      width={96}
-                      height={96}
-                      className="h-11 xs:h-12 sm:h-16 w-auto object-contain"
+                      width={80}
+                      height={80}
+                      className="h-10 xs:h-11 sm:h-13 w-auto object-contain tadoba-kiosk-logo"
                       priority
                     />
                   </div>
 
                   {/* Association Divider */}
-                  <div className="flex items-center gap-1.5 xs:gap-2 sm:gap-3 flex-shrink-0">
-                    <div className="h-7 sm:h-10 w-px bg-stone-200" />
-                    <span className="text-[8px] xs:text-[10px] sm:text-xs font-semibold tracking-wider text-stone-400 uppercase text-center whitespace-nowrap">
+                  <div className="flex items-center gap-1.5 xs:gap-2 sm:gap-2.5 flex-shrink-0">
+                    <div className="h-6 sm:h-8 w-px bg-stone-200 tadoba-kiosk-divider" />
+                    <span className="text-[8px] xs:text-[9px] sm:text-[10px] md:text-xs font-semibold tracking-wider text-stone-400 uppercase text-center whitespace-nowrap tadoba-kiosk-assoc-text">
                       {translations[currentLang]?.header?.inAssocWith || "IN ASSOCIATION WITH"}
                     </span>
-                    <div className="h-7 sm:h-10 w-px bg-stone-200" />
+                    <div className="h-6 sm:h-8 w-px bg-stone-200 tadoba-kiosk-divider" />
                   </div>
 
                   {/* SaafAI Logo */}
                   <div className="flex items-center justify-center flex-shrink-0 select-none">
-                    <div className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-none">
+                    <div className="text-lg xs:text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-none tadoba-kiosk-brand-title">
                       Saaf<span className="text-[#00A3E0]">AI</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Segmented Language Selector Pill */}
-                <div className="flex items-center justify-center sm:justify-end self-center sm:self-auto bg-stone-50 border border-stone-200 rounded-xl p-0.5 gap-0.5 shadow-2xs">
+                <div className="flex items-center bg-stone-50 border border-stone-200 rounded-xl p-0.5 gap-0.5 shadow-2xs flex-shrink-0">
                   {["en", "hi", "mr"].map((l) => (
                     <button
                       key={l}
                       type="button"
                       onClick={() => dispatch(setLang(l))}
-                      className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+                      className={`px-2.5 py-1 sm:px-3 sm:py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer tadoba-kiosk-lang-btn ${
                         currentLang === l
                           ? "bg-[#284e3a] text-white font-bold shadow-xs"
                           : "text-stone-600 hover:text-stone-900 hover:bg-stone-100"
@@ -464,8 +469,8 @@ export default function UserFeedbackForm() {
               <Image
                 src="/tadoba_banner_new.png"
                 alt="Your voice cleans India - Tadoba-Andhari Tiger Reserve"
-                width={1024}
-                height={287}
+                width={800}
+                height={224}
                 className="w-full h-auto block object-cover"
                 priority
               />
@@ -477,11 +482,11 @@ export default function UserFeedbackForm() {
 
               <form
                 onSubmit={handleFormSubmit}
-                className="relative z-10 px-6 py-7 sm:px-9 sm:py-8 space-y-7 pb-8 sm:pb-9"
+                className="relative z-10 px-4 py-5 sm:px-6 sm:py-6 space-y-5 sm:space-y-6 pb-6 sm:pb-7 tadoba-kiosk-form"
               >
                 {/* 1. OVERALL RATING SECTION */}
                 <div>
-                  <label className="block text-sm font-bold text-stone-900 mb-3">
+                  <label className="block text-sm sm:text-base font-bold text-stone-900 mb-2.5 tadoba-kiosk-section-label">
                     {translations[currentLang].ratingLabel}{" "}
                     <span className="text-red-500">*</span>
                   </label>
@@ -493,7 +498,7 @@ export default function UserFeedbackForm() {
                   />
 
                   {submittedOnce && rating === 0 && (
-                    <p className="text-orange-600 text-xs font-semibold mt-2 text-center sm:text-left">
+                    <p className="text-orange-600 text-xs sm:text-sm font-semibold mt-2 text-center sm:text-left">
                       {translations[currentLang].ratingRequired}
                     </p>
                   )}
@@ -501,14 +506,14 @@ export default function UserFeedbackForm() {
 
                 {/* 2. ISSUES SECTION */}
                 <div>
-                  <div className="flex items-center justify-between mb-3.5">
+                  <div className="flex items-center justify-between mb-3">
                     <div
                       onClick={() => {
                         if (isReasonSelected(0)) {
                           handleNoIssuesToggle();
                         }
                       }}
-                      className={`flex items-center gap-2 text-sm font-bold text-stone-900 ${
+                      className={`flex items-center gap-2 text-sm sm:text-base font-bold text-stone-900 tadoba-kiosk-section-label ${
                         isReasonSelected(0) ? "cursor-pointer" : ""
                       }`}
                     >
@@ -532,7 +537,7 @@ export default function UserFeedbackForm() {
                         onChange={handleNoIssuesToggle}
                         className="h-4 w-4 text-[#284e3a] rounded border-stone-300 focus:ring-[#284e3a] accent-[#284e3a]"
                       />
-                      <span className="text-sm font-semibold text-stone-800">
+                      <span className="text-xs sm:text-sm font-semibold text-stone-800">
                         {translations[currentLang].fields.noIssues}
                       </span>
                     </label>
@@ -540,7 +545,7 @@ export default function UserFeedbackForm() {
 
                   {/* Issues Grid */}
                   {!isReasonSelected(0) && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-2.5">
                       {translations[currentLang].issues.map((issueText, index) => {
                         const reasonId = commonIndianWashroomIssues[index]?.id ?? (index + 1);
                         const isChecked = isReasonSelected(reasonId);
@@ -548,9 +553,9 @@ export default function UserFeedbackForm() {
                         return (
                           <label
                             key={reasonId}
-                            className={`flex items-start space-x-3 p-3.5 rounded-xl border transition-all cursor-pointer ${
+                            className={`flex items-start space-x-2.5 p-2.5 sm:p-3 rounded-xl border transition-all cursor-pointer tadoba-kiosk-issue-item ${
                               isChecked
-                                ? "bg-emerald-50/80 border-[#284e3a]/60 shadow-xs"
+                                ? "bg-emerald-50/80 border-[#284e3a]/60 shadow-2xs"
                                 : "bg-white/90 border-stone-200/90 hover:bg-stone-50/80 hover:border-stone-300"
                             }`}
                           >
@@ -558,9 +563,9 @@ export default function UserFeedbackForm() {
                               type="checkbox"
                               checked={isChecked}
                               onChange={() => handleReasonToggle(reasonId)}
-                              className="mt-0.5 h-4 w-4 rounded text-[#284e3a] border-stone-300 focus:ring-[#284e3a] accent-[#284e3a]"
+                              className="mt-0.5 h-4 w-4 rounded text-[#284e3a] border-stone-300 focus:ring-[#284e3a] accent-[#284e3a] flex-shrink-0 tadoba-kiosk-issue-checkbox"
                             />
-                            <span className="text-xs sm:text-sm font-medium text-stone-700 leading-snug">
+                            <span className="text-xs sm:text-[13px] font-medium text-stone-700 leading-snug tadoba-kiosk-issue-text">
                               {issueText}
                             </span>
                           </label>
@@ -572,15 +577,15 @@ export default function UserFeedbackForm() {
 
                 {/* 3. ADDITIONAL COMMENTS */}
                 <div>
-                  <label className="flex items-center text-sm font-bold text-stone-900 mb-2">
-                    <MessageSquare className="h-4 w-4 mr-1.5 text-stone-700" />
+                  <label className="flex items-center text-sm sm:text-base font-bold text-stone-900 mb-2 tadoba-kiosk-section-label">
+                    <MessageSquare className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 text-stone-700" />
                     {translations[currentLang].fields.additional}
                   </label>
                   <textarea
                     value={description}
                     onChange={(e) => dispatch(setDescription(e.target.value))}
                     rows={3}
-                    className="w-full px-4 py-3 border border-stone-200 rounded-2xl focus:ring-2 focus:ring-[#284e3a] focus:border-[#284e3a] resize-none text-stone-900 bg-white/90 placeholder-stone-400 text-sm"
+                    className="w-full px-3.5 py-2.5 sm:px-4 sm:py-3 border border-stone-200 rounded-xl sm:rounded-2xl focus:ring-2 focus:ring-[#284e3a] focus:border-[#284e3a] resize-none text-stone-900 bg-white/90 placeholder-stone-400 text-xs sm:text-sm min-h-[75px] sm:min-h-[85px] tadoba-kiosk-textarea"
                     placeholder={translations[currentLang].placeholders.description}
                   />
                 </div>
@@ -589,7 +594,7 @@ export default function UserFeedbackForm() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full bg-[#284e3a] hover:bg-[#1f3f2e] text-white py-4 px-6 rounded-2xl font-bold flex items-center justify-center space-x-2 text-base sm:text-lg shadow-sm hover:shadow-md transition-all active:scale-[0.99] cursor-pointer disabled:opacity-75"
+                  className="w-full bg-[#284e3a] hover:bg-[#1f3f2e] text-white py-3.5 sm:py-4 px-6 rounded-xl sm:rounded-2xl font-bold flex items-center justify-center space-x-2 text-sm sm:text-base shadow-sm hover:shadow-md transition-all active:scale-[0.99] cursor-pointer disabled:opacity-75 tadoba-kiosk-submit-btn"
                 >
                   {isSubmitting ? (
                     <>
@@ -598,7 +603,7 @@ export default function UserFeedbackForm() {
                     </>
                   ) : (
                     <>
-                      <Send className="h-5 w-5 rotate-45" />
+                      <Send className="h-4 w-4 sm:h-5 sm:w-5 rotate-45" />
                       <span>{translations[currentLang].buttons.submit}</span>
                     </>
                   )}
@@ -607,9 +612,9 @@ export default function UserFeedbackForm() {
             </div>
 
             {/* CLEAN FOOTER */}
-            <div className="relative z-10 bg-white/95 border-t border-stone-150 px-5 py-3 sm:px-8">
-              <div className="flex items-center justify-center gap-1.5 text-xs text-stone-500">
-                <ShieldCheck className="w-4 h-4 text-[#284e3a] flex-shrink-0" />
+            <div className="relative z-10 bg-white/95 border-t border-stone-150 px-4 py-2.5 sm:px-6 sm:py-3 tadoba-kiosk-footer">
+              <div className="flex items-center justify-center gap-1.5 text-[11px] sm:text-xs text-stone-500">
+                <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#284e3a] flex-shrink-0" />
                 <span className="font-semibold text-stone-700">
                   {translations[currentLang]?.footer?.initiativeTag}
                 </span>
