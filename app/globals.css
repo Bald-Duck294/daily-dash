@@ -1020,3 +1020,184 @@ body {
   background: var(--washroom-bg);
   color: var(--washroom-text);
 }
+
+/* =========================================================
+   TADOBA 15.6-INCH BIG DISPLAY & KIOSK ADAPTIVE STYLES
+   - Triggers automatically on 15.6" Vertical / Portrait kiosk (1080x1920: height >= 980px & width >= 768px)
+   - Triggers automatically on 15.6" Horizontal / Landscape kiosk (1920x1080: width >= 1500px)
+   - Also activates when ?kiosk=true is in the URL (.tadoba-force-kiosk)
+   - Does NOT trigger on normal laptops (e.g. 1366x768, 1404x770) or mobile phones!
+   ========================================================= */
+@media (min-height: 980px) and (min-width: 768px), (min-width: 1500px) {
+  .tadoba-kiosk-container {
+    max-width: 860px !important;
+  }
+  .tadoba-kiosk-header {
+    padding-left: 2rem !important;
+    padding-right: 2rem !important;
+    padding-top: 1.25rem !important;
+    padding-bottom: 1.25rem !important;
+  }
+  .tadoba-kiosk-logo {
+    height: 4.25rem !important; /* 68px */
+  }
+  .tadoba-kiosk-divider {
+    height: 2.5rem !important;
+  }
+  .tadoba-kiosk-assoc-text {
+    font-size: 0.8125rem !important; /* 13px */
+  }
+  .tadoba-kiosk-brand-title {
+    font-size: 2.25rem !important;
+  }
+  .tadoba-kiosk-lang-btn {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+    font-size: 0.875rem !important;
+  }
+  .tadoba-kiosk-form {
+    padding-left: 2.75rem !important;
+    padding-right: 2.75rem !important;
+    padding-top: 2rem !important;
+    padding-bottom: 2.25rem !important;
+    row-gap: 2rem !important;
+  }
+  .tadoba-kiosk-section-label {
+    font-size: 1.25rem !important; /* 20px */
+    margin-bottom: 1.125rem !important;
+  }
+  .tadoba-kiosk-rating-grid {
+    max-width: 44rem !important; /* 704px */
+    gap: 1.25rem !important;
+  }
+  .tadoba-kiosk-smiley-btn {
+    width: 4.25rem !important; /* 68px */
+    height: 4.25rem !important;
+  }
+  .tadoba-kiosk-smiley-svg {
+    width: 2.85rem !important; /* ~46px */
+    height: 2.85rem !important;
+  }
+  .tadoba-kiosk-smiley-num {
+    font-size: 1.05rem !important;
+    margin-top: 0.5rem !important;
+  }
+  .tadoba-kiosk-issue-item {
+    padding: 1.125rem 1.25rem !important;
+    border-radius: 1rem !important;
+    gap: 0.875rem !important;
+  }
+  .tadoba-kiosk-issue-checkbox {
+    width: 1.35rem !important;
+    height: 1.35rem !important;
+  }
+  .tadoba-kiosk-issue-text {
+    font-size: 1.05rem !important;
+    line-height: 1.45 !important;
+  }
+  .tadoba-kiosk-textarea {
+    padding: 1.125rem 1.25rem !important;
+    font-size: 1.05rem !important;
+    min-height: 120px !important;
+    border-radius: 1rem !important;
+  }
+  .tadoba-kiosk-submit-btn {
+    padding-top: 1.35rem !important;
+    padding-bottom: 1.35rem !important;
+    font-size: 1.25rem !important; /* 20px */
+    border-radius: 1.125rem !important;
+  }
+  .tadoba-kiosk-footer {
+    padding: 1.125rem 2rem !important;
+    font-size: 0.9375rem !important;
+  }
+}
+
+/* Explicit Kiosk Class (for URL parameter ?kiosk=true or dedicated kiosk standees) */
+.tadoba-force-kiosk.tadoba-kiosk-container {
+  max-width: 860px !important;
+}
+.tadoba-force-kiosk .tadoba-kiosk-header {
+  padding-left: 2rem !important;
+  padding-right: 2rem !important;
+  padding-top: 1.25rem !important;
+  padding-bottom: 1.25rem !important;
+}
+.tadoba-force-kiosk .tadoba-kiosk-logo {
+  height: 4.25rem !important;
+}
+.tadoba-force-kiosk .tadoba-kiosk-divider {
+  height: 2.5rem !important;
+}
+.tadoba-force-kiosk .tadoba-kiosk-assoc-text {
+  font-size: 0.8125rem !important;
+}
+.tadoba-force-kiosk .tadoba-kiosk-brand-title {
+  font-size: 2.25rem !important;
+}
+.tadoba-force-kiosk .tadoba-kiosk-lang-btn {
+  padding-left: 1rem !important;
+  padding-right: 1rem !important;
+  padding-top: 0.5rem !important;
+  padding-bottom: 0.5rem !important;
+  font-size: 0.875rem !important;
+}
+.tadoba-force-kiosk .tadoba-kiosk-form {
+  padding-left: 2.75rem !important;
+  padding-right: 2.75rem !important;
+  padding-top: 2rem !important;
+  padding-bottom: 2.25rem !important;
+  row-gap: 2rem !important;
+}
+.tadoba-force-kiosk .tadoba-kiosk-section-label {
+  font-size: 1.25rem !important;
+  margin-bottom: 1.125rem !important;
+}
+.tadoba-force-kiosk .tadoba-kiosk-rating-grid {
+  max-width: 44rem !important;
+  gap: 1.25rem !important;
+}
+.tadoba-force-kiosk .tadoba-kiosk-smiley-btn {
+  width: 4.25rem !important;
+  height: 4.25rem !important;
+}
+.tadoba-force-kiosk .tadoba-kiosk-smiley-svg {
+  width: 2.85rem !important;
+  height: 2.85rem !important;
+}
+.tadoba-force-kiosk .tadoba-kiosk-smiley-num {
+  font-size: 1.05rem !important;
+  margin-top: 0.5rem !important;
+}
+.tadoba-force-kiosk .tadoba-kiosk-issue-item {
+  padding: 1.125rem 1.25rem !important;
+  border-radius: 1rem !important;
+  gap: 0.875rem !important;
+}
+.tadoba-force-kiosk .tadoba-kiosk-issue-checkbox {
+  width: 1.35rem !important;
+  height: 1.35rem !important;
+}
+.tadoba-force-kiosk .tadoba-kiosk-issue-text {
+  font-size: 1.05rem !important;
+  line-height: 1.45 !important;
+}
+.tadoba-force-kiosk .tadoba-kiosk-textarea {
+  padding: 1.125rem 1.25rem !important;
+  font-size: 1.05rem !important;
+  min-height: 120px !important;
+  border-radius: 1rem !important;
+}
+.tadoba-force-kiosk .tadoba-kiosk-submit-btn {
+  padding-top: 1.35rem !important;
+  padding-bottom: 1.35rem !important;
+  font-size: 1.25rem !important;
+  border-radius: 1.125rem !important;
+}
+.tadoba-force-kiosk .tadoba-kiosk-footer {
+  padding: 1.125rem 2rem !important;
+  font-size: 0.9375rem !important;
+}
+

@@ -1653,6 +1653,7 @@ import {
   X,
   ExternalLink,
   CheckCircle2,
+  FileSpreadsheet,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -1665,6 +1666,7 @@ import { MODULES } from "@/shared/constants/permissions";
 // TanStack Query Hooks
 import { useGetAllUsers, useDeleteUser } from "@/features/users/users.queries";
 import { useDropdownRoles } from "@/features/dropdownList/dropdownlist.query"; // ✅ ADDED
+import ExportUsersModal from "./components/ExportUsersModal";
 
 // 1. Define the strict hierarchy levels (Lower number = Higher authority)
 const ROLE_LEVELS = {
@@ -1769,6 +1771,7 @@ export default function UsersPage() {
   const [viewMode, setViewMode] = useState("table");
   const [selectedUserForAssignments, setSelectedUserForAssignments] =
     useState(null);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -2233,7 +2236,15 @@ export default function UsersPage() {
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setIsExportModalOpen(true)}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-lg font-bold text-xs shadow-md transition-all active:scale-95 cursor-pointer"
+                  title="Export Users to Excel"
+                >
+                  <FileSpreadsheet size={16} /> EXPORT USERS
+                </button>
                 {canAddUser && (
                   <a
                     href={`/users/add?companyId=${companyId}`}
@@ -2630,6 +2641,16 @@ export default function UsersPage() {
         user={selectedUserForAssignments}
         isOpen={!!selectedUserForAssignments}
         onClose={() => setSelectedUserForAssignments(null)}
+      />
+
+      {/* Export Users Modal */}
+      <ExportUsersModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        companyId={companyId}
+        roles={visibleRoles}
+        roleCounts={roleCounts}
+        totalCount={globalTotalUsers}
       />
     </>
   );

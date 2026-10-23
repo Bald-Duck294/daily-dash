@@ -12,7 +12,7 @@ const RatingFaceIcon = ({ index, isActive }) => {
       return (
         <svg
           viewBox="0 0 40 40"
-          className="w-9 h-9 sm:w-11 sm:h-11"
+          className="w-8 h-8 xs:w-9 xs:h-9 sm:w-10 sm:h-10 md:w-11 md:h-11 tadoba-kiosk-smiley-svg"
           fill="none"
           stroke={strokeColor}
           strokeWidth="2.2"
@@ -40,7 +40,7 @@ const RatingFaceIcon = ({ index, isActive }) => {
       return (
         <svg
           viewBox="0 0 40 40"
-          className="w-9 h-9 sm:w-11 sm:h-11"
+          className="w-8 h-8 xs:w-9 xs:h-9 sm:w-10 sm:h-10 md:w-11 md:h-11 tadoba-kiosk-smiley-svg"
           fill="none"
           stroke={strokeColor}
           strokeWidth="2.2"
@@ -59,7 +59,7 @@ const RatingFaceIcon = ({ index, isActive }) => {
       return (
         <svg
           viewBox="0 0 40 40"
-          className="w-9 h-9 sm:w-11 sm:h-11"
+          className="w-8 h-8 xs:w-9 xs:h-9 sm:w-10 sm:h-10 md:w-11 md:h-11 tadoba-kiosk-smiley-svg"
           fill="none"
           stroke={strokeColor}
           strokeWidth="2.2"
@@ -76,7 +76,7 @@ const RatingFaceIcon = ({ index, isActive }) => {
       return (
         <svg
           viewBox="0 0 40 40"
-          className="w-9 h-9 sm:w-11 sm:h-11"
+          className="w-8 h-8 xs:w-9 xs:h-9 sm:w-10 sm:h-10 md:w-11 md:h-11 tadoba-kiosk-smiley-svg"
           fill="none"
           stroke={strokeColor}
           strokeWidth="2.2"
@@ -93,7 +93,7 @@ const RatingFaceIcon = ({ index, isActive }) => {
       return (
         <svg
           viewBox="0 0 40 40"
-          className="w-9 h-9 sm:w-11 sm:h-11"
+          className="w-8 h-8 xs:w-9 xs:h-9 sm:w-10 sm:h-10 md:w-11 md:h-11 tadoba-kiosk-smiley-svg"
           fill="none"
           stroke={strokeColor}
           strokeWidth="2.2"
@@ -110,7 +110,7 @@ const RatingFaceIcon = ({ index, isActive }) => {
       return (
         <svg
           viewBox="0 0 40 40"
-          className="w-9 h-9 sm:w-11 sm:h-11"
+          className="w-8 h-8 xs:w-9 xs:h-9 sm:w-10 sm:h-10 md:w-11 md:h-11 tadoba-kiosk-smiley-svg"
           fill="none"
           stroke={strokeColor}
           strokeWidth="2.2"
@@ -132,7 +132,7 @@ const RatingFaceIcon = ({ index, isActive }) => {
       return (
         <svg
           viewBox="0 0 40 40"
-          className="w-9 h-9 sm:w-11 sm:h-11"
+          className="w-8 h-8 xs:w-9 xs:h-9 sm:w-10 sm:h-10 md:w-11 md:h-11 tadoba-kiosk-smiley-svg"
           fill="none"
           stroke={strokeColor}
           strokeWidth="2.2"
@@ -152,7 +152,7 @@ const RatingFaceIcon = ({ index, isActive }) => {
       return (
         <svg
           viewBox="0 0 40 40"
-          className="w-9 h-9 sm:w-11 sm:h-11"
+          className="w-8 h-8 xs:w-9 xs:h-9 sm:w-10 sm:h-10 md:w-11 md:h-11 tadoba-kiosk-smiley-svg"
           fill="none"
           stroke={strokeColor}
           strokeWidth="2.2"
@@ -174,7 +174,7 @@ const RatingFaceIcon = ({ index, isActive }) => {
       return (
         <svg
           viewBox="0 0 40 40"
-          className="w-9 h-9 sm:w-11 sm:h-11"
+          className="w-8 h-8 xs:w-9 xs:h-9 sm:w-10 sm:h-10 md:w-11 md:h-11 tadoba-kiosk-smiley-svg"
           fill="none"
           stroke={strokeColor}
           strokeWidth="2.2"
@@ -204,7 +204,7 @@ const RatingFaceIcon = ({ index, isActive }) => {
       return (
         <svg
           viewBox="0 0 40 40"
-          className="w-9 h-9 sm:w-11 sm:h-11"
+          className="w-8 h-8 xs:w-9 xs:h-9 sm:w-10 sm:h-10 md:w-11 md:h-11 tadoba-kiosk-smiley-svg"
           fill="none"
           stroke={strokeColor}
           strokeWidth="2.2"
@@ -259,9 +259,9 @@ export default function TigerSmileyRating({
   ];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4">
       {/* 2 Rows of 5 Smileys (Exact match to reference) */}
-      <div className="grid grid-cols-5 gap-2 sm:gap-3 md:gap-4 max-w-lg mx-auto">
+      <div className="grid grid-cols-5 gap-2 sm:gap-3 max-w-sm xs:max-w-md sm:max-w-lg md:max-w-xl mx-auto tadoba-kiosk-rating-grid">
         {ratings.map((item) => {
           const isSelected = rating === item.value;
           const isHovered = hoverRating === item.value;
@@ -277,7 +277,7 @@ export default function TigerSmileyRating({
               className="group flex flex-col items-center justify-center p-1 transition-all duration-200 cursor-pointer"
             >
               <div
-                className={`w-11 h-11 xs:w-12 xs:h-12 sm:w-13 sm:h-13 rounded-full border flex items-center justify-center transition-all duration-200 ${
+                className={`w-11 h-11 xs:w-12 xs:h-12 sm:w-13 sm:h-13 md:w-14 md:h-14 tadoba-kiosk-smiley-btn rounded-full border flex items-center justify-center transition-all duration-200 ${
                   isSelected
                     ? "bg-emerald-100/90 border-[#284e3a] scale-110 shadow-xs ring-2 ring-[#284e3a]/30 ring-offset-1"
                     : isHovered
@@ -288,7 +288,7 @@ export default function TigerSmileyRating({
                 <RatingFaceIcon index={item.value} isActive={isActive} />
               </div>
               <span
-                className={`text-xs sm:text-sm font-semibold mt-1.5 transition-colors ${
+                className={`text-xs sm:text-sm font-semibold mt-1.5 transition-colors tadoba-kiosk-smiley-num ${
                   isSelected
                     ? "text-[#284e3a] font-bold scale-105"
                     : "text-stone-700"

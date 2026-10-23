@@ -134,7 +134,7 @@ export function getSuperadminMainMenu() {
     {
       icon: MessageSquare,
       label: "Feedback Form",
-      href: "/feedback/tadoba",
+      href: "/feedback",
     },
   ];
 }
@@ -385,7 +385,7 @@ export function getSuperadminCompanyMenu(companyId, isCompanySlaActive = false) 
         {
           icon: PlusCircle,
           label: "Feedback Form",
-          href: `/feedback/tadoba?companyId=${companyId}`,
+          href: String(companyId) === "95" ? `/feedback/tadoba?companyId=${companyId}` : `/feedback?companyId=${companyId}`,
         },
       ],
     },
@@ -622,7 +622,7 @@ export function getAdminMenu(companyId, isCompanySlaActive = false) {
         {
           icon: PlusCircle,
           label: "Feedback Form",
-          href: `/feedback/tadoba?companyId=${companyId}`,
+          href: String(companyId) === "95" ? `/feedback/tadoba?companyId=${companyId}` : `/feedback?companyId=${companyId}`,
         },
       ],
     },
