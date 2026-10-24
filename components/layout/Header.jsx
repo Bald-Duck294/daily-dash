@@ -259,6 +259,7 @@ const Header = ({ pageTitle }) => {
   const [deleteFcmTokenFromBackend] = useDeleteFCMTokenMutation();
 
   const { user } = useSelector((state) => state.auth);
+  const { fcmToken } = useSelector((state) => state.notifications);
 
   useNotifications();
 
@@ -282,13 +283,26 @@ const Header = ({ pageTitle }) => {
 
   const handleLogout = async () => {
     try {
-      await deleteFCMToken();
+      const currentToken =
+        fcmToken ||
+        (typeof window !== "undefined" ? localStorage.getItem("fcm_token") : null);
 
       if (user?.id) {
-        try {
-          await deleteFcmTokenFromBackend({ userId: user?.id }).unwrap();
-        } catch (error) {
-          console.log(error, "error");
+        if (currentToken) {
+          try {
+            await deleteFcmTokenFromBackend({
+              userId: user?.id,
+              fcm_token: currentToken,
+            }).unwrap();
+          } catch (error) {
+            console.log("Error deleting FCM token from backend:", error);
+          }
+        }
+
+        await deleteFCMToken();
+
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("fcm_token");
         }
 
         dispatch(resetNotifications());

@@ -31,12 +31,12 @@ export const notificationApi = createApi({
       invalidatesTags: ["FCMToken"],
     }),
     deleteFCMToken: builder.mutation({
-      query: ({ userId }) => {
-        console.log(userId, "userId");
+      query: ({ userId, fcm_token, fcmToken }) => {
+        const token = fcm_token || fcmToken;
         return {
           url: "/fcm/delete-fcm-token",
           method: "DELETE",
-          body: { userId },
+          body: { userId, fcm_token: token },
         };
       },
       invalidatesTags: ["FCMToken"],

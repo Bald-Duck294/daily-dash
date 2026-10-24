@@ -20,23 +20,17 @@ export default function useNotifications() {
     (state) => state.notifications,
   );
 
-  const isInitialized = useRef(false);
+  const initializedUserIdRef = useRef(null);
   const processedMessageIds = useRef(new Set()); // ✅ Track processed messages
   const [saveFCMToken] = useSaveFCMTokenMutation();
 
   useEffect(() => {
     if (!isAuthenticated || !user || !user.id) {
       console.log("⚠️ User not authenticated, skipping FCM initialization");
-      isInitialized.current = false;
+      initializedUserIdRef.current = null;
       return;
     }
-    if (isInitialized.current) {
-      //  console.log("⏭️ FCM already initialized, skipping...");
-      return;
-    }
-
-    if (!user || !user.id) {
-      console.log("⚠️ User not logged in, skipping FCM initialization");
+    if (initializedUserIdRef.current === user.id) {
       return;
     }
 
@@ -47,7 +41,7 @@ export default function useNotifications() {
       user.role_id,
       ")",
     );
-    isInitialized.current = true;
+    initializedUserIdRef.current = user.id;
     let unsubscribeFCM = () => {};
 
     const initializeFCM = async () => {
@@ -55,6 +49,9 @@ export default function useNotifications() {
       console.log("🔑 [FCM HOOK] FCM Token received:", token);
 
       if (token) {
+        if (typeof window !== "undefined") {
+          localStorage.setItem("fcm_token", token);
+        }
         dispatch(setFCMToken(token));
 
         try {
@@ -219,8 +216,10 @@ export default function useNotifications() {
       console.log("🧹 [FCM HOOK] Cleaning up FCM hook");
       unsubscribeFCM();
       cleanupSWListener?.then((cleanup) => cleanup?.());
-      isInitialized.current = false;
-      processedMessageIds.current.clear();
+      if (!isAuthenticated || !user?.id) {
+        initializedUserIdRef.current = null;
+        processedMessageIds.current.clear();
+      }
     };
   }, [user?.id, isAuthenticated, dispatch, saveFCMToken, router]);
 

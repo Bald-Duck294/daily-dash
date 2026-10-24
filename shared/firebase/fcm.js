@@ -37,77 +37,90 @@ const ensureServiceWorkerReady = async () => {
     }
 };
 
+let tokenRequestPromise = null;
+
 /**
  * Request FCM token
  */
 export const requestFCMToken = async () => {
-    console.log("🎯 [FCM] requestFCMToken called...");
-    
-    if (!messaging) {
-        console.warn("❌ [FCM] messaging not available or not in browser environment");
-        return null;
+    if (tokenRequestPromise) {
+        console.log("⏳ [FCM] Token request already in flight, returning existing promise...");
+        return tokenRequestPromise;
     }
 
-    try {
-        // Step 1: Check if Notification API exists
-        if (!("Notification" in window)) {
-            console.log("❌ [FCM] Browser doesn't support notifications");
+    tokenRequestPromise = (async () => {
+        console.log("🎯 [FCM] requestFCMToken called...");
+        
+        if (!messaging) {
+            console.warn("❌ [FCM] messaging not available or not in browser environment");
             return null;
         }
 
-        // Step 2: Check current permission
-        let permission = Notification.permission;
-        console.log("📋 [FCM] Current notification permission:", permission);
+        try {
+            // Step 1: Check if Notification API exists
+            if (!("Notification" in window)) {
+                console.log("❌ [FCM] Browser doesn't support notifications");
+                return null;
+            }
 
-        // Step 3: Handle denied permission
-        if (permission === "denied") {
-            console.warn("❌ [FCM] Notification permission is DENIED by user. Enable in browser settings.");
+            // Step 2: Check current permission
+            let permission = Notification.permission;
+            console.log("📋 [FCM] Current notification permission:", permission);
+
+            // Step 3: Handle denied permission
+            if (permission === "denied") {
+                console.warn("❌ [FCM] Notification permission is DENIED by user. Enable in browser settings.");
+                return null;
+            }
+
+            // Step 4: Request permission if needed
+            if (permission === "default") {
+                console.log("📩 [FCM] Requesting notification permission...");
+                permission = await Notification.requestPermission();
+                console.log("📋 [FCM] Permission result:", permission);
+            }
+
+            // Step 5: If not granted, stop here
+            if (permission !== "granted") {
+                console.warn("❌ [FCM] Notification permission was not granted:", permission);
+                return null;
+            }
+            console.log("✅ [FCM] Notification permission GRANTED!");
+
+            // Step 6: Ensure service worker is ready
+            console.log("⏳ [FCM] Ensuring service worker is ready...");
+            const registration = await ensureServiceWorkerReady();
+
+            if (!registration) {
+                console.error("❌ [FCM] Service worker registration failed");
+                return null;
+            }
+            console.log("✅ [FCM] Service worker ready, proceeding to fetch token...");
+
+            // Step 7: Get FCM token
+            console.log("🔑 [FCM] Requesting FCM token with VAPID key...");
+            const token = await getToken(messaging, {
+                vapidKey: VAPID_KEY,
+                serviceWorkerRegistration: registration,
+            });
+
+            if (!token) {
+                console.error("❌ [FCM] FCM token is null or empty");
+                return null;
+            }
+
+            console.log("✅ [FCM Token Generated]:", token);
+            return token;
+
+        } catch (error) {
+            console.error("❌ [FCM] Error getting FCM token:", error);
             return null;
         }
+    })().finally(() => {
+        tokenRequestPromise = null;
+    });
 
-        // Step 4: Request permission if needed
-        if (permission === "default") {
-            console.log("📩 [FCM] Requesting notification permission...");
-            permission = await Notification.requestPermission();
-            console.log("📋 [FCM] Permission result:", permission);
-        }
-
-        // Step 5: If not granted, stop here
-        if (permission !== "granted") {
-            console.warn("❌ [FCM] Notification permission was not granted:", permission);
-            return null;
-        }
-        console.log("✅ [FCM] Notification permission GRANTED!");
-
-        // Step 6: Ensure service worker is ready
-        console.log("⏳ [FCM] Ensuring service worker is ready...");
-        const registration = await ensureServiceWorkerReady();
-
-        if (!registration) {
-            console.error("❌ [FCM] Service worker registration failed");
-            return null;
-        }
-        console.log("✅ [FCM] Service worker ready, proceeding to fetch token...");
-
-        // Step 7: Get FCM token
-        console.log("🔑 [FCM] Requesting FCM token with VAPID key...");
-        const token = await getToken(messaging, {
-            vapidKey: VAPID_KEY,
-            serviceWorkerRegistration: registration,
-        });
-
-        if (!token) {
-            console.error("❌ [FCM] FCM token is null or empty");
-            return null;
-        }
-
-        console.log("✅ [FCM Token Generated]:", token);
-        return token;
-
-    } catch (error) {
-        console.error("❌ [FCM] Error getting FCM token:", error);
-        return null;
-    }
+    return tokenRequestPromise;
 };
 
 /**

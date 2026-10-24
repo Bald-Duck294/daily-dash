@@ -47,7 +47,10 @@ axiosInstance.interceptors.response.use(
       try {
         const state = store.getState();
         const user = state?.auth?.user;
-        const fcmToken = state?.notifications?.fcmToken;
+        let fcmToken = state?.notifications?.fcmToken;
+        if (!fcmToken && typeof window !== "undefined") {
+          fcmToken = localStorage.getItem("fcm_token");
+        }
 
         let userId = user?.id;
         if (!userId && typeof window !== "undefined") {
@@ -69,7 +72,7 @@ axiosInstance.interceptors.response.use(
 
         // Delete / deactivate FCM token in backend database
         const deleteBackendTokenPromise = (async () => {
-          if (!userId) return;
+          if (!userId || !fcmToken) return;
           try {
             const baseURL = axiosInstance.defaults.baseURL || API_BASE_URL;
             await axios.delete(`${baseURL}/fcm/delete-fcm-token`, {
@@ -108,6 +111,7 @@ axiosInstance.interceptors.response.use(
           localStorage.removeItem("authToken");
           localStorage.removeItem("token");
           localStorage.removeItem("user");
+          localStorage.removeItem("fcm_token");
 
           // Hard reset app state to login page
           window.location.href = "/login";
