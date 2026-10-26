@@ -8,6 +8,8 @@ import toast from "react-hot-toast";
 export const useRequirePermission = (module, options = {}) => {
   const router = useRouter();
   const user = useSelector((state) => state.auth.user);
+  const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
+  const isLoggingOut = useSelector((state) => state.auth.isLoggingOut);
 
   // ✅ Memoize permissions to prevent unnecessary re-renders
   const permissions = useMemo(() => {
@@ -15,10 +17,15 @@ export const useRequirePermission = (module, options = {}) => {
     return Array.isArray(user.role.permissions) ? user.role.permissions : [];
   }, [user?.role?.permissions]);
 
-  console.log(permissions, "permissions");
   const { action = "view", errorMessage, redirectTo } = options;
 
   useEffect(() => {
+    // 🛑 If user is logging out, unauthenticated, or user data is not loaded yet,
+    // do NOT perform permission check or show error toast.
+    if (isLoggingOut || !isAuthenticated || !user) {
+      return;
+    }
+
     // ✅ Superadmin bypass (has all permissions)
     if (user?.role_id === 1) {
       return;
@@ -58,6 +65,9 @@ export const useRequirePermission = (module, options = {}) => {
     permissions,
     user?.role_id,
     user?.company_id,
+    user,
+    isAuthenticated,
+    isLoggingOut,
     router,
     errorMessage,
     redirectTo,

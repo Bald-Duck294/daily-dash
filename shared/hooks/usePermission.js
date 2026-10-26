@@ -4,7 +4,7 @@ import { useSelector } from "react-redux";
 import { useMemo } from "react";
 
 export const usePermissions = () => {
-  const { user } = useSelector((state) => state.auth);
+  const { user, isAuthenticated, isLoggingOut } = useSelector((state) => state.auth);
 
   const userPermissions = useMemo(() => {
     if (!user?.role) return [];
@@ -14,7 +14,7 @@ export const usePermissions = () => {
   }, [user]);
 
   const hasPermission = (module, action) => {
-    if (!user) return false;
+    if (!user || !isAuthenticated || isLoggingOut) return false;
 
     // Superadmin has all permissions
     if (user.role_id === 1) return true;
@@ -35,5 +35,8 @@ export const usePermissions = () => {
     canUpdate,
     canDelete,
     userPermissions,
+    user,
+    isAuthenticated,
+    isLoggingOut,
   };
 };

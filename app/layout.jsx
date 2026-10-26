@@ -7,6 +7,7 @@ import { CompanyProvider } from "@/providers/CompanyProvider";
 import ThemeProvider from "@/providers/ThemeProvider";
 import StoreProvider from "@/store/StoreProvider.jsx";
 import LayoutWrapper from "@/components/layout/LayoutWrapper";
+import LogoutOverlay from "@/components/layout/LogoutOverlay";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -33,7 +34,10 @@ export default function RootLayout({ children }) {
           <QueryProvider>
             <ThemeProvider>
               {/* <LayoutWrapper> */}
-              <CompanyProvider>{children}</CompanyProvider>
+              <CompanyProvider>
+                {children}
+                <LogoutOverlay />
+              </CompanyProvider>
               {/* </LayoutWrapper> */}
             </ThemeProvider>
           </QueryProvider>

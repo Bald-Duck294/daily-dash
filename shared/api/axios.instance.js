@@ -2,7 +2,7 @@
 
 import axios from "axios";
 import { store } from "@/store/index.js";
-import { logout } from "@/features/auth/auth.slice.js";
+import { logout, startLoggingOut } from "@/features/auth/auth.slice.js";
 import { resetNotifications } from "@/features/notification/notification.slice.js";
 import { deleteFCMToken } from "@/shared/firebase/fcm.js";
 import toast from "react-hot-toast";
@@ -41,6 +41,7 @@ axiosInstance.interceptors.response.use(
 
     if (error.response?.status === 401 && !isLoggingOut) {
       isLoggingOut = true;
+      store.dispatch(startLoggingOut());
 
       toast.error("Session expired. Please login again.");
 

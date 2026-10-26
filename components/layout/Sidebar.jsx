@@ -20,7 +20,9 @@ import {
   Building,
   ChevronLeft,
   User,
+  Loader2,
 } from "lucide-react";
+import useLogout from "@/shared/hooks/useLogout";
 import {
   getSuperadminMainMenu,
   getSuperadminCompanyMenu,
@@ -291,11 +293,8 @@ const Sidebar = () => {
     setOpenDropdowns((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  // Logout handler
-  const handleLogout = () => {
-    dispatch(logout());
-    router.push("/login");
-  };
+  // Centralized logout handler
+  const { handleLogout, isLoggingOut } = useLogout();
 
   return (
     <>
@@ -516,15 +515,25 @@ const Sidebar = () => {
           {/* Logout Button */}
           <button
             onClick={handleLogout}
-            className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-black border transition-all group"
+            disabled={isLoggingOut}
+            className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-black border transition-all group disabled:opacity-70 disabled:cursor-not-allowed"
             style={{
               background: "color-mix(in srgb, #dc2626 12%, transparent)",
               color: "#dc2626",
               borderColor: "color-mix(in srgb, #dc2626 30%, transparent)",
             }}
           >
-            <LogOut className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
-            {sidebarOpen && <span>Logout</span>}
+            {isLoggingOut ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin flex-shrink-0" />
+                {sidebarOpen && <span>Logging out...</span>}
+              </>
+            ) : (
+              <>
+                <LogOut className="h-4 w-4 group-hover:-translate-x-1 transition-transform flex-shrink-0" />
+                {sidebarOpen && <span>Logout</span>}
+              </>
+            )}
           </button>
         </div>
 

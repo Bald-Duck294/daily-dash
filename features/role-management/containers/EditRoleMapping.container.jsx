@@ -15,7 +15,7 @@ import RolePermissions from "@/features/role-management/components/RolePermissio
 export default function EditRoleMappingContainer() {
   const router = useRouter();
   const { id } = useParams();
-  const { canUpdate } = usePermissions();
+  const { canUpdate, isLoggingOut, isAuthenticated, user } = usePermissions();
 
   const roleId = Number(id);
   const isSystemRole = roleId <= 4;
@@ -35,13 +35,14 @@ export default function EditRoleMappingContainer() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
+    if (isLoggingOut || !isAuthenticated || !user) return;
     if (!canUpdate(MODULES.ROLE_MANAGEMENT)) {
       toast.error("No permission");
       router.push("/role-management");
       return;
     }
     loadData();
-  }, [id]);
+  }, [id, isLoggingOut, isAuthenticated, user]);
 
   const loadData = async () => {
     try {

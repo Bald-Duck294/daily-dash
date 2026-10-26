@@ -20,6 +20,7 @@ const getInitialState = () => {
           isAuthenticated: true,
           isFetching: false,
           error: false,
+          isLoggingOut: false,
         };
       } else {
         console.warn(
@@ -37,6 +38,7 @@ const getInitialState = () => {
     isAuthenticated: false,
     isFetching: false,
     error: false,
+    isLoggingOut: false,
   };
 };
 
@@ -47,12 +49,14 @@ const authSlice = createSlice({
     loginStart: (state) => {
       state.isFetching = true;
       state.error = false;
+      state.isLoggingOut = false;
     },
     loginSuccess: (state, action) => {
       state.user = action.payload;
       state.isAuthenticated = true; // ✅ Set to true on login
       state.isFetching = false;
       state.error = false;
+      state.isLoggingOut = false;
       try {
         localStorage.setItem("user", JSON.stringify(action.payload));
       } catch (error) {
@@ -64,12 +68,17 @@ const authSlice = createSlice({
       state.isAuthenticated = false; // ✅ Set to false on failure
       state.isFetching = false;
       state.error = action.payload || true;
+      state.isLoggingOut = false;
+    },
+    startLoggingOut: (state) => {
+      state.isLoggingOut = true;
     },
     logout: (state) => {
       state.user = null;
       state.isAuthenticated = false; // ✅ Set to false on logout
       state.isFetching = false;
       state.error = false;
+      state.isLoggingOut = false;
       try {
         localStorage.removeItem("user");
         localStorage.removeItem("token");
@@ -80,7 +89,7 @@ const authSlice = createSlice({
   },
 });
 
-export const { loginStart, loginSuccess, loginFailure, logout } =
+export const { loginStart, loginSuccess, loginFailure, startLoggingOut, logout } =
   authSlice.actions;
 
 export default authSlice.reducer;

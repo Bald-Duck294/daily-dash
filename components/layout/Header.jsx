@@ -239,11 +239,8 @@ import React, { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useRouter, useSearchParams, useParams } from "next/navigation";
 import Link from "next/link"; // ✅ Import Link for navigation
-import { LogOut, Building, Sun, Moon } from "lucide-react";
-import { logout } from "@/features/auth/auth.slice.js";
-import { resetNotifications } from "@/features/notification/notification.slice.js";
-import { deleteFCMToken } from "@/shared/firebase/fcm.js";
-import { useDeleteFCMTokenMutation } from "@/features/notification/notification.api.js";
+import { LogOut, Building, Sun, Moon, Loader2 } from "lucide-react";
+import useLogout from "@/shared/hooks/useLogout.js";
 import useNotifications from "@/shared/hooks/useNotification.js";
 import NotificationBell from "../notification/NotificationBell";
 import { useCompanyId } from "@/providers/CompanyProvider.jsx";
@@ -256,7 +253,7 @@ const Header = ({ pageTitle }) => {
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
-  const [deleteFcmTokenFromBackend] = useDeleteFCMTokenMutation();
+  const { handleLogout, isLoggingOut } = useLogout();
 
   const { user } = useSelector((state) => state.auth);
   const { fcmToken } = useSelector((state) => state.notifications);
@@ -280,55 +277,6 @@ const Header = ({ pageTitle }) => {
 
   const { companyId } = useCompanyId();
   const { data: company, isLoading: loadingCompany } = useCompany(companyId);
-
-  const handleLogout = async () => {
-    try {
-      const currentToken =
-        fcmToken ||
-        (typeof window !== "undefined" ? localStorage.getItem("fcm_token") : null);
-
-      if (user?.id) {
-        if (currentToken) {
-          try {
-            await deleteFcmTokenFromBackend({
-              userId: user?.id,
-              fcm_token: currentToken,
-            }).unwrap();
-          } catch (error) {
-            console.log("Error deleting FCM token from backend:", error);
-          }
-        }
-
-        await deleteFCMToken();
-
-        if (typeof window !== "undefined") {
-          localStorage.removeItem("fcm_token");
-        }
-
-        dispatch(resetNotifications());
-        dispatch(logout());
-
-        localStorage.removeItem("authToken");
-        localStorage.removeItem("user");
-
-        if ("serviceWorker" in navigator) {
-          const registrations =
-            await navigator.serviceWorker.getRegistrations();
-          for (const registration of registrations) {
-            if (registration.scope.includes("firebase-cloud-messaging")) {
-              await registration.unregister();
-              console.log("✅ Service worker unregistered");
-            }
-          }
-        }
-      }
-
-      router.push("/login");
-    } catch (error) {
-      console.error("❌ Error during logout:", error);
-      toast.error("Error logging out. Please try again.");
-    }
-  };
 
   const getRoleText = () => {
     if (!user || !user.role_id) {
@@ -441,10 +389,21 @@ const Header = ({ pageTitle }) => {
 
         <button
           onClick={handleLogout}
-          className="cursor-pointer px-2 py-1.5 sm:px-3 sm:py-2 md:px-4 md:py-2 text-xs sm:text-sm font-medium text-white bg-slate-800 rounded-lg hover:bg-slate-900 dark:bg-cyan-600 dark:hover:bg-cyan-700 transition-colors flex items-center justify-center gap-1 sm:gap-2 whitespace-nowrap"
+          disabled={isLoggingOut}
+          className="cursor-pointer px-2 py-1.5 sm:px-3 sm:py-2 md:px-4 md:py-2 text-xs sm:text-sm font-medium text-white bg-slate-800 rounded-lg hover:bg-slate-900 dark:bg-cyan-600 dark:hover:bg-cyan-700 transition-all flex items-center justify-center gap-1 sm:gap-2 whitespace-nowrap disabled:opacity-70 disabled:cursor-not-allowed"
+          title="Logout"
         >
-          <LogOut className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
-          <span className="hidden sm:inline">Logout</span>
+          {isLoggingOut ? (
+            <>
+              <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0 animate-spin" />
+              <span className="hidden sm:inline">Logging out...</span>
+            </>
+          ) : (
+            <>
+              <LogOut className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+              <span className="hidden sm:inline">Logout</span>
+            </>
+          )}
         </button>
       </div>
     </header>

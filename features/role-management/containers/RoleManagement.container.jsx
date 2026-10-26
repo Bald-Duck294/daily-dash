@@ -17,7 +17,8 @@ import Loader from "@/components/ui/Loader";
 
 const RoleManagementContainer = () => {
   const router = useRouter();
-  const { canView, canAdd, canUpdate, canDelete } = usePermissions();
+  const { canView, canAdd, canUpdate, canDelete, isLoggingOut, isAuthenticated, user } =
+    usePermissions();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [deleteModal, setDeleteModal] = useState({ open: false, role: null });
@@ -27,11 +28,12 @@ const RoleManagementContainer = () => {
   ================================ */
 
   useEffect(() => {
+    if (isLoggingOut || !isAuthenticated || !user) return;
     if (!canView(MODULES.ROLE_MANAGEMENT)) {
       toast.error("You do not have permission");
       router.push("/dashboard");
     }
-  }, [canView, router]);
+  }, [canView, router, isLoggingOut, isAuthenticated, user]);
 
   /* ===============================
      FETCH ROLES (TanStack)

@@ -13,7 +13,7 @@ import RolePermissions from "@/features/role-management/components/RolePermissio
 
 export default function AddRoleMappingContainer() {
   const router = useRouter();
-  const { canAdd } = usePermissions();
+  const { canAdd, isLoggingOut, isAuthenticated, user } = usePermissions();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -27,13 +27,14 @@ export default function AddRoleMappingContainer() {
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
+    if (isLoggingOut || !isAuthenticated || !user) return;
     if (!canAdd(MODULES.ROLE_MANAGEMENT)) {
       toast.error("No permission");
       router.push("/role-management");
       return;
     }
     fetchPermissions();
-  }, []);
+  }, [isLoggingOut, isAuthenticated, user]);
 
   const fetchPermissions = async () => {
     try {
