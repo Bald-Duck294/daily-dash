@@ -7,6 +7,8 @@ export const fetchUserReviews = async ({
   company_id,
   status,
   date,
+  from_date,
+  to_date,
   limit = 50,
 } = {}) => {
   const res = await axios.get("/qr-reviews/user-review", {
@@ -15,6 +17,8 @@ export const fetchUserReviews = async ({
       company_id,
       status,
       date,
+      from_date,
+      to_date,
       limit,
     },
   });

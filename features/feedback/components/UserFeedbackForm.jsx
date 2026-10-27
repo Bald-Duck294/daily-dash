@@ -8,6 +8,7 @@ import {
   MessageSquare,
   Send,
   ShieldCheck,
+  Download,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -308,14 +309,71 @@ export default function UserFeedbackForm() {
 
   const authUser = useSelector((state) => state?.auth?.user);
 
-  // Parse location and company from URL query or fallback
+  // Parse location and company from URL query or fallback to persisted kiosk storage
   const rawLocationId = searchParams.get("locationId");
   const locMatch = rawLocationId ? rawLocationId.toString().match(/\d+/) : null;
-  const locationId = locMatch ? locMatch[0] : "2080";
+  const savedLocationId = typeof window !== "undefined" ? localStorage.getItem("saafai_kiosk_locationId") : null;
+  const locationId = locMatch ? locMatch[0] : (savedLocationId || "2248");
 
   const rawCompanyId = searchParams.get("companyId") || authUser?.company_id;
   const compMatch = rawCompanyId ? rawCompanyId.toString().match(/\d+/) : null;
-  const companyId = compMatch ? compMatch[0] : "93";
+  const savedCompanyId = typeof window !== "undefined" ? localStorage.getItem("saafai_kiosk_companyId") : null;
+  const companyId = compMatch ? compMatch[0] : (savedCompanyId || "95");
+
+  // Persist current washroom assignment to localStorage for future kiosk app launches
+  useEffect(() => {
+    if (locMatch?.[0] && typeof window !== "undefined") {
+      localStorage.setItem("saafai_kiosk_locationId", locMatch[0]);
+    }
+    if (compMatch?.[0] && typeof window !== "undefined") {
+      localStorage.setItem("saafai_kiosk_companyId", compMatch[0]);
+    }
+  }, [locMatch, compMatch]);
+
+  // PWA Install state
+  const [canInstall, setCanInstall] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const isStandaloneMode =
+        window.matchMedia("(display-mode: standalone)").matches ||
+        window.navigator.standalone === true;
+      setIsStandalone(isStandaloneMode);
+
+      const handleInstallable = () => setCanInstall(true);
+      window.addEventListener("pwa-installable", handleInstallable);
+      if (window.deferredPwaPrompt) setCanInstall(true);
+
+      return () => {
+        window.removeEventListener("pwa-installable", handleInstallable);
+      };
+    }
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (typeof window !== "undefined" && window.deferredPwaPrompt) {
+      try {
+        window.deferredPwaPrompt.prompt();
+        const choice = await window.deferredPwaPrompt.userChoice;
+        if (choice.outcome === "accepted") {
+          toast.success("App installed successfully!");
+          setCanInstall(false);
+        }
+        window.deferredPwaPrompt = null;
+      } catch (err) {
+        console.warn("PWA prompt error:", err);
+      }
+    } else {
+      toast(
+        "To install on this device: tap Chrome's 3-dot menu (⋮) and select 'Install app' or 'Add to Home screen'",
+        {
+          icon: "📲",
+          duration: 6000,
+        }
+      );
+    }
+  };
 
   useEffect(() => {
     dispatch(setLocationId(locationId));
@@ -444,22 +502,37 @@ export default function UserFeedbackForm() {
                   </div>
                 </div>
 
-                {/* Segmented Language Selector Pill */}
-                <div className="flex items-center bg-stone-50 border border-stone-200 rounded-xl p-0.5 gap-0.5 shadow-2xs flex-shrink-0">
-                  {["en", "hi", "mr"].map((l) => (
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {/* PWA Install Button (hidden when already installed in standalone mode) */}
+                  {!isStandalone && (
                     <button
-                      key={l}
                       type="button"
-                      onClick={() => dispatch(setLang(l))}
-                      className={`px-2.5 py-1 sm:px-3 sm:py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer tadoba-kiosk-lang-btn ${
-                        currentLang === l
-                          ? "bg-[#284e3a] text-white font-bold shadow-xs"
-                          : "text-stone-600 hover:text-stone-900 hover:bg-stone-100"
-                      }`}
+                      onClick={handleInstallClick}
+                      className="flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1 rounded-xl text-xs font-semibold bg-[#284e3a] text-white hover:bg-[#1e3a29] transition-all shadow-xs cursor-pointer flex-shrink-0"
+                      title="Install as Kiosk App"
                     >
-                      {l.toUpperCase()}
+                      <Download size={13} />
+                      <span className="hidden xs:inline">Install App</span>
                     </button>
-                  ))}
+                  )}
+
+                  {/* Segmented Language Selector Pill */}
+                  <div className="flex items-center bg-stone-50 border border-stone-200 rounded-xl p-0.5 gap-0.5 shadow-2xs flex-shrink-0">
+                    {["en", "hi", "mr"].map((l) => (
+                      <button
+                        key={l}
+                        type="button"
+                        onClick={() => dispatch(setLang(l))}
+                        className={`px-2.5 py-1 sm:px-3 sm:py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer tadoba-kiosk-lang-btn ${
+                          currentLang === l
+                            ? "bg-[#284e3a] text-white font-bold shadow-xs"
+                            : "text-stone-600 hover:text-stone-900 hover:bg-stone-100"
+                        }`}
+                      >
+                        {l.toUpperCase()}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>

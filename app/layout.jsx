@@ -8,6 +8,7 @@ import ThemeProvider from "@/providers/ThemeProvider";
 import StoreProvider from "@/store/StoreProvider.jsx";
 import LayoutWrapper from "@/components/layout/LayoutWrapper";
 import LogoutOverlay from "@/components/layout/LogoutOverlay";
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -22,8 +23,8 @@ export const metadata = {
   title: "SaafAI Dashboard",
   description: "Admin dashboard",
   icons: {
-    icon: '/flo-mascot.png'
-  }
+    icon: "/flo-mascot.png",
+  },
 };
 
 export default function RootLayout({ children }) {

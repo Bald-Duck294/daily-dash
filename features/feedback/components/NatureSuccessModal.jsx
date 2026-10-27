@@ -49,7 +49,9 @@ export default function NatureSuccessModal({
 
   const validateContactForm = () => {
     const newErrors = {};
-    if (!contactDetails.name.trim()) newErrors.name = tMsg.nameRequired || "Name is required";
+
+    // Name is optional - no required check
+
     // Email is optional - only validate format if entered
     if (
       contactDetails.email.trim() &&
@@ -57,9 +59,9 @@ export default function NatureSuccessModal({
     ) {
       newErrors.email = tMsg.emailRequired || "Please enter a valid email";
     }
-    if (!contactDetails.phone.trim()) {
-      newErrors.phone = tMsg.phoneInvalid || "Phone must be at least 10 digits";
-    } else if (contactDetails.phone.trim().length < 10) {
+
+    // Phone is optional - only validate length if entered
+    if (contactDetails.phone.trim() && contactDetails.phone.trim().length < 10) {
       newErrors.phone = tMsg.phoneInvalid || "Phone must be at least 10 digits";
     }
 
@@ -69,6 +71,16 @@ export default function NatureSuccessModal({
 
   const handleSubmit = async () => {
     if (validateContactForm()) {
+      const hasAnyData =
+        Boolean(contactDetails.name.trim()) ||
+        Boolean(contactDetails.email.trim()) ||
+        Boolean(contactDetails.phone.trim());
+
+      if (!hasAnyData) {
+        setStep(2);
+        return;
+      }
+
       try {
         setIsSubmitting(true);
         const success = await onSubmitWithDetails(contactDetails);
@@ -131,7 +143,9 @@ export default function NatureSuccessModal({
                   <label className="flex items-center text-xs sm:text-sm lg:text-base font-semibold text-gray-700 mb-1.5 lg:mb-2">
                     <User className="h-3.5 w-3.5 lg:h-5 lg:w-5 mr-1.5 lg:mr-2 text-[#284e3a]" />
                     {translations?.[lang]?.fields?.name || "Name"}{" "}
-                    <span className="text-red-500">*</span>
+                    <span className="text-gray-400 font-normal text-xs ml-1">
+                      ({translations?.[lang]?.fields?.optional || "Optional"})
+                    </span>
                   </label>
                   <input
                     type="text"
@@ -140,7 +154,7 @@ export default function NatureSuccessModal({
                       setContactDetails({ ...contactDetails, name: e.target.value })
                     }
                     className="w-full px-3.5 py-2.5 lg:px-5 lg:py-3.5 text-sm sm:text-base lg:text-lg border border-gray-300 rounded-xl lg:rounded-2xl focus:ring-2 focus:ring-[#284e3a] focus:border-transparent text-black"
-                    placeholder={translations?.[lang]?.placeholders?.name || "Your full name"}
+                    placeholder={translations?.[lang]?.placeholders?.name || "Your full name (optional)"}
                   />
                   {errors.name && <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.name}</p>}
                 </div>
@@ -148,8 +162,10 @@ export default function NatureSuccessModal({
                 <div>
                   <label className="flex items-center text-xs sm:text-sm lg:text-base font-semibold text-gray-700 mb-1.5 lg:mb-2">
                     <Mail className="h-3.5 w-3.5 lg:h-5 lg:w-5 mr-1.5 lg:mr-2 text-[#284e3a]" />
-                    {translations?.[lang]?.fields?.email || "Email"} (
-                    {translations?.[lang]?.fields?.optional || "Optional"})
+                    {translations?.[lang]?.fields?.email || "Email"}{" "}
+                    <span className="text-gray-400 font-normal text-xs ml-1">
+                      ({translations?.[lang]?.fields?.optional || "Optional"})
+                    </span>
                   </label>
                   <input
                     type="email"
@@ -169,7 +185,9 @@ export default function NatureSuccessModal({
                   <label className="flex items-center text-xs sm:text-sm lg:text-base font-semibold text-gray-700 mb-1.5 lg:mb-2">
                     <Phone className="h-3.5 w-3.5 lg:h-5 lg:w-5 mr-1.5 lg:mr-2 text-[#284e3a]" />
                     {translations?.[lang]?.fields?.phone || "Phone Number"}{" "}
-                    <span className="text-red-500">*</span>
+                    <span className="text-gray-400 font-normal text-xs ml-1">
+                      ({translations?.[lang]?.fields?.optional || "Optional"})
+                    </span>
                   </label>
                   <input
                     type="tel"
@@ -182,7 +200,7 @@ export default function NatureSuccessModal({
                     }
                     className="w-full px-3.5 py-2.5 lg:px-5 lg:py-3.5 text-sm sm:text-base lg:text-lg border border-gray-300 rounded-xl lg:rounded-2xl focus:ring-2 focus:ring-[#284e3a] focus:border-transparent text-black"
                     placeholder={
-                      translations?.[lang]?.placeholders?.phone || "10-digit mobile number"
+                      translations?.[lang]?.placeholders?.phone || "10-digit mobile number (optional)"
                     }
                     maxLength={10}
                   />
@@ -190,7 +208,7 @@ export default function NatureSuccessModal({
                 </div>
               </div>
 
-              <div className="pt-2 lg:pt-4">
+              <div className="pt-2 lg:pt-4 space-y-2">
                 <button
                   type="button"
                   onClick={handleSubmit}
@@ -205,6 +223,14 @@ export default function NatureSuccessModal({
                       <Send className="h-4 w-4 lg:h-5 lg:w-5" />
                     </>
                   )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setStep(2)}
+                  className="w-full py-2 text-xs sm:text-sm font-semibold text-gray-500 hover:text-gray-800 transition-colors text-center cursor-pointer"
+                >
+                  {lang === "hi" ? "अभी छोड़ें" : lang === "mr" ? "आता वगळा" : "Skip for now"}
                 </button>
               </div>
             </>

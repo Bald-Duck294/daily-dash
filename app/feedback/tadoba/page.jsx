@@ -3,7 +3,7 @@
 import { Suspense, useEffect } from "react";
 import Image from "next/image";
 import { useSearchParams, useRouter } from "next/navigation";
-import UserFeedbackForm from "@/features/feedback/components/UserFeedbackForm";
+import TadobaLandscapeFeedback from "@/features/feedback/tadobaF/TadobaLandscapeFeedback";
 
 const FeedbackLoading = ({ message = "Loading Tadoba Review Form..." }) => {
   return (
@@ -49,7 +49,7 @@ function TadobaGuard() {
     return <FeedbackLoading message="Redirecting to feedback form..." />;
   }
 
-  return <UserFeedbackForm />;
+  return <TadobaLandscapeFeedback />;
 }
 
 export default function TadobaFeedbackPage() {

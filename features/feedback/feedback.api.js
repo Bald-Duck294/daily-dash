@@ -54,6 +54,16 @@ export const feedbackApi = {
   },
 
   /**
+   * Patch any review fields (reasons, comments, contact info)
+   * @param {string|number} reviewId 
+   * @param {Object} updateData 
+   */
+  patchReview: async (reviewId, updateData) => {
+    const response = await axiosInstance.patch(`/qr-reviews/user-review/${reviewId}`, updateData);
+    return response.data;
+  },
+
+  /**
    * Fetch all user reviews with optional filters
    * @param {Object} params - { company_id, location_id, rating, limit, page }
    */
