@@ -98,6 +98,9 @@ const QUICK_ISSUES = [
 
 const TRANSLATIONS = {
   en: {
+    welcomeTitle: "Welcome to Tadoba-Andhari Tiger Reserve",
+    recordingRating: "Recording your rating...",
+    slowNetworkNotice: "Forest network is slow, taking a moment...",
     title: "Rate Your Washroom Experience",
     subtitle: "Tap an emoji to record your instant review",
     thanksTitle: "Thank You for Your Feedback!",
@@ -119,6 +122,9 @@ const TRANSLATIONS = {
     recordedBadge: "Recorded ✓",
   },
   hi: {
+    welcomeTitle: "ताडोबा-अंधारी टाइगर रिजर्व में आपका स्वागत है",
+    recordingRating: "आपकी रेटिंग दर्ज की जा रही है...",
+    slowNetworkNotice: "वन क्षेत्र में नेटवर्क धीमा है, कृपया प्रतीक्षा करें...",
     title: "अपने शौचालय के अनुभव को रेट करें",
     subtitle: "अपनी तत्काल समीक्षा दर्ज करने के लिए किसी इमोजी पर टैप करें",
     thanksTitle: "आपकी प्रतिक्रिया के लिए धन्यवाद!",
@@ -140,6 +146,9 @@ const TRANSLATIONS = {
     recordedBadge: "दर्ज हुआ ✓",
   },
   mr: {
+    welcomeTitle: "ताडोबा-अंधारी व्याघ्र प्रकल्पात आपले स्वागत आहे",
+    recordingRating: "तुमचे रेटिंग नोंदवत आहे...",
+    slowNetworkNotice: "वनपरिक्षेत्रात नेटवर्क मंद आहे, थोडा वेळ लागत आहे...",
     title: "तुमचा स्वच्छतागृह अनुभव रेट करा",
     subtitle: "तुमचा त्वरित अभिप्राय नोंदवण्यासाठी इमोजीवर टॅप करा",
     thanksTitle: "आपल्या अभिप्रायाबद्दल धन्यवाद!",
@@ -161,6 +170,21 @@ const TRANSLATIONS = {
     recordedBadge: "नोंदवले ✓",
   },
 };
+
+
+// Ambient Falling Forest Leaves configuration for live photo-frame feel
+const FALLING_LEAVES = [
+  { id: 1, left: "7%", duration: 13, delay: 0, size: "w-6 h-6", anim: "forestLeafFallLeft", img: "/leaf_01.png" },
+  { id: 2, left: "17%", duration: 16, delay: 3.5, size: "w-5 h-5", anim: "forestLeafFallRight", img: "/leaf_02.png" },
+  { id: 3, left: "28%", duration: 14, delay: 7.2, size: "w-7 h-7", anim: "forestLeafFallLeft", img: "/leaf_03.png" },
+  { id: 4, left: "41%", duration: 18, delay: 1.5, size: "w-6 h-6", anim: "forestLeafFallRight", img: "/leaf_04.png" },
+  { id: 5, left: "53%", duration: 15, delay: 9.8, size: "w-5 h-5", anim: "forestLeafFallLeft", img: "/leaf_01.png" },
+  { id: 6, left: "64%", duration: 13.5, delay: 4.5, size: "w-7 h-7", anim: "forestLeafFallRight", img: "/leaf_02.png" },
+  { id: 7, left: "76%", duration: 17, delay: 2.2, size: "w-6 h-6", anim: "forestLeafFallLeft", img: "/leaf_03.png" },
+  { id: 8, left: "86%", duration: 15.5, delay: 8.4, size: "w-5 h-5", anim: "forestLeafFallRight", img: "/leaf_04.png" },
+  { id: 9, left: "94%", duration: 14, delay: 5.8, size: "w-6 h-6", anim: "forestLeafFallLeft", img: "/leaf_01.png" },
+  { id: 10, left: "2%", duration: 19, delay: 11.2, size: "w-7 h-7", anim: "forestLeafFallRight", img: "/leaf_02.png" },
+];
 
 export default function TadobaTFeedback() {
   const searchParams = useSearchParams();
@@ -202,6 +226,11 @@ export default function TadobaTFeedback() {
   const [selectedRating, setSelectedRating] = useState(null);
   const [submittedReviewId, setSubmittedReviewId] = useState(null);
 
+  // Rating Click Processing & Low Connectivity states
+  const [selectedTigerId, setSelectedTigerId] = useState(null);
+  const [isProcessingRating, setIsProcessingRating] = useState(false);
+  const [isSlowNetwork, setIsSlowNetwork] = useState(false);
+
   // Phase 3 (Details) states
   const [selectedIssues, setSelectedIssues] = useState([]);
   const [noIssuesSelected, setNoIssuesSelected] = useState(false);
@@ -235,6 +264,9 @@ export default function TadobaTFeedback() {
     if (thankYouTimerRef.current) clearInterval(thankYouTimerRef.current);
     setCurrentPhase("rating");
     setSelectedRating(null);
+    setSelectedTigerId(null);
+    setIsProcessingRating(false);
+    setIsSlowNetwork(false);
     setSubmittedReviewId(null);
     setSelectedIssues([]);
     setNoIssuesSelected(false);
@@ -398,23 +430,121 @@ export default function TadobaTFeedback() {
       >
         
         {/* ============================================================== */}
+        {/* AMBIENT PHOTO-FRAME KEYFRAME STYLES                            */}
+        {/* ============================================================== */}
+        <style dangerouslySetInnerHTML={{ __html: `
+          @keyframes forestLeafFallLeft {
+            0% {
+              transform: translate3d(0, -60px, 0) rotate(0deg) scale(0.9);
+              opacity: 0;
+            }
+            10% {
+              opacity: 0.85;
+            }
+            50% {
+              transform: translate3d(-35px, 50vh, 0) rotate(190deg) scale(1);
+            }
+            88% {
+              opacity: 0.85;
+            }
+            100% {
+              transform: translate3d(25px, 108vh, 0) rotate(380deg) scale(0.95);
+              opacity: 0;
+            }
+          }
+
+          @keyframes forestLeafFallRight {
+            0% {
+              transform: translate3d(0, -60px, 0) rotate(0deg) scale(0.85);
+              opacity: 0;
+            }
+            10% {
+              opacity: 0.8;
+            }
+            50% {
+              transform: translate3d(40px, 52vh, 0) rotate(-160deg) scale(1);
+            }
+            88% {
+              opacity: 0.8;
+            }
+            100% {
+              transform: translate3d(-30px, 108vh, 0) rotate(-340deg) scale(0.9);
+              opacity: 0;
+            }
+          }
+
+          @keyframes tigerTapPop {
+            0% {
+              transform: scale(1);
+            }
+            35% {
+              transform: scale(1.22);
+            }
+            65% {
+              transform: scale(1.14);
+            }
+            100% {
+              transform: scale(1.18);
+            }
+          }
+
+          @keyframes pulseGlowRing {
+            0% {
+              box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.8), 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            }
+            70% {
+              box-shadow: 0 0 0 28px rgba(16, 185, 129, 0), 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            }
+            100% {
+              box-shadow: 0 0 0 0 rgba(16, 185, 129, 0), 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            }
+          }
+        `}} />
+
+        {/* ============================================================== */}
+        {/* LIVE AMBIENT LAYER: GENTLE FALLING LEAVES (Continuous Forest Breeze) */}
+        {/* ============================================================== */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden z-10" aria-hidden="true">
+          {FALLING_LEAVES.map((leaf) => (
+            <div
+              key={leaf.id}
+              className={`absolute pointer-events-none ${leaf.size}`}
+              style={{
+                left: leaf.left,
+                top: 0,
+                animation: `${leaf.anim} ${leaf.duration}s cubic-bezier(0.4, 0, 0.2, 1) infinite`,
+                animationDelay: `${leaf.delay}s`,
+                willChange: "transform, opacity",
+              }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={leaf.img}
+                alt=""
+                className="w-full h-full object-contain filter drop-shadow-xs"
+              />
+            </div>
+          ))}
+        </div>
+
+        {/* ============================================================== */}
         {/* TOP BAR: Left: TATR Logo | Center: Lang Selector | Right: SaafAI */}
         {/* ============================================================== */}
         <header className="w-full max-w-[94vw] 2xl:max-w-[1600px] mx-auto flex items-center justify-between relative z-20 shrink-0 mb-1 sm:mb-3 px-3 sm:px-6">
           
-          {/* Top Left: TATR Tadoba Logo (Transparent PNG, no white box) */}
+          {/* Top Left: TATR Tadoba Logo (Enlarged & Prominent) */}
           <div className="flex items-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/tadoba-form/tatr-logo.png"
               alt="TATR - Tadoba Andhari Tiger Reserve"
-              className="h-12 sm:h-16 md:h-18 lg:h-22 xl:h-24 w-auto object-contain drop-shadow-xs"
+              className="h-16 sm:h-20 md:h-24 lg:h-28 xl:h-32 w-auto object-contain drop-shadow-sm transition-all"
             />
           </div>
 
           {/* Center: Language Selector Pill */}
           <div className="flex items-center justify-center">
-            <div className="flex items-center bg-white/90 border border-stone-200/90 rounded-full p-1 shadow-2xs">
+            <div className="flex items-center bg-white/95 border border-stone-200/90 rounded-full p-1.5 shadow-xs">
               {[
                 { code: "en", label: "English" },
                 { code: "hi", label: "हिंदी" },
@@ -424,7 +554,7 @@ export default function TadobaTFeedback() {
                   key={item.code}
                   type="button"
                   onClick={() => setLang(item.code)}
-                  className={`px-3.5 py-1.5 sm:px-5 sm:py-2.5 rounded-full text-xs sm:text-sm md:text-base lg:text-lg font-bold transition-all cursor-pointer ${
+                  className={`px-4 py-2 sm:px-6 sm:py-2.5 rounded-full text-xs sm:text-sm md:text-base lg:text-lg font-black transition-all cursor-pointer ${
                     lang === item.code
                       ? "bg-[#284e3a] text-white shadow-xs"
                       : "text-gray-700 hover:text-gray-900 hover:bg-gray-100"
@@ -436,21 +566,21 @@ export default function TadobaTFeedback() {
             </div>
           </div>
 
-          {/* Top Right: Fullscreen + SaafAI Logo */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          {/* Top Right: Fullscreen + SaafAI Logo (Enlarged & Prominent) */}
+          <div className="flex items-center gap-3 sm:gap-4">
             <button
               onClick={toggleFullscreen}
-              className="p-2 sm:p-2.5 lg:p-3 rounded-full bg-white/90 border border-stone-200/90 text-gray-600 hover:text-gray-900 hover:bg-white transition shadow-2xs cursor-pointer"
+              className="p-2.5 sm:p-3 rounded-full bg-white/95 border border-stone-200/90 text-gray-600 hover:text-gray-900 hover:bg-white transition shadow-xs cursor-pointer"
               title="Toggle Fullscreen Kiosk"
             >
-              {isFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+              {isFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
             </button>
 
             <div className="flex flex-col items-end">
-              <div className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-none">
+              <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-none">
                 Saaf<span className="text-[#00A3E0]">AI</span>
               </div>
-              <span className="text-[8px] sm:text-[9px] md:text-[10px] lg:text-[11px] uppercase font-bold tracking-[0.24em] text-slate-500 mt-0.5">
+              <span className="text-[9px] sm:text-[10px] md:text-xs lg:text-sm uppercase font-black tracking-[0.24em] text-slate-600 mt-1">
                 SMART FACILITY AI
               </span>
             </div>
@@ -458,48 +588,110 @@ export default function TadobaTFeedback() {
         </header>
 
         {/* ============================================================== */}
-        {/* SCREEN 1: Rating Selection (Well-Balanced Tiger Emojis)       */}
+        {/* SCREEN 1: Rating Selection (Prominent Welcome Headline & Interactive Tigers) */}
         {/* ============================================================== */}
         {currentPhase === "rating" && (
           <main className="flex-1 flex flex-col justify-center items-center my-auto py-2 sm:py-4 text-center w-full max-w-[94vw] 2xl:max-w-[1600px] mx-auto px-4">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-black text-slate-900 tracking-tight mb-2 sm:mb-4">
+            
+            {/* Prestigious Welcome Headline above Rating */}
+            <div className="inline-flex items-center gap-2 sm:gap-3 px-4 py-1.5 sm:px-6 sm:py-2 rounded-full bg-emerald-950/10 backdrop-blur-xs border border-emerald-800/20 text-[#1e3a29] font-black text-xs sm:text-sm md:text-base lg:text-xl uppercase tracking-wider mb-2 sm:mb-3 shadow-2xs">
+              <span className="text-emerald-700 text-sm sm:text-base md:text-lg">🌿</span>
+              <span>{t.welcomeTitle}</span>
+              <span className="text-emerald-700 text-sm sm:text-base md:text-lg">🌿</span>
+            </div>
+
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-black text-slate-900 tracking-tight mb-1.5 sm:mb-2">
               {t.title}
             </h1>
-            <p className="text-slate-700 text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl mb-6 sm:mb-10 font-semibold">
+            <p className="text-slate-700 text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl mb-5 sm:mb-8 font-semibold">
               {t.subtitle}
             </p>
 
             {/* 5 TIGER RATING BUTTONS IN SINGLE HORIZONTAL ROW */}
-            <div className="grid grid-cols-5 gap-3 sm:gap-6 md:gap-8 lg:gap-10 xl:gap-12 w-full max-w-6xl xl:max-w-7xl 2xl:max-w-[1550px] px-2 sm:px-4">
+            <div className="grid grid-cols-5 gap-3 sm:gap-5 md:gap-7 lg:gap-9 xl:gap-11 w-full max-w-6xl xl:max-w-7xl 2xl:max-w-[1550px] px-2 sm:px-4">
               {RATING_OPTIONS.map((option) => {
                 const labelText = option.label[lang] || option.label.en;
+                const isSelected = selectedTigerId === option.id;
+                const isOtherSelected = isProcessingRating && !isSelected;
 
                 return (
                   <div
                     key={option.id}
-                    onClick={() => handleRatingSelect(option)}
-                    className="flex flex-col items-center group cursor-pointer transition-all duration-300 transform active:scale-95"
+                    onClick={() => !isProcessingRating && handleRatingSelect(option)}
+                    className={`flex flex-col items-center group transition-all duration-300 transform ${
+                      isProcessingRating ? "cursor-wait" : "cursor-pointer active:scale-95 hover:scale-105"
+                    } ${isOtherSelected ? "opacity-30 scale-90 blur-[0.5px]" : "opacity-100"}`}
+                    style={
+                      isSelected
+                        ? {
+                            animation: "tigerTapPop 0.85s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards",
+                            zIndex: 40,
+                          }
+                        : {}
+                    }
                   >
-                    {/* Tiger Emoji Circle - Increased by ~30px for Optimal Touch Target */}
-                    <div className="relative aspect-square w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 lg:w-48 lg:h-48 xl:w-56 xl:h-56 2xl:w-60 2xl:h-60 rounded-full overflow-hidden transition-all duration-300 group-hover:scale-108 group-hover:shadow-2xl shadow-xl ring-4 sm:ring-6 ring-white/95">
+                    {/* Tiger Emoji Circle with Dramatic Tap Ripple & Pop Animation */}
+                    <div
+                      className={`relative aspect-square w-20 h-20 sm:w-28 sm:h-28 md:w-36 md:h-36 lg:w-44 lg:h-44 xl:w-52 xl:h-52 2xl:w-60 2xl:h-60 rounded-full overflow-hidden transition-all duration-300 shadow-xl ${
+                        isSelected
+                          ? "ring-6 sm:ring-8 ring-emerald-400"
+                          : "ring-4 sm:ring-6 ring-white/95 group-hover:shadow-2xl group-hover:scale-108"
+                      }`}
+                      style={
+                        isSelected
+                          ? {
+                              animation: "pulseGlowRing 0.9s ease-out infinite",
+                            }
+                          : {}
+                      }
+                    >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={option.image}
                         alt={labelText}
                         className="w-full h-full object-cover transition-transform duration-300"
                       />
+
+                      {/* Vibrant Green Selected Checkmark Burst Overlay */}
+                      {isSelected && (
+                        <div className="absolute inset-0 bg-emerald-950/20 backdrop-blur-2xs flex items-center justify-center rounded-full animate-in zoom-in-75 duration-200">
+                          <div className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-2xl animate-bounce border-3 sm:border-4 border-white">
+                            <Check size={32} className="stroke-[4]" />
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* Rating Label Pill Below Tiger */}
                     <div
-                      className={`mt-3 sm:mt-4 lg:mt-6 px-4 py-1.5 sm:px-6 sm:py-2.5 lg:px-7 lg:py-3 rounded-full font-black text-xs sm:text-base md:text-lg lg:text-xl xl:text-2xl transition-all duration-300 shadow-md group-hover:shadow-lg group-hover:scale-105 ${option.pillBg} ${option.pillText}`}
+                      className={`mt-2.5 sm:mt-4 lg:mt-5 px-3.5 py-1.5 sm:px-5 sm:py-2 lg:px-6 lg:py-2.5 rounded-full font-black text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl transition-all duration-300 shadow-md ${
+                        isSelected
+                          ? "bg-emerald-600 text-white ring-3 ring-emerald-300 shadow-xl scale-110"
+                          : `${option.pillBg} ${option.pillText} group-hover:scale-105`
+                      }`}
                     >
-                      {labelText}
+                      {isSelected ? `${labelText} ✓` : labelText}
                     </div>
                   </div>
                 );
               })}
             </div>
+
+            {/* LIVE PROCESSING STATUS & LOW CONNECTIVITY NOTICE */}
+            {isProcessingRating && (
+              <div className="mt-5 sm:mt-7 px-5 py-3 sm:px-7 sm:py-3.5 rounded-2xl bg-white/95 backdrop-blur-md border border-emerald-200 shadow-2xl flex flex-col items-center gap-1.5 animate-in fade-in zoom-in-95 duration-200 max-w-lg mx-auto">
+                <div className="flex items-center gap-2.5 text-emerald-900 font-extrabold text-sm sm:text-base">
+                  <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+                  <span>{t.recordingRating}</span>
+                </div>
+                {isSlowNetwork && (
+                  <div className="flex items-center gap-2 text-amber-900 bg-amber-50 border border-amber-200 px-3 py-1 rounded-xl text-xs sm:text-sm font-bold animate-in fade-in slide-in-from-top-1 duration-300">
+                    <Clock size={14} className="text-amber-700 animate-spin" />
+                    <span>{t.slowNetworkNotice}</span>
+                  </div>
+                )}
+              </div>
+            )}
           </main>
         )}
 
@@ -583,8 +775,8 @@ export default function TadobaTFeedback() {
           <main className="flex-1 w-full max-w-[94vw] xl:max-w-7xl 2xl:max-w-[1550px] mx-auto flex flex-col justify-center min-h-0 my-auto py-1 sm:py-3 relative z-20">
             <div className="bg-white rounded-3xl sm:rounded-4xl border border-stone-200/90 shadow-2xl overflow-hidden flex flex-col">
               
-              {/* 1. TOP HERO BANNER: Full-width uncropped banner with comfortable generous height */}
-              <div className="relative w-full overflow-hidden bg-[#FAF7F2] border-b border-stone-200 shrink-0 h-[26vh] min-h-[170px] max-h-[380px] xl:h-[30vh]">
+              {/* 1. TOP HERO BANNER: Responsive fluid height that adapts to any window size */}
+              <div className="relative w-full overflow-hidden bg-[#FAF7F2] border-b border-stone-200 shrink-0 h-[22vh] sm:h-[26vh] lg:h-[28vh] xl:h-[30vh] min-h-[140px] max-h-[360px]">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src="/tadoba_banner_new.png"
@@ -593,15 +785,15 @@ export default function TadobaTFeedback() {
                 />
               </div>
 
-              {/* 2. BODY CONTENT: Balanced 2-Column Split */}
-              <div className="p-4 sm:p-6 lg:p-7 xl:p-8 grid grid-cols-1 md:grid-cols-12 gap-4 lg:gap-6 xl:gap-8 items-stretch">
+              {/* 2. BODY CONTENT: Balanced 2-Column Split with Enhanced Kiosk Typography */}
+              <div className="p-3.5 sm:p-5 lg:p-6 xl:p-8 grid grid-cols-1 md:grid-cols-12 gap-3.5 lg:gap-6 xl:gap-8 items-stretch">
                 
                 {/* Left Column (5/12): Rating Confirmation & Written Feedback */}
-                <div className="md:col-span-5 flex flex-col justify-between gap-2.5">
+                <div className="md:col-span-5 flex flex-col justify-between gap-3">
                   
-                  {/* Selected Rating Badge */}
-                  <div className="flex items-center gap-3 sm:gap-4 p-3.5 sm:p-4 lg:p-5 bg-emerald-50/90 border border-emerald-200 rounded-2xl sm:rounded-3xl shadow-2xs">
-                    <div className="w-12 h-12 sm:w-16 sm:h-16 lg:w-20 lg:h-20 rounded-full overflow-hidden shrink-0 shadow-xs border-2 sm:border-3 border-emerald-400 ring-2 ring-emerald-100">
+                  {/* Selected Rating Badge (Enhanced Visibility) */}
+                  <div className="flex items-center gap-3.5 sm:gap-4 p-3 sm:p-4 lg:p-5 bg-emerald-50/90 border border-emerald-200 rounded-2xl sm:rounded-3xl shadow-2xs">
+                    <div className="w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 rounded-full overflow-hidden shrink-0 shadow-xs border-2 sm:border-3 border-emerald-400 ring-2 ring-emerald-100">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={selectedRating.image}
@@ -611,65 +803,65 @@ export default function TadobaTFeedback() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-[11px] sm:text-xs lg:text-sm font-bold uppercase tracking-wider text-emerald-800">
+                        <span className="text-xs sm:text-sm lg:text-base font-extrabold uppercase tracking-wider text-emerald-800">
                           {t.yourRating}
                         </span>
-                        <span className="text-[11px] sm:text-xs lg:text-sm font-black px-2.5 py-0.5 rounded-full bg-emerald-200 text-emerald-900 shrink-0">
+                        <span className="text-xs sm:text-sm font-black px-3 py-1 rounded-full bg-emerald-200 text-emerald-900 shrink-0 shadow-2xs">
                           {t.recordedBadge}
                         </span>
                       </div>
-                      <div className="text-base sm:text-xl lg:text-2xl xl:text-3xl font-black text-emerald-950 truncate mt-0.5">
+                      <div className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-black text-emerald-950 truncate mt-1">
                         {ratingLabel}
                       </div>
                     </div>
                   </div>
 
-                  {/* Additional Comments Input */}
+                  {/* Additional Comments Input (Clear & Tactile) */}
                   <div className="flex-1 flex flex-col justify-end">
-                    <label className="block text-xs sm:text-sm lg:text-base font-bold text-gray-700 mb-1.5 flex items-center gap-2">
-                      <MessageSquare size={13} className="text-[#284e3a]" />
+                    <label className="block text-xs sm:text-sm md:text-base lg:text-lg font-bold text-gray-800 mb-1.5 flex items-center gap-2">
+                      <MessageSquare size={16} className="text-[#284e3a]" />
                       <span>{t.commentsLabel}</span>
                     </label>
                     <textarea
                       value={comments}
                       onChange={(e) => setComments(e.target.value)}
                       rows={2}
-                      className="w-full px-3.5 py-2 sm:py-3 text-xs sm:text-sm lg:text-base border border-gray-200 rounded-xl sm:rounded-2xl focus:ring-2 focus:ring-[#284e3a] focus:border-[#284e3a] resize-none text-gray-900 placeholder-gray-400 bg-gray-50/70 focus:bg-white transition"
+                      className="w-full px-4 py-2.5 sm:py-3 text-sm sm:text-base lg:text-lg font-medium border border-gray-200 rounded-xl sm:rounded-2xl focus:ring-2 focus:ring-[#284e3a] focus:border-[#284e3a] resize-none text-gray-900 placeholder-gray-400 bg-gray-50/70 focus:bg-white transition"
                       placeholder={t.commentsPlaceholder}
                     />
                   </div>
                 </div>
 
                 {/* Right Column (7/12): Improvement Issues Checklist & Actions */}
-                <div className="md:col-span-7 flex flex-col justify-between gap-2.5 border-t md:border-t-0 md:border-l border-gray-100 md:pl-4 lg:pl-5 pt-2.5 md:pt-0">
+                <div className="md:col-span-7 flex flex-col justify-between gap-3 border-t md:border-t-0 md:border-l border-gray-100 md:pl-4 lg:pl-6 pt-3 md:pt-0">
                   <div>
-                    <div className="flex items-center justify-between mb-2 gap-2">
+                    <div className="flex items-center justify-between mb-2 sm:mb-3 gap-2">
                       <div>
-                        <h3 className="text-base sm:text-xl lg:text-2xl xl:text-3xl font-black text-gray-900 leading-tight">
+                        <h3 className="text-lg sm:text-2xl md:text-3xl lg:text-4xl font-black text-gray-900 leading-tight">
                           {t.issuesTitle}
                         </h3>
-                        <p className="text-xs sm:text-sm text-gray-500 hidden sm:block font-medium">
+                        <p className="text-xs sm:text-sm md:text-base text-gray-600 hidden sm:block font-medium mt-0.5">
                           {t.issuesSubtitle}
                         </p>
                       </div>
 
-                      {/* No Issues Toggle */}
+                      {/* No Issues Toggle (Prominent) */}
                       <button
                         type="button"
                         onClick={toggleNoIssues}
-                        className={`px-3.5 py-1.5 sm:px-5 sm:py-2.5 rounded-xl sm:rounded-2xl text-xs sm:text-sm lg:text-base font-bold transition flex items-center gap-1.5 border cursor-pointer shrink-0 ${
+                        className={`px-4 py-2 sm:px-6 sm:py-2.5 rounded-xl sm:rounded-2xl text-xs sm:text-sm md:text-base font-black transition flex items-center gap-2 border cursor-pointer shrink-0 ${
                           noIssuesSelected
                             ? "bg-[#284e3a] text-white border-[#284e3a] shadow-xs"
-                            : "bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100"
+                            : "bg-gray-50 text-gray-800 border-gray-200 hover:bg-gray-100"
                         }`}
                       >
-                        {noIssuesSelected && <Check size={12} className="stroke-[3]" />}
+                        {noIssuesSelected && <Check size={15} className="stroke-[3]" />}
                         <span>{t.noIssues}</span>
                       </button>
                     </div>
 
-                    {/* Quick Issue Chips Grid (2x4 on landscape) */}
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5 lg:gap-3 mb-2.5 sm:mb-3.5">
+                    {/* Quick Issue Chips Grid (Bold & Clear Kiosk Touch Targets) */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5 lg:gap-3.5 mb-2.5 sm:mb-3.5">
                       {QUICK_ISSUES.map((issue) => {
                         const isSelected = selectedIssues.includes(issue.id);
                         const issueText = issue.label[lang] || issue.label.en;
@@ -679,13 +871,13 @@ export default function TadobaTFeedback() {
                             key={issue.id}
                             type="button"
                             onClick={() => toggleIssueSelection(issue.id)}
-                            className={`p-2.5 sm:p-3.5 lg:p-4 rounded-xl sm:rounded-2xl border text-xs sm:text-sm lg:text-base font-bold transition-all text-center cursor-pointer flex items-center justify-center gap-1.5 min-h-[46px] sm:min-h-[54px] lg:min-h-[60px] ${
+                            className={`p-3 sm:p-3.5 lg:p-4.5 rounded-xl sm:rounded-2xl border text-sm sm:text-base md:text-lg lg:text-xl font-extrabold transition-all text-center cursor-pointer flex items-center justify-center gap-1.5 min-h-[48px] sm:min-h-[56px] lg:min-h-[64px] ${
                               isSelected
-                                ? "bg-rose-500 text-white border-rose-500 shadow-xs"
-                                : "bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100"
+                                ? "bg-rose-500 text-white border-rose-500 shadow-md scale-[1.02]"
+                                : "bg-gray-50/90 border-gray-200 text-gray-800 hover:bg-gray-100"
                             }`}
                           >
-                            {isSelected && <Check size={11} className="stroke-[3]" />}
+                            {isSelected && <Check size={16} className="stroke-[3] shrink-0" />}
                             <span className="truncate">{issueText}</span>
                           </button>
                         );
@@ -693,12 +885,12 @@ export default function TadobaTFeedback() {
                     </div>
                   </div>
 
-                  {/* Action Buttons Row */}
-                  <div className="flex items-center justify-end gap-3 pt-2 border-t border-gray-100">
+                  {/* Action Buttons Row (Enlarged Kiosk Touch Targets) */}
+                  <div className="flex items-center justify-end gap-3 sm:gap-4 pt-3 border-t border-gray-100">
                     <button
                       type="button"
                       onClick={handleSkipPhase3}
-                      className="px-5 py-2.5 sm:px-7 sm:py-3.5 lg:px-8 lg:py-4 rounded-xl sm:rounded-2xl text-xs sm:text-sm lg:text-base font-bold text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition cursor-pointer"
+                      className="px-6 py-2.5 sm:px-8 sm:py-3.5 lg:px-9 lg:py-4 rounded-xl sm:rounded-2xl text-sm sm:text-base md:text-lg font-bold text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition cursor-pointer"
                     >
                       {t.skipIssues}
                     </button>
@@ -707,14 +899,14 @@ export default function TadobaTFeedback() {
                       type="button"
                       onClick={handleSubmitPhase3}
                       disabled={isSubmitting}
-                      className="px-6 py-2.5 sm:px-9 sm:py-3.5 lg:px-12 lg:py-4 rounded-xl sm:rounded-2xl text-xs sm:text-sm lg:text-base xl:text-lg font-extrabold bg-[#284e3a] hover:bg-[#1e3a29] text-white shadow-md hover:shadow-lg transition flex items-center gap-2 cursor-pointer disabled:opacity-70 active:scale-95"
+                      className="px-7 py-3 sm:px-10 sm:py-4 lg:px-12 lg:py-4.5 rounded-xl sm:rounded-2xl text-sm sm:text-base md:text-lg lg:text-xl font-black bg-[#284e3a] hover:bg-[#1e3a29] text-white shadow-md hover:shadow-xl transition flex items-center gap-2.5 cursor-pointer disabled:opacity-70 active:scale-95"
                     >
                       {isSubmitting ? (
-                        <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                        <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
                       ) : (
                         <>
                           <span>{t.submitIssues}</span>
-                          <Send size={13} />
+                          <Send size={16} />
                         </>
                       )}
                     </button>
