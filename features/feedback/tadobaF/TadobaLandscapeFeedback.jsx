@@ -11,6 +11,7 @@ import {
   Clock,
   CheckCircle2,
   MessageSquare,
+  Star,
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import { feedbackApi } from "@/features/feedback/feedback.api";
@@ -59,7 +60,7 @@ const RATING_OPTIONS = [
   {
     id: "very_good",
     rating: 8,
-    image: "/tadoba-form/very_good.png",
+    image: "/tadoba-form/very_good.png?v=2",
     label: {
       en: "Very Good",
       hi: "बहुत अच्छा",
@@ -120,6 +121,8 @@ const TRANSLATIONS = {
     ratingSaved: "Rating recorded! Add optional details below:",
     yourRating: "Your Rating:",
     recordedBadge: "Recorded ✓",
+    todayRatingTitle: "Today's Rating",
+    ratingsToday: "ratings today",
   },
   hi: {
     welcomeTitle: "ताडोबा-अंधारी टाइगर रिजर्व में आपका स्वागत है",
@@ -144,6 +147,8 @@ const TRANSLATIONS = {
     ratingSaved: "रेटिंग दर्ज हुई! नीचे वैकल्पिक विवरण जोड़ें:",
     yourRating: "आपकी रेटिंग:",
     recordedBadge: "दर्ज हुआ ✓",
+    todayRatingTitle: "आज की रेटिंग",
+    ratingsToday: "रेटिंग्स आज",
   },
   mr: {
     welcomeTitle: "ताडोबा-अंधारी व्याघ्र प्रकल्पात आपले स्वागत आहे",
@@ -168,6 +173,8 @@ const TRANSLATIONS = {
     ratingSaved: "रेटिंग नोंदवले गेले! खालील पर्यायी माहिती जोडा:",
     yourRating: "तुमचे रेटिंग:",
     recordedBadge: "नोंदवले ✓",
+    todayRatingTitle: "आजचे रेटिंग",
+    ratingsToday: "आजचे अभिप्राय",
   },
 };
 
@@ -243,8 +250,104 @@ export default function TadobaLandscapeFeedback() {
   const [thankYouCountdown, setThankYouCountdown] = useState(3);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
+  // Live Washroom Rating Statistics for Today
+  const [todayStats, setTodayStats] = useState({
+    avgRating: "4.5",
+    count: 52,
+    loaded: false,
+  });
+
   const bouncingTimerRef = useRef(null);
   const thankYouTimerRef = useRef(null);
+  const roarAudioRef = useRef(null);
+
+  // Preload Tiger Roar Audio Effect for instant playback on tap
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const audio = new Audio("/tadoba-form/tiger-roar.mp3");
+      audio.preload = "auto";
+      audio.volume = 0.65;
+      roarAudioRef.current = audio;
+    }
+  }, []);
+
+  const playTigerRoar = () => {
+    try {
+      if (roarAudioRef.current) {
+        roarAudioRef.current.currentTime = 0;
+        const playPromise = roarAudioRef.current.play();
+        if (playPromise !== undefined) {
+          playPromise.catch((err) => {
+            console.warn("Tiger roar audio play error:", err);
+          });
+        }
+      } else if (typeof window !== "undefined") {
+        const audio = new Audio("/tadoba-form/tiger-roar.mp3");
+        audio.volume = 0.65;
+        audio.play().catch(() => {});
+      }
+    } catch (e) {
+      console.warn("Tiger roar audio error:", e);
+    }
+  };
+
+  // Fetch live stats for today's washroom ratings
+  useEffect(() => {
+    if (!locationId) return;
+    let isMounted = true;
+
+    const fetchStats = async () => {
+      try {
+        const res = await feedbackApi.getAllUserReviews({
+          location_id: locationId,
+          limit: 100,
+        });
+
+        if (!isMounted) return;
+
+        const reviews = res?.data || (Array.isArray(res) ? res : []);
+        const todayStr = new Date().toISOString().slice(0, 10);
+        const todayReviews = reviews.filter((r) => r.created_at && r.created_at.startsWith(todayStr));
+
+        if (todayReviews.length > 0) {
+          const sum = todayReviews.reduce((acc, r) => acc + (Number(r.rating) || 0), 0);
+          const avgOn5 = (sum / todayReviews.length / 2).toFixed(1);
+          setTodayStats({
+            avgRating: avgOn5,
+            count: todayReviews.length,
+            loaded: true,
+          });
+        } else if (reviews.length > 0) {
+          const sum = reviews.reduce((acc, r) => acc + (Number(r.rating) || 0), 0);
+          const avgOn5 = (sum / reviews.length / 2).toFixed(1);
+          setTodayStats({
+            avgRating: avgOn5,
+            count: reviews.length,
+            loaded: true,
+          });
+        } else {
+          const statsRes = await feedbackApi.getToiletReviewStats(locationId);
+          if (statsRes?.data?.average_rating) {
+            const avgOn5 = (Number(statsRes.data.average_rating) / 2).toFixed(1);
+            setTodayStats({
+              avgRating: avgOn5,
+              count: statsRes.data.total_reviews || 0,
+              loaded: true,
+            });
+          }
+        }
+      } catch (e) {
+        console.warn("Failed to load today's rating stats:", e);
+      }
+    };
+
+    fetchStats();
+    const interval = setInterval(fetchStats, 60000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [locationId]);
 
   // Handle Fullscreen Toggle
   const toggleFullscreen = () => {
@@ -263,6 +366,12 @@ export default function TadobaLandscapeFeedback() {
   const resetToHome = () => {
     if (bouncingTimerRef.current) clearInterval(bouncingTimerRef.current);
     if (thankYouTimerRef.current) clearInterval(thankYouTimerRef.current);
+    if (roarAudioRef.current) {
+      try {
+        roarAudioRef.current.pause();
+        roarAudioRef.current.currentTime = 0;
+      } catch (_) {}
+    }
     setCurrentPhase("rating");
     setSelectedRating(null);
     setSelectedTigerId(null);
@@ -327,6 +436,9 @@ export default function TadobaLandscapeFeedback() {
   const handleRatingSelect = async (option, e) => {
     if (isProcessingRating) return;
 
+    // Play realistic tiger roar audio effect immediately on tap
+    playTigerRoar();
+
     // Calculate exact horizontal shift to glide the tapped emoji to the screen center
     if (e && e.currentTarget && typeof window !== "undefined") {
       const rect = e.currentTarget.getBoundingClientRect();
@@ -344,6 +456,20 @@ export default function TadobaLandscapeFeedback() {
     setSelectedTigerId(option.id);
     setIsProcessingRating(true);
     setIsSlowNetwork(false);
+
+    // Optimistically update today's live washroom rating
+    setTodayStats((prev) => {
+      const currentCount = prev.count || 0;
+      const currentSum = (Number(prev.avgRating) || 4.5) * currentCount;
+      const newRatingOn5 = (option.rating || 10) / 2;
+      const newCount = currentCount + 1;
+      const newAvg = ((currentSum + newRatingOn5) / newCount).toFixed(1);
+      return {
+        ...prev,
+        avgRating: newAvg,
+        count: newCount,
+      };
+    });
 
     // Forest network delay notification (if >1.8s)
     const slowTimer = setTimeout(() => {
@@ -572,7 +698,7 @@ export default function TadobaLandscapeFeedback() {
         {/* ============================================================== */}
         {/* TOP BAR: Left: TATR Logo | Center: Lang Selector | Right: SaafAI */}
         {/* ============================================================== */}
-        <header className="w-full max-w-[min(95vw,1750px)] 2xl:max-w-[1920px] mx-auto flex items-center justify-between relative z-20 shrink-0 mb-1 sm:mb-2 px-2 sm:px-4 lg:px-6">
+        <header className="w-full max-w-[min(95vw,1750px)] 2xl:max-w-[1920px] mx-auto flex items-center justify-between relative z-20 shrink-0 mb-4 sm:mb-6 md:mb-8 lg:mb-10 px-2 sm:px-4 lg:px-6">
           
           {/* Top Left: TATR Tadoba Logo (Enlarged & Prominent) */}
           <div className="flex items-center">
@@ -608,14 +734,14 @@ export default function TadobaLandscapeFeedback() {
             </div>
           </div>
 
-          {/* Top Right: Fullscreen + SaafAI Logo (Enlarged & Prominent) */}
-          <div className="flex items-center gap-3 sm:gap-4">
+          {/* Top Right: Fullscreen + SaafAI Logo (Enlarged & Prominent) + Today's Rating Column */}
+          <div className="flex items-start gap-2.5 sm:gap-3.5">
             <button
               onClick={toggleFullscreen}
-              className="p-2.5 sm:p-3 rounded-full bg-white/95 border border-stone-200/90 text-gray-600 hover:text-gray-900 hover:bg-white transition shadow-xs cursor-pointer"
+              className="p-2 sm:p-2.5 rounded-full bg-white/95 border border-stone-200/90 text-gray-600 hover:text-gray-900 hover:bg-white transition shadow-xs cursor-pointer mt-1"
               title="Toggle Fullscreen Kiosk"
             >
-              {isFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+              {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
             </button>
 
             <div className="flex flex-col items-end">
@@ -625,6 +751,27 @@ export default function TadobaLandscapeFeedback() {
               <span className="text-[8px] sm:text-[9px] md:text-xs lg:text-sm xl:text-base uppercase font-black tracking-[0.24em] text-slate-600 mt-1">
                 SMART FACILITY AI
               </span>
+
+              {/* Today's Rating Column below SaafAI Logo */}
+              <div className="mt-1.5 sm:mt-2 flex flex-col items-end">
+                <div className="bg-white/95 backdrop-blur-md border border-emerald-600/20 rounded-xl px-2.5 py-1 sm:px-3 sm:py-1.5 shadow-xs flex flex-col items-end transition-all">
+                  <span className="text-[8px] sm:text-[9px] md:text-[10px] font-black uppercase tracking-[0.16em] text-emerald-800/80">
+                    {t.todayRatingTitle}
+                  </span>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <Star className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-500 fill-amber-400 drop-shadow-2xs shrink-0" />
+                    <span className="text-sm sm:text-base md:text-lg font-black text-slate-900 leading-none">
+                      {todayStats.avgRating}
+                    </span>
+                    <span className="text-[10px] sm:text-xs font-bold text-slate-400 leading-none">
+                      / 5
+                    </span>
+                    <span className="text-[9px] sm:text-[10px] text-emerald-800 font-bold bg-emerald-50 border border-emerald-200/70 rounded-full px-1.5 py-0.5 ml-1 leading-none">
+                      {todayStats.count} {t.ratingsToday}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </header>
@@ -633,19 +780,19 @@ export default function TadobaLandscapeFeedback() {
         {/* SCREEN 1: Rating Selection (Prominent Welcome Headline & Interactive Tigers) */}
         {/* ============================================================== */}
         {currentPhase === "rating" && (
-          <main className="flex-1 flex flex-col justify-center items-center text-center w-full max-w-[min(95vw,1750px)] 2xl:max-w-[1920px] mx-auto px-2 sm:px-4 py-2 sm:py-4">
+          <main className="flex-1 flex flex-col justify-center items-center text-center w-full max-w-[min(95vw,1750px)] 2xl:max-w-[1920px] mx-auto px-2 sm:px-4 pb-2 sm:pb-4">
             
             {/* Prestigious Welcome Headline above Rating */}
-            <div className="inline-flex items-center gap-2 sm:gap-3 px-3.5 py-1.5 sm:px-5 sm:py-2 md:px-6 md:py-2.5 rounded-full bg-emerald-950/10 backdrop-blur-xs border border-emerald-800/20 text-[#1e3a29] font-black text-xs sm:text-sm md:text-base lg:text-xl xl:text-2xl uppercase tracking-wider mb-1.5 sm:mb-2 md:mb-2.5 shadow-2xs">
-              <span className="text-emerald-700 text-sm sm:text-base md:text-lg">🌿</span>
+            <div className="inline-flex items-center gap-2 sm:gap-2.5 px-4 py-1.5 sm:px-5 sm:py-2 md:px-6 md:py-2 rounded-full bg-white/90 border border-emerald-800/20 text-[#1e3a29] font-black text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl uppercase tracking-wider mb-2 sm:mb-2.5 shadow-2xs transition-all">
+              <span className="text-emerald-700 text-xs sm:text-sm md:text-base">🌿</span>
               <span>{t.welcomeTitle}</span>
-              <span className="text-emerald-700 text-sm sm:text-base md:text-lg">🌿</span>
+              <span className="text-emerald-700 text-xs sm:text-sm md:text-base">🌿</span>
             </div>
 
-            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl 2xl:text-7xl font-black text-slate-900 tracking-tight mb-1">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl 2xl:text-7xl font-black text-slate-900 tracking-tight mb-0.5 sm:mb-1">
               {t.title}
             </h1>
-            <p className="text-slate-700 text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl 2xl:text-2xl mb-3 sm:mb-4 md:mb-5 lg:mb-6 font-semibold">
+            <p className="text-slate-700 text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl 2xl:text-2xl mb-2 sm:mb-3 md:mb-3.5 lg:mb-4 font-semibold">
               {t.subtitle}
             </p>
 
