@@ -323,9 +323,28 @@ export default function TadobaLandscapeFeedback() {
 
   // Phase 1: Tap Rating Emoji -> Immediately records review (POST) and moves to Screen 2 (Bouncing Emoji)
   const handleRatingSelect = async (option) => {
+    if (isProcessingRating) return;
+
+    // Immediate visual tactile response (0ms) so user knows click was registered
     setSelectedRating(option);
+    setSelectedTigerId(option.id);
+    setIsProcessingRating(true);
+    setIsSlowNetwork(false);
+
+    // Forest network delay notification (if >1.8s)
+    const slowTimer = setTimeout(() => {
+      setIsSlowNetwork(true);
+    }, 1800);
+
+    // Guarantee minimum display time of 850ms for crisp, noticeable feedback
+    const minDisplayPromise = new Promise((resolve) => setTimeout(resolve, 850));
+
+    // Fallback timeout of 6s so kiosk never gets stuck in low/no connectivity areas
+    const timeoutPromise = new Promise((resolve) =>
+      setTimeout(() => resolve({ timeout: true }), 6000)
+    );
+
     try {
-      setIsSubmitting(true);
       const payload = {
         rating: option.rating,
         location_id: locationId,
@@ -334,15 +353,29 @@ export default function TadobaLandscapeFeedback() {
         description: "",
       };
 
-      const res = await feedbackApi.submitReview(payload);
-      const newId = res?.data?.id || res?.id || (res?.data && res.data[0]?.id);
-      if (newId) {
-        setSubmittedReviewId(newId.toString());
+      const apiPromise = feedbackApi.submitReview(payload).catch((err) => {
+        console.warn("Initial rating submit warning:", err);
+        return null;
+      });
+
+      const [res] = await Promise.all([
+        Promise.race([apiPromise, timeoutPromise]),
+        minDisplayPromise,
+      ]);
+
+      if (res && !res.timeout) {
+        const newId = res?.data?.id || res?.id || (res?.data && res.data[0]?.id);
+        if (newId) {
+          setSubmittedReviewId(newId.toString());
+        }
       }
     } catch (error) {
       console.error("Initial rating save failed:", error);
     } finally {
-      setIsSubmitting(false);
+      clearTimeout(slowTimer);
+      setIsProcessingRating(false);
+      setIsSlowNetwork(false);
+      setSelectedTigerId(null);
       // Advance to Screen 2 (Bouncing Emoji Screen with "You rated Good")
       setCurrentPhase("bouncing");
     }
@@ -414,8 +447,8 @@ export default function TadobaLandscapeFeedback() {
       <div
         className={`h-screen w-full select-none flex flex-col justify-between overflow-hidden font-sans relative transition-all duration-300 ${
           currentPhase === "rating"
-            ? "bg-cover bg-center bg-no-repeat p-3 sm:p-5 lg:p-6"
-            : "bg-[#FAF7F2] p-2.5 sm:p-3.5 lg:p-4"
+            ? "bg-cover bg-center bg-no-repeat p-2.5 sm:p-4 md:p-6 lg:p-7 xl:p-8 2xl:p-10"
+            : "bg-[#FAF7F2] p-2.5 sm:p-3.5 md:p-5 lg:p-6 xl:p-8 2xl:p-9"
         }`}
         style={
           currentPhase === "rating"
@@ -530,7 +563,7 @@ export default function TadobaLandscapeFeedback() {
         {/* ============================================================== */}
         {/* TOP BAR: Left: TATR Logo | Center: Lang Selector | Right: SaafAI */}
         {/* ============================================================== */}
-        <header className="w-full max-w-[94vw] 2xl:max-w-[1600px] mx-auto flex items-center justify-between relative z-20 shrink-0 mb-1 sm:mb-3 px-3 sm:px-6">
+        <header className="w-full max-w-[min(95vw,1750px)] 2xl:max-w-[1920px] mx-auto flex items-center justify-between relative z-20 shrink-0 mb-1 sm:mb-2 lg:mb-4 px-2 sm:px-4 lg:px-6">
           
           {/* Top Left: TATR Tadoba Logo (Enlarged & Prominent) */}
           <div className="flex items-center">
@@ -538,7 +571,7 @@ export default function TadobaLandscapeFeedback() {
             <img
               src="/tadoba-form/tatr-logo.png"
               alt="TATR - Tadoba Andhari Tiger Reserve"
-              className="h-16 sm:h-20 md:h-24 lg:h-28 xl:h-32 w-auto object-contain drop-shadow-sm transition-all"
+              className="h-14 sm:h-18 md:h-22 lg:h-26 xl:h-30 2xl:h-36 max-h-[12vh] w-auto object-contain drop-shadow-sm transition-all"
             />
           </div>
 
@@ -554,7 +587,7 @@ export default function TadobaLandscapeFeedback() {
                   key={item.code}
                   type="button"
                   onClick={() => setLang(item.code)}
-                  className={`px-4 py-2 sm:px-6 sm:py-2.5 rounded-full text-xs sm:text-sm md:text-base lg:text-lg font-black transition-all cursor-pointer ${
+                  className={`px-3.5 py-1.5 sm:px-5 sm:py-2 md:px-6 md:py-2.5 lg:px-7 lg:py-3 rounded-full text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl font-black transition-all cursor-pointer ${
                     lang === item.code
                       ? "bg-[#284e3a] text-white shadow-xs"
                       : "text-gray-700 hover:text-gray-900 hover:bg-gray-100"
@@ -577,10 +610,10 @@ export default function TadobaLandscapeFeedback() {
             </button>
 
             <div className="flex flex-col items-end">
-              <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-none">
+              <div className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl 2xl:text-7xl font-black text-slate-900 tracking-tight leading-none">
                 Saaf<span className="text-[#00A3E0]">AI</span>
               </div>
-              <span className="text-[9px] sm:text-[10px] md:text-xs lg:text-sm uppercase font-black tracking-[0.24em] text-slate-600 mt-1">
+              <span className="text-[8px] sm:text-[9px] md:text-xs lg:text-sm xl:text-base uppercase font-black tracking-[0.24em] text-slate-600 mt-1">
                 SMART FACILITY AI
               </span>
             </div>
@@ -591,24 +624,24 @@ export default function TadobaLandscapeFeedback() {
         {/* SCREEN 1: Rating Selection (Prominent Welcome Headline & Interactive Tigers) */}
         {/* ============================================================== */}
         {currentPhase === "rating" && (
-          <main className="flex-1 flex flex-col justify-center items-center my-auto py-2 sm:py-4 text-center w-full max-w-[94vw] 2xl:max-w-[1600px] mx-auto px-4">
+          <main className="flex-1 flex flex-col justify-center items-center my-auto py-2 sm:py-3 lg:py-4 text-center w-full max-w-[min(95vw,1750px)] 2xl:max-w-[1920px] mx-auto px-2 sm:px-4">
             
             {/* Prestigious Welcome Headline above Rating */}
-            <div className="inline-flex items-center gap-2 sm:gap-3 px-4 py-1.5 sm:px-6 sm:py-2 rounded-full bg-emerald-950/10 backdrop-blur-xs border border-emerald-800/20 text-[#1e3a29] font-black text-xs sm:text-sm md:text-base lg:text-xl uppercase tracking-wider mb-2 sm:mb-3 shadow-2xs">
+            <div className="inline-flex items-center gap-2 sm:gap-3 px-3.5 py-1.5 sm:px-5 sm:py-2 md:px-6 md:py-2.5 rounded-full bg-emerald-950/10 backdrop-blur-xs border border-emerald-800/20 text-[#1e3a29] font-black text-xs sm:text-sm md:text-base lg:text-xl xl:text-2xl uppercase tracking-wider mb-2 sm:mb-3 lg:mb-4 shadow-2xs">
               <span className="text-emerald-700 text-sm sm:text-base md:text-lg">🌿</span>
               <span>{t.welcomeTitle}</span>
               <span className="text-emerald-700 text-sm sm:text-base md:text-lg">🌿</span>
             </div>
 
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-black text-slate-900 tracking-tight mb-1.5 sm:mb-2">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl 2xl:text-7xl font-black text-slate-900 tracking-tight mb-1 sm:mb-2">
               {t.title}
             </h1>
-            <p className="text-slate-700 text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl mb-5 sm:mb-8 font-semibold">
+            <p className="text-slate-700 text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl 2xl:text-2xl mb-4 sm:mb-6 lg:mb-8 xl:mb-10 font-semibold">
               {t.subtitle}
             </p>
 
             {/* 5 TIGER RATING BUTTONS IN SINGLE HORIZONTAL ROW */}
-            <div className="grid grid-cols-5 gap-3 sm:gap-5 md:gap-7 lg:gap-9 xl:gap-11 w-full max-w-6xl xl:max-w-7xl 2xl:max-w-[1550px] px-2 sm:px-4">
+            <div className="grid grid-cols-5 gap-2.5 sm:gap-4 md:gap-6 lg:gap-8 xl:gap-10 2xl:gap-14 w-full max-w-[min(95vw,1700px)] 2xl:max-w-[1850px] px-2 sm:px-4">
               {RATING_OPTIONS.map((option) => {
                 const labelText = option.label[lang] || option.label.en;
                 const isSelected = selectedTigerId === option.id;
@@ -632,7 +665,7 @@ export default function TadobaLandscapeFeedback() {
                   >
                     {/* Tiger Emoji Circle with Dramatic Tap Ripple & Pop Animation */}
                     <div
-                      className={`relative aspect-square w-20 h-20 sm:w-28 sm:h-28 md:w-36 md:h-36 lg:w-44 lg:h-44 xl:w-52 xl:h-52 2xl:w-60 2xl:h-60 rounded-full overflow-hidden transition-all duration-300 shadow-xl ${
+                      className={`relative aspect-square w-[clamp(68px,11.5vw,240px)] h-[clamp(68px,11.5vw,240px)] rounded-full overflow-hidden transition-all duration-300 shadow-xl ${
                         isSelected
                           ? "ring-6 sm:ring-8 ring-emerald-400"
                           : "ring-4 sm:ring-6 ring-white/95 group-hover:shadow-2xl group-hover:scale-108"
@@ -652,11 +685,16 @@ export default function TadobaLandscapeFeedback() {
                         className="w-full h-full object-cover transition-transform duration-300"
                       />
 
-                      {/* Vibrant Green Selected Checkmark Burst Overlay */}
+                      {/* Vibrant Green Selected Checkmark Burst & Loader Overlay */}
                       {isSelected && (
-                        <div className="absolute inset-0 bg-emerald-950/20 backdrop-blur-2xs flex items-center justify-center rounded-full animate-in zoom-in-75 duration-200">
-                          <div className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-2xl animate-bounce border-3 sm:border-4 border-white">
-                            <Check size={32} className="stroke-[4]" />
+                        <div className="absolute inset-0 bg-emerald-950/40 backdrop-blur-[2px] flex flex-col items-center justify-center rounded-full animate-in fade-in zoom-in-75 duration-200">
+                          <div className="relative flex items-center justify-center">
+                            {/* Radial Animated Spinner Ring */}
+                            <div className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 lg:w-24 lg:h-24 rounded-full border-4 sm:border-5 lg:border-6 border-white/30 border-t-emerald-400 border-r-emerald-400 animate-spin shadow-2xl" />
+                            {/* Glowing Checkmark in Center */}
+                            <div className="absolute inset-0 flex items-center justify-center text-white drop-shadow-lg">
+                              <Check className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 text-emerald-300 stroke-[4]" />
+                            </div>
                           </div>
                         </div>
                       )}
@@ -664,13 +702,16 @@ export default function TadobaLandscapeFeedback() {
 
                     {/* Rating Label Pill Below Tiger */}
                     <div
-                      className={`mt-2.5 sm:mt-4 lg:mt-5 px-3.5 py-1.5 sm:px-5 sm:py-2 lg:px-6 lg:py-2.5 rounded-full font-black text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl transition-all duration-300 shadow-md ${
+                      className={`mt-2 sm:mt-3 md:mt-4 lg:mt-6 px-3 py-1 sm:px-4 sm:py-1.5 md:px-5 md:py-2 lg:px-7 lg:py-3 rounded-full font-black text-xs sm:text-sm md:text-base lg:text-xl xl:text-2xl transition-all duration-300 shadow-md flex items-center justify-center gap-1.5 sm:gap-2.5 ${
                         isSelected
-                          ? "bg-emerald-600 text-white ring-3 ring-emerald-300 shadow-xl scale-110"
+                          ? "bg-emerald-600 text-white ring-4 ring-emerald-300 shadow-xl scale-110"
                           : `${option.pillBg} ${option.pillText} group-hover:scale-105`
                       }`}
                     >
-                      {isSelected ? `${labelText} ✓` : labelText}
+                      {isSelected && (
+                        <div className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 border-2 sm:border-3 border-white border-t-transparent rounded-full animate-spin shrink-0" />
+                      )}
+                      <span>{isSelected ? `${labelText} ✓` : labelText}</span>
                     </div>
                   </div>
                 );
@@ -679,14 +720,14 @@ export default function TadobaLandscapeFeedback() {
 
             {/* LIVE PROCESSING STATUS & LOW CONNECTIVITY NOTICE */}
             {isProcessingRating && (
-              <div className="mt-5 sm:mt-7 px-5 py-3 sm:px-7 sm:py-3.5 rounded-2xl bg-white/95 backdrop-blur-md border border-emerald-200 shadow-2xl flex flex-col items-center gap-1.5 animate-in fade-in zoom-in-95 duration-200 max-w-lg mx-auto">
-                <div className="flex items-center gap-2.5 text-emerald-900 font-extrabold text-sm sm:text-base">
-                  <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+              <div className="mt-5 sm:mt-7 lg:mt-9 px-6 py-3.5 sm:px-8 sm:py-4 rounded-3xl bg-white/95 backdrop-blur-md border-2 border-emerald-400 shadow-2xl flex flex-col items-center gap-2 animate-in fade-in zoom-in-95 duration-200 max-w-xl mx-auto">
+                <div className="flex items-center gap-3 text-emerald-950 font-black text-sm sm:text-base md:text-lg lg:text-xl">
+                  <div className="w-5 h-5 sm:w-6 sm:h-6 border-3 border-emerald-600 border-t-transparent rounded-full animate-spin shrink-0" />
                   <span>{t.recordingRating}</span>
                 </div>
                 {isSlowNetwork && (
-                  <div className="flex items-center gap-2 text-amber-900 bg-amber-50 border border-amber-200 px-3 py-1 rounded-xl text-xs sm:text-sm font-bold animate-in fade-in slide-in-from-top-1 duration-300">
-                    <Clock size={14} className="text-amber-700 animate-spin" />
+                  <div className="flex items-center gap-2 text-amber-900 bg-amber-50 border border-amber-300 px-4 py-1.5 rounded-2xl text-xs sm:text-sm font-bold animate-in fade-in slide-in-from-top-1 duration-300">
+                    <Clock size={16} className="text-amber-700 animate-spin shrink-0" />
                     <span>{t.slowNetworkNotice}</span>
                   </div>
                 )}
@@ -699,10 +740,10 @@ export default function TadobaLandscapeFeedback() {
         {/* SCREEN 2: Bouncing Emoji Screen ("You rated Good" + "Give Feedback" button) */}
         {/* ============================================================== */}
         {currentPhase === "bouncing" && selectedRating && (
-          <main className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 text-center my-auto animate-in fade-in duration-300 w-full max-w-[92vw] xl:max-w-5xl mx-auto">
+          <main className="flex-1 flex flex-col items-center justify-center p-3 sm:p-5 lg:p-8 text-center my-auto animate-in fade-in duration-300 w-full max-w-[min(94vw,1400px)] 2xl:max-w-[1600px] mx-auto">
             
             {/* Big Bouncing Emoji */}
-            <div className="w-32 h-32 sm:w-44 sm:h-44 md:w-56 md:h-56 lg:w-64 lg:h-64 xl:w-72 xl:h-72 rounded-full overflow-hidden shadow-2xl mb-4 sm:mb-6 animate-bounce ring-4 sm:ring-8 ring-emerald-50">
+            <div className="w-[clamp(110px,15vw,250px)] h-[clamp(110px,15vw,250px)] rounded-full overflow-hidden shadow-2xl mb-3 sm:mb-5 lg:mb-6 animate-bounce ring-4 sm:ring-8 ring-emerald-50">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={selectedRating.image}
@@ -713,7 +754,7 @@ export default function TadobaLandscapeFeedback() {
 
             {/* "You rated Good" Pill */}
             <div
-              className={`inline-flex items-center gap-2.5 sm:gap-3 px-8 py-3 sm:px-10 sm:py-4 rounded-full font-black text-lg sm:text-2xl md:text-3xl lg:text-4xl mb-4 sm:mb-6 shadow-md ${selectedRating.pillBg} ${selectedRating.pillText}`}
+              className={`inline-flex items-center gap-2 sm:gap-3 px-6 py-2 sm:px-8 sm:py-3 md:px-10 md:py-3.5 lg:px-12 lg:py-4 rounded-full font-black text-base sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl mb-3 sm:mb-5 shadow-md ${selectedRating.pillBg} ${selectedRating.pillText}`}
             >
               <CheckCircle2 size={20} />
               <span>
@@ -723,11 +764,11 @@ export default function TadobaLandscapeFeedback() {
             </div>
 
             {/* Headline */}
-            <h2 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-slate-900 tracking-tight mb-2 sm:mb-4">
+            <h2 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl 2xl:text-8xl font-black text-slate-900 tracking-tight mb-2 sm:mb-3">
               {t.thanksTitle}
             </h2>
 
-            <p className="text-slate-600 text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl max-w-2xl mx-auto mb-5 sm:mb-8 font-medium">
+            <p className="text-slate-600 text-xs sm:text-sm md:text-base lg:text-lg xl:text-2xl max-w-2xl mx-auto mb-4 sm:mb-6 lg:mb-8 font-medium">
               {t.thanksSubtitle}
             </p>
 
@@ -749,7 +790,7 @@ export default function TadobaLandscapeFeedback() {
               <button
                 type="button"
                 onClick={handleOpenFeedbackDetails}
-                className="px-8 sm:px-12 lg:px-14 py-4 sm:py-5 lg:py-6 rounded-2xl sm:rounded-3xl bg-[#284e3a] hover:bg-[#1e3a29] text-white font-extrabold text-base sm:text-xl lg:text-2xl transition-all shadow-md hover:shadow-xl flex items-center gap-3 cursor-pointer transform hover:scale-105 active:scale-95"
+                className="px-6 py-3 sm:px-10 sm:py-4 md:px-12 md:py-5 lg:px-16 lg:py-6 rounded-2xl sm:rounded-3xl bg-[#284e3a] hover:bg-[#1e3a29] text-white font-extrabold text-sm sm:text-base md:text-xl lg:text-2xl transition-all shadow-md hover:shadow-xl flex items-center gap-2.5 sm:gap-3 cursor-pointer transform hover:scale-105 active:scale-95"
               >
                 <MessageSquare size={19} />
                 <span>{t.giveFeedbackBtn}</span>
@@ -759,7 +800,7 @@ export default function TadobaLandscapeFeedback() {
               <button
                 type="button"
                 onClick={resetToHome}
-                className="px-6 sm:px-10 lg:px-12 py-4 sm:py-5 lg:py-6 rounded-2xl sm:rounded-3xl bg-white hover:bg-gray-100 text-gray-700 font-bold text-sm sm:text-lg lg:text-xl border border-stone-200 transition-all flex items-center gap-2.5 cursor-pointer shadow-2xs"
+                className="px-5 py-3 sm:px-8 sm:py-4 md:px-10 md:py-5 lg:px-12 lg:py-6 rounded-2xl sm:rounded-3xl bg-white hover:bg-gray-100 text-gray-700 font-bold text-xs sm:text-sm md:text-base lg:text-xl border border-stone-200 transition-all flex items-center gap-2 cursor-pointer shadow-2xs"
               >
                 <RotateCcw size={16} />
                 <span>{t.resetNow}</span>
@@ -772,11 +813,11 @@ export default function TadobaLandscapeFeedback() {
         {/* SCREEN 3: Detailed Feedback Window (Properly Sized Hero Banner, No Scroll) */}
         {/* ============================================================== */}
         {currentPhase === "details" && selectedRating && (
-          <main className="flex-1 w-full max-w-[94vw] xl:max-w-7xl 2xl:max-w-[1550px] mx-auto flex flex-col justify-center min-h-0 my-auto py-1 sm:py-3 relative z-20">
+          <main className="flex-1 w-full max-w-[min(95vw,1750px)] 2xl:max-w-[1920px] mx-auto flex flex-col justify-center min-h-0 my-auto py-1 sm:py-2 relative z-20">
             <div className="bg-white rounded-3xl sm:rounded-4xl border border-stone-200/90 shadow-2xl overflow-hidden flex flex-col">
               
               {/* 1. TOP HERO BANNER: Responsive fluid height that adapts to any window size */}
-              <div className="relative w-full overflow-hidden bg-[#FAF7F2] border-b border-stone-200 shrink-0 h-[22vh] sm:h-[26vh] lg:h-[28vh] xl:h-[30vh] min-h-[140px] max-h-[360px]">
+              <div className="relative w-full overflow-hidden bg-[#FAF7F2] border-b border-stone-200 shrink-0 h-[clamp(140px,26vh,380px)] xl:h-[28vh] 2xl:h-[30vh]">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src="/tadoba_banner_new.png"
@@ -786,14 +827,14 @@ export default function TadobaLandscapeFeedback() {
               </div>
 
               {/* 2. BODY CONTENT: Balanced 2-Column Split with Enhanced Kiosk Typography */}
-              <div className="p-3.5 sm:p-5 lg:p-6 xl:p-8 grid grid-cols-1 md:grid-cols-12 gap-3.5 lg:gap-6 xl:gap-8 items-stretch">
+              <div className="p-3 sm:p-5 md:p-6 lg:p-7 xl:p-8 2xl:p-10 grid grid-cols-1 md:grid-cols-12 gap-3 sm:gap-4 md:gap-5 lg:gap-7 xl:gap-9 items-stretch">
                 
                 {/* Left Column (5/12): Rating Confirmation & Written Feedback */}
                 <div className="md:col-span-5 flex flex-col justify-between gap-3">
                   
                   {/* Selected Rating Badge (Enhanced Visibility) */}
                   <div className="flex items-center gap-3.5 sm:gap-4 p-3 sm:p-4 lg:p-5 bg-emerald-50/90 border border-emerald-200 rounded-2xl sm:rounded-3xl shadow-2xs">
-                    <div className="w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 rounded-full overflow-hidden shrink-0 shadow-xs border-2 sm:border-3 border-emerald-400 ring-2 ring-emerald-100">
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 lg:w-20 lg:h-20 xl:w-24 xl:h-24 rounded-full overflow-hidden shrink-0 shadow-xs border-2 sm:border-3 border-emerald-400 ring-2 ring-emerald-100">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={selectedRating.image}
@@ -810,7 +851,7 @@ export default function TadobaLandscapeFeedback() {
                           {t.recordedBadge}
                         </span>
                       </div>
-                      <div className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-black text-emerald-950 truncate mt-1">
+                      <div className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl 2xl:text-5xl font-black text-emerald-950 truncate mt-0.5 sm:mt-1">
                         {ratingLabel}
                       </div>
                     </div>
@@ -837,7 +878,7 @@ export default function TadobaLandscapeFeedback() {
                   <div>
                     <div className="flex items-center justify-between mb-2 sm:mb-3 gap-2">
                       <div>
-                        <h3 className="text-lg sm:text-2xl md:text-3xl lg:text-4xl font-black text-gray-900 leading-tight">
+                        <h3 className="text-base sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl 2xl:text-5xl font-black text-gray-900 leading-tight">
                           {t.issuesTitle}
                         </h3>
                         <p className="text-xs sm:text-sm md:text-base text-gray-600 hidden sm:block font-medium mt-0.5">
@@ -922,9 +963,9 @@ export default function TadobaLandscapeFeedback() {
         {/* SCREEN 4: Thank You Screen (Auto-resets in 3s) */}
         {/* ============================================================== */}
         {currentPhase === "thankyou" && (
-          <main className="flex-1 flex flex-col items-center justify-center p-4 text-center animate-in fade-in duration-300 my-auto">
+          <main className="flex-1 flex flex-col items-center justify-center p-3 sm:p-5 lg:p-8 text-center my-auto animate-in fade-in duration-300 w-full max-w-[min(94vw,1400px)] 2xl:max-w-[1600px] mx-auto">
             {selectedRating && (
-              <div className="w-28 h-28 sm:w-36 sm:h-36 md:w-44 md:h-44 lg:w-52 lg:h-52 rounded-full overflow-hidden shadow-xl mb-4 animate-bounce">
+              <div className="w-[clamp(90px,14vw,230px)] h-[clamp(90px,14vw,230px)] rounded-full overflow-hidden shadow-xl mb-3 sm:mb-5 animate-bounce">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={selectedRating.image}
@@ -939,11 +980,11 @@ export default function TadobaLandscapeFeedback() {
               <span>Review Recorded Successfully</span>
             </div>
 
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 tracking-tight mb-2">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl 2xl:text-7xl font-black text-slate-900 tracking-tight mb-2 sm:mb-3">
               {t.thanksTitle}
             </h2>
 
-            <p className="text-gray-600 text-xs sm:text-sm md:text-base max-w-lg mx-auto mb-5 font-medium">
+            <p className="text-gray-600 text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl max-w-xl mx-auto mb-4 sm:mb-6 font-medium">
               {t.thanksSubtitle}
             </p>
 
@@ -961,7 +1002,7 @@ export default function TadobaLandscapeFeedback() {
 
             <button
               onClick={resetToHome}
-              className="px-8 py-3.5 sm:px-10 sm:py-4 rounded-2xl sm:rounded-3xl bg-[#284e3a] hover:bg-[#1e3a29] text-white font-bold text-sm sm:text-base lg:text-lg transition-all shadow-md flex items-center gap-2.5 cursor-pointer"
+              className="px-6 py-2.5 sm:px-8 sm:py-3.5 md:px-10 md:py-4 lg:px-14 lg:py-5 rounded-2xl sm:rounded-3xl bg-[#284e3a] hover:bg-[#1e3a29] text-white font-bold text-xs sm:text-sm md:text-base lg:text-xl transition-all shadow-md flex items-center gap-2.5 cursor-pointer"
             >
               <RotateCcw size={15} />
               <span>{t.resetNow}</span>
