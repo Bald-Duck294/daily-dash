@@ -230,6 +230,7 @@ export default function TadobaLandscapeFeedback() {
   const [selectedTigerId, setSelectedTigerId] = useState(null);
   const [isProcessingRating, setIsProcessingRating] = useState(false);
   const [isSlowNetwork, setIsSlowNetwork] = useState(false);
+  const [centerOffset, setCenterOffset] = useState(0);
 
   // Phase 3 (Details) states
   const [selectedIssues, setSelectedIssues] = useState([]);
@@ -267,6 +268,7 @@ export default function TadobaLandscapeFeedback() {
     setSelectedTigerId(null);
     setIsProcessingRating(false);
     setIsSlowNetwork(false);
+    setCenterOffset(0);
     setSubmittedReviewId(null);
     setSelectedIssues([]);
     setNoIssuesSelected(false);
@@ -322,8 +324,20 @@ export default function TadobaLandscapeFeedback() {
   }, [currentPhase]);
 
   // Phase 1: Tap Rating Emoji -> Immediately records review (POST) and moves to Screen 2 (Bouncing Emoji)
-  const handleRatingSelect = async (option) => {
+  const handleRatingSelect = async (option, e) => {
     if (isProcessingRating) return;
+
+    // Calculate exact horizontal shift to glide the tapped emoji to the screen center
+    if (e && e.currentTarget && typeof window !== "undefined") {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const elementCenter = rect.left + rect.width / 2;
+      const screenCenter = window.innerWidth / 2;
+      setCenterOffset(screenCenter - elementCenter);
+    } else if (typeof window !== "undefined") {
+      const indexMap = { poor: 0, fair: 1, good: 2, very_good: 3, excellent: 4 };
+      const idx = indexMap[option.id] ?? 2;
+      setCenterOffset((2 - idx) * (window.innerWidth * 0.18));
+    }
 
     // Immediate visual tactile response (0ms) so user knows click was registered
     setSelectedRating(option);
@@ -336,8 +350,8 @@ export default function TadobaLandscapeFeedback() {
       setIsSlowNetwork(true);
     }, 1800);
 
-    // Guarantee minimum display time of 850ms for crisp, noticeable feedback
-    const minDisplayPromise = new Promise((resolve) => setTimeout(resolve, 850));
+    // When the round line finishes its 360° circle (~1020ms), redirect to the next window
+    const minDisplayPromise = new Promise((resolve) => setTimeout(resolve, 1020));
 
     // Fallback timeout of 6s so kiosk never gets stuck in low/no connectivity areas
     const timeoutPromise = new Promise((resolve) =>
@@ -376,6 +390,7 @@ export default function TadobaLandscapeFeedback() {
       setIsProcessingRating(false);
       setIsSlowNetwork(false);
       setSelectedTigerId(null);
+      setCenterOffset(0);
       // Advance to Screen 2 (Bouncing Emoji Screen with "You rated Good")
       setCurrentPhase("bouncing");
     }
@@ -445,7 +460,7 @@ export default function TadobaLandscapeFeedback() {
 
       {/* HORIZONTAL KIOSK CONTAINER (Optimized for 31.5cm x 21.5cm Landscape Screen) */}
       <div
-        className={`h-screen w-full select-none flex flex-col justify-between overflow-hidden font-sans relative transition-all duration-300 ${
+        className={`h-screen w-full select-none flex flex-col overflow-hidden font-sans relative transition-all duration-300 ${
           currentPhase === "rating"
             ? "bg-cover bg-center bg-no-repeat p-2.5 sm:p-4 md:p-6 lg:p-7 xl:p-8 2xl:p-10"
             : "bg-[#FAF7F2] p-2.5 sm:p-3.5 md:p-5 lg:p-6 xl:p-8 2xl:p-9"
@@ -506,30 +521,24 @@ export default function TadobaLandscapeFeedback() {
             }
           }
 
-          @keyframes tigerTapPop {
+          @keyframes drawRoundLine {
             0% {
-              transform: scale(1);
-            }
-            35% {
-              transform: scale(1.22);
-            }
-            65% {
-              transform: scale(1.14);
+              stroke-dashoffset: 340;
             }
             100% {
-              transform: scale(1.18);
+              stroke-dashoffset: 0;
             }
           }
 
-          @keyframes pulseGlowRing {
+          @keyframes selectedEmojiZoom {
             0% {
-              box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.8), 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+              transform: scale(1);
             }
-            70% {
-              box-shadow: 0 0 0 28px rgba(16, 185, 129, 0), 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            50% {
+              transform: scale(1.42) translateY(-6px);
             }
             100% {
-              box-shadow: 0 0 0 0 rgba(16, 185, 129, 0), 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+              transform: scale(1.38) translateY(-4px);
             }
           }
         `}} />
@@ -563,7 +572,7 @@ export default function TadobaLandscapeFeedback() {
         {/* ============================================================== */}
         {/* TOP BAR: Left: TATR Logo | Center: Lang Selector | Right: SaafAI */}
         {/* ============================================================== */}
-        <header className="w-full max-w-[min(95vw,1750px)] 2xl:max-w-[1920px] mx-auto flex items-center justify-between relative z-20 shrink-0 mb-1 sm:mb-2 lg:mb-4 px-2 sm:px-4 lg:px-6">
+        <header className="w-full max-w-[min(95vw,1750px)] 2xl:max-w-[1920px] mx-auto flex items-center justify-between relative z-20 shrink-0 mb-1 sm:mb-2 px-2 sm:px-4 lg:px-6">
           
           {/* Top Left: TATR Tadoba Logo (Enlarged & Prominent) */}
           <div className="flex items-center">
@@ -624,19 +633,19 @@ export default function TadobaLandscapeFeedback() {
         {/* SCREEN 1: Rating Selection (Prominent Welcome Headline & Interactive Tigers) */}
         {/* ============================================================== */}
         {currentPhase === "rating" && (
-          <main className="flex-1 flex flex-col justify-center items-center my-auto py-2 sm:py-3 lg:py-4 text-center w-full max-w-[min(95vw,1750px)] 2xl:max-w-[1920px] mx-auto px-2 sm:px-4">
+          <main className="flex-1 flex flex-col justify-center items-center text-center w-full max-w-[min(95vw,1750px)] 2xl:max-w-[1920px] mx-auto px-2 sm:px-4 py-2 sm:py-4">
             
             {/* Prestigious Welcome Headline above Rating */}
-            <div className="inline-flex items-center gap-2 sm:gap-3 px-3.5 py-1.5 sm:px-5 sm:py-2 md:px-6 md:py-2.5 rounded-full bg-emerald-950/10 backdrop-blur-xs border border-emerald-800/20 text-[#1e3a29] font-black text-xs sm:text-sm md:text-base lg:text-xl xl:text-2xl uppercase tracking-wider mb-2 sm:mb-3 lg:mb-4 shadow-2xs">
+            <div className="inline-flex items-center gap-2 sm:gap-3 px-3.5 py-1.5 sm:px-5 sm:py-2 md:px-6 md:py-2.5 rounded-full bg-emerald-950/10 backdrop-blur-xs border border-emerald-800/20 text-[#1e3a29] font-black text-xs sm:text-sm md:text-base lg:text-xl xl:text-2xl uppercase tracking-wider mb-1.5 sm:mb-2 md:mb-2.5 shadow-2xs">
               <span className="text-emerald-700 text-sm sm:text-base md:text-lg">🌿</span>
               <span>{t.welcomeTitle}</span>
               <span className="text-emerald-700 text-sm sm:text-base md:text-lg">🌿</span>
             </div>
 
-            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl 2xl:text-7xl font-black text-slate-900 tracking-tight mb-1 sm:mb-2">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl 2xl:text-7xl font-black text-slate-900 tracking-tight mb-1">
               {t.title}
             </h1>
-            <p className="text-slate-700 text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl 2xl:text-2xl mb-4 sm:mb-6 lg:mb-8 xl:mb-10 font-semibold">
+            <p className="text-slate-700 text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl 2xl:text-2xl mb-3 sm:mb-4 md:mb-5 lg:mb-6 font-semibold">
               {t.subtitle}
             </p>
 
@@ -650,87 +659,106 @@ export default function TadobaLandscapeFeedback() {
                 return (
                   <div
                     key={option.id}
-                    onClick={() => !isProcessingRating && handleRatingSelect(option)}
-                    className={`flex flex-col items-center group transition-all duration-300 transform ${
+                    onClick={(e) => !isProcessingRating && handleRatingSelect(option, e)}
+                    className={`flex flex-col items-center group transition-all duration-500 transform ${
                       isProcessingRating ? "cursor-wait" : "cursor-pointer active:scale-95 hover:scale-105"
-                    } ${isOtherSelected ? "opacity-30 scale-90 blur-[0.5px]" : "opacity-100"}`}
+                    } ${
+                      isSelected
+                        ? "z-50"
+                        : isOtherSelected
+                        ? "opacity-15 scale-80 filter blur-[8px] sm:blur-[10px] pointer-events-none transition-all duration-500"
+                        : "opacity-100"
+                    }`}
                     style={
                       isSelected
                         ? {
-                            animation: "tigerTapPop 0.85s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards",
-                            zIndex: 40,
+                            transform: `translate3d(${centerOffset}px, -6px, 0) scale(1.42)`,
+                            transition: "transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)",
+                            zIndex: 50,
                           }
                         : {}
                     }
                   >
-                    {/* Tiger Emoji Circle with Dramatic Tap Ripple & Pop Animation */}
-                    <div
-                      className={`relative aspect-square w-[clamp(68px,11.5vw,240px)] h-[clamp(68px,11.5vw,240px)] rounded-full overflow-hidden transition-all duration-300 shadow-xl ${
-                        isSelected
-                          ? "ring-6 sm:ring-8 ring-emerald-400"
-                          : "ring-4 sm:ring-6 ring-white/95 group-hover:shadow-2xl group-hover:scale-108"
-                      }`}
-                      style={
-                        isSelected
-                          ? {
-                              animation: "pulseGlowRing 0.9s ease-out infinite",
-                            }
-                          : {}
-                      }
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={option.image}
-                        alt={labelText}
-                        className="w-full h-full object-cover transition-transform duration-300"
-                      />
-
-                      {/* Vibrant Green Selected Checkmark Burst & Loader Overlay */}
+                    {/* Emoji Wrapper: Contains Round Line Animation & Tiger Circle */}
+                    <div className="relative flex items-center justify-center">
+                      {/* Clean Round Line Sweeping Around the Big Emoji */}
                       {isSelected && (
-                        <div className="absolute inset-0 bg-emerald-950/40 backdrop-blur-[2px] flex flex-col items-center justify-center rounded-full animate-in fade-in zoom-in-75 duration-200">
-                          <div className="relative flex items-center justify-center">
-                            {/* Radial Animated Spinner Ring */}
-                            <div className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 lg:w-24 lg:h-24 rounded-full border-4 sm:border-5 lg:border-6 border-white/30 border-t-emerald-400 border-r-emerald-400 animate-spin shadow-2xl" />
-                            {/* Glowing Checkmark in Center */}
-                            <div className="absolute inset-0 flex items-center justify-center text-white drop-shadow-lg">
-                              <Check className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 text-emerald-300 stroke-[4]" />
-                            </div>
-                          </div>
-                        </div>
+                        <svg
+                          viewBox="0 0 120 120"
+                          className="absolute -inset-2.5 sm:-inset-3.5 md:-inset-4.5 lg:-inset-5.5 w-[calc(100%+20px)] sm:w-[calc(100%+28px)] md:w-[calc(100%+36px)] lg:w-[calc(100%+44px)] h-[calc(100%+20px)] sm:h-[calc(100%+28px)] md:h-[calc(100%+36px)] lg:h-[calc(100%+44px)] -rotate-90 pointer-events-none z-30 overflow-visible"
+                          style={{ filter: "drop-shadow(0 4px 10px rgba(0, 0, 0, 0.35))" }}
+                        >
+                          <defs>
+                            <linearGradient id={`roundLineGrad-${option.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
+                              <stop offset="0%" stopColor="#ffffff" stopOpacity="0.8" />
+                              <stop offset="60%" stopColor="#ffffff" stopOpacity="1" />
+                              <stop offset="100%" stopColor="#ffffff" stopOpacity="1" />
+                            </linearGradient>
+                          </defs>
+
+                          {/* Subtle Guide Track */}
+                          <circle
+                            cx="60"
+                            cy="60"
+                            r="54"
+                            fill="none"
+                            stroke="rgba(255, 255, 255, 0.4)"
+                            strokeWidth="3.5"
+                          />
+
+                          {/* Round Line Coming Around the Big Emoji */}
+                          <circle
+                            cx="60"
+                            cy="60"
+                            r="54"
+                            fill="none"
+                            stroke={`url(#roundLineGrad-${option.id})`}
+                            strokeWidth="5.5"
+                            strokeLinecap="round"
+                            strokeDasharray="340"
+                            strokeDashoffset="340"
+                            style={{
+                              animation: "drawRoundLine 1.0s cubic-bezier(0.25, 0.1, 0.25, 1) forwards",
+                            }}
+                          />
+                        </svg>
                       )}
+
+                      {/* Tiger Emoji Circle - Clean, unobstructed */}
+                      <div
+                        className={`relative aspect-square w-[clamp(68px,11.5vw,240px)] h-[clamp(68px,11.5vw,240px)] rounded-full overflow-hidden transition-all duration-300 shadow-xl ${
+                          isSelected
+                            ? "ring-4 sm:ring-6 ring-white shadow-2xl"
+                            : "ring-4 sm:ring-6 ring-white/95 group-hover:shadow-2xl group-hover:scale-108"
+                        }`}
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={option.image}
+                          alt={labelText}
+                          className="w-full h-full object-cover transition-transform duration-300"
+                        />
+                      </div>
                     </div>
 
-                    {/* Rating Label Pill Below Tiger */}
+                    {/* Rating Label Pill Below Tiger - Natural styling, no green checkmark */}
                     <div
-                      className={`mt-2 sm:mt-3 md:mt-4 lg:mt-6 px-3 py-1 sm:px-4 sm:py-1.5 md:px-5 md:py-2 lg:px-7 lg:py-3 rounded-full font-black text-xs sm:text-sm md:text-base lg:text-xl xl:text-2xl transition-all duration-300 shadow-md flex items-center justify-center gap-1.5 sm:gap-2.5 ${
-                        isSelected
-                          ? "bg-emerald-600 text-white ring-4 ring-emerald-300 shadow-xl scale-110"
-                          : `${option.pillBg} ${option.pillText} group-hover:scale-105`
+                      className={`mt-2 sm:mt-3 md:mt-4 lg:mt-6 px-3 py-1 sm:px-4 sm:py-1.5 md:px-5 md:py-2 lg:px-7 lg:py-3 rounded-full font-black text-xs sm:text-sm md:text-base lg:text-xl xl:text-2xl transition-all duration-300 shadow-md ${option.pillBg} ${option.pillText} ${
+                        isSelected ? "ring-4 ring-white shadow-xl scale-105" : "group-hover:scale-105"
                       }`}
                     >
-                      {isSelected && (
-                        <div className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 border-2 sm:border-3 border-white border-t-transparent rounded-full animate-spin shrink-0" />
-                      )}
-                      <span>{isSelected ? `${labelText} ✓` : labelText}</span>
+                      <span>{labelText}</span>
                     </div>
                   </div>
                 );
               })}
             </div>
 
-            {/* LIVE PROCESSING STATUS & LOW CONNECTIVITY NOTICE */}
-            {isProcessingRating && (
-              <div className="mt-5 sm:mt-7 lg:mt-9 px-6 py-3.5 sm:px-8 sm:py-4 rounded-3xl bg-white/95 backdrop-blur-md border-2 border-emerald-400 shadow-2xl flex flex-col items-center gap-2 animate-in fade-in zoom-in-95 duration-200 max-w-xl mx-auto">
-                <div className="flex items-center gap-3 text-emerald-950 font-black text-sm sm:text-base md:text-lg lg:text-xl">
-                  <div className="w-5 h-5 sm:w-6 sm:h-6 border-3 border-emerald-600 border-t-transparent rounded-full animate-spin shrink-0" />
-                  <span>{t.recordingRating}</span>
-                </div>
-                {isSlowNetwork && (
-                  <div className="flex items-center gap-2 text-amber-900 bg-amber-50 border border-amber-300 px-4 py-1.5 rounded-2xl text-xs sm:text-sm font-bold animate-in fade-in slide-in-from-top-1 duration-300">
-                    <Clock size={16} className="text-amber-700 animate-spin shrink-0" />
-                    <span>{t.slowNetworkNotice}</span>
-                  </div>
-                )}
+            {/* SUBTLE LOW CONNECTIVITY NOTICE (Only when forest network lags >2s) */}
+            {isSlowNetwork && (
+              <div className="mt-4 px-4 py-2 rounded-2xl bg-amber-50/95 border border-amber-300 shadow-lg flex items-center gap-2 text-amber-900 text-xs sm:text-sm font-bold animate-in fade-in duration-300 mx-auto max-w-sm">
+                <Clock size={16} className="text-amber-700 animate-spin shrink-0" />
+                <span>{t.slowNetworkNotice}</span>
               </div>
             )}
           </main>
