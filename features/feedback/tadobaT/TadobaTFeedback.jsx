@@ -400,7 +400,7 @@ export default function TadobaTFeedback() {
         {/* ============================================================== */}
         {/* TOP BAR: Left: TATR Logo | Center: Lang Selector | Right: SaafAI */}
         {/* ============================================================== */}
-        <header className="w-full max-w-6xl mx-auto flex items-center justify-between relative z-20 shrink-0 mb-1 sm:mb-2 px-2 sm:px-4">
+        <header className="w-full max-w-[94vw] 2xl:max-w-[1600px] mx-auto flex items-center justify-between relative z-20 shrink-0 mb-1 sm:mb-3 px-3 sm:px-6">
           
           {/* Top Left: TATR Tadoba Logo (Transparent PNG, no white box) */}
           <div className="flex items-center">
@@ -408,7 +408,7 @@ export default function TadobaTFeedback() {
             <img
               src="/tadoba-form/tatr-logo.png"
               alt="TATR - Tadoba Andhari Tiger Reserve"
-              className="h-10 sm:h-12 md:h-14 lg:h-16 w-auto object-contain drop-shadow-xs"
+              className="h-12 sm:h-16 md:h-18 lg:h-22 xl:h-24 w-auto object-contain drop-shadow-xs"
             />
           </div>
 
@@ -424,7 +424,7 @@ export default function TadobaTFeedback() {
                   key={item.code}
                   type="button"
                   onClick={() => setLang(item.code)}
-                  className={`px-3 py-1 sm:px-4 sm:py-1.5 rounded-full text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                  className={`px-3.5 py-1.5 sm:px-5 sm:py-2.5 rounded-full text-xs sm:text-sm md:text-base lg:text-lg font-bold transition-all cursor-pointer ${
                     lang === item.code
                       ? "bg-[#284e3a] text-white shadow-xs"
                       : "text-gray-700 hover:text-gray-900 hover:bg-gray-100"
@@ -440,17 +440,17 @@ export default function TadobaTFeedback() {
           <div className="flex items-center gap-2 sm:gap-3">
             <button
               onClick={toggleFullscreen}
-              className="p-1.5 sm:p-2 rounded-full bg-white/90 border border-stone-200/90 text-gray-600 hover:text-gray-900 hover:bg-white transition shadow-2xs cursor-pointer"
+              className="p-2 sm:p-2.5 lg:p-3 rounded-full bg-white/90 border border-stone-200/90 text-gray-600 hover:text-gray-900 hover:bg-white transition shadow-2xs cursor-pointer"
               title="Toggle Fullscreen Kiosk"
             >
               {isFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
             </button>
 
             <div className="flex flex-col items-end">
-              <div className="text-xl sm:text-2xl md:text-3xl font-black text-slate-900 tracking-tight leading-none">
+              <div className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-none">
                 Saaf<span className="text-[#00A3E0]">AI</span>
               </div>
-              <span className="text-[7px] sm:text-[8px] md:text-[9px] uppercase font-bold tracking-[0.22em] text-slate-500 mt-0.5">
+              <span className="text-[8px] sm:text-[9px] md:text-[10px] lg:text-[11px] uppercase font-bold tracking-[0.24em] text-slate-500 mt-0.5">
                 SMART FACILITY AI
               </span>
             </div>
@@ -461,16 +461,16 @@ export default function TadobaTFeedback() {
         {/* SCREEN 1: Rating Selection (Well-Balanced Tiger Emojis)       */}
         {/* ============================================================== */}
         {currentPhase === "rating" && (
-          <main className="flex-1 flex flex-col justify-center items-center my-auto py-2 sm:py-3 text-center max-w-5xl mx-auto w-full px-4">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight mb-1 sm:mb-2">
+          <main className="flex-1 flex flex-col justify-center items-center my-auto py-2 sm:py-4 text-center w-full max-w-[94vw] 2xl:max-w-[1600px] mx-auto px-4">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-black text-slate-900 tracking-tight mb-2 sm:mb-4">
               {t.title}
             </h1>
-            <p className="text-slate-600 text-xs sm:text-sm md:text-base mb-5 sm:mb-7 font-medium">
+            <p className="text-slate-700 text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl mb-6 sm:mb-10 font-semibold">
               {t.subtitle}
             </p>
 
             {/* 5 TIGER RATING BUTTONS IN SINGLE HORIZONTAL ROW */}
-            <div className="grid grid-cols-5 gap-2.5 sm:gap-4 md:gap-5 lg:gap-6 w-full max-w-5xl px-2">
+            <div className="grid grid-cols-5 gap-3 sm:gap-6 md:gap-8 lg:gap-10 xl:gap-12 w-full max-w-6xl xl:max-w-7xl 2xl:max-w-[1550px] px-2 sm:px-4">
               {RATING_OPTIONS.map((option) => {
                 const labelText = option.label[lang] || option.label.en;
 
@@ -481,7 +481,7 @@ export default function TadobaTFeedback() {
                     className="flex flex-col items-center group cursor-pointer transition-all duration-300 transform active:scale-95"
                   >
                     {/* Tiger Emoji Circle - Increased by ~30px for Optimal Touch Target */}
-                    <div className="relative aspect-square w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32 lg:w-36 lg:h-36 xl:w-40 xl:h-40 rounded-full overflow-hidden transition-all duration-300 group-hover:scale-108 group-hover:shadow-2xl shadow-lg ring-3 sm:ring-4 ring-white/95">
+                    <div className="relative aspect-square w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 lg:w-48 lg:h-48 xl:w-56 xl:h-56 2xl:w-60 2xl:h-60 rounded-full overflow-hidden transition-all duration-300 group-hover:scale-108 group-hover:shadow-2xl shadow-xl ring-4 sm:ring-6 ring-white/95">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={option.image}
@@ -492,7 +492,7 @@ export default function TadobaTFeedback() {
 
                     {/* Rating Label Pill Below Tiger */}
                     <div
-                      className={`mt-2.5 sm:mt-3 px-3 py-1 sm:px-4 sm:py-1.5 rounded-full font-bold text-xs sm:text-sm md:text-base transition-all duration-300 shadow-sm group-hover:shadow-md group-hover:scale-105 ${option.pillBg} ${option.pillText}`}
+                      className={`mt-3 sm:mt-4 lg:mt-6 px-4 py-1.5 sm:px-6 sm:py-2.5 lg:px-7 lg:py-3 rounded-full font-black text-xs sm:text-base md:text-lg lg:text-xl xl:text-2xl transition-all duration-300 shadow-md group-hover:shadow-lg group-hover:scale-105 ${option.pillBg} ${option.pillText}`}
                     >
                       {labelText}
                     </div>
@@ -507,10 +507,10 @@ export default function TadobaTFeedback() {
         {/* SCREEN 2: Bouncing Emoji Screen ("You rated Good" + "Give Feedback" button) */}
         {/* ============================================================== */}
         {currentPhase === "bouncing" && selectedRating && (
-          <main className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 text-center my-auto animate-in fade-in duration-300 max-w-3xl mx-auto w-full">
+          <main className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 text-center my-auto animate-in fade-in duration-300 w-full max-w-[92vw] xl:max-w-5xl mx-auto">
             
             {/* Big Bouncing Emoji */}
-            <div className="w-28 h-28 sm:w-36 sm:h-36 md:w-42 md:h-42 rounded-full overflow-hidden shadow-2xl mb-4 animate-bounce ring-4 sm:ring-6 ring-emerald-50">
+            <div className="w-32 h-32 sm:w-44 sm:h-44 md:w-56 md:h-56 lg:w-64 lg:h-64 xl:w-72 xl:h-72 rounded-full overflow-hidden shadow-2xl mb-4 sm:mb-6 animate-bounce ring-4 sm:ring-8 ring-emerald-50">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={selectedRating.image}
@@ -521,7 +521,7 @@ export default function TadobaTFeedback() {
 
             {/* "You rated Good" Pill */}
             <div
-              className={`inline-flex items-center gap-2 px-6 py-2.5 rounded-full font-black text-base sm:text-lg md:text-xl mb-3 shadow-xs ${selectedRating.pillBg} ${selectedRating.pillText}`}
+              className={`inline-flex items-center gap-2.5 sm:gap-3 px-8 py-3 sm:px-10 sm:py-4 rounded-full font-black text-lg sm:text-2xl md:text-3xl lg:text-4xl mb-4 sm:mb-6 shadow-md ${selectedRating.pillBg} ${selectedRating.pillText}`}
             >
               <CheckCircle2 size={20} />
               <span>
@@ -531,11 +531,11 @@ export default function TadobaTFeedback() {
             </div>
 
             {/* Headline */}
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 tracking-tight mb-2">
+            <h2 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-slate-900 tracking-tight mb-2 sm:mb-4">
               {t.thanksTitle}
             </h2>
 
-            <p className="text-slate-600 text-xs sm:text-sm md:text-base max-w-lg mx-auto mb-4 font-medium">
+            <p className="text-slate-600 text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl max-w-2xl mx-auto mb-5 sm:mb-8 font-medium">
               {t.thanksSubtitle}
             </p>
 
@@ -557,7 +557,7 @@ export default function TadobaTFeedback() {
               <button
                 type="button"
                 onClick={handleOpenFeedbackDetails}
-                className="px-8 sm:px-11 py-3.5 sm:py-4 rounded-2xl bg-[#284e3a] hover:bg-[#1e3a29] text-white font-extrabold text-base sm:text-lg transition-all shadow-md hover:shadow-xl flex items-center gap-2.5 cursor-pointer transform hover:scale-105 active:scale-95"
+                className="px-8 sm:px-12 lg:px-14 py-4 sm:py-5 lg:py-6 rounded-2xl sm:rounded-3xl bg-[#284e3a] hover:bg-[#1e3a29] text-white font-extrabold text-base sm:text-xl lg:text-2xl transition-all shadow-md hover:shadow-xl flex items-center gap-3 cursor-pointer transform hover:scale-105 active:scale-95"
               >
                 <MessageSquare size={19} />
                 <span>{t.giveFeedbackBtn}</span>
@@ -567,7 +567,7 @@ export default function TadobaTFeedback() {
               <button
                 type="button"
                 onClick={resetToHome}
-                className="px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl bg-white hover:bg-gray-100 text-gray-700 font-bold text-sm sm:text-base border border-stone-200 transition-all flex items-center gap-2 cursor-pointer shadow-2xs"
+                className="px-6 sm:px-10 lg:px-12 py-4 sm:py-5 lg:py-6 rounded-2xl sm:rounded-3xl bg-white hover:bg-gray-100 text-gray-700 font-bold text-sm sm:text-lg lg:text-xl border border-stone-200 transition-all flex items-center gap-2.5 cursor-pointer shadow-2xs"
               >
                 <RotateCcw size={16} />
                 <span>{t.resetNow}</span>
@@ -580,11 +580,11 @@ export default function TadobaTFeedback() {
         {/* SCREEN 3: Detailed Feedback Window (Properly Sized Hero Banner, No Scroll) */}
         {/* ============================================================== */}
         {currentPhase === "details" && selectedRating && (
-          <main className="flex-1 w-full max-w-5xl lg:max-w-6xl mx-auto flex flex-col justify-center min-h-0 my-auto py-1 relative z-20">
-            <div className="bg-white rounded-3xl border border-stone-200/90 shadow-xl overflow-hidden flex flex-col">
+          <main className="flex-1 w-full max-w-[94vw] xl:max-w-7xl 2xl:max-w-[1550px] mx-auto flex flex-col justify-center min-h-0 my-auto py-1 sm:py-3 relative z-20">
+            <div className="bg-white rounded-3xl sm:rounded-4xl border border-stone-200/90 shadow-2xl overflow-hidden flex flex-col">
               
               {/* 1. TOP HERO BANNER: Full-width uncropped banner with comfortable generous height */}
-              <div className="relative w-full overflow-hidden bg-[#FAF7F2] border-b border-stone-200 shrink-0 h-44 sm:h-52 md:h-60 lg:h-64 max-h-[260px]">
+              <div className="relative w-full overflow-hidden bg-[#FAF7F2] border-b border-stone-200 shrink-0 h-[26vh] min-h-[170px] max-h-[380px] xl:h-[30vh]">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src="/tadoba_banner_new.png"
@@ -594,14 +594,14 @@ export default function TadobaTFeedback() {
               </div>
 
               {/* 2. BODY CONTENT: Balanced 2-Column Split */}
-              <div className="p-3 sm:p-4 lg:p-5 grid grid-cols-1 md:grid-cols-12 gap-3 lg:gap-5 items-stretch">
+              <div className="p-4 sm:p-6 lg:p-7 xl:p-8 grid grid-cols-1 md:grid-cols-12 gap-4 lg:gap-6 xl:gap-8 items-stretch">
                 
                 {/* Left Column (5/12): Rating Confirmation & Written Feedback */}
                 <div className="md:col-span-5 flex flex-col justify-between gap-2.5">
                   
                   {/* Selected Rating Badge */}
-                  <div className="flex items-center gap-3 p-2.5 sm:p-3 bg-emerald-50/90 border border-emerald-200 rounded-2xl shadow-2xs">
-                    <div className="w-11 h-11 sm:w-13 sm:h-13 rounded-full overflow-hidden shrink-0 shadow-xs border-2 border-emerald-400 ring-2 ring-emerald-100">
+                  <div className="flex items-center gap-3 sm:gap-4 p-3.5 sm:p-4 lg:p-5 bg-emerald-50/90 border border-emerald-200 rounded-2xl sm:rounded-3xl shadow-2xs">
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 lg:w-20 lg:h-20 rounded-full overflow-hidden shrink-0 shadow-xs border-2 sm:border-3 border-emerald-400 ring-2 ring-emerald-100">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={selectedRating.image}
@@ -611,14 +611,14 @@ export default function TadobaTFeedback() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-emerald-800">
+                        <span className="text-[11px] sm:text-xs lg:text-sm font-bold uppercase tracking-wider text-emerald-800">
                           {t.yourRating}
                         </span>
-                        <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-900 shrink-0">
+                        <span className="text-[11px] sm:text-xs lg:text-sm font-black px-2.5 py-0.5 rounded-full bg-emerald-200 text-emerald-900 shrink-0">
                           {t.recordedBadge}
                         </span>
                       </div>
-                      <div className="text-sm sm:text-base font-extrabold text-emerald-950 truncate mt-0.5">
+                      <div className="text-base sm:text-xl lg:text-2xl xl:text-3xl font-black text-emerald-950 truncate mt-0.5">
                         {ratingLabel}
                       </div>
                     </div>
@@ -626,7 +626,7 @@ export default function TadobaTFeedback() {
 
                   {/* Additional Comments Input */}
                   <div className="flex-1 flex flex-col justify-end">
-                    <label className="block text-xs font-bold text-gray-700 mb-1 flex items-center gap-1.5">
+                    <label className="block text-xs sm:text-sm lg:text-base font-bold text-gray-700 mb-1.5 flex items-center gap-2">
                       <MessageSquare size={13} className="text-[#284e3a]" />
                       <span>{t.commentsLabel}</span>
                     </label>
@@ -634,7 +634,7 @@ export default function TadobaTFeedback() {
                       value={comments}
                       onChange={(e) => setComments(e.target.value)}
                       rows={2}
-                      className="w-full px-3 py-1.5 sm:py-2 text-xs sm:text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#284e3a] focus:border-[#284e3a] resize-none text-gray-900 placeholder-gray-400 bg-gray-50/70 focus:bg-white transition"
+                      className="w-full px-3.5 py-2 sm:py-3 text-xs sm:text-sm lg:text-base border border-gray-200 rounded-xl sm:rounded-2xl focus:ring-2 focus:ring-[#284e3a] focus:border-[#284e3a] resize-none text-gray-900 placeholder-gray-400 bg-gray-50/70 focus:bg-white transition"
                       placeholder={t.commentsPlaceholder}
                     />
                   </div>
@@ -645,10 +645,10 @@ export default function TadobaTFeedback() {
                   <div>
                     <div className="flex items-center justify-between mb-2 gap-2">
                       <div>
-                        <h3 className="text-sm sm:text-base font-bold text-gray-900 leading-tight">
+                        <h3 className="text-base sm:text-xl lg:text-2xl xl:text-3xl font-black text-gray-900 leading-tight">
                           {t.issuesTitle}
                         </h3>
-                        <p className="text-[11px] text-gray-500 hidden sm:block">
+                        <p className="text-xs sm:text-sm text-gray-500 hidden sm:block font-medium">
                           {t.issuesSubtitle}
                         </p>
                       </div>
@@ -657,7 +657,7 @@ export default function TadobaTFeedback() {
                       <button
                         type="button"
                         onClick={toggleNoIssues}
-                        className={`px-2.5 py-1 rounded-xl text-xs font-bold transition flex items-center gap-1 border cursor-pointer shrink-0 ${
+                        className={`px-3.5 py-1.5 sm:px-5 sm:py-2.5 rounded-xl sm:rounded-2xl text-xs sm:text-sm lg:text-base font-bold transition flex items-center gap-1.5 border cursor-pointer shrink-0 ${
                           noIssuesSelected
                             ? "bg-[#284e3a] text-white border-[#284e3a] shadow-xs"
                             : "bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100"
@@ -669,7 +669,7 @@ export default function TadobaTFeedback() {
                     </div>
 
                     {/* Quick Issue Chips Grid (2x4 on landscape) */}
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2 mb-1.5">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5 lg:gap-3 mb-2.5 sm:mb-3.5">
                       {QUICK_ISSUES.map((issue) => {
                         const isSelected = selectedIssues.includes(issue.id);
                         const issueText = issue.label[lang] || issue.label.en;
@@ -679,7 +679,7 @@ export default function TadobaTFeedback() {
                             key={issue.id}
                             type="button"
                             onClick={() => toggleIssueSelection(issue.id)}
-                            className={`p-1.5 sm:p-2 rounded-xl border text-xs font-semibold transition-all text-center cursor-pointer flex items-center justify-center gap-1 ${
+                            className={`p-2.5 sm:p-3.5 lg:p-4 rounded-xl sm:rounded-2xl border text-xs sm:text-sm lg:text-base font-bold transition-all text-center cursor-pointer flex items-center justify-center gap-1.5 min-h-[46px] sm:min-h-[54px] lg:min-h-[60px] ${
                               isSelected
                                 ? "bg-rose-500 text-white border-rose-500 shadow-xs"
                                 : "bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100"
@@ -698,7 +698,7 @@ export default function TadobaTFeedback() {
                     <button
                       type="button"
                       onClick={handleSkipPhase3}
-                      className="px-4 py-1.5 rounded-xl text-xs sm:text-sm font-semibold text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition cursor-pointer"
+                      className="px-5 py-2.5 sm:px-7 sm:py-3.5 lg:px-8 lg:py-4 rounded-xl sm:rounded-2xl text-xs sm:text-sm lg:text-base font-bold text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition cursor-pointer"
                     >
                       {t.skipIssues}
                     </button>
@@ -707,7 +707,7 @@ export default function TadobaTFeedback() {
                       type="button"
                       onClick={handleSubmitPhase3}
                       disabled={isSubmitting}
-                      className="px-5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-[#284e3a] hover:bg-[#1e3a29] text-white shadow-md hover:shadow-lg transition flex items-center gap-2 cursor-pointer disabled:opacity-70 active:scale-95"
+                      className="px-6 py-2.5 sm:px-9 sm:py-3.5 lg:px-12 lg:py-4 rounded-xl sm:rounded-2xl text-xs sm:text-sm lg:text-base xl:text-lg font-extrabold bg-[#284e3a] hover:bg-[#1e3a29] text-white shadow-md hover:shadow-lg transition flex items-center gap-2 cursor-pointer disabled:opacity-70 active:scale-95"
                     >
                       {isSubmitting ? (
                         <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
@@ -732,7 +732,7 @@ export default function TadobaTFeedback() {
         {currentPhase === "thankyou" && (
           <main className="flex-1 flex flex-col items-center justify-center p-4 text-center animate-in fade-in duration-300 my-auto">
             {selectedRating && (
-              <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-36 md:h-36 rounded-full overflow-hidden shadow-xl mb-4 animate-bounce">
+              <div className="w-28 h-28 sm:w-36 sm:h-36 md:w-44 md:h-44 lg:w-52 lg:h-52 rounded-full overflow-hidden shadow-xl mb-4 animate-bounce">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={selectedRating.image}
@@ -769,7 +769,7 @@ export default function TadobaTFeedback() {
 
             <button
               onClick={resetToHome}
-              className="px-6 py-2.5 rounded-2xl bg-[#284e3a] hover:bg-[#1e3a29] text-white font-bold text-sm transition-all shadow-md flex items-center gap-2 cursor-pointer"
+              className="px-8 py-3.5 sm:px-10 sm:py-4 rounded-2xl sm:rounded-3xl bg-[#284e3a] hover:bg-[#1e3a29] text-white font-bold text-sm sm:text-base lg:text-lg transition-all shadow-md flex items-center gap-2.5 cursor-pointer"
             >
               <RotateCcw size={15} />
               <span>{t.resetNow}</span>
