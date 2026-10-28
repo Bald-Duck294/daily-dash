@@ -783,7 +783,7 @@ export default function TadobaLandscapeFeedback() {
           <main className="flex-1 flex flex-col justify-center items-center text-center w-full max-w-[min(95vw,1750px)] 2xl:max-w-[1920px] mx-auto px-2 sm:px-4 pb-2 sm:pb-4">
             
             {/* Prestigious Welcome Headline above Rating */}
-            <div className="inline-flex items-center gap-2 sm:gap-2.5 px-4 py-1.5 sm:px-5 sm:py-2 md:px-6 md:py-2 rounded-full bg-white/90 border border-emerald-800/20 text-[#1e3a29] font-black text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl uppercase tracking-wider mb-2 sm:mb-2.5 shadow-2xs transition-all">
+            <div className="inline-flex items-center gap-1.5 sm:gap-2.5 px-3.5 py-1 sm:px-4.5 sm:py-1.5 md:px-5 md:py-2 rounded-full bg-emerald-950/10 backdrop-blur-xs border border-emerald-800/20 text-[#1e3a29] font-black text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl uppercase tracking-wider mb-2 sm:mb-2.5 shadow-2xs transition-all">
               <span className="text-emerald-700 text-xs sm:text-sm md:text-base">🌿</span>
               <span>{t.welcomeTitle}</span>
               <span className="text-emerald-700 text-xs sm:text-sm md:text-base">🌿</span>
