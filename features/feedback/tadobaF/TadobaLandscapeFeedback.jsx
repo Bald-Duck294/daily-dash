@@ -14,6 +14,7 @@ import {
   Star,
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
+import axiosInstance from "@/shared/api/axios.instance";
 import { feedbackApi } from "@/features/feedback/feedback.api";
 
 // 5 Tiger Rating Options matching assets in /public/tadoba-form/ (ordered Poor to Excellent)
@@ -60,7 +61,7 @@ const RATING_OPTIONS = [
   {
     id: "very_good",
     rating: 8,
-    image: "/tadoba-form/very_good.png?v=2",
+    image: "/tadoba-form/very_good.png?v=3",
     label: {
       en: "Very Good",
       hi: "बहुत अच्छा",
@@ -121,8 +122,9 @@ const TRANSLATIONS = {
     ratingSaved: "Rating recorded! Add optional details below:",
     yourRating: "Your Rating:",
     recordedBadge: "Recorded ✓",
-    todayRatingTitle: "Today's Rating",
-    ratingsToday: "ratings today",
+    washroomRatingTitle: "Washroom Rating",
+    cleanlinessScoreBadge: "Cleanliness Score",
+    cleanerAuditsBadge: "audits",
   },
   hi: {
     welcomeTitle: "ताडोबा-अंधारी टाइगर रिजर्व में आपका स्वागत है",
@@ -147,8 +149,9 @@ const TRANSLATIONS = {
     ratingSaved: "रेटिंग दर्ज हुई! नीचे वैकल्पिक विवरण जोड़ें:",
     yourRating: "आपकी रेटिंग:",
     recordedBadge: "दर्ज हुआ ✓",
-    todayRatingTitle: "आज की रेटिंग",
-    ratingsToday: "रेटिंग्स आज",
+    washroomRatingTitle: "शौचालय रेटिंग",
+    cleanlinessScoreBadge: "स्वच्छता स्कोर",
+    cleanerAuditsBadge: "ऑडिट",
   },
   mr: {
     welcomeTitle: "ताडोबा-अंधारी व्याघ्र प्रकल्पात आपले स्वागत आहे",
@@ -173,8 +176,9 @@ const TRANSLATIONS = {
     ratingSaved: "रेटिंग नोंदवले गेले! खालील पर्यायी माहिती जोडा:",
     yourRating: "तुमचे रेटिंग:",
     recordedBadge: "नोंदवले ✓",
-    todayRatingTitle: "आजचे रेटिंग",
-    ratingsToday: "आजचे अभिप्राय",
+    washroomRatingTitle: "स्वच्छतागृह रेटिंग",
+    cleanlinessScoreBadge: "स्वच्छता स्कोअर",
+    cleanerAuditsBadge: "तपासणी",
   },
 };
 
@@ -250,12 +254,8 @@ export default function TadobaLandscapeFeedback() {
   const [thankYouCountdown, setThankYouCountdown] = useState(3);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // Live Washroom Rating Statistics for Today
-  const [todayStats, setTodayStats] = useState({
-    avgRating: "4.5",
-    count: 52,
-    loaded: false,
-  });
+  // Live Washroom Cleanliness Rating (From Cleaner Audits / Location Hygiene Score)
+  const [washroomRating, setWashroomRating] = useState("0.0");
 
   const bouncingTimerRef = useRef(null);
   const thankYouTimerRef = useRef(null);
@@ -291,63 +291,52 @@ export default function TadobaLandscapeFeedback() {
     }
   };
 
-  // Fetch live stats for today's washroom ratings
+  // Fetch washroom average rating based on cleaner reviews / hygiene audits
   useEffect(() => {
     if (!locationId) return;
     let isMounted = true;
 
-    const fetchStats = async () => {
+    const fetchWashroomScore = async () => {
       try {
-        const res = await feedbackApi.getAllUserReviews({
-          location_id: locationId,
-          limit: 100,
-        });
-
+        // Query location details which computes averageRating from cleaner reviews / hygiene scores
+        const locRes = await axiosInstance.get(`/locations/${locationId}${companyId ? `?companyId=${companyId}` : ""}`);
         if (!isMounted) return;
 
-        const reviews = res?.data || (Array.isArray(res) ? res : []);
-        const todayStr = new Date().toISOString().slice(0, 10);
-        const todayReviews = reviews.filter((r) => r.created_at && r.created_at.startsWith(todayStr));
+        const locData = locRes?.data?.data || locRes?.data || locRes;
+        const avgScore = locData?.averageRating ?? locData?.average_cleaning_score ?? locData?.current_cleaning_score;
 
-        if (todayReviews.length > 0) {
-          const sum = todayReviews.reduce((acc, r) => acc + (Number(r.rating) || 0), 0);
-          const avgOn5 = (sum / todayReviews.length / 2).toFixed(1);
-          setTodayStats({
-            avgRating: avgOn5,
-            count: todayReviews.length,
-            loaded: true,
-          });
-        } else if (reviews.length > 0) {
-          const sum = reviews.reduce((acc, r) => acc + (Number(r.rating) || 0), 0);
-          const avgOn5 = (sum / reviews.length / 2).toFixed(1);
-          setTodayStats({
-            avgRating: avgOn5,
-            count: reviews.length,
-            loaded: true,
-          });
-        } else {
-          const statsRes = await feedbackApi.getToiletReviewStats(locationId);
-          if (statsRes?.data?.average_rating) {
-            const avgOn5 = (Number(statsRes.data.average_rating) / 2).toFixed(1);
-            setTodayStats({
-              avgRating: avgOn5,
-              count: statsRes.data.total_reviews || 0,
-              loaded: true,
-            });
-          }
+        if (avgScore !== null && avgScore !== undefined && !isNaN(avgScore) && Number(avgScore) > 0) {
+          const num = Number(avgScore);
+          setWashroomRating(num.toFixed(1));
+          return;
         }
+
+        // Fallback check from cleaner-reviews by location
+        const cleanerRes = await axiosInstance.get(`/cleaner-reviews/location/${locationId}${companyId ? `?company_id=${companyId}` : ""}`);
+        if (!isMounted) return;
+
+        const cleanerAvg = cleanerRes?.data?.data?.stats?.average_score;
+        if (cleanerAvg !== null && cleanerAvg !== undefined && !isNaN(cleanerAvg) && Number(cleanerAvg) > 0) {
+          const num = Number(cleanerAvg);
+          setWashroomRating(num.toFixed(1));
+          return;
+        }
+
+        // Default if not rated yet
+        setWashroomRating("0.0");
       } catch (e) {
-        console.warn("Failed to load today's rating stats:", e);
+        console.warn("Could not fetch washroom cleaner rating:", e);
+        if (isMounted) setWashroomRating("0.0");
       }
     };
 
-    fetchStats();
-    const interval = setInterval(fetchStats, 60000);
+    fetchWashroomScore();
+    const interval = setInterval(fetchWashroomScore, 60000);
     return () => {
       isMounted = false;
       clearInterval(interval);
     };
-  }, [locationId]);
+  }, [locationId, companyId]);
 
   // Handle Fullscreen Toggle
   const toggleFullscreen = () => {
@@ -456,20 +445,6 @@ export default function TadobaLandscapeFeedback() {
     setSelectedTigerId(option.id);
     setIsProcessingRating(true);
     setIsSlowNetwork(false);
-
-    // Optimistically update today's live washroom rating
-    setTodayStats((prev) => {
-      const currentCount = prev.count || 0;
-      const currentSum = (Number(prev.avgRating) || 4.5) * currentCount;
-      const newRatingOn5 = (option.rating || 10) / 2;
-      const newCount = currentCount + 1;
-      const newAvg = ((currentSum + newRatingOn5) / newCount).toFixed(1);
-      return {
-        ...prev,
-        avgRating: newAvg,
-        count: newCount,
-      };
-    });
 
     // Forest network delay notification (if >1.8s)
     const slowTimer = setTimeout(() => {
@@ -752,22 +727,19 @@ export default function TadobaLandscapeFeedback() {
                 SMART FACILITY AI
               </span>
 
-              {/* Today's Rating Column below SaafAI Logo */}
+              {/* Washroom Cleanliness Rating Column below SaafAI Logo */}
               <div className="mt-1.5 sm:mt-2 flex flex-col items-end">
                 <div className="bg-white/95 backdrop-blur-md border border-emerald-600/20 rounded-xl px-2.5 py-1 sm:px-3 sm:py-1.5 shadow-xs flex flex-col items-end transition-all">
                   <span className="text-[8px] sm:text-[9px] md:text-[10px] font-black uppercase tracking-[0.16em] text-emerald-800/80">
-                    {t.todayRatingTitle}
+                    {t.washroomRatingTitle || "Washroom Rating"}
                   </span>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <Star className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-500 fill-amber-400 drop-shadow-2xs shrink-0" />
                     <span className="text-sm sm:text-base md:text-lg font-black text-slate-900 leading-none">
-                      {todayStats.avgRating}
+                      {washroomRating || "0.0"}
                     </span>
                     <span className="text-[10px] sm:text-xs font-bold text-slate-400 leading-none">
-                      / 5
-                    </span>
-                    <span className="text-[9px] sm:text-[10px] text-emerald-800 font-bold bg-emerald-50 border border-emerald-200/70 rounded-full px-1.5 py-0.5 ml-1 leading-none">
-                      {todayStats.count} {t.ratingsToday}
+                      / 10
                     </span>
                   </div>
                 </div>
