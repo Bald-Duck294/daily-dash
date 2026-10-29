@@ -203,30 +203,58 @@ export default function TadobaLandscapeFeedback() {
   // Language management - shared and consistent across all screens
   const [lang, setLang] = useState("en"); // 'en' | 'hi' | 'mr'
 
-  // Kiosk Location / Company resolution & persistence
-  const rawLoc = searchParams.get("locationId");
-  const locMatch = rawLoc ? rawLoc.toString().match(/\d+/) : null;
-  const rawComp = searchParams.get("companyId");
-  const compMatch = rawComp ? rawComp.toString().match(/\d+/) : null;
+  // Kiosk Location / Company resolution & persistence (Supports single ID or comma-separated/linked IDs)
+  const rawLoc = searchParams.get("locationId") || "";
+  const rawLinked = searchParams.get("linkedLocations") || searchParams.get("linkedLocationIds") || "";
+  const rawComp = searchParams.get("companyId") || "";
 
-  const [locationId, setLocationId] = useState("2248");
+  // Helper to extract all numeric IDs from string
+  const extractIds = (str) => {
+    if (!str) return [];
+    const matches = str.toString().match(/\d+/g);
+    return matches ? matches : [];
+  };
+
+  const [locationIds, setLocationIds] = useState(["2248"]);
   const [companyId, setCompanyId] = useState("95");
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const savedLoc = localStorage.getItem("saafai_kiosk_locationId");
+      const queryLocs = [...extractIds(rawLoc), ...extractIds(rawLinked)];
+      const savedLocsStr = localStorage.getItem("saafai_kiosk_locationIds");
       const savedComp = localStorage.getItem("saafai_kiosk_companyId");
+      const compMatch = rawComp ? rawComp.toString().match(/\d+/) : null;
 
-      const finalLoc = locMatch ? locMatch[0] : savedLoc || "2248";
+      let finalLocs = ["2248"];
+      if (queryLocs.length > 0) {
+        finalLocs = [...new Set(queryLocs)];
+      } else if (savedLocsStr) {
+        try {
+          const parsed = JSON.parse(savedLocsStr);
+          if (Array.isArray(parsed) && parsed.length > 0) finalLocs = parsed;
+        } catch {
+          const singleSaved = localStorage.getItem("saafai_kiosk_locationId");
+          if (singleSaved) finalLocs = [singleSaved];
+        }
+      } else {
+        const singleSaved = localStorage.getItem("saafai_kiosk_locationId");
+        if (singleSaved) finalLocs = [singleSaved];
+      }
+
       const finalComp = compMatch ? compMatch[0] : savedComp || "95";
 
-      setLocationId(finalLoc);
+      setLocationIds(finalLocs);
       setCompanyId(finalComp);
 
-      if (locMatch?.[0]) localStorage.setItem("saafai_kiosk_locationId", locMatch[0]);
-      if (compMatch?.[0]) localStorage.setItem("saafai_kiosk_companyId", compMatch[0]);
+      if (queryLocs.length > 0) {
+        localStorage.setItem("saafai_kiosk_locationIds", JSON.stringify(finalLocs));
+        localStorage.setItem("saafai_kiosk_locationId", finalLocs.join(","));
+      }
+      if (compMatch?.[0]) {
+        localStorage.setItem("saafai_kiosk_companyId", compMatch[0]);
+      }
     }
-  }, [locMatch, compMatch]);
+  }, [rawLoc, rawLinked, rawComp]);
 
   // Screen Flow:
   // 1. 'rating'   : Home screen with 5 emojis
@@ -235,7 +263,7 @@ export default function TadobaLandscapeFeedback() {
   // 4. 'thankyou' : Final brief confirmation screen
   const [currentPhase, setCurrentPhase] = useState("rating");
   const [selectedRating, setSelectedRating] = useState(null);
-  const [submittedReviewId, setSubmittedReviewId] = useState(null);
+  const [submittedReviewIds, setSubmittedReviewIds] = useState([]);
 
   // Rating Click Processing & Low Connectivity states
   const [selectedTigerId, setSelectedTigerId] = useState(null);
@@ -291,41 +319,45 @@ export default function TadobaLandscapeFeedback() {
     }
   };
 
-  // Fetch washroom average rating based on cleaner reviews / hygiene audits
+  // Fetch washroom average rating across all linked locations
   useEffect(() => {
-    if (!locationId) return;
+    if (!locationIds || locationIds.length === 0) return;
     let isMounted = true;
 
     const fetchWashroomScore = async () => {
       try {
-        // Query location details which computes averageRating from cleaner reviews / hygiene scores
-        const locRes = await axiosInstance.get(`/locations/${locationId}${companyId ? `?companyId=${companyId}` : ""}`);
+        const scorePromises = locationIds.map(async (locId) => {
+          try {
+            const locRes = await axiosInstance.get(`/locations/${locId}${companyId ? `?companyId=${companyId}` : ""}`);
+            const locData = locRes?.data?.data || locRes?.data || locRes;
+            const avgScore = locData?.averageRating ?? locData?.average_cleaning_score ?? locData?.current_cleaning_score;
+            if (avgScore !== null && avgScore !== undefined && !isNaN(avgScore) && Number(avgScore) > 0) {
+              return Number(avgScore);
+            }
+
+            // Fallback check from cleaner-reviews by location
+            const cleanerRes = await axiosInstance.get(`/cleaner-reviews/location/${locId}${companyId ? `?company_id=${companyId}` : ""}`);
+            const cleanerAvg = cleanerRes?.data?.data?.stats?.average_score;
+            if (cleanerAvg !== null && cleanerAvg !== undefined && !isNaN(cleanerAvg) && Number(cleanerAvg) > 0) {
+              return Number(cleanerAvg);
+            }
+          } catch (err) {
+            console.warn(`Error fetching score for location ${locId}:`, err);
+          }
+          return null;
+        });
+
+        const scores = (await Promise.all(scorePromises)).filter((s) => s !== null && s > 0);
         if (!isMounted) return;
 
-        const locData = locRes?.data?.data || locRes?.data || locRes;
-        const avgScore = locData?.averageRating ?? locData?.average_cleaning_score ?? locData?.current_cleaning_score;
-
-        if (avgScore !== null && avgScore !== undefined && !isNaN(avgScore) && Number(avgScore) > 0) {
-          const num = Number(avgScore);
-          setWashroomRating(num.toFixed(1));
-          return;
+        if (scores.length > 0) {
+          const combinedAvg = scores.reduce((sum, val) => sum + val, 0) / scores.length;
+          setWashroomRating(combinedAvg.toFixed(1));
+        } else {
+          setWashroomRating("0.0");
         }
-
-        // Fallback check from cleaner-reviews by location
-        const cleanerRes = await axiosInstance.get(`/cleaner-reviews/location/${locationId}${companyId ? `?company_id=${companyId}` : ""}`);
-        if (!isMounted) return;
-
-        const cleanerAvg = cleanerRes?.data?.data?.stats?.average_score;
-        if (cleanerAvg !== null && cleanerAvg !== undefined && !isNaN(cleanerAvg) && Number(cleanerAvg) > 0) {
-          const num = Number(cleanerAvg);
-          setWashroomRating(num.toFixed(1));
-          return;
-        }
-
-        // Default if not rated yet
-        setWashroomRating("0.0");
       } catch (e) {
-        console.warn("Could not fetch washroom cleaner rating:", e);
+        console.warn("Could not fetch washroom cleaner ratings:", e);
         if (isMounted) setWashroomRating("0.0");
       }
     };
@@ -336,7 +368,7 @@ export default function TadobaLandscapeFeedback() {
       isMounted = false;
       clearInterval(interval);
     };
-  }, [locationId, companyId]);
+  }, [locationIds, companyId]);
 
   // Handle Fullscreen Toggle
   const toggleFullscreen = () => {
@@ -367,7 +399,7 @@ export default function TadobaLandscapeFeedback() {
     setIsProcessingRating(false);
     setIsSlowNetwork(false);
     setCenterOffset(0);
-    setSubmittedReviewId(null);
+    setSubmittedReviewIds([]);
     setSelectedIssues([]);
     setNoIssuesSelected(false);
     setComments("");
@@ -460,29 +492,36 @@ export default function TadobaLandscapeFeedback() {
     );
 
     try {
-      const payload = {
-        rating: option.rating,
-        location_id: locationId,
-        companyId: companyId,
-        reason_ids: [0],
-        description: "",
-      };
-
-      const apiPromise = feedbackApi.submitReview(payload).catch((err) => {
-        console.warn("Initial rating submit warning:", err);
-        return null;
+      // Submit in parallel to all linked locations
+      const submitPromises = locationIds.map(async (locId) => {
+        const payload = {
+          rating: option.rating,
+          location_id: locId,
+          companyId: companyId,
+          reason_ids: [0],
+          description: "",
+        };
+        try {
+          return await feedbackApi.submitReview(payload);
+        } catch (err) {
+          console.warn(`Initial rating submit error for location ${locId}:`, err);
+          return null;
+        }
       });
 
-      const [res] = await Promise.all([
+      const apiPromise = Promise.all(submitPromises);
+
+      const [responses] = await Promise.all([
         Promise.race([apiPromise, timeoutPromise]),
         minDisplayPromise,
       ]);
 
-      if (res && !res.timeout) {
-        const newId = res?.data?.id || res?.id || (res?.data && res.data[0]?.id);
-        if (newId) {
-          setSubmittedReviewId(newId.toString());
-        }
+      if (Array.isArray(responses)) {
+        const createdIds = responses
+          .map((res) => res?.data?.id || res?.id || (res?.data && res.data[0]?.id))
+          .filter(Boolean)
+          .map((id) => id.toString());
+        setSubmittedReviewIds(createdIds);
       }
     } catch (error) {
       console.error("Initial rating save failed:", error);
@@ -520,21 +559,27 @@ export default function TadobaLandscapeFeedback() {
     }
   };
 
-  // Phase 3: Submit Details -> PATCHes the existing review (Only 1 entry created)
+  // Phase 3: Submit Details -> PATCHes all linked review entries created in Phase 1
   const handleSubmitPhase3 = async () => {
     try {
       setIsSubmitting(true);
-      if (submittedReviewId) {
+      if (submittedReviewIds.length > 0) {
         const finalReasons = noIssuesSelected
           ? [0]
           : selectedIssues.length > 0
           ? selectedIssues
           : [0];
 
-        await feedbackApi.patchReview(submittedReviewId, {
-          reason_ids: finalReasons,
-          description: comments?.trim() || "",
-        });
+        await Promise.all(
+          submittedReviewIds.map((reviewId) =>
+            feedbackApi
+              .patchReview(reviewId, {
+                reason_ids: finalReasons,
+                description: comments?.trim() || "",
+              })
+              .catch((err) => console.warn(`Patch review failed for ID ${reviewId}:`, err))
+          )
+        );
       }
       setCurrentPhase("thankyou");
     } catch (error) {
