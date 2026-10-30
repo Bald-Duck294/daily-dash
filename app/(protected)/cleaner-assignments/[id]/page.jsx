@@ -63,7 +63,7 @@ export default function EditAssignmentPage() {
 
       // Handle locations data
       if (locationsRes.success) {
-        setAllLocations(locationsRes.data || []);
+        const locList = Array.isArray(locationsRes.data) ? locationsRes.data : locationsRes.data?.data || []; setAllLocations(locList);
         console.log("Locations loaded:", locationsRes.data?.length || 0);
       } else {
         console.error("Failed to fetch locations:", locationsRes.error);

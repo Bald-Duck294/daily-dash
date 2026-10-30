@@ -45,8 +45,9 @@ export const LocationsApi = {
     company_id,
     includeUnavailable = false,
     facilityCompanyId = null,
-    page = 1,    // Add page parameter
-    limit = 15   // Add limit parameter
+    page = null,
+    limit = 1000,
+    search = ""
   ) => {
     const params = { company_id };
 
@@ -58,10 +59,17 @@ export const LocationsApi = {
       params.facilityCompanyId = facilityCompanyId;
     }
     
-    // --- ADD PAGINATION PARAMS FOR AXIOS ---
-    if (page) params.page = page;
-    if (limit) params.limit = limit;
-    // ---------------------------------------
+    // --- ADD PAGINATION & SEARCH PARAMS FOR AXIOS ---
+    if (limit && limit !== "all") {
+      params.limit = limit;
+      if (page) params.page = page;
+    } else {
+      params.limit = 1000;
+    }
+    if (search && typeof search === "string" && search.trim()) {
+      params.search = search.trim();
+    }
+    // ------------------------------------------------
 
     try {
       const response = await axiosInstance.get(`/locations`, { params });

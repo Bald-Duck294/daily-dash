@@ -97,7 +97,7 @@ const AddAssignmentPage = () => {
         const locationRes = await LocationsApi.getAllLocations(companyId);
 
         if (userRes.success) setAllUsers(userRes.data || []);
-        if (locationRes.success) setAllLocations(locationRes.data || []);
+        if (locationRes.success) { const locList = Array.isArray(locationRes.data) ? locationRes.data : locationRes.data?.data || []; setAllLocations(locList); }
       } catch (err) {
         console.error("❌ Error while fetching:", err);
         toast.error("Failed to load data");

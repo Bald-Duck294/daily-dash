@@ -39,12 +39,13 @@ export const useGetAllLocations = (
   company_id, 
   includeUnavailable = false, 
   facilityCompanyId = null,
-  page = 1,       // Add page parameter
-  limit = 15      // Add limit parameter
+  page = null,
+  limit = 1000,
+  search = ""
 ) => {
   return useQuery({
-    // --- IMPORTANT: ADD PAGE AND LIMIT TO QUERY KEY ---
-    queryKey: locationKeys.list({ company_id, includeUnavailable, facilityCompanyId, page, limit }),
+    // --- IMPORTANT: ADD PAGE, LIMIT AND SEARCH TO QUERY KEY ---
+    queryKey: locationKeys.list({ company_id, includeUnavailable, facilityCompanyId, page, limit, search }),
     
     queryFn: async () => {
       // --- PASS THE NEW PARAMS TO THE API FUNCTION ---
@@ -53,7 +54,8 @@ export const useGetAllLocations = (
         includeUnavailable, 
         facilityCompanyId, 
         page, 
-        limit
+        limit,
+        search
       );
       
       if (!response.success) throw new Error(response.error || "Failed to fetch locations");

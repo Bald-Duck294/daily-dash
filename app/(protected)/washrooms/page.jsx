@@ -660,7 +660,7 @@
 //                   border: "1px solid var(--washroom-border)",
 //                 }}
 //                 value={selectedLocationTypeId}
-//                 onChange={(e) => setSelectedLocationTypeId(e.target.value)}
+//                 onChange={(e) => { setSelectedLocationTypeId(e.target.value); setPage(1); }}
 //               >
 //                 <option value="">Types: All</option>
 //                 {locationTypes.map((type) => (
@@ -702,7 +702,7 @@
 //                   border: "1px solid var(--washroom-border)",
 //                 }}
 //                 value={minRating}
-//                 onChange={(e) => setMinRating(e.target.value)}
+//                 onChange={(e) => { setMinRating(e.target.value); setPage(1); }}
 //               >
 //                 <option value="">Rating: All</option>
 //                 <option value="2">2+ Stars</option>
@@ -720,7 +720,7 @@
 //               >
 //                 {/* ALL */}
 //                 <button
-//                   onClick={() => setAssignmentFilter("")}
+//                   onClick={() => { setAssignmentFilter(""); setPage(1); }}
 //                   className="px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all"
 //                   style={{
 //                     background:
@@ -742,7 +742,7 @@
 
 //                 {/* ASSIGNED */}
 //                 <button
-//                   onClick={() => setAssignmentFilter("assigned")}
+//                   onClick={() => { setAssignmentFilter("assigned"); setPage(1); }}
 //                   className="px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1"
 //                   style={{
 //                     background:
@@ -1648,13 +1648,27 @@ function WashroomsPage() {
     setQrDownloadLoc(location);
   };
 
-  // --- API Queries via TanStack ---
-  // UPDATED: Pass page and limit, and destructure the new response format
-  const { data: responseData, isLoading: loadingLocations } =
-    useGetAllLocations(companyId, true, null, page, limit);
+  // Debounce search query to prevent over-fetching on rapid typing
+  const [debouncedSearch, setDebouncedSearch] = useState(searchQuery);
 
-  const rawList = responseData?.data || [];
-  const pagination = responseData?.pagination || { total: 0, last_page: 1 };
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
+  // --- API Queries via TanStack ---
+  // Fetch all company washrooms so search and all filters scan the entire list
+  const { data: responseData, isLoading: loadingLocations } =
+    useGetAllLocations(companyId, true, null, 1, 1000);
+
+  const rawList = useMemo(() => {
+    if (!responseData) return [];
+    if (Array.isArray(responseData)) return responseData;
+    if (Array.isArray(responseData.data)) return responseData.data;
+    return [];
+  }, [responseData]);
 
   const { data: typesData = [] } = useLocationTypes(companyId);
   const locationTypes = Array.isArray(typesData)
@@ -1697,10 +1711,17 @@ function WashroomsPage() {
           !item.cleaner_assignments || item.cleaner_assignments.length === 0,
       );
     }
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter((item) =>
-        item.name.toLowerCase().includes(query),
+    if (searchQuery && searchQuery.trim()) {
+      const query = searchQuery.trim().toLowerCase();
+      filtered = filtered.filter(
+        (item) =>
+          (item.name && item.name.toLowerCase().includes(query)) ||
+          (item.code && item.code.toLowerCase().includes(query)) ||
+          String(item.id).includes(query) ||
+          (item.location_types?.name &&
+            item.location_types.name.toLowerCase().includes(query)) ||
+          (item.facility_companies?.name &&
+            item.facility_companies.name.toLowerCase().includes(query))
       );
     }
     if (minRating) {
@@ -1752,6 +1773,16 @@ function WashroomsPage() {
     sortBy,
   ]);
 
+  // Client-side pagination of filteredList across entire dataset
+  const totalFiltered = filteredList.length;
+  const totalPages = Math.max(1, Math.ceil(totalFiltered / limit));
+  const safePage = Math.min(Math.max(1, page), totalPages);
+
+  const paginatedList = useMemo(() => {
+    const startIndex = (safePage - 1) * limit;
+    return filteredList.slice(startIndex, startIndex + limit);
+  }, [filteredList, safePage, limit]);
+
   const isInitialRender = useRef(true);
 
   // --- Sync State to URL ---
@@ -1780,7 +1811,7 @@ function WashroomsPage() {
     const timeoutId = setTimeout(() => {
       const params = new URLSearchParams(searchParams.toString());
 
-      if (page > 1) params.set("page", page.toString());
+      if (safePage > 1) params.set("page", safePage.toString());
       else params.delete("page");
       if (limit !== 15) params.set("limit", limit.toString());
       else params.delete("limit");
@@ -1809,7 +1840,7 @@ function WashroomsPage() {
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    page,
+    safePage,
     limit,
     searchQuery,
     minRating,
@@ -2335,7 +2366,10 @@ function WashroomsPage() {
                   border: "1px solid var(--washroom-border)",
                 }}
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  if (page !== 1) setPage(1);
+                }}
               />
             </div>
 
@@ -2370,11 +2404,10 @@ function WashroomsPage() {
                 value={facilityCompanyId}
                 onChange={(e) => {
                   setFacilityCompanyId(e.target.value);
-
+                  setPage(1);
                   const selected = facilityCompanies.find(
                     (fc) => fc.id === e.target.value,
                   );
-
                   setFacilityCompanyName(selected?.name || "");
                 }}
               >
@@ -2477,7 +2510,7 @@ function WashroomsPage() {
                   border: "1px solid var(--washroom-border)",
                 }}
               >
-                {filteredList.length} / {pagination.total}
+                {filteredList.length} / {rawList.length}
               </span>
 
               {/* View Switch */}
@@ -2563,8 +2596,8 @@ function WashroomsPage() {
               <div className="hidden lg:block">
                 {viewMode === "grid" ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredList.map((item, index) =>
-                      renderWashroomCard(item, index + (page - 1) * limit),
+                    {paginatedList.map((item, index) =>
+                      renderWashroomCard(item, index + (safePage - 1) * limit),
                     )}
                   </div>
                 ) : (
@@ -2630,12 +2663,12 @@ function WashroomsPage() {
 
                     {/* Grid Body */}
                     <div className="divide-y-0">
-                      {filteredList.map((item, index) => (
+                      {paginatedList.map((item, index) => (
                         <div
                           key={item.id}
                           onClick={() => handleView(item.id)}
                           className={`grid grid-cols-[60px_2fr_1.2fr_100px_100px_1.5fr_1fr_120px_90px] gap-2 px-6 py-4 items-center cursor-pointer transition-all duration-200 border-l-4 border-l-transparent hover:border-l-blue-600 hover:bg-blue-50/50 ${
-                            index === filteredList.length - 1
+                            index === paginatedList.length - 1
                               ? "rounded-b-2xl"
                               : ""
                           }`}
@@ -2649,7 +2682,7 @@ function WashroomsPage() {
                                 color: "var(--washroom-accent)",
                               }}
                             >
-                              {String(index + 1 + (page - 1) * limit).padStart(
+                              {String(index + 1 + (safePage - 1) * limit).padStart(
                                 2,
                                 "0",
                               )}
@@ -2856,8 +2889,8 @@ function WashroomsPage() {
               {/* Mobile View - Reusing the Card Component */}
               <div className="lg:hidden">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {filteredList.map((item, index) =>
-                    renderWashroomCard(item, index + (page - 1) * limit),
+                  {paginatedList.map((item, index) =>
+                    renderWashroomCard(item, index + (safePage - 1) * limit),
                   )}
                 </div>
               </div>
@@ -2871,8 +2904,9 @@ function WashroomsPage() {
                   boxShadow: "var(--washroom-shadow)",
                 }}
               >
-                {/* Dropdown for Items Per Page */}
-                <div className="flex items-center gap-2 mb-4 sm:mb-0">
+                {/* Dropdown for Items Per Page + Showing Range */}
+                <div className="flex items-center gap-4 mb-4 sm:mb-0">
+                  <div className="flex items-center gap-2">
                   <span
                     className="text-sm font-medium"
                     style={{ color: "var(--washroom-subtitle)" }}
@@ -2893,13 +2927,15 @@ function WashroomsPage() {
                     <option value={30}>30</option>
                     <option value={50}>50</option>
                   </select>
+                  </div>
+                  <span className="text-xs font-medium hidden md:inline" style={{ color: "var(--washroom-subtitle)" }}>Showing {filteredList.length === 0 ? 0 : (safePage - 1) * limit + 1} to {Math.min(safePage * limit, filteredList.length)} of {filteredList.length} washrooms</span>
                 </div>
 
                 {/* Prev/Next Buttons */}
                 <div className="flex items-center gap-4">
                   <button
                     onClick={() => setPage((old) => Math.max(old - 1, 1))}
-                    disabled={page === 1}
+                    disabled={safePage <= 1}
                     className="px-4 py-2 rounded-lg font-bold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-200"
                     style={{
                       background: "var(--washroom-filter-bg)",
@@ -2914,18 +2950,14 @@ function WashroomsPage() {
                     className="text-sm font-bold"
                     style={{ color: "var(--washroom-title)" }}
                   >
-                    Page {page} of {pagination.last_page}
+                    Page {safePage} of {totalPages}
                   </span>
 
                   <button
                     onClick={() =>
-                      setPage((old) =>
-                        old < pagination.last_page ? old + 1 : old,
-                      )
+                      setPage((old) => (old < totalPages ? old + 1 : old))
                     }
-                    disabled={
-                      page >= pagination.last_page || pagination.last_page === 0
-                    }
+                    disabled={safePage >= totalPages}
                     className="px-4 py-2 rounded-lg font-bold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-200"
                     style={{
                       background: "var(--washroom-filter-bg)",
