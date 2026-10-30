@@ -345,11 +345,17 @@ export default function SingleUserReviewPage() {
                       <span>Submitted</span>
                     </div>
                     <span className="font-medium text-foreground">
-                      {new Date(review.created_at).toLocaleDateString("en-IN", {
-                        day: "2-digit",
+                      {new Date(review.created_at).toLocaleDateString("en-GB", {
+                        day: "numeric",
                         month: "short",
                         year: "numeric",
-                      })}
+                      }) +
+                        ", " +
+                        new Date(review.created_at).toLocaleTimeString("en-US", {
+                          hour: "numeric",
+                          minute: "2-digit",
+                          hour12: true,
+                        })}
                     </span>
                   </div>
                 </div>

@@ -11,6 +11,8 @@ import {
   ChevronDown,
   ShieldCheck,
   Filter,
+  CheckCircle2,
+  Clock,
 } from "lucide-react";
 
 import { useCompanyId } from "@/providers/CompanyProvider";
@@ -88,6 +90,135 @@ export default function SlaCleanerActivityList() {
 
   const activities = response?.data || [];
   const pagination = response?.pagination || {};
+
+  // Aggregate KPI Summary (from API response or client-side calculation fallback)
+  const summary = useMemo(() => {
+    if (response?.summary) {
+      return response.summary;
+    }
+    const total = pagination?.total_items ?? activities.length;
+    const completed = activities.filter((a) => a.status === "completed").length;
+    const ongoing = activities.filter((a) => a.status !== "completed").length;
+    const passed = activities.filter(
+      (a) =>
+        (a.latest_score !== null &&
+          a.latest_score !== undefined &&
+          a.latest_score >= a.sla_threshold) ||
+        a.sla_state === "NO_BREACH" ||
+        a.sla_state === "RESOLVED"
+    ).length;
+    const totalRetries = activities.reduce(
+      (acc, a) => acc + (a.retries_used || 0),
+      0
+    );
+    const tasksWithRetries = activities.filter(
+      (a) => (a.retries_used || 0) > 0
+    ).length;
+
+    return {
+      total_tasks: total,
+      completed_tasks: completed,
+      ongoing_tasks: ongoing,
+      threshold_passed: passed,
+      total_retries: totalRetries,
+      tasks_with_retries: tasksWithRetries,
+    };
+  }, [response?.summary, activities, pagination?.total_items]);
+
+  // KPI Cards in Proper Sequence:
+  // 1. Total Tasks (All)
+  // 2. Completed Tasks
+  // 3. Ongoing
+  // 4. Threshold Passed
+  // 5. Total Retries
+  const kpiCards = useMemo(() => {
+    const total = summary.total_tasks || 0;
+    const completed = summary.completed_tasks || 0;
+    const ongoing = summary.ongoing_tasks || 0;
+    const passed = summary.threshold_passed || 0;
+    const retries = summary.total_retries || 0;
+    const retriedTasks = summary.tasks_with_retries || 0;
+
+    const completionRate =
+      total > 0 ? Math.round((completed / total) * 100) : 0;
+    const passRate =
+      completed > 0 ? Math.round((passed / completed) * 100) : 0;
+
+    return [
+      {
+        id: "total",
+        title: "Total Tasks (All)",
+        value: total,
+        subtitle: "All cleaning tasks",
+        icon: ListChecks,
+        iconContainerClass:
+          "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20",
+        isActive: filter === "all" && slaStatus === "all",
+        onClick: () => {
+          setFilter("all");
+          setSlaStatus("all");
+        },
+      },
+      {
+        id: "completed",
+        title: "Completed Tasks",
+        value: completed,
+        subtitle: total > 0 ? `${completionRate}% completion rate` : "Finished tasks",
+        icon: CheckCircle2,
+        iconContainerClass:
+          "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20",
+        isActive: filter === "completed",
+        onClick: () => {
+          setFilter("completed");
+        },
+      },
+      {
+        id: "ongoing",
+        title: "Ongoing",
+        value: ongoing,
+        subtitle: "In progress / active",
+        icon: Clock,
+        iconContainerClass:
+          "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20",
+        isActive: filter === "ongoing",
+        onClick: () => {
+          setFilter("ongoing");
+        },
+      },
+      {
+        id: "passed",
+        title: "Threshold Passed",
+        value: passed,
+        subtitle:
+          completed > 0
+            ? `${passRate}% SLA compliance`
+            : "Met hygiene target",
+        icon: ShieldCheck,
+        iconContainerClass:
+          "bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20",
+        isActive: slaStatus === "no_breach" || slaStatus === "resolved",
+        onClick: () => {
+          setSlaStatus((prev) => (prev === "no_breach" ? "all" : "no_breach"));
+        },
+      },
+      {
+        id: "retries",
+        title: "Total Retries",
+        value: retries,
+        subtitle:
+          retriedTasks > 0
+            ? `${retriedTasks} task${retriedTasks > 1 ? "s" : ""} retried`
+            : "No retries needed",
+        icon: RotateCcw,
+        iconContainerClass:
+          "bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20",
+        isActive: slaStatus === "breached" || slaStatus === "in_progress",
+        onClick: () => {
+          setSlaStatus((prev) => (prev === "in_progress" ? "all" : "in_progress"));
+        },
+      },
+    ];
+  }, [summary, filter, slaStatus]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -282,6 +413,69 @@ export default function SlaCleanerActivityList() {
                 );
               })}
             </div>
+          </div>
+
+          {/* ================= KPI STATS CARDS ================= */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+            {kpiCards.map((card) => {
+              const Icon = card.icon;
+              return (
+                <div
+                  key={card.id}
+                  onClick={card.onClick}
+                  className={`rounded-xl p-3.5 sm:p-4 flex flex-col justify-between transition-all duration-200 cursor-pointer group hover:shadow-md hover:-translate-y-0.5 select-none ${
+                    card.id === "retries" ? "col-span-2 sm:col-span-1" : ""
+                  }`}
+                  style={{
+                    background: "var(--cleaner-surface, #FFFFFF)",
+                    border: card.isActive
+                      ? "1.5px solid var(--cleaner-header-icon-fg, #EA580C)"
+                      : "1px solid var(--cleaner-border, #E5E7EB)",
+                    boxShadow: card.isActive
+                      ? "0 0 0 2px rgba(234, 88, 12, 0.15)"
+                      : "var(--cleaner-shadow, 0 1px 3px rgba(0,0,0,0.05))",
+                  }}
+                  title={`Click to filter by ${card.title}`}
+                >
+                  {/* Top: Title & Icon */}
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <span
+                      className="text-[11px] sm:text-xs font-bold uppercase tracking-wider truncate"
+                      style={{ color: "var(--cleaner-subtitle, #6B7280)" }}
+                    >
+                      {card.title}
+                    </span>
+                    <div
+                      className={`p-2 rounded-lg shrink-0 transition-transform duration-200 group-hover:scale-110 ${card.iconContainerClass}`}
+                    >
+                      <Icon size={16} />
+                    </div>
+                  </div>
+
+                  {/* Middle: Value */}
+                  <div className="flex items-baseline gap-2 mt-0.5">
+                    <span
+                      className="text-2xl sm:text-3xl font-black tracking-tight leading-none"
+                      style={{ color: "var(--cleaner-title, #111827)" }}
+                    >
+                      {isLoading ? (
+                        <span className="inline-block w-10 h-7 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
+                      ) : (
+                        card.value
+                      )}
+                    </span>
+                  </div>
+
+                  {/* Bottom: Subtitle */}
+                  <p
+                    className="text-[11px] font-medium mt-2 truncate"
+                    style={{ color: "var(--cleaner-subtitle, #6B7280)" }}
+                  >
+                    {card.subtitle}
+                  </p>
+                </div>
+              );
+            })}
           </div>
 
           {/* ================= FILTER CARD ================= */}

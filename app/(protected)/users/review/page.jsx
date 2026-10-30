@@ -68,6 +68,26 @@ const getReasonBadgeStyle = (severity) => {
   }
 };
 
+// Helper to format date and time in AM/PM (e.g. "29 Oct 2026, 09:30 AM")
+const formatDateTime = (dateString) => {
+  if (!dateString) return "—";
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return "—";
+
+  const formattedDate = date.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+  const formattedTime = date.toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+
+  return `${formattedDate}, ${formattedTime}`;
+};
+
 export default function UserReviewsPage() {
   const router = useRouter();
   const { companyId } = useCompanyId();
@@ -582,16 +602,12 @@ export default function UserReviewsPage() {
 
                     {/* Footer Info & Details Button */}
                     <div className="pt-3 border-t border-[var(--border)] flex items-center justify-between text-xs text-[var(--muted-foreground)]">
-                      <span className="flex items-center gap-1.5">
-                        <Calendar size={12} />
-                        {new Date(review.created_at).toLocaleDateString(undefined, {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        })}
+                      <span className="flex items-center gap-1.5 font-medium">
+                        <Calendar size={12} className="shrink-0" />
+                        <span>{formatDateTime(review.created_at)}</span>
                       </span>
 
-                      <span className="inline-flex items-center gap-1 font-bold text-primary text-xs group-hover:translate-x-0.5 transition-transform">
+                      <span className="inline-flex items-center gap-1 font-bold text-primary text-xs group-hover:translate-x-0.5 transition-transform shrink-0">
                         <span>Details</span>
                         <ChevronRight size={14} />
                       </span>
@@ -714,12 +730,7 @@ export default function UserReviewsPage() {
 
                           {/* Date */}
                           <td className="py-3.5 px-4 text-[var(--muted-foreground)] whitespace-nowrap">
-                            {new Date(review.created_at).toLocaleString(undefined, {
-                              month: "short",
-                              day: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
+                            {formatDateTime(review.created_at)}
                           </td>
 
                           {/* Action */}

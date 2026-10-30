@@ -47,6 +47,7 @@ export const SlaCleanerActivityApi = {
         success: true,
         data: response.data?.data || [],
         pagination: response.data?.pagination || {},
+        summary: response.data?.summary || null,
       };
     } catch (error) {
       console.error("Error fetching SLA cleaner activities:", error);
