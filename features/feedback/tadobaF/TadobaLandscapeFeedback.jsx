@@ -7,10 +7,8 @@ import {
   Minimize2,
   RotateCcw,
   Check,
-  Send,
-  Clock,
   CheckCircle2,
-  MessageSquare,
+  Clock,
   Star,
   Settings,
   Mail,
@@ -88,26 +86,263 @@ const RATING_OPTIONS = [
   },
 ];
 
-// Quick issues list for Phase 3 (Details screen)
+// Custom tactile SVG icons matching Screen 2 mockup
+const DirtyToiletIcon = ({ className = "w-6 h-6" }) => (
+  <svg viewBox="0 0 32 32" fill="none" className={className}>
+    <rect x="6" y="5" width="8" height="12" rx="2" fill="#0284c7" />
+    <rect x="5" y="4" width="10" height="2.5" rx="1" fill="#38bdf8" />
+    <circle cx="10" cy="8" r="1.2" fill="#ffffff" />
+    <path
+      d="M12 14h9c2.2 0 4 1.8 4 4 0 4.4-3.6 8-8 8h-2c-1.5 0-3-.5-4-1.5V14z"
+      fill="#0284c7"
+    />
+    <path d="M13 22v5h6v-5" fill="#0369a1" />
+    <rect x="11" y="27" width="10" height="2" rx="1" fill="#0284c7" />
+  </svg>
+);
+
+const FoulOdorIcon = ({ className = "w-6 h-6" }) => (
+  <svg viewBox="0 0 32 32" fill="none" className={className}>
+    <path
+      d="M10 6.5c1.8 3.2-1.8 6.4 0 9.6s-1.8 6.4 0 9.6"
+      stroke="#e11d48"
+      strokeWidth="2.8"
+      strokeLinecap="round"
+    />
+    <path
+      d="M16 4.5c2 3.6-2 7.2 0 10.8s-2 7.2 0 10.8"
+      stroke="#e11d48"
+      strokeWidth="2.8"
+      strokeLinecap="round"
+    />
+    <path
+      d="M22 6.5c1.8 3.2-1.8 6.4 0 9.6s-1.8 6.4 0 9.6"
+      stroke="#e11d48"
+      strokeWidth="2.8"
+      strokeLinecap="round"
+    />
+  </svg>
+);
+
+const WetFloorIcon = ({ className = "w-6 h-6" }) => (
+  <svg viewBox="0 0 32 32" fill="none" className={className}>
+    <path
+      d="M16 4.5C16 4.5 8.5 14 8.5 20a7.5 7.5 0 0 0 15 0c0-6-7.5-15.5-7.5-15.5z"
+      fill="#2563eb"
+    />
+    <path
+      d="M13.5 18a3.5 3.5 0 0 0 3.5 3.5"
+      stroke="#bfdbfe"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+    />
+  </svg>
+);
+
+const NoWaterIcon = ({ className = "w-6 h-6" }) => (
+  <svg viewBox="0 0 32 32" fill="none" className={className}>
+    <rect x="4" y="11" width="10" height="5" rx="1.5" fill="#d97706" />
+    <path
+      d="M12 11h5a4 4 0 0 1 4 4v3.5h-4.5V15a1 1 0 0 0-1-1H12v-3z"
+      fill="#f59e0b"
+    />
+    <rect x="8.5" y="7" width="7" height="4" rx="1.5" fill="#b45309" />
+    <rect x="16.5" y="18" width="5" height="3" rx="1" fill="#d97706" />
+    <path
+      d="M19 23c0-.9 2-3.2 2-3.2s2 2.3 2 3.2a2 2 0 1 1-4 0z"
+      fill="#0284c7"
+    />
+  </svg>
+);
+
+const NoSoapIcon = ({ className = "w-6 h-6" }) => (
+  <svg viewBox="0 0 32 32" fill="none" className={className}>
+    <path
+      d="M16 5.5v5"
+      stroke="#7e22ce"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+    />
+    <path
+      d="M13 5.5h7a2 2 0 0 1 2 2v1"
+      stroke="#7e22ce"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+    />
+    <rect x="13" y="10" width="6" height="3" rx="1" fill="#9333ea" />
+    <rect x="10" y="13" width="12" height="15" rx="4" fill="#a855f7" />
+    <rect
+      x="12"
+      y="16"
+      width="3"
+      height="9"
+      rx="1.5"
+      fill="#f3e8ff"
+      fillOpacity="0.75"
+    />
+  </svg>
+);
+
+const SpitStainsIcon = ({ className = "w-6 h-6" }) => (
+  <svg viewBox="0 0 32 32" fill="none" className={className}>
+    <circle cx="16" cy="16" r="4.5" fill="#dc2626" />
+    <circle cx="16" cy="6.5" r="2.2" fill="#dc2626" />
+    <circle cx="16" cy="25.5" r="2.2" fill="#dc2626" />
+    <circle cx="6.5" cy="16" r="2.2" fill="#dc2626" />
+    <circle cx="25.5" cy="16" r="2.2" fill="#dc2626" />
+    <circle cx="9.2" cy="9.2" r="2" fill="#dc2626" />
+    <circle cx="22.8" cy="9.2" r="2" fill="#dc2626" />
+    <circle cx="9.2" cy="22.8" r="2" fill="#dc2626" />
+    <circle cx="22.8" cy="22.8" r="2" fill="#dc2626" />
+    <path
+      d="M16 11v10M11 16h10M12.5 12.5l7 7M12.5 19.5l7-7"
+      stroke="#dc2626"
+      strokeWidth="2.8"
+      strokeLinecap="round"
+    />
+  </svg>
+);
+
+const FullDustbinIcon = ({ className = "w-6 h-6" }) => (
+  <svg viewBox="0 0 32 32" fill="none" className={className}>
+    <rect x="8" y="7" width="16" height="3" rx="1.5" fill="#059669" />
+    <rect x="13" y="4.5" width="6" height="2.5" rx="1" fill="#047857" />
+    <path
+      d="M10 11l1.5 15a2 2 0 0 0 2 1.8h9a2 2 0 0 0 2-1.8l1.5-15H10z"
+      fill="#10b981"
+    />
+    <line
+      x1="14"
+      y1="14"
+      x2="14"
+      y2="24"
+      stroke="#047857"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+    />
+    <line
+      x1="18"
+      y1="14"
+      x2="18"
+      y2="24"
+      stroke="#047857"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+    />
+  </svg>
+);
+
+const PoorLightingIcon = ({ className = "w-6 h-6" }) => (
+  <svg viewBox="0 0 32 32" fill="none" className={className}>
+    <path
+      d="M16 6a7 7 0 0 0-5 11.9c1 1 1.7 2.2 1.8 3.5h6.4c.1-1.3.8-2.5 1.8-3.5A7 7 0 0 0 16 6z"
+      fill="#eab308"
+    />
+    <circle cx="16" cy="12" r="3" fill="#fef08a" />
+    <rect x="13.5" y="22.5" width="5" height="2" rx="0.5" fill="#ca8a04" />
+    <rect x="14" y="25" width="4" height="2" rx="0.5" fill="#a16207" />
+    <line
+      x1="16"
+      y1="2"
+      x2="16"
+      y2="4"
+      stroke="#ca8a04"
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+    <line
+      x1="6"
+      y1="12"
+      x2="8"
+      y2="12"
+      stroke="#ca8a04"
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+    <line
+      x1="24"
+      y1="12"
+      x2="26"
+      y2="12"
+      stroke="#ca8a04"
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+    <line
+      x1="8.9"
+      y1="5.9"
+      x2="10.3"
+      y2="7.3"
+      stroke="#ca8a04"
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+    <line
+      x1="23.1"
+      y1="5.9"
+      x2="21.7"
+      y2="7.3"
+      stroke="#ca8a04"
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+  </svg>
+);
+
+// 8 Improvement Issue Cards for Screen 2
 const QUICK_ISSUES = [
   {
     id: 1,
+    icon: DirtyToiletIcon,
+    iconBg: "bg-[#e0f2fe]",
     label: { en: "Dirty Toilets", hi: "गंदे शौचालय", mr: "अस्वच्छ शौचालय" },
   },
-  { id: 3, label: { en: "Foul Odor", hi: "बदबू", mr: "दुर्गंधी" } },
-  { id: 2, label: { en: "Wet Floor", hi: "गीला फर्श", mr: "ओला मजला" } },
-  { id: 7, label: { en: "No Water", hi: "पानी नहीं है", mr: "पाणी नाही" } },
-  { id: 14, label: { en: "No Soap", hi: "साबुन नहीं है", mr: "साबण नाही" } },
-  { id: 4, label: { en: "Spit Stains", hi: "थूक के दाग", mr: "पानाचे डाग" } },
+  {
+    id: 3,
+    icon: FoulOdorIcon,
+    iconBg: "bg-[#ffe4e6]",
+    label: { en: "Foul Odor", hi: "बदबू", mr: "दुर्गंधी" },
+  },
+  {
+    id: 2,
+    icon: WetFloorIcon,
+    iconBg: "bg-[#dbeafe]",
+    label: { en: "Wet Floor", hi: "गीला फर्श", mr: "ओला मजला" },
+  },
+  {
+    id: 7,
+    icon: NoWaterIcon,
+    iconBg: "bg-[#fef3c7]",
+    label: { en: "No Water", hi: "पानी नहीं है", mr: "पाणी नाही" },
+  },
+  {
+    id: 14,
+    icon: NoSoapIcon,
+    iconBg: "bg-[#f3e8ff]",
+    label: { en: "No Soap", hi: "साबुन नहीं है", mr: "साबण नाही" },
+  },
+  {
+    id: 4,
+    icon: SpitStainsIcon,
+    iconBg: "bg-[#fee2e2]",
+    label: { en: "Spit Stains", hi: "थूक के दाग", mr: "पानाचे डाग" },
+  },
   {
     id: 5,
+    icon: FullDustbinIcon,
+    iconBg: "bg-[#d1fae5]",
     label: {
       en: "Full Dustbin",
       hi: "कचरा पेटी भरी है",
       mr: "कचराकुंडी भरली आहे",
     },
   },
-  { id: 17, label: { en: "Poor Lighting", hi: "कम रोशनी", mr: "कमी प्रकाश" } },
+  {
+    id: 17,
+    icon: PoorLightingIcon,
+    iconBg: "bg-[#fef9c3]",
+    label: { en: "Poor Lighting", hi: "कम रोशनी", mr: "कमी प्रकाश" },
+  },
 ];
 
 const TRANSLATIONS = {
@@ -120,23 +355,14 @@ const TRANSLATIONS = {
     thanksTitle: "Thank You for Your Feedback!",
     thanksSubtitle: "Your review has been successfully recorded.",
     youRated: "You rated",
-    giveFeedbackBtn: "Give Feedback",
-    resettingText: "Next visitor in",
     resetNow: "Next Visitor",
     issuesTitle: "What could be improved?",
-    issuesSubtitle: "Select any issues you observed (optional):",
-    noIssues: "No Issues / Clean",
-    commentsLabel: "Additional comments (optional):",
-    commentsPlaceholder: "Share more details about your experience...",
-    submitIssues: "Submit Feedback",
-    skipIssues: "Skip & Finish",
-    submitting: "Submitting...",
-    ratingSaved: "Rating recorded! Add optional details below:",
-    yourRating: "Your Rating:",
-    recordedBadge: "Recorded ✓",
+    issuesSubtitle: "Select any issues you observed (optional)",
     washroomRatingTitle: "Washroom Rating",
-    cleanlinessScoreBadge: "Cleanliness Score",
-    cleanerAuditsBadge: "audits",
+    gratitudeTitle: "Thank You for Helping Tadoba!",
+    gratitudeSubtitle:
+      "Our forest hygiene team has been alerted and will attend to these issues promptly.",
+    issuesReported: "issues noted",
   },
   hi: {
     welcomeTitle: "ताडोबा-अंधारी टाइगर रिजर्व में आपका स्वागत है",
@@ -148,23 +374,14 @@ const TRANSLATIONS = {
     thanksTitle: "आपकी प्रतिक्रिया के लिए धन्यवाद!",
     thanksSubtitle: "आपकी समीक्षा सफलतापूर्वक दर्ज कर ली गई है।",
     youRated: "आपने रेट किया",
-    giveFeedbackBtn: "प्रतिक्रिया दें",
-    resettingText: "अगले आगंतुक के लिए",
     resetNow: "अगला आगंतुक",
     issuesTitle: "क्या सुधार किया जा सकता है?",
-    issuesSubtitle: "अपनी देखी गई समस्याएं चुनें (वैकल्पिक):",
-    noIssues: "कोई समस्या नहीं / साफ",
-    commentsLabel: "अतिरिक्त टिप्पणी (वैकल्पिक):",
-    commentsPlaceholder: "अपने अनुभव के बारे में अधिक विवरण साझा करें...",
-    submitIssues: "प्रतिक्रिया जमा करें",
-    skipIssues: "छोड़ें और समाप्त करें",
-    submitting: "जमा हो रहा है...",
-    ratingSaved: "रेटिंग दर्ज हुई! नीचे वैकल्पिक विवरण जोड़ें:",
-    yourRating: "आपकी रेटिंग:",
-    recordedBadge: "दर्ज हुआ ✓",
+    issuesSubtitle: "अपनी देखी गई समस्याएं चुनें (वैकल्पिक)",
     washroomRatingTitle: "शौचालय रेटिंग",
-    cleanlinessScoreBadge: "स्वच्छता स्कोर",
-    cleanerAuditsBadge: "ऑडिट",
+    gratitudeTitle: "ताडोबा को स्वच्छ रखने में मदद के लिए धन्यवाद!",
+    gratitudeSubtitle:
+      "हमारी वन स्वच्छता टीम को सूचित कर दिया गया है और शीघ्र कार्रवाई की जाएगी।",
+    issuesReported: "मुद्दे दर्ज",
   },
   mr: {
     welcomeTitle: "ताडोबा-अंधारी व्याघ्र प्रकल्पात आपले स्वागत आहे",
@@ -175,27 +392,18 @@ const TRANSLATIONS = {
     thanksTitle: "आपल्या अभिप्रायाबद्दल धन्यवाद!",
     thanksSubtitle: "तुमचा अभिप्राय यशस्वीरीत्या नोंदवला गेला आहे.",
     youRated: "तुम्ही रेट केले",
-    giveFeedbackBtn: "अभिप्राय नोंदवा",
-    resettingText: "पुढील अभ्यागतासाठी",
     resetNow: "पुढील अभ्यागत",
     issuesTitle: "काय सुधारणा केली जाऊ शकते?",
-    issuesSubtitle: "तुम्ही अनुभवलेल्या समस्या निवडा (पर्यायी):",
-    noIssues: "कोणतीही समस्या नाही / स्वच्छ",
-    commentsLabel: "अतिरिक्त टिप्पण्या (पर्यायी):",
-    commentsPlaceholder: "तुमच्या अनुभवाबद्दल अधिक माहिती सांगा...",
-    submitIssues: "अभिप्राय नोंदवा",
-    skipIssues: "वगळा आणि समाप्त करा",
-    submitting: "नोंदवत आहे...",
-    ratingSaved: "रेटिंग नोंदवले गेले! खालील पर्यायी माहिती जोडा:",
-    yourRating: "तुमचे रेटिंग:",
-    recordedBadge: "नोंदवले ✓",
+    issuesSubtitle: "तुम्ही अनुभवलेल्या समस्या निवडा (पर्यायी)",
     washroomRatingTitle: "स्वच्छतागृह रेटिंग",
-    cleanlinessScoreBadge: "स्वच्छता स्कोअर",
-    cleanerAuditsBadge: "तपासणी",
+    gratitudeTitle: "ताडोबा स्वच्छ ठेवण्यास मदत केल्याबद्दल धन्यवाद!",
+    gratitudeSubtitle:
+      "आमच्या वन स्वच्छता पथकाला सूचित करण्यात आले असून लवकरच कार्यवाही केली जाईल.",
+    issuesReported: "समस्या नोंदवल्या",
   },
 };
 
-// Ambient Falling Forest Leaves configuration for live photo-frame feel
+// Ambient Falling Forest Leaves configuration
 const FALLING_LEAVES = [
   {
     id: 1,
@@ -292,10 +500,10 @@ const FALLING_LEAVES = [
 export default function TadobaLandscapeFeedback() {
   const searchParams = useSearchParams();
 
-  // Language management - shared and consistent across all screens
+  // Language management - shared and consistent across screens
   const [lang, setLang] = useState("en"); // 'en' | 'hi' | 'mr'
 
-  // Kiosk Location / Company resolution & persistence (Supports single ID or comma-separated/linked IDs)
+  // Kiosk Location / Company resolution & persistence
   const rawLoc = searchParams.get("locationId") || "";
   const rawLinked =
     searchParams.get("linkedLocations") ||
@@ -303,7 +511,6 @@ export default function TadobaLandscapeFeedback() {
     "";
   const rawComp = searchParams.get("companyId") || "";
 
-  // Helper to extract all numeric IDs from string
   const extractIds = (str) => {
     if (!str) return [];
     const matches = str.toString().match(/\d+/g);
@@ -356,9 +563,7 @@ export default function TadobaLandscapeFeedback() {
 
   // Screen Flow:
   // 1. 'rating'   : Home screen with 5 emojis
-  // 2. 'bouncing' : Bouncing emoji screen with "You rated [Good]", 15s timer, "Give Feedback" button
-  // 3. 'details'  : Horizontal 2-column detailed feedback window (banner, issue chips, comments)
-  // 4. 'thankyou' : Final brief confirmation screen
+  // 2. 'bouncing' : Screen 2 (Rating Confirmation + Enlarged Issues Grid)
   const [currentPhase, setCurrentPhase] = useState("rating");
   const [selectedRating, setSelectedRating] = useState(null);
   const [submittedReviewIds, setSubmittedReviewIds] = useState([]);
@@ -369,22 +574,19 @@ export default function TadobaLandscapeFeedback() {
   const [isSlowNetwork, setIsSlowNetwork] = useState(false);
   const [centerOffset, setCenterOffset] = useState(0);
 
-  // Phase 3 (Details) states
+  // Screen 2 states
   const [selectedIssues, setSelectedIssues] = useState([]);
-  const [noIssuesSelected, setNoIssuesSelected] = useState(false);
-  const [comments, setComments] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showGratitude, setShowGratitude] = useState(false);
 
-  // Timers
-  const [bouncingTimer, setBouncingTimer] = useState(15); // 15s on bouncing screen
-  const [thankYouCountdown, setThankYouCountdown] = useState(3);
+  // Timers: 20-Second Normal Redirect Timer
+  const [bouncingTimer, setBouncingTimer] = useState(20);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // Live Washroom Cleanliness Rating (From Cleaner Audits / Location Hygiene Score)
+  // Live Washroom Cleanliness Rating
   const [washroomRating, setWashroomRating] = useState("0.0");
 
   const bouncingTimerRef = useRef(null);
-  const thankYouTimerRef = useRef(null);
+  const gratitudeTimeoutRef = useRef(null);
   const roarAudioRef = useRef(null);
 
   // Preload Tiger Roar Audio Effect for instant playback on tap
@@ -443,7 +645,6 @@ export default function TadobaLandscapeFeedback() {
               return Number(avgScore);
             }
 
-            // Fallback check from cleaner-reviews by location
             const cleanerRes = await axiosInstance.get(
               `/cleaner-reviews/location/${locId}${companyId ? `?company_id=${companyId}` : ""}`,
             );
@@ -504,7 +705,7 @@ export default function TadobaLandscapeFeedback() {
   // Reset form completely back to Screen 1 (Home)
   const resetToHome = () => {
     if (bouncingTimerRef.current) clearInterval(bouncingTimerRef.current);
-    if (thankYouTimerRef.current) clearInterval(thankYouTimerRef.current);
+    if (gratitudeTimeoutRef.current) clearTimeout(gratitudeTimeoutRef.current);
     if (roarAudioRef.current) {
       try {
         roarAudioRef.current.pause();
@@ -519,17 +720,14 @@ export default function TadobaLandscapeFeedback() {
     setCenterOffset(0);
     setSubmittedReviewIds([]);
     setSelectedIssues([]);
-    setNoIssuesSelected(false);
-    setComments("");
-    setIsSubmitting(false);
-    setBouncingTimer(15);
-    setThankYouCountdown(3);
+    setShowGratitude(false);
+    setBouncingTimer(20);
   };
 
-  // 15-Second Auto-Reset Timer for Screen 2 (Bouncing Emoji Screen)
+  // 20-Second Auto-Reset Timer for Screen 2
   useEffect(() => {
     if (currentPhase === "bouncing") {
-      setBouncingTimer(15);
+      setBouncingTimer(20);
 
       bouncingTimerRef.current = setInterval(() => {
         setBouncingTimer((prev) => {
@@ -548,36 +746,22 @@ export default function TadobaLandscapeFeedback() {
     }
   }, [currentPhase]);
 
-  // 3-Second Timer for Screen 4 (Thank You)
+  // Clean up timers on unmount
   useEffect(() => {
-    if (currentPhase === "thankyou") {
-      setThankYouCountdown(3);
+    return () => {
+      if (bouncingTimerRef.current) clearInterval(bouncingTimerRef.current);
+      if (gratitudeTimeoutRef.current) clearTimeout(gratitudeTimeoutRef.current);
+    };
+  }, []);
 
-      thankYouTimerRef.current = setInterval(() => {
-        setThankYouCountdown((prev) => {
-          if (prev <= 1) {
-            clearInterval(thankYouTimerRef.current);
-            resetToHome();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-
-      return () => {
-        if (thankYouTimerRef.current) clearInterval(thankYouTimerRef.current);
-      };
-    }
-  }, [currentPhase]);
-
-  // Phase 1: Tap Rating Emoji -> Immediately records review (POST) and moves to Screen 2 (Bouncing Emoji)
+  // Phase 1: Tap Rating Emoji -> Immediately records review (POST) and moves directly to Screen 2
   const handleRatingSelect = async (option, e) => {
     if (isProcessingRating) return;
 
     // Play realistic tiger roar audio effect immediately on tap
     playTigerRoar();
 
-    // Calculate exact horizontal shift to glide the tapped emoji to the screen center
+    // Calculate exact horizontal shift to glide the tapped emoji toward center
     if (e && e.currentTarget && typeof window !== "undefined") {
       const rect = e.currentTarget.getBoundingClientRect();
       const elementCenter = rect.left + rect.width / 2;
@@ -595,7 +779,7 @@ export default function TadobaLandscapeFeedback() {
       setCenterOffset((2 - idx) * (window.innerWidth * 0.18));
     }
 
-    // Immediate visual tactile response (0ms) so user knows click was registered
+    // Immediate visual response
     setSelectedRating(option);
     setSelectedTigerId(option.id);
     setIsProcessingRating(true);
@@ -606,12 +790,11 @@ export default function TadobaLandscapeFeedback() {
       setIsSlowNetwork(true);
     }, 1800);
 
-    // When the round line finishes its 360° circle (~1020ms), redirect to the next window
+    // When the round line finishes its 360° circle (~1020ms), redirect to Screen 2
     const minDisplayPromise = new Promise((resolve) =>
       setTimeout(resolve, 1020),
     );
 
-    // Fallback timeout of 6s so kiosk never gets stuck in low/no connectivity areas
     const timeoutPromise = new Promise((resolve) =>
       setTimeout(() => resolve({ timeout: true }), 6000),
     );
@@ -661,78 +844,82 @@ export default function TadobaLandscapeFeedback() {
       setIsSlowNetwork(false);
       setSelectedTigerId(null);
       setCenterOffset(0);
-      // Advance to Screen 2 (Bouncing Emoji Screen with "You rated Good")
+      // Advance directly to Screen 2
       setCurrentPhase("bouncing");
     }
   };
 
-  // Phase 2 -> Phase 3: Click "Give Feedback" button
-  const handleOpenFeedbackDetails = () => {
-    if (bouncingTimerRef.current) clearInterval(bouncingTimerRef.current);
-    setCurrentPhase("details");
-  };
-
-  // Phase 3: Toggle Issue Selection
-  const toggleIssueSelection = (issueId) => {
-    setNoIssuesSelected(false);
-    setSelectedIssues((prev) =>
-      prev.includes(issueId)
-        ? prev.filter((id) => id !== issueId)
-        : [...prev, issueId],
-    );
-  };
-
-  const toggleNoIssues = () => {
-    if (noIssuesSelected) {
-      setNoIssuesSelected(false);
-    } else {
-      setNoIssuesSelected(true);
-      setSelectedIssues([]);
+  // Screen 2: Toggle Issue Selection -> Auto-saves & triggers Token of Gratitude after 3.5s
+  const toggleIssueSelection = async (issueId) => {
+    // Clear any existing gratitude debounce timer
+    if (gratitudeTimeoutRef.current) {
+      clearTimeout(gratitudeTimeoutRef.current);
     }
-  };
 
-  // Phase 3: Submit Details -> PATCHes all linked review entries created in Phase 1
-  const handleSubmitPhase3 = async () => {
-    try {
-      setIsSubmitting(true);
-      if (submittedReviewIds.length > 0) {
-        const finalReasons = noIssuesSelected
-          ? [0]
-          : selectedIssues.length > 0
-            ? selectedIssues
-            : [0];
+    const updatedIssues = selectedIssues.includes(issueId)
+      ? selectedIssues.filter((id) => id !== issueId)
+      : [...selectedIssues, issueId];
 
+    setSelectedIssues(updatedIssues);
+
+    // If reasons are selected, trigger token of gratitude after 3.5 seconds of inactivity
+    if (updatedIssues.length > 0) {
+      gratitudeTimeoutRef.current = setTimeout(() => {
+        setShowGratitude(true);
+        // After showing gratitude for 3.5s, return smoothly to Screen 1
+        gratitudeTimeoutRef.current = setTimeout(() => {
+          resetToHome();
+        }, 3500);
+      }, 3500);
+    } else {
+      setShowGratitude(false);
+    }
+
+    // Immediately patch review in backend
+    if (submittedReviewIds.length > 0) {
+      try {
+        const finalReasons = updatedIssues.length > 0 ? updatedIssues : [0];
         await Promise.all(
           submittedReviewIds.map((reviewId) =>
             feedbackApi
               .patchReview(reviewId, {
                 reason_ids: finalReasons,
-                description: comments?.trim() || "",
+                description: "",
               })
               .catch((err) =>
-                console.warn(`Patch review failed for ID ${reviewId}:`, err),
+                console.warn(
+                  `Auto-patch review failed for ID ${reviewId}:`,
+                  err,
+                ),
               ),
           ),
         );
+      } catch (e) {
+        console.warn("Auto-save issue error:", e);
       }
-      setCurrentPhase("thankyou");
-    } catch (error) {
-      console.error("Patching review details failed:", error);
-      setCurrentPhase("thankyou");
-    } finally {
-      setIsSubmitting(false);
     }
-  };
-
-  // Phase 3: Skip & Finish
-  const handleSkipPhase3 = () => {
-    resetToHome();
   };
 
   const t = TRANSLATIONS[lang] || TRANSLATIONS.en;
   const ratingLabel = selectedRating
     ? selectedRating.label[lang] || selectedRating.label.en
     : "";
+
+  // Helper to split 2-word labels onto 2 lines matching mockup
+  const renderLabel = (text) => {
+    if (!text) return null;
+    const parts = text.split(" ");
+    if (parts.length === 2) {
+      return (
+        <>
+          <span>{parts[0]}</span>
+          <br />
+          <span>{parts[1]}</span>
+        </>
+      );
+    }
+    return <span>{text}</span>;
+  };
 
   return (
     <>
@@ -743,7 +930,7 @@ export default function TadobaLandscapeFeedback() {
         className={`h-screen w-full select-none flex flex-col overflow-hidden font-sans relative transition-all duration-300 ${
           currentPhase === "rating"
             ? "bg-cover bg-center bg-no-repeat p-2.5 sm:p-4 md:p-6 lg:p-7 xl:p-8 2xl:p-10"
-            : "bg-[#FAF7F2] p-2.5 sm:p-3.5 md:p-5 lg:p-6 xl:p-8 2xl:p-9"
+            : "bg-[#FAF7F2] p-2.5 sm:p-3.5 md:p-5 lg:p-6 xl:p-7 2xl:p-8"
         }`}
         style={
           currentPhase === "rating"
@@ -765,7 +952,6 @@ export default function TadobaLandscapeFeedback() {
           @keyframes forestLeafFallLeft {
             0% {
               transform: translate3d(0, -60px, 0) rotate(0deg) scale(0.9);
-              opacity: 0;
             }
             10% {
               opacity: 0.85;
@@ -778,14 +964,12 @@ export default function TadobaLandscapeFeedback() {
             }
             100% {
               transform: translate3d(25px, 108vh, 0) rotate(380deg) scale(0.95);
-              opacity: 0;
             }
           }
 
           @keyframes forestLeafFallRight {
             0% {
               transform: translate3d(0, -60px, 0) rotate(0deg) scale(0.85);
-              opacity: 0;
             }
             10% {
               opacity: 0.8;
@@ -798,7 +982,6 @@ export default function TadobaLandscapeFeedback() {
             }
             100% {
               transform: translate3d(-30px, 108vh, 0) rotate(-340deg) scale(0.9);
-              opacity: 0;
             }
           }
 
@@ -810,24 +993,12 @@ export default function TadobaLandscapeFeedback() {
               stroke-dashoffset: 0;
             }
           }
-
-          @keyframes selectedEmojiZoom {
-            0% {
-              transform: scale(1);
-            }
-            50% {
-              transform: scale(1.42) translateY(-6px);
-            }
-            100% {
-              transform: scale(1.38) translateY(-4px);
-            }
-          }
         `,
           }}
         />
 
         {/* ============================================================== */}
-        {/* LIVE AMBIENT LAYER: GENTLE FALLING LEAVES (Continuous Forest Breeze) */}
+        {/* LIVE AMBIENT LAYER: GENTLE FALLING LEAVES                      */}
         {/* ============================================================== */}
         <div
           className="absolute inset-0 pointer-events-none overflow-hidden z-10"
@@ -858,20 +1029,20 @@ export default function TadobaLandscapeFeedback() {
         {/* ============================================================== */}
         {/* TOP BAR: Left: TATR Logo | Center: Lang Selector | Right: SaafAI */}
         {/* ============================================================== */}
-        <header className="w-full max-w-[min(95vw,1750px)] 2xl:max-w-[1920px] mx-auto flex items-center justify-between relative z-20 shrink-0 mb-4 sm:mb-6 md:mb-8 lg:mb-10 px-2 sm:px-4 lg:px-6">
-          {/* Top Left: TATR Tadoba Logo (Enlarged & Prominent) */}
+        <header className="w-full max-w-[min(95vw,1750px)] 2xl:max-w-[1920px] mx-auto flex items-center justify-between relative z-20 shrink-0 mb-2 sm:mb-4 md:mb-5 lg:mb-6 px-2 sm:px-4 lg:px-6">
+          {/* Top Left: TATR Tadoba Logo */}
           <div className="flex items-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/tadoba-form/tatr_logo_png.png"
               alt="TATR - Tadoba Andhari Tiger Reserve"
-              className="h-16 sm:h-20 md:h-24 lg:h-28 xl:h-32 2xl:h-40 min-h-[56px] sm:min-h-[72px] md:min-h-[88px] lg:min-h-[108px] xl:min-h-[120px] max-h-[18vh] w-auto object-contain drop-shadow-md transition-all select-none"
+              className="h-14 sm:h-18 md:h-22 lg:h-26 xl:h-28 2xl:h-36 min-h-[52px] sm:min-h-[68px] md:min-h-[82px] lg:min-h-[98px] max-h-[16vh] w-auto object-contain drop-shadow-md transition-all select-none"
             />
           </div>
 
           {/* Center: Language Selector Pill */}
           <div className="flex items-center justify-center">
-            <div className="flex items-center bg-white/95 border border-stone-200/90 rounded-full p-1.5 shadow-xs">
+            <div className="flex items-center bg-white/95 border border-stone-200/90 rounded-full p-1 sm:p-1.5 shadow-xs">
               {[
                 { code: "en", label: "English" },
                 { code: "hi", label: "हिंदी" },
@@ -881,7 +1052,7 @@ export default function TadobaLandscapeFeedback() {
                   key={item.code}
                   type="button"
                   onClick={() => setLang(item.code)}
-                  className={`px-3.5 py-1.5 sm:px-5 sm:py-2 md:px-6 md:py-2.5 lg:px-7 lg:py-3 rounded-full text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl font-black transition-all cursor-pointer ${
+                  className={`px-3 py-1 sm:px-4.5 sm:py-1.5 md:px-5 md:py-2 lg:px-6 lg:py-2.5 rounded-full text-xs sm:text-sm md:text-base lg:text-lg font-black transition-all cursor-pointer ${
                     lang === item.code
                       ? "bg-[#284e3a] text-white shadow-xs"
                       : "text-gray-700 hover:text-gray-900 hover:bg-gray-100"
@@ -893,36 +1064,36 @@ export default function TadobaLandscapeFeedback() {
             </div>
           </div>
 
-          {/* Top Right: Fullscreen + SaafAI Logo (Enlarged & Prominent) + Today's Rating Column */}
-          <div className="flex items-start gap-2.5 sm:gap-3.5">
+          {/* Top Right: Fullscreen + SaafAI Logo + Cleanliness Score */}
+          <div className="flex items-start gap-2 sm:gap-3">
             <button
               onClick={toggleFullscreen}
-              className="p-2 sm:p-2.5 rounded-full bg-white/95 border border-stone-200/90 text-gray-600 hover:text-gray-900 hover:bg-white transition shadow-xs cursor-pointer mt-1"
+              className="p-1.5 sm:p-2 rounded-full bg-white/95 border border-stone-200/90 text-gray-600 hover:text-gray-900 hover:bg-white transition shadow-xs cursor-pointer mt-1"
               title="Toggle Fullscreen Kiosk"
             >
-              {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+              {isFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
             </button>
 
             <div className="flex flex-col items-end">
-              <div className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl 2xl:text-7xl font-black text-slate-900 tracking-tight leading-none">
+              <div className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-black text-slate-900 tracking-tight leading-none">
                 Saaf<span className="text-[#00A3E0]">AI</span>
               </div>
-              <span className="text-[8px] sm:text-[9px] md:text-xs lg:text-sm xl:text-base uppercase font-black tracking-[0.24em] text-slate-600 mt-1">
+              <span className="text-[7px] sm:text-[8px] md:text-[10px] lg:text-xs uppercase font-black tracking-[0.24em] text-slate-600 mt-0.5 sm:mt-1">
                 SMART FACILITY AI
               </span>
 
               {/* Washroom Cleanliness Rating Column below SaafAI Logo */}
-              <div className="mt-1.5 sm:mt-2 flex flex-col items-end">
-                <div className="bg-white/95 backdrop-blur-md border border-emerald-600/20 rounded-xl px-2.5 py-1 sm:px-3 sm:py-1.5 shadow-xs flex flex-col items-end transition-all">
-                  <span className="text-[8px] sm:text-[9px] md:text-[10px] font-black uppercase tracking-[0.16em] text-emerald-800/80">
+              <div className="mt-1 sm:mt-1.5 flex flex-col items-end">
+                <div className="bg-white/95 backdrop-blur-md border border-emerald-600/20 rounded-xl px-2 py-0.5 sm:px-2.5 sm:py-1 shadow-xs flex flex-col items-end transition-all">
+                  <span className="text-[7px] sm:text-[8px] md:text-[9px] font-black uppercase tracking-[0.16em] text-emerald-800/80">
                     {t.washroomRatingTitle || "Washroom Rating"}
                   </span>
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    <Star className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-500 fill-amber-400 drop-shadow-2xs shrink-0" />
-                    <span className="text-sm sm:text-base md:text-lg font-black text-slate-900 leading-none">
+                  <div className="flex items-center gap-1 mt-0.5">
+                    <Star className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-500 fill-amber-400 drop-shadow-2xs shrink-0" />
+                    <span className="text-xs sm:text-sm md:text-base font-black text-slate-900 leading-none">
                       {washroomRating || "0.0"}
                     </span>
-                    <span className="text-[10px] sm:text-xs font-bold text-slate-400 leading-none">
+                    <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 leading-none">
                       / 10
                     </span>
                   </div>
@@ -933,25 +1104,21 @@ export default function TadobaLandscapeFeedback() {
         </header>
 
         {/* ============================================================== */}
-        {/* SCREEN 1: Rating Selection (Prominent Welcome Headline & Interactive Tigers) */}
+        {/* SCREEN 1: Rating Selection (Welcome Headline & Interactive Tigers) */}
         {/* ============================================================== */}
         {currentPhase === "rating" && (
           <main className="flex-1 flex flex-col justify-center items-center text-center w-full max-w-[min(95vw,1750px)] 2xl:max-w-[1920px] mx-auto px-2 sm:px-4 pb-2 sm:pb-4">
             {/* Prestigious Welcome Headline above Rating */}
-            <div className="inline-flex items-center gap-1.5 sm:gap-2.5 px-3.5 py-1 sm:px-4.5 sm:py-1.5 md:px-5 md:py-2 rounded-full bg-emerald-950/10 backdrop-blur-xs border border-emerald-800/20 text-[#1e3a29] font-black text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl uppercase tracking-wider mb-2 sm:mb-2.5 shadow-2xs transition-all">
-              <span className="text-emerald-700 text-xs sm:text-sm md:text-base">
-                🌿
-              </span>
+            <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 py-1 sm:px-4 sm:py-1.5 rounded-full bg-emerald-950/10 backdrop-blur-xs border border-emerald-800/20 text-[#1e3a29] font-black text-xs sm:text-sm md:text-base lg:text-lg uppercase tracking-wider mb-1.5 sm:mb-2 shadow-2xs transition-all">
+              <span className="text-emerald-700 text-xs sm:text-sm">🌿</span>
               <span>{t.welcomeTitle}</span>
-              <span className="text-emerald-700 text-xs sm:text-sm md:text-base">
-                🌿
-              </span>
+              <span className="text-emerald-700 text-xs sm:text-sm">🌿</span>
             </div>
 
             <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl 2xl:text-7xl font-black text-slate-900 tracking-tight mb-0.5 sm:mb-1">
               {t.title}
             </h1>
-            <p className="text-slate-700 text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl 2xl:text-2xl mb-2 sm:mb-3 md:mb-3.5 lg:mb-4 font-semibold">
+            <p className="text-slate-700 text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl mb-2 sm:mb-3 md:mb-4 font-semibold">
               {t.subtitle}
             </p>
 
@@ -1057,7 +1224,7 @@ export default function TadobaLandscapeFeedback() {
                         </svg>
                       )}
 
-                      {/* Tiger Emoji Circle - Clean, unobstructed */}
+                      {/* Tiger Emoji Circle */}
                       <div
                         className={`relative aspect-square w-[clamp(68px,11.5vw,240px)] h-[clamp(68px,11.5vw,240px)] rounded-full overflow-hidden transition-all duration-300 shadow-xl ${
                           isSelected
@@ -1074,7 +1241,7 @@ export default function TadobaLandscapeFeedback() {
                       </div>
                     </div>
 
-                    {/* Rating Label Pill Below Tiger - Natural styling, no green checkmark */}
+                    {/* Rating Label Pill Below Tiger */}
                     <div
                       className={`mt-2 sm:mt-3 md:mt-4 lg:mt-6 px-3 py-1 sm:px-4 sm:py-1.5 md:px-5 md:py-2 lg:px-7 lg:py-3 rounded-full font-black text-xs sm:text-sm md:text-base lg:text-xl xl:text-2xl transition-all duration-300 shadow-md ${option.pillBg} ${option.pillText} ${
                         isSelected
@@ -1089,38 +1256,33 @@ export default function TadobaLandscapeFeedback() {
               })}
             </div>
 
-            {/* BRANDING FOOTER: Developed & Managed by SaafAI | Want a similar solution? */}
-            <div className="w-full flex items-center justify-center gap-2.5 sm:gap-4 md:gap-6 mt-4 sm:mt-6 md:mt-8 lg:mt-9 z-20 shrink-0 select-none">
-              {/* Left Accent Divider Line */}
+            {/* BRANDING FOOTER: Developed & Managed by SaafAI */}
+            <div className="w-full flex items-center justify-center gap-2.5 sm:gap-4 md:gap-6 mt-4 sm:mt-6 md:mt-8 z-20 shrink-0 select-none">
               <div className="hidden sm:block h-[1.5px] w-10 sm:w-16 md:w-24 lg:w-32 bg-slate-400/50 rounded-full" />
-
-              {/* Left Block: Developed & Managed by SaafAI */}
-              <div className="flex items-center gap-2 sm:gap-2.5 md:gap-3 text-left">
-                <Settings className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-slate-800 stroke-[1.8] shrink-0" />
+              <div className="flex items-center gap-2 sm:gap-2.5 text-left">
+                <Settings className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-slate-800 stroke-[1.8] shrink-0" />
                 <div className="flex flex-col">
-                  <div className="text-xs sm:text-sm md:text-base font-extrabold text-slate-900 tracking-tight leading-snug">
+                  <div className="text-xs sm:text-sm font-extrabold text-slate-900 tracking-tight leading-snug">
                     Developed & Managed by{" "}
                     <span className="font-black text-slate-900">
                       Saaf<span className="text-[#00A3E0]">AI</span>
                     </span>
                   </div>
-                  <div className="text-[10px] sm:text-xs md:text-sm font-medium text-slate-500 leading-snug">
-                    Smart Facility Management Solutions
+                  <div className="text-[10px] sm:text-xs font-medium text-slate-500 leading-snug">
+                    AI-Powered Hygiene Intelligence Platform
                   </div>
                 </div>
               </div>
 
-              {/* Vertical Divider */}
-              <div className="h-7 sm:h-8 md:h-9 w-[1px] bg-slate-300 mx-1 sm:mx-2 md:mx-3 shrink-0" />
+              <div className="h-6 sm:h-7 w-[1px] bg-slate-300 mx-1 sm:mx-2 shrink-0" />
 
-              {/* Right Block: Want a similar solution? */}
-              <div className="flex items-center gap-2 sm:gap-2.5 md:gap-3 text-left">
-                <Mail className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-slate-800 stroke-[1.8] shrink-0" />
+              <div className="flex items-center gap-2 sm:gap-2.5 text-left">
+                <Mail className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-slate-800 stroke-[1.8] shrink-0" />
                 <div className="flex flex-col">
-                  <div className="text-xs sm:text-sm md:text-base font-extrabold text-slate-900 tracking-tight leading-snug">
+                  <div className="text-xs sm:text-sm font-extrabold text-slate-900 tracking-tight leading-snug">
                     Want a similar solution?
                   </div>
-                  <div className="text-[10px] sm:text-xs md:text-sm font-medium text-slate-600 leading-snug">
+                  <div className="text-[10px] sm:text-xs font-medium text-slate-600 leading-snug">
                     Contact:{" "}
                     <a
                       href="mailto:info@saafai.in"
@@ -1131,16 +1293,14 @@ export default function TadobaLandscapeFeedback() {
                   </div>
                 </div>
               </div>
-
-              {/* Right Accent Divider Line */}
               <div className="hidden sm:block h-[1.5px] w-10 sm:w-16 md:w-24 lg:w-32 bg-slate-400/50 rounded-full" />
             </div>
 
-            {/* SUBTLE LOW CONNECTIVITY NOTICE (Only when forest network lags >2s) */}
+            {/* SUBTLE LOW CONNECTIVITY NOTICE */}
             {isSlowNetwork && (
-              <div className="mt-4 px-4 py-2 rounded-2xl bg-amber-50/95 border border-amber-300 shadow-lg flex items-center gap-2 text-amber-900 text-xs sm:text-sm font-bold animate-in fade-in duration-300 mx-auto max-w-sm">
+              <div className="mt-3 px-3 py-1.5 rounded-2xl bg-amber-50/95 border border-amber-300 shadow-lg flex items-center gap-2 text-amber-900 text-xs font-bold animate-in fade-in duration-300 mx-auto max-w-sm">
                 <Clock
-                  size={16}
+                  size={15}
                   className="text-amber-700 animate-spin shrink-0"
                 />
                 <span>{t.slowNetworkNotice}</span>
@@ -1150,296 +1310,186 @@ export default function TadobaLandscapeFeedback() {
         )}
 
         {/* ============================================================== */}
-        {/* SCREEN 2: Bouncing Emoji Screen ("You rated Good" + "Give Feedback" button) */}
+        {/* SCREEN 2: Rating Confirmation & Enlarged What Could Be Improved */}
         {/* ============================================================== */}
         {currentPhase === "bouncing" && selectedRating && (
-          <main className="flex-1 flex flex-col items-center justify-center p-3 sm:p-5 lg:p-8 text-center my-auto animate-in fade-in duration-300 w-full max-w-[min(94vw,1400px)] 2xl:max-w-[1600px] mx-auto">
-            {/* Big Bouncing Emoji */}
-            <div className="w-[clamp(110px,15vw,250px)] h-[clamp(110px,15vw,250px)] rounded-full overflow-hidden shadow-2xl mb-3 sm:mb-5 lg:mb-6 animate-bounce ring-4 sm:ring-8 ring-emerald-50">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={selectedRating.image}
-                alt="Rating submitted"
-                className="w-full h-full object-cover"
-              />
-            </div>
-
-            {/* "You rated Good" Pill */}
-            <div
-              className={`inline-flex items-center gap-2 sm:gap-3 px-6 py-2 sm:px-8 sm:py-3 md:px-10 md:py-3.5 lg:px-12 lg:py-4 rounded-full font-black text-base sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl mb-3 sm:mb-5 shadow-md ${selectedRating.pillBg} ${selectedRating.pillText}`}
-            >
-              <CheckCircle2 size={20} />
-              <span>
-                {t.youRated}{" "}
-                <span className="font-extrabold underline">{ratingLabel}</span>
-              </span>
-            </div>
-
-            {/* Headline */}
-            <h2 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl 2xl:text-8xl font-black text-slate-900 tracking-tight mb-2 sm:mb-3">
-              {t.thanksTitle}
-            </h2>
-
-            <p className="text-slate-600 text-xs sm:text-sm md:text-base lg:text-lg xl:text-2xl max-w-2xl mx-auto mb-4 sm:mb-6 lg:mb-8 font-medium">
-              {t.thanksSubtitle}
-            </p>
-
-            {/* 15-Second Auto-Reset Timer Bar */}
-            <div className="w-full max-w-xs bg-gray-200/80 rounded-full h-2.5 overflow-hidden mb-2">
-              <div
-                className="bg-emerald-500 h-full transition-all duration-1000 ease-linear rounded-full"
-                style={{ width: `${(bouncingTimer / 15) * 100}%` }}
-              />
-            </div>
-
-            <p className="text-xs text-gray-500 mb-6 font-semibold">
-              {t.resettingText} {bouncingTimer}s...
-            </p>
-
-            {/* Action Buttons: "Give Feedback" (Opens Screen 3) or "Next Visitor" */}
-            <div className="flex items-center justify-center gap-4 flex-wrap">
-              {/* PRIMARY: Give Feedback */}
-              <button
-                type="button"
-                onClick={handleOpenFeedbackDetails}
-                className="px-6 py-3 sm:px-10 sm:py-4 md:px-12 md:py-5 lg:px-16 lg:py-6 rounded-2xl sm:rounded-3xl bg-[#284e3a] hover:bg-[#1e3a29] text-white font-extrabold text-sm sm:text-base md:text-xl lg:text-2xl transition-all shadow-md hover:shadow-xl flex items-center gap-2.5 sm:gap-3 cursor-pointer transform hover:scale-105 active:scale-95"
-              >
-                <MessageSquare size={19} />
-                <span>{t.giveFeedbackBtn}</span>
-              </button>
-
-              {/* SECONDARY: Next Visitor / Done */}
-              <button
-                type="button"
-                onClick={resetToHome}
-                className="px-5 py-3 sm:px-8 sm:py-4 md:px-10 md:py-5 lg:px-12 lg:py-6 rounded-2xl sm:rounded-3xl bg-white hover:bg-gray-100 text-gray-700 font-bold text-xs sm:text-sm md:text-base lg:text-xl border border-stone-200 transition-all flex items-center gap-2 cursor-pointer shadow-2xs"
-              >
-                <RotateCcw size={16} />
-                <span>{t.resetNow}</span>
-              </button>
-            </div>
-          </main>
-        )}
-
-        {/* ============================================================== */}
-        {/* SCREEN 3: Detailed Feedback Window (Properly Sized Hero Banner, No Scroll) */}
-        {/* ============================================================== */}
-        {currentPhase === "details" && selectedRating && (
-          <main className="flex-1 w-full max-w-[min(95vw,1750px)] 2xl:max-w-[1920px] mx-auto flex flex-col justify-center min-h-0 my-auto py-1 sm:py-2 relative z-20">
-            <div className="bg-white rounded-3xl sm:rounded-4xl border border-stone-200/90 shadow-2xl overflow-hidden flex flex-col">
-              {/* 1. TOP HERO BANNER: Responsive fluid height that adapts to any window size & zoom */}
-              <div className="relative w-full overflow-hidden bg-[#FAF8F5] border-b border-stone-200 shrink-0 h-[clamp(130px,22vh,280px)] xl:h-[24vh] 2xl:h-[26vh] flex items-center">
-                {/* Photographic background anchored to tiger on the right */}
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/tadoba-form/tadoba_tiger_photo.png"
-                  alt="Tadoba-Andhari Tiger Reserve"
-                  className="w-full h-full object-cover object-[85%_75%] block select-none"
-                />
-
-                {/* Soft natural sun mist gradient on the left for guaranteed text contrast */}
-                <div className="absolute inset-0 bg-gradient-to-r from-[#FAF8F5] via-[#FAF8F5]/92 via-35% md:via-42% to-transparent pointer-events-none" />
-
-                {/* Live Responsive Typography: Centered vertically, NEVER cropped at any zoom level */}
-                <div className="absolute inset-0 flex flex-col justify-center px-5 sm:px-8 md:px-12 lg:px-16 pointer-events-none z-10">
-                  <div className="max-w-[72%] sm:max-w-[62%] md:max-w-[55%]">
-                    <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-black tracking-tight leading-[1.08] text-[#112217] drop-shadow-2xs">
-                      Your voice <br />
-                      <span className="text-[#15803d]">cleans Tadoba</span>
-                    </h2>
-                    <p className="mt-1 sm:mt-1.5 md:mt-2 text-[11px] sm:text-xs md:text-sm lg:text-base font-semibold text-gray-700 leading-tight drop-shadow-2xs">
-                      Help others by sharing your washroom experience.
-                    </p>
-                  </div>
+          <main className="flex-1 flex flex-col justify-center items-center w-full max-w-[min(96vw,1750px)] 2xl:max-w-[1900px] mx-auto px-2 sm:px-4 md:px-6 relative z-20 my-auto animate-in fade-in duration-300">
+            <div className="w-full grid grid-cols-1 md:grid-cols-12 gap-5 sm:gap-7 lg:gap-10 xl:gap-12 items-center">
+              
+              {/* LEFT COLUMN: Rating Confirmation with Bouncing Tiger Avatar */}
+              <div className="md:col-span-5 flex flex-col items-center text-center justify-center">
+                {/* Selected Tiger Avatar with animate-bounce */}
+                <div className="w-28 h-28 sm:w-36 sm:h-36 md:w-44 md:h-44 lg:w-50 lg:h-50 xl:w-56 xl:h-56 rounded-full overflow-hidden shadow-2xl ring-4 sm:ring-8 ring-amber-100/90 bg-white animate-bounce">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={selectedRating.image}
+                    alt="Selected rating"
+                    className="w-full h-full object-cover"
+                  />
                 </div>
+
+                {/* Rating Pill: "✓ You rated Good" */}
+                <div
+                  className={`inline-flex items-center gap-2 px-5 py-2 sm:px-7 sm:py-2.5 md:px-8 md:py-3 rounded-full font-black text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl shadow-xs mt-3 sm:mt-4 ${selectedRating.pillBg} ${selectedRating.pillText}`}
+                >
+                  <Check size={18} className="stroke-[3]" />
+                  <span>
+                    {t.youRated}{" "}
+                    <span className="underline decoration-2 underline-offset-4">
+                      {ratingLabel}
+                    </span>
+                  </span>
+                </div>
+
+                {/* Headline */}
+                <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-black text-[#132f20] tracking-tight leading-tight mt-3 sm:mt-4">
+                  {t.thanksTitle}
+                </h2>
+
+                {/* Subtitle */}
+                <p className="text-slate-600 text-xs sm:text-sm md:text-base lg:text-lg font-medium mt-1 sm:mt-1.5 max-w-md">
+                  {t.thanksSubtitle}
+                </p>
               </div>
 
-              {/* 2. BODY CONTENT: Balanced 2-Column Split with Enhanced Kiosk Typography */}
-              <div className="p-3 sm:p-5 md:p-6 lg:p-7 xl:p-8 2xl:p-10 grid grid-cols-1 md:grid-cols-12 gap-3 sm:gap-4 md:gap-5 lg:gap-7 xl:gap-9 items-stretch">
-                {/* Left Column (5/12): Rating Confirmation & Written Feedback */}
-                <div className="md:col-span-5 flex flex-col justify-between gap-3">
-                  {/* Selected Rating Badge (Enhanced Visibility) */}
-                  <div className="flex items-center gap-3.5 sm:gap-4 p-3 sm:p-4 lg:p-5 bg-emerald-50/90 border border-emerald-200 rounded-2xl sm:rounded-3xl shadow-2xs">
-                    <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 lg:w-20 lg:h-20 xl:w-24 xl:h-24 rounded-full overflow-hidden shrink-0 shadow-xs border-2 sm:border-3 border-emerald-400 ring-2 ring-emerald-100">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={selectedRating.image}
-                        alt={selectedRating.id}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs sm:text-sm lg:text-base font-extrabold uppercase tracking-wider text-emerald-800">
-                          {t.yourRating}
-                        </span>
-                        <span className="text-xs sm:text-sm font-black px-3 py-1 rounded-full bg-emerald-200 text-emerald-900 shrink-0 shadow-2xs">
-                          {t.recordedBadge}
+              {/* Subtle Vertical Divider Line (Visible on Tablet/Desktop) */}
+              <div className="hidden md:block col-span-1 h-64 lg:h-80 w-px bg-stone-300/80 mx-auto" />
+
+              {/* RIGHT COLUMN: "What could be improved?" OR Token of Gratitude */}
+              <div className="md:col-span-6 flex flex-col justify-center">
+                <div className="bg-[#edf7f0]/90 border border-[#cbe4d2] rounded-3xl sm:rounded-4xl p-4 sm:p-6 md:p-7 lg:p-8 shadow-xs min-h-[350px] sm:min-h-[390px] flex flex-col justify-center transition-all duration-500">
+                  {showGratitude ? (
+                    /* TOKEN OF GRATITUDE (Shown after 3.5s of selecting reasons) */
+                    <div className="flex flex-col items-center justify-center text-center my-auto py-3 sm:py-5 animate-in zoom-in-95 fade-in duration-500">
+                      {/* Animated Check & Leaf Emblem */}
+                      <div className="relative mb-3 sm:mb-4">
+                        <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-22 md:h-22 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-lg ring-4 ring-emerald-200">
+                          <CheckCircle2 className="w-9 h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 stroke-[2.2]" />
+                        </div>
+                        <div className="absolute -top-1 -right-1 text-lg sm:text-xl animate-bounce">
+                          🌿
+                        </div>
+                      </div>
+
+                      {/* Selected Issues Count Pill */}
+                      <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3.5 py-1 sm:px-4 sm:py-1.5 rounded-full bg-emerald-200/80 text-emerald-900 font-black text-xs sm:text-sm md:text-base mb-2 sm:mb-3 shadow-2xs">
+                        <span>
+                          {selectedIssues.length} {t.issuesReported}
                         </span>
                       </div>
-                      <div className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl 2xl:text-5xl font-black text-emerald-950 truncate mt-0.5 sm:mt-1">
-                        {ratingLabel}
-                      </div>
+
+                      {/* Gratitude Title */}
+                      <h3 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black text-[#132f20] tracking-tight leading-tight">
+                        {t.gratitudeTitle}
+                      </h3>
+
+                      {/* Gratitude Subtitle */}
+                      <p className="text-xs sm:text-sm md:text-base lg:text-lg text-slate-700 font-medium max-w-md mt-1.5 sm:mt-2 leading-relaxed">
+                        {t.gratitudeSubtitle}
+                      </p>
                     </div>
-                  </div>
-
-                  {/* Additional Comments Input (Clear & Tactile) */}
-                  <div className="flex-1 flex flex-col justify-end">
-                    <label className="block text-xs sm:text-sm md:text-base lg:text-lg font-bold text-gray-800 mb-1.5 flex items-center gap-2">
-                      <MessageSquare size={16} className="text-[#284e3a]" />
-                      <span>{t.commentsLabel}</span>
-                    </label>
-                    <textarea
-                      value={comments}
-                      onChange={(e) => setComments(e.target.value)}
-                      rows={2}
-                      className="w-full px-4 py-2.5 sm:py-3 text-sm sm:text-base lg:text-lg font-medium border border-gray-200 rounded-xl sm:rounded-2xl focus:ring-2 focus:ring-[#284e3a] focus:border-[#284e3a] resize-none text-gray-900 placeholder-gray-400 bg-gray-50/70 focus:bg-white transition"
-                      placeholder={t.commentsPlaceholder}
-                    />
-                  </div>
-                </div>
-
-                {/* Right Column (7/12): Improvement Issues Checklist & Actions */}
-                <div className="md:col-span-7 flex flex-col justify-between gap-3 border-t md:border-t-0 md:border-l border-gray-100 md:pl-4 lg:pl-6 pt-3 md:pt-0">
-                  <div>
-                    <div className="flex items-center justify-between mb-2 sm:mb-3 gap-2">
-                      <div>
-                        <h3 className="text-base sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl 2xl:text-5xl font-black text-gray-900 leading-tight">
+                  ) : (
+                    /* WHAT COULD BE IMPROVED ISSUES GRID */
+                    <>
+                      {/* Header */}
+                      <div className="mb-3 sm:mb-4">
+                        <h3 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black text-[#132f20] tracking-tight">
                           {t.issuesTitle}
                         </h3>
-                        <p className="text-xs sm:text-sm md:text-base text-gray-600 hidden sm:block font-medium mt-0.5">
+                        <p className="text-xs sm:text-sm md:text-base text-slate-600 font-semibold mt-0.5 sm:mt-1">
                           {t.issuesSubtitle}
                         </p>
                       </div>
 
-                      {/* No Issues Toggle (Prominent) */}
-                      <button
-                        type="button"
-                        onClick={toggleNoIssues}
-                        className={`px-4 py-2 sm:px-6 sm:py-2.5 rounded-xl sm:rounded-2xl text-xs sm:text-sm md:text-base font-black transition flex items-center gap-2 border cursor-pointer shrink-0 ${
-                          noIssuesSelected
-                            ? "bg-[#284e3a] text-white border-[#284e3a] shadow-xs"
-                            : "bg-gray-50 text-gray-800 border-gray-200 hover:bg-gray-100"
-                        }`}
-                      >
-                        {noIssuesSelected && (
-                          <Check size={15} className="stroke-[3]" />
-                        )}
-                        <span>{t.noIssues}</span>
-                      </button>
-                    </div>
+                      {/* 2x4 Grid of 8 Issue Cards */}
+                      <div className="grid grid-cols-4 gap-2.5 sm:gap-3.5 md:gap-4 lg:gap-4.5">
+                        {QUICK_ISSUES.map((issue) => {
+                          const isSelected = selectedIssues.includes(issue.id);
+                          const issueText = issue.label[lang] || issue.label.en;
+                          const IconComp = issue.icon;
 
-                    {/* Quick Issue Chips Grid (Bold & Clear Kiosk Touch Targets) */}
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5 lg:gap-3.5 mb-2.5 sm:mb-3.5">
-                      {QUICK_ISSUES.map((issue) => {
-                        const isSelected = selectedIssues.includes(issue.id);
-                        const issueText = issue.label[lang] || issue.label.en;
+                          return (
+                            <button
+                              key={issue.id}
+                              type="button"
+                              onClick={() => toggleIssueSelection(issue.id)}
+                              className={`relative flex flex-col items-center justify-center p-2.5 sm:p-3.5 md:p-4 rounded-2xl sm:rounded-3xl transition-all cursor-pointer select-none text-center min-h-[92px] sm:min-h-[108px] md:min-h-[120px] lg:min-h-[132px] ${
+                                isSelected
+                                  ? "bg-emerald-50 border-2 sm:border-3 border-emerald-600 ring-2 ring-emerald-500/25 shadow-md scale-[1.03]"
+                                  : "bg-white border border-stone-200/90 shadow-2xs hover:shadow-md hover:border-emerald-300 active:scale-95"
+                              }`}
+                            >
+                              {/* Selected check badge */}
+                              {isSelected && (
+                                <div className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 w-4.5 h-4.5 sm:w-5 sm:h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-xs">
+                                  <Check size={11} className="stroke-[3]" />
+                                </div>
+                              )}
 
-                        return (
-                          <button
-                            key={issue.id}
-                            type="button"
-                            onClick={() => toggleIssueSelection(issue.id)}
-                            className={`p-3 sm:p-3.5 lg:p-4.5 rounded-xl sm:rounded-2xl border text-sm sm:text-base md:text-lg lg:text-xl font-extrabold transition-all text-center cursor-pointer flex items-center justify-center gap-1.5 min-h-[48px] sm:min-h-[56px] lg:min-h-[64px] ${
-                              isSelected
-                                ? "bg-rose-500 text-white border-rose-500 shadow-md scale-[1.02]"
-                                : "bg-gray-50/90 border-gray-200 text-gray-800 hover:bg-gray-100"
-                            }`}
-                          >
-                            {isSelected && (
-                              <Check
-                                size={16}
-                                className="stroke-[3] shrink-0"
-                              />
-                            )}
-                            <span className="truncate">{issueText}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
+                              {/* Icon Circle */}
+                              <div
+                                className={`w-10 h-10 sm:w-12 sm:h-12 md:w-13 md:h-13 rounded-full flex items-center justify-center mb-1.5 shrink-0 transition-transform ${
+                                  issue.iconBg
+                                } ${isSelected ? "scale-105" : ""}`}
+                              >
+                                <IconComp className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7" />
+                              </div>
 
-                  {/* Action Buttons Row (Enlarged Kiosk Touch Targets) */}
-                  <div className="flex items-center justify-end gap-3 sm:gap-4 pt-3 border-t border-gray-100">
-                    <button
-                      type="button"
-                      onClick={handleSkipPhase3}
-                      className="px-6 py-2.5 sm:px-8 sm:py-3.5 lg:px-9 lg:py-4 rounded-xl sm:rounded-2xl text-sm sm:text-base md:text-lg font-bold text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition cursor-pointer"
-                    >
-                      {t.skipIssues}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={handleSubmitPhase3}
-                      disabled={isSubmitting}
-                      className="px-7 py-3 sm:px-10 sm:py-4 lg:px-12 lg:py-4.5 rounded-xl sm:rounded-2xl text-sm sm:text-base md:text-lg lg:text-xl font-black bg-[#284e3a] hover:bg-[#1e3a29] text-white shadow-md hover:shadow-xl transition flex items-center gap-2.5 cursor-pointer disabled:opacity-70 active:scale-95"
-                    >
-                      {isSubmitting ? (
-                        <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                      ) : (
-                        <>
-                          <span>{t.submitIssues}</span>
-                          <Send size={16} />
-                        </>
-                      )}
-                    </button>
-                  </div>
+                              {/* Label */}
+                              <span className="text-xs sm:text-sm md:text-base font-black text-slate-800 leading-snug">
+                                {renderLabel(issueText)}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
+
+            </div>
+
+            {/* BOTTOM ACTION: Next Visitor Button */}
+            <div className="flex items-center justify-center mt-4 sm:mt-6 md:mt-7 relative z-20">
+              <button
+                type="button"
+                onClick={resetToHome}
+                className="px-8 py-2.5 sm:px-10 sm:py-3 md:px-12 md:py-3.5 rounded-full bg-white hover:bg-stone-50 text-slate-800 font-extrabold text-xs sm:text-sm md:text-base lg:text-lg border border-stone-300 shadow-2xs hover:shadow-md transition-all flex items-center gap-2 cursor-pointer transform hover:scale-105 active:scale-95"
+              >
+                <RotateCcw size={18} className="stroke-[2.2]" />
+                <span>{t.resetNow}</span>
+              </button>
+            </div>
+
+            {/* Auto-reset indicator bar (subtle) */}
+            <div className="w-full max-w-xs bg-stone-200/60 rounded-full h-1 overflow-hidden mt-2.5 sm:mt-3 opacity-50">
+              <div
+                className="bg-emerald-600 h-full transition-all duration-1000 ease-linear rounded-full"
+                style={{ width: `${(bouncingTimer / 20) * 100}%` }}
+              />
             </div>
           </main>
         )}
 
         {/* ============================================================== */}
-        {/* SCREEN 4: Thank You Screen (Auto-resets in 3s) */}
+        {/* BOTTOM CORNER FOLIAGE: Left and Right Corner Leaves (Flush)    */}
         {/* ============================================================== */}
-        {currentPhase === "thankyou" && (
-          <main className="flex-1 flex flex-col items-center justify-center p-3 sm:p-5 lg:p-8 text-center my-auto animate-in fade-in duration-300 w-full max-w-[min(94vw,1400px)] 2xl:max-w-[1600px] mx-auto">
-            {selectedRating && (
-              <div className="w-[clamp(90px,14vw,230px)] h-[clamp(90px,14vw,230px)] rounded-full overflow-hidden shadow-xl mb-3 sm:mb-5 animate-bounce">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={selectedRating.image}
-                  alt="Review submitted"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            )}
-
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs sm:text-sm font-bold mb-2 shadow-xs">
-              <CheckCircle2 size={15} />
-              <span>Review Recorded Successfully</span>
-            </div>
-
-            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl 2xl:text-7xl font-black text-slate-900 tracking-tight mb-2 sm:mb-3">
-              {t.thanksTitle}
-            </h2>
-
-            <p className="text-gray-600 text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl max-w-xl mx-auto mb-4 sm:mb-6 font-medium">
-              {t.thanksSubtitle}
-            </p>
-
-            {/* Countdown bar */}
-            <div className="w-full max-w-xs bg-gray-100 rounded-full h-1.5 overflow-hidden mb-3">
-              <div
-                className="bg-emerald-500 h-full transition-all duration-1000 ease-linear rounded-full"
-                style={{ width: `${(thankYouCountdown / 3) * 100}%` }}
-              />
-            </div>
-
-            <p className="text-xs text-gray-400 mb-4 font-semibold">
-              {t.resettingText} {thankYouCountdown}s...
-            </p>
-
-            <button
-              onClick={resetToHome}
-              className="px-6 py-2.5 sm:px-8 sm:py-3.5 md:px-10 md:py-4 lg:px-14 lg:py-5 rounded-2xl sm:rounded-3xl bg-[#284e3a] hover:bg-[#1e3a29] text-white font-bold text-xs sm:text-sm md:text-base lg:text-xl transition-all shadow-md flex items-center gap-2.5 cursor-pointer"
-            >
-              <RotateCcw size={15} />
-              <span>{t.resetNow}</span>
-            </button>
-          </main>
+        {currentPhase !== "rating" && (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/tadoba-form/tadoba_leaves_left.png"
+              alt=""
+              className="absolute bottom-0 left-0 w-[clamp(160px,24vw,390px)] h-auto max-h-[32vh] object-contain object-left-bottom pointer-events-none z-10 select-none -mb-0.5"
+            />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/tadoba-form/tadoba_leaves_right.png"
+              alt=""
+              className="absolute bottom-0 right-0 w-[clamp(180px,27vw,430px)] h-auto max-h-[32vh] object-contain object-right-bottom pointer-events-none z-10 select-none -mb-0.5"
+            />
+          </>
         )}
       </div>
     </>
