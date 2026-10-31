@@ -12,6 +12,8 @@ import {
   CheckCircle2,
   MessageSquare,
   Star,
+  Settings,
+  Mail,
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import axiosInstance from "@/shared/api/axios.instance";
@@ -724,9 +726,9 @@ export default function TadobaTFeedback() {
           <div className="flex items-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/tadoba-form/tatr-logo.png"
+              src="/tadoba-form/tatr_logo_png.png"
               alt="TATR - Tadoba Andhari Tiger Reserve"
-              className="h-14 sm:h-18 md:h-22 lg:h-26 xl:h-30 2xl:h-36 max-h-[12vh] w-auto object-contain drop-shadow-sm transition-all"
+              className="h-16 sm:h-20 md:h-24 lg:h-28 xl:h-32 2xl:h-40 min-h-[56px] sm:min-h-[72px] md:min-h-[88px] lg:min-h-[108px] xl:min-h-[120px] max-h-[18vh] w-auto object-contain drop-shadow-md transition-all select-none"
             />
           </div>
 
@@ -918,6 +920,53 @@ export default function TadobaTFeedback() {
               })}
             </div>
 
+            {/* BRANDING FOOTER: Developed & Managed by SaafAI | Want a similar solution? */}
+            <div className="w-full flex items-center justify-center gap-2.5 sm:gap-4 md:gap-6 mt-4 sm:mt-6 md:mt-8 lg:mt-9 z-20 shrink-0 select-none">
+              {/* Left Accent Divider Line */}
+              <div className="hidden sm:block h-[1.5px] w-10 sm:w-16 md:w-24 lg:w-32 bg-slate-400/50 rounded-full" />
+
+              {/* Left Block: Developed & Managed by SaafAI */}
+              <div className="flex items-center gap-2 sm:gap-2.5 md:gap-3 text-left">
+                <Settings className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-slate-800 stroke-[1.8] shrink-0" />
+                <div className="flex flex-col">
+                  <div className="text-xs sm:text-sm md:text-base font-extrabold text-slate-900 tracking-tight leading-snug">
+                    Developed & Managed by{" "}
+                    <span className="font-black text-slate-900">
+                      Saaf<span className="text-[#00A3E0]">AI</span>
+                    </span>
+                  </div>
+                  <div className="text-[10px] sm:text-xs md:text-sm font-medium text-slate-500 leading-snug">
+                    Smart Facility Management Solutions
+                  </div>
+                </div>
+              </div>
+
+              {/* Vertical Divider */}
+              <div className="h-7 sm:h-8 md:h-9 w-[1px] bg-slate-300 mx-1 sm:mx-2 md:mx-3 shrink-0" />
+
+              {/* Right Block: Want a similar solution? */}
+              <div className="flex items-center gap-2 sm:gap-2.5 md:gap-3 text-left">
+                <Mail className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-slate-800 stroke-[1.8] shrink-0" />
+                <div className="flex flex-col">
+                  <div className="text-xs sm:text-sm md:text-base font-extrabold text-slate-900 tracking-tight leading-snug">
+                    Want a similar solution?
+                  </div>
+                  <div className="text-[10px] sm:text-xs md:text-sm font-medium text-slate-600 leading-snug">
+                    Contact:{" "}
+                    <a
+                      href="mailto:info@saafai.in"
+                      className="font-bold text-[#00A3E0] hover:underline"
+                    >
+                      info@saafai.in
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Accent Divider Line */}
+              <div className="hidden sm:block h-[1.5px] w-10 sm:w-16 md:w-24 lg:w-32 bg-slate-400/50 rounded-full" />
+            </div>
+
             {/* SUBTLE LOW CONNECTIVITY NOTICE (Only when forest network lags >2s) */}
             {isSlowNetwork && (
               <div className="mt-4 px-4 py-2 rounded-2xl bg-amber-50/95 border border-amber-300 shadow-lg flex items-center gap-2 text-amber-900 text-xs sm:text-sm font-bold animate-in fade-in duration-300 mx-auto max-w-sm">
@@ -1008,14 +1057,31 @@ export default function TadobaTFeedback() {
           <main className="flex-1 w-full max-w-[min(95vw,1750px)] 2xl:max-w-[1920px] mx-auto flex flex-col justify-center min-h-0 my-auto py-1 sm:py-2 relative z-20">
             <div className="bg-white rounded-3xl sm:rounded-4xl border border-stone-200/90 shadow-2xl overflow-hidden flex flex-col">
               
-              {/* 1. TOP HERO BANNER: Responsive fluid height that adapts to any window size */}
-              <div className="relative w-full overflow-hidden bg-[#FAF7F2] border-b border-stone-200 shrink-0 h-[clamp(140px,26vh,380px)] xl:h-[28vh] 2xl:h-[30vh]">
+              {/* 1. TOP HERO BANNER: Responsive fluid height that adapts to any window size & zoom */}
+              <div className="relative w-full overflow-hidden bg-[#FAF8F5] border-b border-stone-200 shrink-0 h-[clamp(130px,22vh,280px)] xl:h-[24vh] 2xl:h-[26vh] flex items-center">
+                {/* Photographic background anchored to tiger on the right */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src="/tadoba_banner_new.png"
-                  alt="Your voice cleans India - Tadoba-Andhari Tiger Reserve"
-                  className="w-full h-full object-cover object-center block"
+                  src="/tadoba-form/tadoba_tiger_photo.png"
+                  alt="Tadoba-Andhari Tiger Reserve"
+                  className="w-full h-full object-cover object-[85%_75%] block select-none"
                 />
+
+                {/* Soft natural sun mist gradient on the left for guaranteed text contrast */}
+                <div className="absolute inset-0 bg-gradient-to-r from-[#FAF8F5] via-[#FAF8F5]/92 via-35% md:via-42% to-transparent pointer-events-none" />
+
+                {/* Live Responsive Typography: Centered vertically, NEVER cropped at any zoom level */}
+                <div className="absolute inset-0 flex flex-col justify-center px-5 sm:px-8 md:px-12 lg:px-16 pointer-events-none z-10">
+                  <div className="max-w-[72%] sm:max-w-[62%] md:max-w-[55%]">
+                    <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-black tracking-tight leading-[1.08] text-[#112217] drop-shadow-2xs">
+                      Your voice <br />
+                      <span className="text-[#15803d]">cleans Tadoba</span>
+                    </h2>
+                    <p className="mt-1 sm:mt-1.5 md:mt-2 text-[11px] sm:text-xs md:text-sm lg:text-base font-semibold text-gray-700 leading-tight drop-shadow-2xs">
+                      Help others by sharing your washroom experience.
+                    </p>
+                  </div>
+                </div>
               </div>
 
               {/* 2. BODY CONTENT: Balanced 2-Column Split with Enhanced Kiosk Typography */}

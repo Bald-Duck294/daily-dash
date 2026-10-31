@@ -12,6 +12,8 @@ import {
   CheckCircle2,
   MessageSquare,
   Star,
+  Settings,
+  Mail,
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import axiosInstance from "@/shared/api/axios.instance";
@@ -88,13 +90,23 @@ const RATING_OPTIONS = [
 
 // Quick issues list for Phase 3 (Details screen)
 const QUICK_ISSUES = [
-  { id: 1, label: { en: "Dirty Toilets", hi: "गंदे शौचालय", mr: "अस्वच्छ शौचालय" } },
+  {
+    id: 1,
+    label: { en: "Dirty Toilets", hi: "गंदे शौचालय", mr: "अस्वच्छ शौचालय" },
+  },
   { id: 3, label: { en: "Foul Odor", hi: "बदबू", mr: "दुर्गंधी" } },
   { id: 2, label: { en: "Wet Floor", hi: "गीला फर्श", mr: "ओला मजला" } },
   { id: 7, label: { en: "No Water", hi: "पानी नहीं है", mr: "पाणी नाही" } },
   { id: 14, label: { en: "No Soap", hi: "साबुन नहीं है", mr: "साबण नाही" } },
   { id: 4, label: { en: "Spit Stains", hi: "थूक के दाग", mr: "पानाचे डाग" } },
-  { id: 5, label: { en: "Full Dustbin", hi: "कचरा पेटी भरी है", mr: "कचराकुंडी भरली आहे" } },
+  {
+    id: 5,
+    label: {
+      en: "Full Dustbin",
+      hi: "कचरा पेटी भरी है",
+      mr: "कचराकुंडी भरली आहे",
+    },
+  },
   { id: 17, label: { en: "Poor Lighting", hi: "कम रोशनी", mr: "कमी प्रकाश" } },
 ];
 
@@ -129,7 +141,8 @@ const TRANSLATIONS = {
   hi: {
     welcomeTitle: "ताडोबा-अंधारी टाइगर रिजर्व में आपका स्वागत है",
     recordingRating: "आपकी रेटिंग दर्ज की जा रही है...",
-    slowNetworkNotice: "वन क्षेत्र में नेटवर्क धीमा है, कृपया प्रतीक्षा करें...",
+    slowNetworkNotice:
+      "वन क्षेत्र में नेटवर्क धीमा है, कृपया प्रतीक्षा करें...",
     title: "अपने शौचालय के अनुभव को रेट करें",
     subtitle: "अपनी तत्काल समीक्षा दर्ज करने के लिए किसी इमोजी पर टैप करें",
     thanksTitle: "आपकी प्रतिक्रिया के लिए धन्यवाद!",
@@ -182,19 +195,98 @@ const TRANSLATIONS = {
   },
 };
 
-
 // Ambient Falling Forest Leaves configuration for live photo-frame feel
 const FALLING_LEAVES = [
-  { id: 1, left: "7%", duration: 13, delay: 0, size: "w-6 h-6", anim: "forestLeafFallLeft", img: "/leaf_01.png" },
-  { id: 2, left: "17%", duration: 16, delay: 3.5, size: "w-5 h-5", anim: "forestLeafFallRight", img: "/leaf_02.png" },
-  { id: 3, left: "28%", duration: 14, delay: 7.2, size: "w-7 h-7", anim: "forestLeafFallLeft", img: "/leaf_03.png" },
-  { id: 4, left: "41%", duration: 18, delay: 1.5, size: "w-6 h-6", anim: "forestLeafFallRight", img: "/leaf_04.png" },
-  { id: 5, left: "53%", duration: 15, delay: 9.8, size: "w-5 h-5", anim: "forestLeafFallLeft", img: "/leaf_01.png" },
-  { id: 6, left: "64%", duration: 13.5, delay: 4.5, size: "w-7 h-7", anim: "forestLeafFallRight", img: "/leaf_02.png" },
-  { id: 7, left: "76%", duration: 17, delay: 2.2, size: "w-6 h-6", anim: "forestLeafFallLeft", img: "/leaf_03.png" },
-  { id: 8, left: "86%", duration: 15.5, delay: 8.4, size: "w-5 h-5", anim: "forestLeafFallRight", img: "/leaf_04.png" },
-  { id: 9, left: "94%", duration: 14, delay: 5.8, size: "w-6 h-6", anim: "forestLeafFallLeft", img: "/leaf_01.png" },
-  { id: 10, left: "2%", duration: 19, delay: 11.2, size: "w-7 h-7", anim: "forestLeafFallRight", img: "/leaf_02.png" },
+  {
+    id: 1,
+    left: "7%",
+    duration: 13,
+    delay: 0,
+    size: "w-6 h-6",
+    anim: "forestLeafFallLeft",
+    img: "/leaf_01.png",
+  },
+  {
+    id: 2,
+    left: "17%",
+    duration: 16,
+    delay: 3.5,
+    size: "w-5 h-5",
+    anim: "forestLeafFallRight",
+    img: "/leaf_02.png",
+  },
+  {
+    id: 3,
+    left: "28%",
+    duration: 14,
+    delay: 7.2,
+    size: "w-7 h-7",
+    anim: "forestLeafFallLeft",
+    img: "/leaf_03.png",
+  },
+  {
+    id: 4,
+    left: "41%",
+    duration: 18,
+    delay: 1.5,
+    size: "w-6 h-6",
+    anim: "forestLeafFallRight",
+    img: "/leaf_04.png",
+  },
+  {
+    id: 5,
+    left: "53%",
+    duration: 15,
+    delay: 9.8,
+    size: "w-5 h-5",
+    anim: "forestLeafFallLeft",
+    img: "/leaf_01.png",
+  },
+  {
+    id: 6,
+    left: "64%",
+    duration: 13.5,
+    delay: 4.5,
+    size: "w-7 h-7",
+    anim: "forestLeafFallRight",
+    img: "/leaf_02.png",
+  },
+  {
+    id: 7,
+    left: "76%",
+    duration: 17,
+    delay: 2.2,
+    size: "w-6 h-6",
+    anim: "forestLeafFallLeft",
+    img: "/leaf_03.png",
+  },
+  {
+    id: 8,
+    left: "86%",
+    duration: 15.5,
+    delay: 8.4,
+    size: "w-5 h-5",
+    anim: "forestLeafFallRight",
+    img: "/leaf_04.png",
+  },
+  {
+    id: 9,
+    left: "94%",
+    duration: 14,
+    delay: 5.8,
+    size: "w-6 h-6",
+    anim: "forestLeafFallLeft",
+    img: "/leaf_01.png",
+  },
+  {
+    id: 10,
+    left: "2%",
+    duration: 19,
+    delay: 11.2,
+    size: "w-7 h-7",
+    anim: "forestLeafFallRight",
+    img: "/leaf_02.png",
+  },
 ];
 
 export default function TadobaLandscapeFeedback() {
@@ -205,7 +297,10 @@ export default function TadobaLandscapeFeedback() {
 
   // Kiosk Location / Company resolution & persistence (Supports single ID or comma-separated/linked IDs)
   const rawLoc = searchParams.get("locationId") || "";
-  const rawLinked = searchParams.get("linkedLocations") || searchParams.get("linkedLocationIds") || "";
+  const rawLinked =
+    searchParams.get("linkedLocations") ||
+    searchParams.get("linkedLocationIds") ||
+    "";
   const rawComp = searchParams.get("companyId") || "";
 
   // Helper to extract all numeric IDs from string
@@ -247,7 +342,10 @@ export default function TadobaLandscapeFeedback() {
       setCompanyId(finalComp);
 
       if (queryLocs.length > 0) {
-        localStorage.setItem("saafai_kiosk_locationIds", JSON.stringify(finalLocs));
+        localStorage.setItem(
+          "saafai_kiosk_locationIds",
+          JSON.stringify(finalLocs),
+        );
         localStorage.setItem("saafai_kiosk_locationId", finalLocs.join(","));
       }
       if (compMatch?.[0]) {
@@ -328,17 +426,34 @@ export default function TadobaLandscapeFeedback() {
       try {
         const scorePromises = locationIds.map(async (locId) => {
           try {
-            const locRes = await axiosInstance.get(`/locations/${locId}${companyId ? `?companyId=${companyId}` : ""}`);
+            const locRes = await axiosInstance.get(
+              `/locations/${locId}${companyId ? `?companyId=${companyId}` : ""}`,
+            );
             const locData = locRes?.data?.data || locRes?.data || locRes;
-            const avgScore = locData?.averageRating ?? locData?.average_cleaning_score ?? locData?.current_cleaning_score;
-            if (avgScore !== null && avgScore !== undefined && !isNaN(avgScore) && Number(avgScore) > 0) {
+            const avgScore =
+              locData?.averageRating ??
+              locData?.average_cleaning_score ??
+              locData?.current_cleaning_score;
+            if (
+              avgScore !== null &&
+              avgScore !== undefined &&
+              !isNaN(avgScore) &&
+              Number(avgScore) > 0
+            ) {
               return Number(avgScore);
             }
 
             // Fallback check from cleaner-reviews by location
-            const cleanerRes = await axiosInstance.get(`/cleaner-reviews/location/${locId}${companyId ? `?company_id=${companyId}` : ""}`);
+            const cleanerRes = await axiosInstance.get(
+              `/cleaner-reviews/location/${locId}${companyId ? `?company_id=${companyId}` : ""}`,
+            );
             const cleanerAvg = cleanerRes?.data?.data?.stats?.average_score;
-            if (cleanerAvg !== null && cleanerAvg !== undefined && !isNaN(cleanerAvg) && Number(cleanerAvg) > 0) {
+            if (
+              cleanerAvg !== null &&
+              cleanerAvg !== undefined &&
+              !isNaN(cleanerAvg) &&
+              Number(cleanerAvg) > 0
+            ) {
               return Number(cleanerAvg);
             }
           } catch (err) {
@@ -347,11 +462,14 @@ export default function TadobaLandscapeFeedback() {
           return null;
         });
 
-        const scores = (await Promise.all(scorePromises)).filter((s) => s !== null && s > 0);
+        const scores = (await Promise.all(scorePromises)).filter(
+          (s) => s !== null && s > 0,
+        );
         if (!isMounted) return;
 
         if (scores.length > 0) {
-          const combinedAvg = scores.reduce((sum, val) => sum + val, 0) / scores.length;
+          const combinedAvg =
+            scores.reduce((sum, val) => sum + val, 0) / scores.length;
           setWashroomRating(combinedAvg.toFixed(1));
         } else {
           setWashroomRating("0.0");
@@ -430,7 +548,6 @@ export default function TadobaLandscapeFeedback() {
     }
   }, [currentPhase]);
 
-
   // 3-Second Timer for Screen 4 (Thank You)
   useEffect(() => {
     if (currentPhase === "thankyou") {
@@ -467,7 +584,13 @@ export default function TadobaLandscapeFeedback() {
       const screenCenter = window.innerWidth / 2;
       setCenterOffset(screenCenter - elementCenter);
     } else if (typeof window !== "undefined") {
-      const indexMap = { poor: 0, fair: 1, good: 2, very_good: 3, excellent: 4 };
+      const indexMap = {
+        poor: 0,
+        fair: 1,
+        good: 2,
+        very_good: 3,
+        excellent: 4,
+      };
       const idx = indexMap[option.id] ?? 2;
       setCenterOffset((2 - idx) * (window.innerWidth * 0.18));
     }
@@ -484,11 +607,13 @@ export default function TadobaLandscapeFeedback() {
     }, 1800);
 
     // When the round line finishes its 360° circle (~1020ms), redirect to the next window
-    const minDisplayPromise = new Promise((resolve) => setTimeout(resolve, 1020));
+    const minDisplayPromise = new Promise((resolve) =>
+      setTimeout(resolve, 1020),
+    );
 
     // Fallback timeout of 6s so kiosk never gets stuck in low/no connectivity areas
     const timeoutPromise = new Promise((resolve) =>
-      setTimeout(() => resolve({ timeout: true }), 6000)
+      setTimeout(() => resolve({ timeout: true }), 6000),
     );
 
     try {
@@ -504,7 +629,10 @@ export default function TadobaLandscapeFeedback() {
         try {
           return await feedbackApi.submitReview(payload);
         } catch (err) {
-          console.warn(`Initial rating submit error for location ${locId}:`, err);
+          console.warn(
+            `Initial rating submit error for location ${locId}:`,
+            err,
+          );
           return null;
         }
       });
@@ -518,7 +646,9 @@ export default function TadobaLandscapeFeedback() {
 
       if (Array.isArray(responses)) {
         const createdIds = responses
-          .map((res) => res?.data?.id || res?.id || (res?.data && res.data[0]?.id))
+          .map(
+            (res) => res?.data?.id || res?.id || (res?.data && res.data[0]?.id),
+          )
           .filter(Boolean)
           .map((id) => id.toString());
         setSubmittedReviewIds(createdIds);
@@ -546,7 +676,9 @@ export default function TadobaLandscapeFeedback() {
   const toggleIssueSelection = (issueId) => {
     setNoIssuesSelected(false);
     setSelectedIssues((prev) =>
-      prev.includes(issueId) ? prev.filter((id) => id !== issueId) : [...prev, issueId]
+      prev.includes(issueId)
+        ? prev.filter((id) => id !== issueId)
+        : [...prev, issueId],
     );
   };
 
@@ -567,8 +699,8 @@ export default function TadobaLandscapeFeedback() {
         const finalReasons = noIssuesSelected
           ? [0]
           : selectedIssues.length > 0
-          ? selectedIssues
-          : [0];
+            ? selectedIssues
+            : [0];
 
         await Promise.all(
           submittedReviewIds.map((reviewId) =>
@@ -577,8 +709,10 @@ export default function TadobaLandscapeFeedback() {
                 reason_ids: finalReasons,
                 description: comments?.trim() || "",
               })
-              .catch((err) => console.warn(`Patch review failed for ID ${reviewId}:`, err))
-          )
+              .catch((err) =>
+                console.warn(`Patch review failed for ID ${reviewId}:`, err),
+              ),
+          ),
         );
       }
       setCurrentPhase("thankyou");
@@ -622,11 +756,12 @@ export default function TadobaLandscapeFeedback() {
               }
         }
       >
-        
         {/* ============================================================== */}
         {/* AMBIENT PHOTO-FRAME KEYFRAME STYLES                            */}
         {/* ============================================================== */}
-        <style dangerouslySetInnerHTML={{ __html: `
+        <style
+          dangerouslySetInnerHTML={{
+            __html: `
           @keyframes forestLeafFallLeft {
             0% {
               transform: translate3d(0, -60px, 0) rotate(0deg) scale(0.9);
@@ -687,12 +822,17 @@ export default function TadobaLandscapeFeedback() {
               transform: scale(1.38) translateY(-4px);
             }
           }
-        `}} />
+        `,
+          }}
+        />
 
         {/* ============================================================== */}
         {/* LIVE AMBIENT LAYER: GENTLE FALLING LEAVES (Continuous Forest Breeze) */}
         {/* ============================================================== */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden z-10" aria-hidden="true">
+        <div
+          className="absolute inset-0 pointer-events-none overflow-hidden z-10"
+          aria-hidden="true"
+        >
           {FALLING_LEAVES.map((leaf) => (
             <div
               key={leaf.id}
@@ -719,14 +859,13 @@ export default function TadobaLandscapeFeedback() {
         {/* TOP BAR: Left: TATR Logo | Center: Lang Selector | Right: SaafAI */}
         {/* ============================================================== */}
         <header className="w-full max-w-[min(95vw,1750px)] 2xl:max-w-[1920px] mx-auto flex items-center justify-between relative z-20 shrink-0 mb-4 sm:mb-6 md:mb-8 lg:mb-10 px-2 sm:px-4 lg:px-6">
-          
           {/* Top Left: TATR Tadoba Logo (Enlarged & Prominent) */}
           <div className="flex items-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/tadoba-form/tatr-logo.png"
+              src="/tadoba-form/tatr_logo_png.png"
               alt="TATR - Tadoba Andhari Tiger Reserve"
-              className="h-14 sm:h-18 md:h-22 lg:h-26 xl:h-30 2xl:h-36 max-h-[12vh] w-auto object-contain drop-shadow-sm transition-all"
+              className="h-16 sm:h-20 md:h-24 lg:h-28 xl:h-32 2xl:h-40 min-h-[56px] sm:min-h-[72px] md:min-h-[88px] lg:min-h-[108px] xl:min-h-[120px] max-h-[18vh] w-auto object-contain drop-shadow-md transition-all select-none"
             />
           </div>
 
@@ -798,12 +937,15 @@ export default function TadobaLandscapeFeedback() {
         {/* ============================================================== */}
         {currentPhase === "rating" && (
           <main className="flex-1 flex flex-col justify-center items-center text-center w-full max-w-[min(95vw,1750px)] 2xl:max-w-[1920px] mx-auto px-2 sm:px-4 pb-2 sm:pb-4">
-            
             {/* Prestigious Welcome Headline above Rating */}
             <div className="inline-flex items-center gap-1.5 sm:gap-2.5 px-3.5 py-1 sm:px-4.5 sm:py-1.5 md:px-5 md:py-2 rounded-full bg-emerald-950/10 backdrop-blur-xs border border-emerald-800/20 text-[#1e3a29] font-black text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl uppercase tracking-wider mb-2 sm:mb-2.5 shadow-2xs transition-all">
-              <span className="text-emerald-700 text-xs sm:text-sm md:text-base">🌿</span>
+              <span className="text-emerald-700 text-xs sm:text-sm md:text-base">
+                🌿
+              </span>
               <span>{t.welcomeTitle}</span>
-              <span className="text-emerald-700 text-xs sm:text-sm md:text-base">🌿</span>
+              <span className="text-emerald-700 text-xs sm:text-sm md:text-base">
+                🌿
+              </span>
             </div>
 
             <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl 2xl:text-7xl font-black text-slate-900 tracking-tight mb-0.5 sm:mb-1">
@@ -823,21 +965,26 @@ export default function TadobaLandscapeFeedback() {
                 return (
                   <div
                     key={option.id}
-                    onClick={(e) => !isProcessingRating && handleRatingSelect(option, e)}
+                    onClick={(e) =>
+                      !isProcessingRating && handleRatingSelect(option, e)
+                    }
                     className={`flex flex-col items-center group transition-all duration-500 transform ${
-                      isProcessingRating ? "cursor-wait" : "cursor-pointer active:scale-95 hover:scale-105"
+                      isProcessingRating
+                        ? "cursor-wait"
+                        : "cursor-pointer active:scale-95 hover:scale-105"
                     } ${
                       isSelected
                         ? "z-50"
                         : isOtherSelected
-                        ? "opacity-15 scale-80 filter blur-[8px] sm:blur-[10px] pointer-events-none transition-all duration-500"
-                        : "opacity-100"
+                          ? "opacity-15 scale-80 filter blur-[8px] sm:blur-[10px] pointer-events-none transition-all duration-500"
+                          : "opacity-100"
                     }`}
                     style={
                       isSelected
                         ? {
                             transform: `translate3d(${centerOffset}px, -6px, 0) scale(1.42)`,
-                            transition: "transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)",
+                            transition:
+                              "transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)",
                             zIndex: 50,
                           }
                         : {}
@@ -850,13 +997,34 @@ export default function TadobaLandscapeFeedback() {
                         <svg
                           viewBox="0 0 120 120"
                           className="absolute -inset-2.5 sm:-inset-3.5 md:-inset-4.5 lg:-inset-5.5 w-[calc(100%+20px)] sm:w-[calc(100%+28px)] md:w-[calc(100%+36px)] lg:w-[calc(100%+44px)] h-[calc(100%+20px)] sm:h-[calc(100%+28px)] md:h-[calc(100%+36px)] lg:h-[calc(100%+44px)] -rotate-90 pointer-events-none z-30 overflow-visible"
-                          style={{ filter: "drop-shadow(0 4px 10px rgba(0, 0, 0, 0.35))" }}
+                          style={{
+                            filter:
+                              "drop-shadow(0 4px 10px rgba(0, 0, 0, 0.35))",
+                          }}
                         >
                           <defs>
-                            <linearGradient id={`roundLineGrad-${option.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
-                              <stop offset="0%" stopColor="#ffffff" stopOpacity="0.8" />
-                              <stop offset="60%" stopColor="#ffffff" stopOpacity="1" />
-                              <stop offset="100%" stopColor="#ffffff" stopOpacity="1" />
+                            <linearGradient
+                              id={`roundLineGrad-${option.id}`}
+                              x1="0%"
+                              y1="0%"
+                              x2="100%"
+                              y2="100%"
+                            >
+                              <stop
+                                offset="0%"
+                                stopColor="#ffffff"
+                                stopOpacity="0.8"
+                              />
+                              <stop
+                                offset="60%"
+                                stopColor="#ffffff"
+                                stopOpacity="1"
+                              />
+                              <stop
+                                offset="100%"
+                                stopColor="#ffffff"
+                                stopOpacity="1"
+                              />
                             </linearGradient>
                           </defs>
 
@@ -882,7 +1050,8 @@ export default function TadobaLandscapeFeedback() {
                             strokeDasharray="340"
                             strokeDashoffset="340"
                             style={{
-                              animation: "drawRoundLine 1.0s cubic-bezier(0.25, 0.1, 0.25, 1) forwards",
+                              animation:
+                                "drawRoundLine 1.0s cubic-bezier(0.25, 0.1, 0.25, 1) forwards",
                             }}
                           />
                         </svg>
@@ -908,7 +1077,9 @@ export default function TadobaLandscapeFeedback() {
                     {/* Rating Label Pill Below Tiger - Natural styling, no green checkmark */}
                     <div
                       className={`mt-2 sm:mt-3 md:mt-4 lg:mt-6 px-3 py-1 sm:px-4 sm:py-1.5 md:px-5 md:py-2 lg:px-7 lg:py-3 rounded-full font-black text-xs sm:text-sm md:text-base lg:text-xl xl:text-2xl transition-all duration-300 shadow-md ${option.pillBg} ${option.pillText} ${
-                        isSelected ? "ring-4 ring-white shadow-xl scale-105" : "group-hover:scale-105"
+                        isSelected
+                          ? "ring-4 ring-white shadow-xl scale-105"
+                          : "group-hover:scale-105"
                       }`}
                     >
                       <span>{labelText}</span>
@@ -918,10 +1089,60 @@ export default function TadobaLandscapeFeedback() {
               })}
             </div>
 
+            {/* BRANDING FOOTER: Developed & Managed by SaafAI | Want a similar solution? */}
+            <div className="w-full flex items-center justify-center gap-2.5 sm:gap-4 md:gap-6 mt-4 sm:mt-6 md:mt-8 lg:mt-9 z-20 shrink-0 select-none">
+              {/* Left Accent Divider Line */}
+              <div className="hidden sm:block h-[1.5px] w-10 sm:w-16 md:w-24 lg:w-32 bg-slate-400/50 rounded-full" />
+
+              {/* Left Block: Developed & Managed by SaafAI */}
+              <div className="flex items-center gap-2 sm:gap-2.5 md:gap-3 text-left">
+                <Settings className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-slate-800 stroke-[1.8] shrink-0" />
+                <div className="flex flex-col">
+                  <div className="text-xs sm:text-sm md:text-base font-extrabold text-slate-900 tracking-tight leading-snug">
+                    Developed & Managed by{" "}
+                    <span className="font-black text-slate-900">
+                      Saaf<span className="text-[#00A3E0]">AI</span>
+                    </span>
+                  </div>
+                  <div className="text-[10px] sm:text-xs md:text-sm font-medium text-slate-500 leading-snug">
+                    Smart Facility Management Solutions
+                  </div>
+                </div>
+              </div>
+
+              {/* Vertical Divider */}
+              <div className="h-7 sm:h-8 md:h-9 w-[1px] bg-slate-300 mx-1 sm:mx-2 md:mx-3 shrink-0" />
+
+              {/* Right Block: Want a similar solution? */}
+              <div className="flex items-center gap-2 sm:gap-2.5 md:gap-3 text-left">
+                <Mail className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-slate-800 stroke-[1.8] shrink-0" />
+                <div className="flex flex-col">
+                  <div className="text-xs sm:text-sm md:text-base font-extrabold text-slate-900 tracking-tight leading-snug">
+                    Want a similar solution?
+                  </div>
+                  <div className="text-[10px] sm:text-xs md:text-sm font-medium text-slate-600 leading-snug">
+                    Contact:{" "}
+                    <a
+                      href="mailto:info@saafai.in"
+                      className="font-bold text-[#00A3E0] hover:underline"
+                    >
+                      info@saafai.in
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Accent Divider Line */}
+              <div className="hidden sm:block h-[1.5px] w-10 sm:w-16 md:w-24 lg:w-32 bg-slate-400/50 rounded-full" />
+            </div>
+
             {/* SUBTLE LOW CONNECTIVITY NOTICE (Only when forest network lags >2s) */}
             {isSlowNetwork && (
               <div className="mt-4 px-4 py-2 rounded-2xl bg-amber-50/95 border border-amber-300 shadow-lg flex items-center gap-2 text-amber-900 text-xs sm:text-sm font-bold animate-in fade-in duration-300 mx-auto max-w-sm">
-                <Clock size={16} className="text-amber-700 animate-spin shrink-0" />
+                <Clock
+                  size={16}
+                  className="text-amber-700 animate-spin shrink-0"
+                />
                 <span>{t.slowNetworkNotice}</span>
               </div>
             )}
@@ -933,7 +1154,6 @@ export default function TadobaLandscapeFeedback() {
         {/* ============================================================== */}
         {currentPhase === "bouncing" && selectedRating && (
           <main className="flex-1 flex flex-col items-center justify-center p-3 sm:p-5 lg:p-8 text-center my-auto animate-in fade-in duration-300 w-full max-w-[min(94vw,1400px)] 2xl:max-w-[1600px] mx-auto">
-            
             {/* Big Bouncing Emoji */}
             <div className="w-[clamp(110px,15vw,250px)] h-[clamp(110px,15vw,250px)] rounded-full overflow-hidden shadow-2xl mb-3 sm:mb-5 lg:mb-6 animate-bounce ring-4 sm:ring-8 ring-emerald-50">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -1007,23 +1227,37 @@ export default function TadobaLandscapeFeedback() {
         {currentPhase === "details" && selectedRating && (
           <main className="flex-1 w-full max-w-[min(95vw,1750px)] 2xl:max-w-[1920px] mx-auto flex flex-col justify-center min-h-0 my-auto py-1 sm:py-2 relative z-20">
             <div className="bg-white rounded-3xl sm:rounded-4xl border border-stone-200/90 shadow-2xl overflow-hidden flex flex-col">
-              
-              {/* 1. TOP HERO BANNER: Responsive fluid height that adapts to any window size */}
-              <div className="relative w-full overflow-hidden bg-[#FAF7F2] border-b border-stone-200 shrink-0 h-[clamp(140px,26vh,380px)] xl:h-[28vh] 2xl:h-[30vh]">
+              {/* 1. TOP HERO BANNER: Responsive fluid height that adapts to any window size & zoom */}
+              <div className="relative w-full overflow-hidden bg-[#FAF8F5] border-b border-stone-200 shrink-0 h-[clamp(130px,22vh,280px)] xl:h-[24vh] 2xl:h-[26vh] flex items-center">
+                {/* Photographic background anchored to tiger on the right */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src="/tadoba_banner_new.png"
-                  alt="Your voice cleans India - Tadoba-Andhari Tiger Reserve"
-                  className="w-full h-full object-cover object-center block"
+                  src="/tadoba-form/tadoba_tiger_photo.png"
+                  alt="Tadoba-Andhari Tiger Reserve"
+                  className="w-full h-full object-cover object-[85%_75%] block select-none"
                 />
+
+                {/* Soft natural sun mist gradient on the left for guaranteed text contrast */}
+                <div className="absolute inset-0 bg-gradient-to-r from-[#FAF8F5] via-[#FAF8F5]/92 via-35% md:via-42% to-transparent pointer-events-none" />
+
+                {/* Live Responsive Typography: Centered vertically, NEVER cropped at any zoom level */}
+                <div className="absolute inset-0 flex flex-col justify-center px-5 sm:px-8 md:px-12 lg:px-16 pointer-events-none z-10">
+                  <div className="max-w-[72%] sm:max-w-[62%] md:max-w-[55%]">
+                    <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-black tracking-tight leading-[1.08] text-[#112217] drop-shadow-2xs">
+                      Your voice <br />
+                      <span className="text-[#15803d]">cleans Tadoba</span>
+                    </h2>
+                    <p className="mt-1 sm:mt-1.5 md:mt-2 text-[11px] sm:text-xs md:text-sm lg:text-base font-semibold text-gray-700 leading-tight drop-shadow-2xs">
+                      Help others by sharing your washroom experience.
+                    </p>
+                  </div>
+                </div>
               </div>
 
               {/* 2. BODY CONTENT: Balanced 2-Column Split with Enhanced Kiosk Typography */}
               <div className="p-3 sm:p-5 md:p-6 lg:p-7 xl:p-8 2xl:p-10 grid grid-cols-1 md:grid-cols-12 gap-3 sm:gap-4 md:gap-5 lg:gap-7 xl:gap-9 items-stretch">
-                
                 {/* Left Column (5/12): Rating Confirmation & Written Feedback */}
                 <div className="md:col-span-5 flex flex-col justify-between gap-3">
-                  
                   {/* Selected Rating Badge (Enhanced Visibility) */}
                   <div className="flex items-center gap-3.5 sm:gap-4 p-3 sm:p-4 lg:p-5 bg-emerald-50/90 border border-emerald-200 rounded-2xl sm:rounded-3xl shadow-2xs">
                     <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 lg:w-20 lg:h-20 xl:w-24 xl:h-24 rounded-full overflow-hidden shrink-0 shadow-xs border-2 sm:border-3 border-emerald-400 ring-2 ring-emerald-100">
@@ -1088,7 +1322,9 @@ export default function TadobaLandscapeFeedback() {
                             : "bg-gray-50 text-gray-800 border-gray-200 hover:bg-gray-100"
                         }`}
                       >
-                        {noIssuesSelected && <Check size={15} className="stroke-[3]" />}
+                        {noIssuesSelected && (
+                          <Check size={15} className="stroke-[3]" />
+                        )}
                         <span>{t.noIssues}</span>
                       </button>
                     </div>
@@ -1110,7 +1346,12 @@ export default function TadobaLandscapeFeedback() {
                                 : "bg-gray-50/90 border-gray-200 text-gray-800 hover:bg-gray-100"
                             }`}
                           >
-                            {isSelected && <Check size={16} className="stroke-[3] shrink-0" />}
+                            {isSelected && (
+                              <Check
+                                size={16}
+                                className="stroke-[3] shrink-0"
+                              />
+                            )}
                             <span className="truncate">{issueText}</span>
                           </button>
                         );
@@ -1145,7 +1386,6 @@ export default function TadobaLandscapeFeedback() {
                     </button>
                   </div>
                 </div>
-
               </div>
             </div>
           </main>
@@ -1201,7 +1441,6 @@ export default function TadobaLandscapeFeedback() {
             </button>
           </main>
         )}
-
       </div>
     </>
   );

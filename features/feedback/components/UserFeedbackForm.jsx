@@ -540,8 +540,8 @@ export default function UserFeedbackForm() {
             {/* HERO BANNER SECTION */}
             <div className="relative z-10 w-full overflow-hidden bg-[#faf8f5] select-none border-b border-stone-200/60">
               <Image
-                src="/tadoba_banner_new.png"
-                alt="Your voice cleans India - Tadoba-Andhari Tiger Reserve"
+                src="/tadoba-form/tadoba_voice_cleans_tadoba.png"
+                alt="Your voice cleans Tadoba - Tadoba-Andhari Tiger Reserve"
                 width={800}
                 height={224}
                 className="w-full h-auto block object-cover"

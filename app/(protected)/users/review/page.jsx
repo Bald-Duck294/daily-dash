@@ -95,7 +95,8 @@ export default function UserReviewsPage() {
   // State management
   const [viewMode, setViewMode] = useState("card"); // 'card' | 'list'
   const [dateFilterType, setDateFilterType] = useState("all"); // 'all' | 'today' | 'week' | 'month' | 'custom'
-  const [customDate, setCustomDate] = useState("");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [ratingFilter, setRatingFilter] = useState("all"); // 'all' | 'high' | 'mid' | 'low'
   const [limit, setLimit] = useState(100);
@@ -118,11 +119,14 @@ export default function UserReviewsPage() {
       past.setDate(now.getDate() - 30);
       return { from_date: past.toISOString().split("T")[0], to_date: toDateStr };
     }
-    if (dateFilterType === "custom" && customDate) {
-      return { date: customDate };
+    if (dateFilterType === "custom") {
+      const params = {};
+      if (fromDate) params.from_date = fromDate;
+      if (toDate) params.to_date = toDate;
+      return params;
     }
     return {};
-  }, [dateFilterType, customDate]);
+  }, [dateFilterType, fromDate, toDate]);
 
   // Fetch reviews using TanStack Query
   const { data, isLoading, isError, error, refetch, isFetching } = useUserReviews({
@@ -186,7 +190,8 @@ export default function UserReviewsPage() {
 
   const handleResetFilters = () => {
     setDateFilterType("all");
-    setCustomDate("");
+    setFromDate("");
+    setToDate("");
     setSearchQuery("");
     setRatingFilter("all");
     toast.success("Filters reset to default");
@@ -280,7 +285,7 @@ export default function UserReviewsPage() {
                 </button>
               </div>
 
-              {(dateFilterType !== "all" || ratingFilter !== "all" || searchQuery) && (
+              {(dateFilterType !== "all" || ratingFilter !== "all" || searchQuery || fromDate || toDate) && (
                 <button
                   onClick={handleResetFilters}
                   className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-[var(--surface)] hover:bg-[var(--muted)] border border-[var(--border)] text-[var(--muted-foreground)] hover:text-foreground transition shadow-sm"
@@ -430,21 +435,56 @@ export default function UserReviewsPage() {
                 ))}
               </div>
 
-              {/* Custom Date Input (shown when 'custom' is active) */}
+              {/* Custom Date Range Picker (shown when 'custom' is active) */}
               {dateFilterType === "custom" && (
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-[var(--muted-foreground)]">Select Date:</span>
-                  <input
-                    type="date"
-                    value={customDate}
-                    onChange={(e) => setCustomDate(e.target.value)}
-                    className="px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--background)] border border-[var(--border)] text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
-                  />
-                  {customDate && (
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3 bg-[var(--surface-muted)]/50 px-2.5 py-1.5 rounded-xl border border-[var(--border)]">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-semibold text-[var(--muted-foreground)] whitespace-nowrap">
+                      From:
+                    </span>
+                    <input
+                      type="date"
+                      value={fromDate}
+                      max={toDate || undefined}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setFromDate(val);
+                        if (toDate && val > toDate) {
+                          setToDate(val);
+                        }
+                      }}
+                      className="px-2.5 py-1 rounded-lg text-xs font-medium bg-[var(--background)] border border-[var(--border)] text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer shadow-xs"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-semibold text-[var(--muted-foreground)] whitespace-nowrap">
+                      To:
+                    </span>
+                    <input
+                      type="date"
+                      value={toDate}
+                      min={fromDate || undefined}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setToDate(val);
+                        if (fromDate && val < fromDate) {
+                          setFromDate(val);
+                        }
+                      }}
+                      className="px-2.5 py-1 rounded-lg text-xs font-medium bg-[var(--background)] border border-[var(--border)] text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer shadow-xs"
+                    />
+                  </div>
+
+                  {(fromDate || toDate) && (
                     <button
-                      onClick={() => setCustomDate("")}
-                      className="p-1 rounded text-[var(--muted-foreground)] hover:text-foreground"
-                      title="Clear custom date"
+                      type="button"
+                      onClick={() => {
+                        setFromDate("");
+                        setToDate("");
+                      }}
+                      className="p-1 rounded-md text-[var(--muted-foreground)] hover:text-foreground hover:bg-[var(--surface)] transition cursor-pointer"
+                      title="Clear custom date range"
                     >
                       <X size={14} />
                     </button>
