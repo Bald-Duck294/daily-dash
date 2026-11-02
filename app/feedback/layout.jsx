@@ -1,5 +1,3 @@
-import PwaRegister from "@/components/pwa/PwaRegister";
-
 export const metadata = {
   title: "SaafAI - Citizen Feedback",
   description: "Citizen Washroom Experience & Feedback",
@@ -24,7 +22,6 @@ export default function FeedbackLayout({ children }) {
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
       </head>
-      <PwaRegister />
       {children}
     </>
   );

@@ -1,14 +1,14 @@
 {
-  "name": "SaafAI - Tadoba Feedback Kiosk",
-  "short_name": "Tadoba Feedback",
-  "description": "Tadoba-Andhari Tiger Reserve × SaafAI Citizen Washroom Feedback",
-  "start_url": "/feedback/tadoba",
-  "scope": "/feedback/",
+  "name": "SaafAI Dashboard",
+  "short_name": "SaafAI",
+  "description": "SaafAI Intelligent Facility Management & Washroom Hygiene Platform",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#faf8f4",
-  "theme_color": "#284e3a",
-  "id": "/feedback/tadoba",
+  "background_color": "#ffffff",
+  "theme_color": "#0891b2",
+  "id": "/dashboard",
   "icons": [
     {
       "src": "/icons/icon-192x192.png",

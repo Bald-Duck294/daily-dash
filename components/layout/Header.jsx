@@ -239,7 +239,8 @@ import React, { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useRouter, useSearchParams, useParams } from "next/navigation";
 import Link from "next/link"; // ✅ Import Link for navigation
-import { LogOut, Building, Sun, Moon, Loader2 } from "lucide-react";
+import { LogOut, Building, Sun, Moon, Loader2, Download } from "lucide-react";
+import usePwaInstall from "@/shared/hooks/usePwaInstall.js";
 import useLogout from "@/shared/hooks/useLogout.js";
 import useNotifications from "@/shared/hooks/useNotification.js";
 import NotificationBell from "../notification/NotificationBell";
@@ -254,6 +255,7 @@ const Header = ({ pageTitle }) => {
   const params = useParams();
   const searchParams = useSearchParams();
   const { handleLogout, isLoggingOut } = useLogout();
+  const { isStandalone, installApp } = usePwaInstall();
 
   const { user } = useSelector((state) => state.auth);
   const { fcmToken } = useSelector((state) => state.notifications);
@@ -386,6 +388,19 @@ const Header = ({ pageTitle }) => {
             {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
           </button>
         </div>
+
+        {/* PWA Install Button */}
+        {!isStandalone && (
+          <button
+            type="button"
+            onClick={installApp}
+            className="cursor-pointer flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm font-semibold text-cyan-700 bg-cyan-50 hover:bg-cyan-100 border border-cyan-200 dark:bg-cyan-950/40 dark:text-cyan-300 dark:border-cyan-800/60 dark:hover:bg-cyan-900/50 rounded-lg transition-all shadow-xs"
+            title="Install SaafAI Dashboard App"
+          >
+            <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+            <span className="hidden sm:inline">Install App</span>
+          </button>
+        )}
 
         <button
           onClick={handleLogout}

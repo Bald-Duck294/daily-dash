@@ -21,8 +21,10 @@ import {
   ChevronLeft,
   User,
   Loader2,
+  Download,
 } from "lucide-react";
 import useLogout from "@/shared/hooks/useLogout";
+import usePwaInstall from "@/shared/hooks/usePwaInstall";
 import {
   getSuperadminMainMenu,
   getSuperadminCompanyMenu,
@@ -295,6 +297,7 @@ const Sidebar = () => {
 
   // Centralized logout handler
   const { handleLogout, isLoggingOut } = useLogout();
+  const { isStandalone, installApp } = usePwaInstall();
 
   return (
     <>
@@ -511,6 +514,26 @@ const Sidebar = () => {
               )}
             </Link>
           </div>
+
+          {/* Install App Button */}
+          {!isStandalone && (
+            <button
+              type="button"
+              onClick={installApp}
+              className={`flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-bold border transition-all cursor-pointer ${
+                sidebarOpen ? "px-4" : "px-0"
+              }`}
+              style={{
+                background: "color-mix(in srgb, var(--primary) 12%, transparent)",
+                color: "var(--primary)",
+                borderColor: "color-mix(in srgb, var(--primary) 25%, transparent)",
+              }}
+              title="Install SaafAI Dashboard"
+            >
+              <Download className="h-4 w-4 flex-shrink-0" />
+              {sidebarOpen && <span>Install App</span>}
+            </button>
+          )}
 
           {/* Logout Button */}
           <button

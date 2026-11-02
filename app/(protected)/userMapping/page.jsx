@@ -8,6 +8,9 @@ import {
   UserCheck,
   MapPin,
   Trash2,
+  Edit,
+  X,
+  Check,
   Plus,
   Shield,
   Activity,
@@ -34,6 +37,7 @@ import {
   useDeleteAssignment,
   useUpdateAssignment,
 } from "@/features/assignments/assignments.queries";
+import { useLocationSchema } from "@/features/configurations/configurations.queries";
 
 export default function AssignmentListPage() {
   useRequirePermission(MODULES.ASSIGNMENTS);
@@ -53,9 +57,68 @@ export default function AssignmentListPage() {
   const [showRoleDropdown, setShowRoleDropdown] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
 
+  // --- EDIT MODAL STATE ---
+  const [editingAssignment, setEditingAssignment] = useState(null);
+  const [editStatus, setEditStatus] = useState("assigned");
+  const [editSections, setEditSections] = useState([]);
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+
+  const handleOpenEdit = (assignment) => {
+    setEditingAssignment(assignment);
+    setEditStatus(assignment.status || "assigned");
+    setEditSections(
+      Array.isArray(assignment.assigned_sections)
+        ? [...assignment.assigned_sections]
+        : [],
+    );
+  };
+
+  const handleCloseEdit = () => {
+    setEditingAssignment(null);
+    setEditSections([]);
+  };
+
+  const handleToggleEditSection = (sectionId) => {
+    if (sectionId === "all") {
+      setEditSections([]);
+      return;
+    }
+    setEditSections((prev) => {
+      if (prev.includes(sectionId)) {
+        return prev.filter((id) => id !== sectionId);
+      } else {
+        return [...prev, sectionId];
+      }
+    });
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingAssignment) return;
+    setIsSavingEdit(true);
+    try {
+      await updateMutation.mutateAsync({
+        id: editingAssignment.id,
+        data: {
+          status: editStatus,
+          assigned_sections: editSections,
+        },
+      });
+      toast.success("Assignment updated successfully!");
+      handleCloseEdit();
+    } catch (error) {
+      toast.error(error.message || "Failed to update assignment");
+    } finally {
+      setIsSavingEdit(false);
+    }
+  };
+
   const statusDropdownRef = useRef(null);
   const roleDropdownRef = useRef(null);
   const { companyId } = useCompanyId();
+  const { data: schemaData } = useLocationSchema(companyId);
+  const usageCategories = useMemo(() => {
+    return schemaData?.usageCategories || [];
+  }, [schemaData]);
 
   // --- QUERIES & MUTATIONS ---
   const { data: responsePayload, isLoading } = useGetAllAssignments(
@@ -185,14 +248,14 @@ export default function AssignmentListPage() {
 
   return (
     <div
-    id="scroll-container"
+      id="scroll-container"
       className="min-h-screen p-6"
       style={{
         background: "var(--assignment-bg)",
       }}
     >
       <Toaster position="top-right" />
-<ScrollToTop />
+      <ScrollToTop />
       <div className="max-w-[1400px] mx-auto space-y-8 ">
         {/* --- HEADER --- */}
         <div
@@ -243,7 +306,7 @@ export default function AssignmentListPage() {
                 boxShadow: "var(--assignment-primary-shadow)",
               }}
             >
-              <Plus className="w-3.5 h-3.5" /> Add Cleaner
+              <Plus className="w-3.5 h-3.5" /> Assign Cleaner
             </Link>
           )}
         </div>
@@ -596,7 +659,7 @@ export default function AssignmentListPage() {
                         </div>
                       </td>
 
-                      {/* Location */}
+                      {/* Location & Assigned Sections */}
                       <td className="px-6 py-4">
                         <p
                           className="text-xs font-bold"
@@ -604,6 +667,32 @@ export default function AssignmentListPage() {
                         >
                           {assignment.locations?.name || "Unassigned Location"}
                         </p>
+                        {assignment.role?.name?.toLowerCase() === "cleaner" && (
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            {!assignment.assigned_sections ||
+                            assignment.assigned_sections.length === 0 ? (
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                All Sections
+                              </span>
+                            ) : (
+                              assignment.assigned_sections.map((secId) => {
+                                const cat = usageCategories.find(
+                                  (c) =>
+                                    c.usageCategoryId === Number(secId) ||
+                                    c.id === secId,
+                                );
+                                return (
+                                  <span
+                                    key={secId}
+                                    className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800"
+                                  >
+                                    {cat?.label || `Section #${secId}`}
+                                  </span>
+                                );
+                              })
+                            )}
+                          </div>
+                        )}
                       </td>
 
                       {/* Role Badge */}
@@ -666,25 +755,44 @@ export default function AssignmentListPage() {
 
                       {/* Action */}
                       <td className="px-6 py-4 text-right">
-                        {canDeleteAssignment && (
-                          <button
-                            onClick={() => handleDelete(assignment.id)}
-                            disabled={deletingId === assignment.id}
-                            className="w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-sm ml-auto"
-                            style={{
-                              background: "var(--assignment-warning-bg)",
-                              border:
-                                "1px solid var(--assignment-warning-border)",
-                              color: "var(--assignment-warning-text)",
-                            }}
-                          >
-                            {deletingId === assignment.id ? (
-                              <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                            ) : (
-                              <Trash2 className="w-3.5 h-3.5" />
-                            )}
-                          </button>
-                        )}
+                        <div className="flex items-center justify-end gap-2">
+                          {canEditAssignment && (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEdit(assignment)}
+                              className="w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-sm hover:scale-105 active:scale-95 cursor-pointer"
+                              style={{
+                                background: "var(--assignment-chip-bg)",
+                                border: "1px solid var(--assignment-chip-border)",
+                                color: "var(--assignment-title)",
+                              }}
+                              title="Edit Assignment & Sections"
+                            >
+                              <Edit className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                          {canDeleteAssignment && (
+                            <button
+                              type="button"
+                              onClick={() => handleDelete(assignment.id)}
+                              disabled={deletingId === assignment.id}
+                              className="w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-sm hover:scale-105 active:scale-95 cursor-pointer"
+                              style={{
+                                background: "var(--assignment-warning-bg)",
+                                border:
+                                  "1px solid var(--assignment-warning-border)",
+                                color: "var(--assignment-warning-text)",
+                              }}
+                              title="Delete Assignment"
+                            >
+                              {deletingId === assignment.id ? (
+                                <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                              ) : (
+                                <Trash2 className="w-3.5 h-3.5" />
+                              )}
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -762,24 +870,43 @@ export default function AssignmentListPage() {
                     </div>
                   </div>
 
-                  {canDeleteAssignment && (
-                    <button
-                      onClick={() => handleDelete(assignment.id)}
-                      disabled={deletingId === assignment.id}
-                      className="w-8 h-8 rounded-full flex items-center justify-center transition-all"
-                      style={{
-                        background: "var(--assignment-warning-bg)",
-                        border: "1px solid var(--assignment-warning-border)",
-                        color: "var(--assignment-warning-text)",
-                      }}
-                    >
-                      {deletingId === assignment.id ? (
-                        <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        <Trash2 className="w-4 h-4" />
-                      )}
-                    </button>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {canEditAssignment && (
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEdit(assignment)}
+                        className="w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-sm cursor-pointer"
+                        style={{
+                          background: "var(--assignment-chip-bg)",
+                          border: "1px solid var(--assignment-chip-border)",
+                          color: "var(--assignment-title)",
+                        }}
+                        title="Edit Assignment"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                    )}
+                    {canDeleteAssignment && (
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(assignment.id)}
+                        disabled={deletingId === assignment.id}
+                        className="w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer"
+                        style={{
+                          background: "var(--assignment-warning-bg)",
+                          border: "1px solid var(--assignment-warning-border)",
+                          color: "var(--assignment-warning-text)",
+                        }}
+                        title="Delete Assignment"
+                      >
+                        {deletingId === assignment.id ? (
+                          <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <Trash2 className="w-4 h-4" />
+                        )}
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {/* Info Grid */}
@@ -797,6 +924,32 @@ export default function AssignmentListPage() {
                     >
                       {assignment.locations?.name || "N/A"}
                     </p>
+                    {assignment.role?.name?.toLowerCase() === "cleaner" && (
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {!assignment.assigned_sections ||
+                        assignment.assigned_sections.length === 0 ? (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                            All Sections
+                          </span>
+                        ) : (
+                          assignment.assigned_sections.map((secId) => {
+                            const cat = usageCategories.find(
+                              (c) =>
+                                c.usageCategoryId === Number(secId) ||
+                                c.id === secId,
+                            );
+                            return (
+                              <span
+                                key={secId}
+                                className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800"
+                              >
+                                {cat?.label || `Section #${secId}`}
+                              </span>
+                            );
+                          })
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   <div>
@@ -916,7 +1069,279 @@ export default function AssignmentListPage() {
           </div>
         </div>
       </div>
-      
+
+      {/* ============================================================== */}
+      {/* EDIT ASSIGNMENT & SECTIONS MODAL                               */}
+      {/* ============================================================== */}
+      {editingAssignment && (
+        <div
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
+          onClick={handleCloseEdit}
+        >
+          <div
+            className="w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden transition-all my-auto"
+            style={{
+              background: "var(--assignment-surface)",
+              border: "1px solid var(--assignment-border)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div
+              className="px-6 py-4 flex items-center justify-between border-b"
+              style={{ borderColor: "var(--assignment-divider)" }}
+            >
+              <div className="flex items-center gap-2.5">
+                <div
+                  className="w-8 h-8 rounded-lg flex items-center justify-center"
+                  style={{
+                    background: "var(--assignment-accent-bg)",
+                    border: "1px solid var(--assignment-accent-border)",
+                    color: "var(--assignment-accent-text)",
+                  }}
+                >
+                  <Edit className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3
+                    className="text-base font-bold"
+                    style={{ color: "var(--assignment-title)" }}
+                  >
+                    Edit Assignment
+                  </h3>
+                  <p
+                    className="text-[11px] font-medium"
+                    style={{ color: "var(--assignment-subtitle)" }}
+                  >
+                    Update status and assigned washroom sections
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleCloseEdit}
+                className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                style={{ color: "var(--assignment-subtitle)" }}
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-5 max-h-[75vh] overflow-y-auto">
+              {/* User & Location Summary */}
+              <div
+                className="p-3.5 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                style={{
+                  background: "var(--assignment-chip-bg)",
+                  borderColor: "var(--assignment-chip-border)",
+                }}
+              >
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-black uppercase flex-shrink-0"
+                    style={{
+                      background: "var(--assignment-surface)",
+                      border: "1px solid var(--assignment-chip-border)",
+                      color: "var(--assignment-subtitle)",
+                    }}
+                  >
+                    {getInitials(editingAssignment.user?.name)}
+                  </div>
+                  <div>
+                    <div
+                      className="text-sm font-bold"
+                      style={{ color: "var(--assignment-title)" }}
+                    >
+                      {editingAssignment.user?.name || "Unknown User"}
+                    </div>
+                    <div
+                      className="text-[11px] font-medium"
+                      style={{ color: "var(--assignment-subtitle)" }}
+                    >
+                      Role: {editingAssignment.role?.name || "N/A"}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="text-left sm:text-right">
+                  <div
+                    className="text-[10px] font-bold uppercase tracking-wider"
+                    style={{ color: "var(--assignment-subtitle)" }}
+                  >
+                    Location
+                  </div>
+                  <div
+                    className="text-xs font-bold"
+                    style={{ color: "var(--assignment-title)" }}
+                  >
+                    {editingAssignment.locations?.name || "Unassigned"}
+                  </div>
+                </div>
+              </div>
+
+              {/* Status Switcher */}
+              <div className="space-y-1.5">
+                <label
+                  className="block text-xs font-bold uppercase tracking-wider"
+                  style={{ color: "var(--assignment-title)" }}
+                >
+                  Assignment Status
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditStatus("assigned")}
+                    className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                      editStatus === "assigned"
+                        ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
+                        : "bg-[var(--assignment-input-bg)] text-[var(--assignment-subtitle)] border-[var(--assignment-border)]"
+                    }`}
+                  >
+                    <CheckCircle className="w-3.5 h-3.5" />
+                    <span>Assigned (Active)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setEditStatus("unassigned")}
+                    className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                      editStatus === "unassigned"
+                        ? "bg-amber-600 text-white border-amber-600 shadow-xs"
+                        : "bg-[var(--assignment-input-bg)] text-[var(--assignment-subtitle)] border-[var(--assignment-border)]"
+                    }`}
+                  >
+                    <AlertCircle className="w-3.5 h-3.5" />
+                    <span>Unassigned</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Section Assignment Pills (Only for Cleaners) */}
+              {editingAssignment.role?.name?.toLowerCase() === "cleaner" && (
+                <div className="space-y-2 pt-2 border-t" style={{ borderColor: "var(--assignment-divider)" }}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label
+                        className="block text-xs font-bold uppercase tracking-wider"
+                        style={{ color: "var(--assignment-title)" }}
+                      >
+                        Assigned Washroom Sections
+                      </label>
+                      <p
+                        className="text-[11px]"
+                        style={{ color: "var(--assignment-subtitle)" }}
+                      >
+                        Choose which sections this cleaner cleans
+                      </p>
+                    </div>
+                    <span
+                      className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                      style={{
+                        background: editSections.length === 0 ? "rgba(16,185,129,0.15)" : "rgba(168,85,247,0.15)",
+                        color: editSections.length === 0 ? "#10b981" : "#a855f7",
+                      }}
+                    >
+                      {editSections.length === 0 ? "Full Washroom" : `${editSections.length} Section(s)`}
+                    </span>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2 pt-1">
+                    {/* All Sections Pill */}
+                    <button
+                      type="button"
+                      onClick={() => handleToggleEditSection("all")}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                        editSections.length === 0
+                          ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
+                          : "bg-[var(--assignment-input-bg)] text-[var(--assignment-subtitle)] border-[var(--assignment-border)]"
+                      }`}
+                    >
+                      ✓ All Sections (Default)
+                    </button>
+
+                    {/* Category Pills */}
+                    {usageCategories.map((cat) => {
+                      const catId = cat.usageCategoryId || cat.id;
+                      const isSelected = editSections.includes(catId);
+                      return (
+                        <button
+                          key={cat.id || catId}
+                          type="button"
+                          onClick={() => handleToggleEditSection(catId)}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                            isSelected
+                              ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
+                              : "bg-[var(--assignment-input-bg)] text-[var(--assignment-subtitle)] border-[var(--assignment-border)]"
+                          }`}
+                        >
+                          {cat.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <p
+                    className="text-[11px] pt-1"
+                    style={{ color: "var(--assignment-subtitle)" }}
+                  >
+                    {editSections.length === 0
+                      ? "💡 Cleaner is responsible for all sections of this washroom."
+                      : `💡 Cleaner will only be assigned to: ${editSections
+                          .map((sid) => {
+                            const c = usageCategories.find((cat) => (cat.usageCategoryId || cat.id) === sid);
+                            return c?.label || `#${sid}`;
+                          })
+                          .join(", ")}.`}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div
+              className="px-6 py-4 flex items-center justify-end gap-3 border-t"
+              style={{
+                borderColor: "var(--assignment-divider)",
+                background: "var(--assignment-card-bg)",
+              }}
+            >
+              <button
+                type="button"
+                onClick={handleCloseEdit}
+                disabled={isSavingEdit}
+                className="px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider border hover:bg-black/5 dark:hover:bg-white/5 transition-all cursor-pointer disabled:opacity-50"
+                style={{
+                  borderColor: "var(--assignment-border)",
+                  color: "var(--assignment-subtitle)",
+                }}
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={handleSaveEdit}
+                disabled={isSavingEdit}
+                className="px-6 py-2 rounded-xl text-xs font-bold uppercase tracking-wider bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+              >
+                {isSavingEdit ? (
+                  <>
+                    <Loader className="w-3.5 h-3.5 animate-spin" />
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-4 h-4 stroke-[2.5]" />
+                    <span>Save Changes</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

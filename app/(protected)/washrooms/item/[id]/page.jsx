@@ -41,14 +41,12 @@ import { useRequirePermission } from "@/shared/hooks/useRequirePermission";
 import { MODULES } from "@/shared/constants/permissions";
 
 // ✅ Import TanStack Query Hooks (Removed useGetAllLocations)
-import { 
-  useLocationById, 
-  useDeleteLocation 
-} from "@/features/locations/locations.queries"; 
-import { 
-  useCleanerReviewsByLocationId 
-} from "@/features/cleanerReview/cleanerReview.queries"; 
-
+import {
+  useLocationById,
+  useDeleteLocation,
+} from "@/features/locations/locations.queries";
+import { useCleanerReviewsByLocationId } from "@/features/cleanerReview/cleanerReview.queries";
+import { useLocationSchema } from "@/features/configurations/configurations.queries";
 
 const SingleLocation = () => {
   useRequirePermission(MODULES.LOCATIONS);
@@ -72,27 +70,33 @@ const SingleLocation = () => {
   const [selectedImageIndex, setSelectedImageIndex] = useState(null);
 
   // --- API Queries via TanStack ---
-  
+
   // 1. Get specific location details
-  const { 
-    data: location, 
-    isLoading: loadingLocation, 
-    isError: isLocationError, 
-    error: locationError 
+  const {
+    data: location,
+    isLoading: loadingLocation,
+    isError: isLocationError,
+    error: locationError,
   } = useLocationById(params.id, finalCompanyId);
 
   // 2. Get cleaner reviews for this location
-  const { 
-    data: cleanerReviewsData, 
-    isLoading: loadingReviews 
-  } = useCleanerReviewsByLocationId(params.id, finalCompanyId, 10);
+  const { data: cleanerReviewsData, isLoading: loadingReviews } =
+    useCleanerReviewsByLocationId(params.id, finalCompanyId, 10);
 
   // 3. Delete Mutation
   const { mutate: deleteLocation, isPending: deleting } = useDeleteLocation();
 
+  // 4. Fetch dynamic usage categories schema for company
+  const { data: schemaData } = useLocationSchema(finalCompanyId);
+  const schemaCategories = useMemo(() => {
+    return schemaData?.usageCategories || [];
+  }, [schemaData]);
+
   // Extract cleaner reviews data safely
-const cleanerReviews = cleanerReviewsData?.data?.reviews || cleanerReviewsData?.reviews || [];
-  const cleanerReviewStats = cleanerReviewsData?.data?.stats || cleanerReviewsData?.stats || null;
+  const cleanerReviews =
+    cleanerReviewsData?.data?.reviews || cleanerReviewsData?.reviews || [];
+  const cleanerReviewStats =
+    cleanerReviewsData?.data?.stats || cleanerReviewsData?.stats || null;
 
   // Combined Loading & Error States
   const loading = loadingLocation || loadingReviews;
@@ -109,7 +113,7 @@ const cleanerReviews = cleanerReviewsData?.data?.reviews || cleanerReviewsData?.
       0,
     );
     return (totalRating / reviewData.length).toFixed(1);
-  }, [reviewData]); 
+  }, [reviewData]);
 
   const userReviewCount = reviewData?.length || 0;
   const cleanerReviewCount = cleanerReviews.length || 0;
@@ -135,10 +139,11 @@ const cleanerReviews = cleanerReviewsData?.data?.reviews || cleanerReviewsData?.
     return () => window.removeEventListener("keydown", handleKeyPress);
   }, [selectedImageIndex, location?.images]);
 
-
   // --- Handlers ---
   const handleEdit = () => {
-    router.push(`/washrooms/item/${params.id}/edit?companyId=${finalCompanyId}`);
+    router.push(
+      `/washrooms/item/${params.id}/edit?companyId=${finalCompanyId}`,
+    );
   };
 
   const handleDelete = () => {
@@ -158,8 +163,8 @@ const cleanerReviews = cleanerReviewsData?.data?.reviews || cleanerReviewsData?.
         },
         onError: (err) => {
           toast.error(err.message || "Failed to delete location");
-        }
-      }
+        },
+      },
     );
   };
 
@@ -197,12 +202,18 @@ const cleanerReviews = cleanerReviewsData?.data?.reviews || cleanerReviewsData?.
     const normalizedRating = isOutOf10 ? rating / 2 : rating;
 
     const fullStars = Math.floor(normalizedRating);
-    const hasHalfStar = normalizedRating % 1 >= 0.25 && normalizedRating % 1 < 0.75;
+    const hasHalfStar =
+      normalizedRating % 1 >= 0.25 && normalizedRating % 1 < 0.75;
     const totalStars = 5;
     const emptyStars = totalStars - Math.ceil(normalizedRating);
 
     for (let i = 0; i < fullStars; i++) {
-      stars.push(<Star key={`full-${i}`} className="w-4 h-4 text-amber-400 fill-amber-400" />);
+      stars.push(
+        <Star
+          key={`full-${i}`}
+          className="w-4 h-4 text-amber-400 fill-amber-400"
+        />,
+      );
     }
     if (hasHalfStar) {
       stars.push(
@@ -211,7 +222,7 @@ const cleanerReviews = cleanerReviewsData?.data?.reviews || cleanerReviewsData?.
           <div className="overflow-hidden absolute" style={{ width: "50%" }}>
             <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
           </div>
-        </div>
+        </div>,
       );
     }
     for (let i = 0; i < emptyStars; i++) {
@@ -230,17 +241,34 @@ const cleanerReviews = cleanerReviewsData?.data?.reviews || cleanerReviewsData?.
       }}
     >
       <span className="font-medium text-[var(--washroom-text)]">{label}</span>
-      <span className="font-bold text-[var(--washroom-score-text)]">{value}</span>
+      <span className="font-bold text-[var(--washroom-score-text)]">
+        {value}
+      </span>
     </div>
   );
 
-  const renderUsageCategory = (usageCategory) => {
-    if (!usageCategory || Object.keys(usageCategory).length === 0) return null;
+  const FIXTURE_LABELS = {
+    wc: "🚽 Western Toilet (WC)",
+    indian: "🚾 Indian Toilet",
+    urinals: "🧍 Urinals",
+    shower: "🚿 Shower",
+    basin: "🚰 Basin",
+  };
 
-    const genderData = [
-      { key: "men", label: "Men" },
-      { key: "women", label: "Women" },
-    ];
+  const renderUsageCategory = (usageCategory) => {
+    if (!usageCategory || typeof usageCategory !== "object" || Object.keys(usageCategory).length === 0) return null;
+
+    // Filter valid section objects (men, women, handicap, etc.)
+    const categoryEntries = Object.entries(usageCategory).filter(([key, val]) => {
+      return (
+        val &&
+        typeof val === "object" &&
+        !Array.isArray(val) &&
+        !["type", "access_level", "open_area"].includes(key)
+      );
+    });
+
+    if (categoryEntries.length === 0) return null;
 
     return (
       <div
@@ -257,17 +285,43 @@ const cleanerReviews = cleanerReviewsData?.data?.reviews || cleanerReviewsData?.
             Washroom Facilities
           </h3>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {genderData.map(({ key, label }) => {
-              const data = usageCategory[key];
-              if (!data) return null;
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {categoryEntries.map(([key, data]) => {
+              // 1. Resolve human label from schema or fallback to title-cased key
+              const matchedSchema = schemaCategories.find(
+                (c) =>
+                  c.id?.toLowerCase() === key.toLowerCase() ||
+                  c.label?.toLowerCase() === key.toLowerCase(),
+              );
+              const label =
+                matchedSchema?.label ||
+                key
+                  .split(/[_-s]+/)
+                  .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                  .join(" ");
 
-              const totalCount =
-                (data.wc || 0) +
-                (data.indian || 0) +
-                (data.urinals || 0) +
-                (data.shower || 0) +
-                (data.basin || 0);
+              // 2. Select appropriate icon based on category type
+              const lowerKey = key.toLowerCase();
+              const lowerLabel = label.toLowerCase();
+              const isHandicap =
+                lowerKey.includes("handicap") ||
+                lowerKey.includes("wheelchair") ||
+                lowerKey.includes("disable") ||
+                lowerLabel.includes("handicap") ||
+                lowerLabel.includes("wheelchair");
+              const isBaby =
+                lowerKey.includes("baby") ||
+                lowerKey.includes("child") ||
+                lowerLabel.includes("baby");
+
+              // 3. Extract and sum facilities dynamically
+              const facilityEntries = Object.entries(data).filter(
+                ([, fVal]) => typeof fVal === "number" && fVal > 0,
+              );
+              const totalCount = facilityEntries.reduce(
+                (sum, [, fVal]) => sum + fVal,
+                0,
+              );
 
               return (
                 <div
@@ -283,10 +337,18 @@ const cleanerReviews = cleanerReviewsData?.data?.reviews || cleanerReviewsData?.
                       className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
                       style={{ background: "var(--washroom-score-bg)" }}
                     >
-                      <Users className="w-4 h-4 text-[var(--washroom-score-text)]" />
+                      {isHandicap ? (
+                        <Accessibility className="w-4 h-4 text-[var(--washroom-score-text)]" />
+                      ) : isBaby ? (
+                        <Baby className="w-4 h-4 text-[var(--washroom-score-text)]" />
+                      ) : (
+                        <Users className="w-4 h-4 text-[var(--washroom-score-text)]" />
+                      )}
                     </div>
                     <div>
-                      <h4 className="font-semibold text-[var(--washroom-title)]">{label}</h4>
+                      <h4 className="font-semibold text-[var(--washroom-title)]">
+                        {label}
+                      </h4>
                       <p className="text-xs text-[var(--washroom-subtitle)]">
                         Total: {totalCount} facilities
                       </p>
@@ -294,11 +356,25 @@ const cleanerReviews = cleanerReviewsData?.data?.reviews || cleanerReviewsData?.
                   </div>
 
                   <div className="space-y-2">
-                    {data.wc > 0 && <FacilityRow label="🚽 Western Toilet (WC)" value={data.wc} />}
-                    {data.indian > 0 && <FacilityRow label="🚾 Indian Toilet" value={data.indian} />}
-                    {data.urinals > 0 && <FacilityRow label="🧍 Urinals" value={data.urinals} />}
-                    {data.shower > 0 && <FacilityRow label="🚿 Shower" value={data.shower} />}
-                    {data.basin > 0 && <FacilityRow label="🚰 Basin" value={data.basin} />}
+                    {facilityEntries.map(([fKey, fVal]) => {
+                      const entityObj = matchedSchema?.entities?.find(
+                        (e) => e.id?.toLowerCase() === fKey.toLowerCase(),
+                      );
+                      const fLabel =
+                        FIXTURE_LABELS[fKey.toLowerCase()] ||
+                        entityObj?.label ||
+                        fKey.charAt(0).toUpperCase() +
+                          fKey.slice(1).replace(/_/g, " ");
+
+                      return (
+                        <FacilityRow
+                          key={fKey}
+                          label={fLabel}
+                          value={fVal}
+                        />
+                      );
+                    })}
+
                     {totalCount === 0 && (
                       <div className="text-center py-2 text-sm text-[var(--washroom-subtitle)]">
                         No facilities available
@@ -327,7 +403,10 @@ const cleanerReviews = cleanerReviewsData?.data?.reviews || cleanerReviewsData?.
 
     const optionIcons = {
       isPaid: { icon: Coins, label: "Paid Entry" },
-      isHandicapAccessible: { icon: Accessibility, label: "Wheelchair Accessible" },
+      isHandicapAccessible: {
+        icon: Accessibility,
+        label: "Wheelchair Accessible",
+      },
       isStrictlyForHandicap: { icon: Accessibility, label: "Disabled Only" },
       hasBabyChangingStation: { icon: Baby, label: "Baby Changing" },
       hasSanitaryProducts: { icon: Package, label: "Sanitary Products" },
@@ -368,7 +447,8 @@ const cleanerReviews = cleanerReviewsData?.data?.reviews || cleanerReviewsData?.
           {Object.entries(options).map(([key, value]) => {
             if (key === "genderAccess" || !optionIcons[key]) return null;
             if (typeof value === "boolean" && value !== true) return null;
-            if (value === null || value === undefined || value === "") return null;
+            if (value === null || value === undefined || value === "")
+              return null;
 
             const { icon: Icon, label } = optionIcons[key];
             return (
@@ -391,11 +471,12 @@ const cleanerReviews = cleanerReviewsData?.data?.reviews || cleanerReviewsData?.
     );
   };
 
-const renderAssignedUsers = (assignedCleaners) => {
+  const renderAssignedUsers = (assignedCleaners) => {
     // 1. Filter the array to ONLY include users with the role "cleaner"
-    const actualCleaners = assignedCleaners?.filter(
-      (assignment) => assignment?.role?.name?.toLowerCase() === "cleaner"
-    ) || [];
+    const actualCleaners =
+      assignedCleaners?.filter(
+        (assignment) => assignment?.role?.name?.toLowerCase() === "cleaner",
+      ) || [];
 
     // 2. Use the filtered array for our checks and rendering
     if (!actualCleaners || actualCleaners.length === 0) {
@@ -486,19 +567,19 @@ const renderAssignedUsers = (assignedCleaners) => {
                   style={
                     assignment.status === "assigned"
                       ? {
-                        background: "var(--washroom-status-active-bg)",
-                        color: "var(--washroom-status-active-text)",
-                        border: `1px solid var(--washroom-status-active-border)`,
-                      }
+                          background: "var(--washroom-status-active-bg)",
+                          color: "var(--washroom-status-active-text)",
+                          border: `1px solid var(--washroom-status-active-border)`,
+                        }
                       : assignment.status === "active"
                         ? {
-                          background: "var(--washroom-score-bg)",
-                          color: "var(--washroom-score-text)",
-                        }
+                            background: "var(--washroom-score-bg)",
+                            color: "var(--washroom-score-text)",
+                          }
                         : {
-                          background: "var(--washroom-input-bg)",
-                          color: "var(--washroom-subtitle)",
-                        }
+                            background: "var(--washroom-input-bg)",
+                            color: "var(--washroom-subtitle)",
+                          }
                   }
                 >
                   {assignment.status}
@@ -519,7 +600,9 @@ const renderAssignedUsers = (assignedCleaners) => {
     if (!schedule) return null;
 
     const now = new Date();
-    const currentDay = now.toLocaleDateString("en-US", { weekday: "long" }).toLowerCase();
+    const currentDay = now
+      .toLocaleDateString("en-US", { weekday: "long" })
+      .toLowerCase();
     const currentTime = now.toTimeString().slice(0, 5);
 
     if (schedule.mode === "TWENTY_FOUR_HOURS") {
@@ -533,7 +616,8 @@ const renderAssignedUsers = (assignedCleaners) => {
     const to24Hour = (time12) => {
       const [time, modifier] = time12.split(" ");
       let [hours, minutes] = time.split(":");
-      if (modifier === "PM" && hours !== "12") hours = String(parseInt(hours, 10) + 12);
+      if (modifier === "PM" && hours !== "12")
+        hours = String(parseInt(hours, 10) + 12);
       if (modifier === "AM" && hours === "12") hours = "00";
       return `${hours.padStart(2, "0")}:${minutes}`;
     };
@@ -541,7 +625,11 @@ const renderAssignedUsers = (assignedCleaners) => {
     if (schedule.mode === "FIXED_HOURS") {
       const { opens_at, closes_at, overnight } = schedule;
       if (!opens_at || !closes_at) {
-        return { label: "Fixed Hours", isOpen: false, description: "Hours not configured" };
+        return {
+          label: "Fixed Hours",
+          isOpen: false,
+          description: "Hours not configured",
+        };
       }
 
       const open24 = to24Hour(opens_at);
@@ -554,13 +642,21 @@ const renderAssignedUsers = (assignedCleaners) => {
         isOpen = currentTime >= open24 || currentTime <= close24;
       }
 
-      return { label: "Fixed Hours", isOpen, description: `${opens_at} – ${closes_at}` };
+      return {
+        label: "Fixed Hours",
+        isOpen,
+        description: `${opens_at} – ${closes_at}`,
+      };
     }
 
     if (schedule.mode === "DAY_WISE") {
       const today = schedule.days?.[currentDay];
       if (!today || !today.open) {
-        return { label: "Day Wise Schedule", isOpen: false, description: "Closed Today" };
+        return {
+          label: "Day Wise Schedule",
+          isOpen: false,
+          description: "Closed Today",
+        };
       }
 
       const open24 = to24Hour(today.opens_at);
@@ -585,7 +681,7 @@ const renderAssignedUsers = (assignedCleaners) => {
   };
 
   // --- Renders ---
-  
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -601,7 +697,9 @@ const renderAssignedUsers = (assignedCleaners) => {
           <div className="text-red-500 mb-4">
             <MapPin className="w-12 h-12 mx-auto" />
           </div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Something went wrong</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            Something went wrong
+          </h2>
           <p className="text-gray-600 mb-6">{error}</p>
           <button
             onClick={() => router.back()}
@@ -619,8 +717,12 @@ const renderAssignedUsers = (assignedCleaners) => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
         <div className="bg-white rounded-lg shadow-lg p-8 text-center max-w-md w-full">
           <MapPin className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Location not found</h2>
-          <p className="text-gray-600">This washroom doesn&apos;t exist or has been removed.</p>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            Location not found
+          </h2>
+          <p className="text-gray-600">
+            This washroom doesn&apos;t exist or has been removed.
+          </p>
         </div>
       </div>
     );
@@ -631,16 +733,17 @@ const renderAssignedUsers = (assignedCleaners) => {
   return (
     <div className="min-h-screen washroom-page">
       {/* Header Navigation - Cleaned up to only show Back button */}
-     <div 
-     className="md:mt-[-12px]"
-     style={{ background: "var(--washroom-surface)" }}>
+      <div
+        className="md:mt-[-12px]"
+        style={{ background: "var(--washroom-surface)" }}
+      >
         <div className="max-w-6xl mx-auto px-4 md:px-6 py-2">
           <button
             onClick={() => router.back()}
             className="inline-flex items-center text-sm font-medium transition-all group border px-4 py-2 rounded-lg cursor-pointer"
-            style={{ 
+            style={{
               color: "var(--washroom-subtitle)",
-              borderColor: "var(--washroom-border)"
+              borderColor: "var(--washroom-border)",
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.color = "var(--washroom-primary)";
@@ -677,7 +780,9 @@ const renderAssignedUsers = (assignedCleaners) => {
                     }
                     alt={location.name}
                     className="w-full h-full object-cover cursor-pointer transition-opacity hover:opacity-90"
-                    onClick={() => location.images?.[0] && setSelectedImageIndex(0)}
+                    onClick={() =>
+                      location.images?.[0] && setSelectedImageIndex(0)
+                    }
                   />
                 </div>
 
@@ -693,7 +798,11 @@ const renderAssignedUsers = (assignedCleaners) => {
                         }}
                         onClick={() => setSelectedImageIndex(idx + 1)}
                       >
-                        <img src={img} alt={`Location ${idx + 2}`} className="w-full h-full object-cover" />
+                        <img
+                          src={img}
+                          alt={`Location ${idx + 2}`}
+                          className="w-full h-full object-cover"
+                        />
                       </div>
                     ))}
                   </div>
@@ -709,7 +818,9 @@ const renderAssignedUsers = (assignedCleaners) => {
                   >
                     <div className="flex items-center justify-between mb-2">
                       <div>
-                        <p className="text-xs text-[var(--washroom-subtitle)]">Availability</p>
+                        <p className="text-xs text-[var(--washroom-subtitle)]">
+                          Availability
+                        </p>
                         <p className="text-sm font-semibold text-[var(--washroom-title)]">
                           {availabilityInfo.label}
                         </p>
@@ -718,8 +829,15 @@ const renderAssignedUsers = (assignedCleaners) => {
                         className="px-2 py-0.5 rounded-full text-[10px] font-semibold"
                         style={
                           availabilityInfo.isOpen
-                            ? { background: "var(--washroom-status-active-bg)", color: "var(--washroom-status-active-text)" }
-                            : { background: "var(--washroom-status-inactive-bg)", color: "var(--washroom-status-inactive-text)" }
+                            ? {
+                                background: "var(--washroom-status-active-bg)",
+                                color: "var(--washroom-status-active-text)",
+                              }
+                            : {
+                                background:
+                                  "var(--washroom-status-inactive-bg)",
+                                color: "var(--washroom-status-inactive-text)",
+                              }
                         }
                       >
                         {availabilityInfo.isOpen ? "Open" : "Closed"}
@@ -730,14 +848,26 @@ const renderAssignedUsers = (assignedCleaners) => {
                     </p>
                     {availabilityInfo.weeklySchedule && (
                       <div className="grid grid-cols-2 gap-y-1 text-[11px]">
-                        {Object.entries(availabilityInfo.weeklySchedule).map(([day, value]) => (
-                          <React.Fragment key={day}>
-                            <span className="capitalize text-[var(--washroom-subtitle)]">{day.slice(0, 3)}</span>
-                            <span className={value.open ? "text-right text-[var(--washroom-title)]" : "text-right text-gray-400"}>
-                              {value.open ? `${value.opens_at} – ${value.closes_at}` : "Closed"}
-                            </span>
-                          </React.Fragment>
-                        ))}
+                        {Object.entries(availabilityInfo.weeklySchedule).map(
+                          ([day, value]) => (
+                            <React.Fragment key={day}>
+                              <span className="capitalize text-[var(--washroom-subtitle)]">
+                                {day.slice(0, 3)}
+                              </span>
+                              <span
+                                className={
+                                  value.open
+                                    ? "text-right text-[var(--washroom-title)]"
+                                    : "text-right text-gray-400"
+                                }
+                              >
+                                {value.open
+                                  ? `${value.opens_at} – ${value.closes_at}`
+                                  : "Closed"}
+                              </span>
+                            </React.Fragment>
+                          ),
+                        )}
                       </div>
                     )}
                   </div>
@@ -789,19 +919,25 @@ const renderAssignedUsers = (assignedCleaners) => {
                     <div className="flex flex-wrap gap-x-4 sm:gap-x-6 gap-y-2 text-xs sm:text-sm">
                       {location.city && (
                         <div className="flex items-center gap-1">
-                          <span className="font-medium text-[var(--washroom-title)]">City:</span>
+                          <span className="font-medium text-[var(--washroom-title)]">
+                            City:
+                          </span>
                           <span>{location.city}</span>
                         </div>
                       )}
                       {location.state && (
                         <div className="flex items-center gap-1">
-                          <span className="font-medium text-[var(--washroom-title)]">State:</span>
+                          <span className="font-medium text-[var(--washroom-title)]">
+                            State:
+                          </span>
                           <span>{location.state}</span>
                         </div>
                       )}
                       {location.pincode && (
                         <div className="flex items-center gap-1">
-                          <span className="font-medium text-[var(--washroom-title)]">Pincode:</span>
+                          <span className="font-medium text-[var(--washroom-title)]">
+                            Pincode:
+                          </span>
                           <span>{location.pincode}</span>
                         </div>
                       )}
@@ -818,10 +954,12 @@ const renderAssignedUsers = (assignedCleaners) => {
                   {renderLocationOptions(location.options)}
                 </div>
 
-              {/* Action Buttons */}
+                {/* Action Buttons */}
                 <div className="flex flex-wrap items-center gap-3">
                   <button
-                    onClick={() => handleViewLocation(location.latitude, location.longitude)}
+                    onClick={() =>
+                      handleViewLocation(location.latitude, location.longitude)
+                    }
                     className="flex items-center justify-center px-5 py-2.5 text-sm font-medium rounded-lg transition-colors"
                     style={{
                       color: "var(--washroom-primary)",
@@ -882,7 +1020,11 @@ const renderAssignedUsers = (assignedCleaners) => {
                         Photo Upload Limit
                       </p>
                       <p className="text-xs text-[var(--washroom-subtitle)] mt-0.5">
-                        Minimum <span className="font-bold text-[var(--washroom-title)]">{location.no_of_photos}</span> photos can be uploaded
+                        Minimum{" "}
+                        <span className="font-bold text-[var(--washroom-title)]">
+                          {location.no_of_photos}
+                        </span>{" "}
+                        photos can be uploaded
                       </p>
                     </div>
                   </div>
@@ -894,11 +1036,9 @@ const renderAssignedUsers = (assignedCleaners) => {
 
         {renderUsageCategory(location.usage_category)}
 
-     {/* --- Side-by-Side: Assigned Cleaners & Review Stats (SINGLE OUTER BOX) --- */}
+        {/* --- Side-by-Side: Assigned Cleaners & Review Stats (SINGLE OUTER BOX) --- */}
         <div className="bg-[var(--washroom-surface)] border border-[var(--washroom-border)] shadow-[var(--washroom-shadow)] rounded-lg mb-6 sm:mb-8 p-4 sm:p-6">
-          
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
-            
             {/* LEFT: Assigned Cleaners (Inner Box) */}
             <div className="border border-[var(--washroom-border)] rounded-xl p-4 sm:p-6 flex flex-col">
               {renderAssignedUsers(location.cleaner_assignments)}
@@ -909,9 +1049,8 @@ const renderAssignedUsers = (assignedCleaners) => {
               <h2 className="text-lg font-semibold text-[var(--washroom-title)] mb-4">
                 Review Statistics
               </h2>
-              
+
               <div className="flex flex-col gap-4">
-                
                 {/* User Reviews */}
                 <div
                   className="flex items-center gap-4 p-4 rounded-lg"
@@ -938,14 +1077,18 @@ const renderAssignedUsers = (assignedCleaners) => {
                           {userReviewAverage}/10
                         </div>
                         <p className="text-xs text-[var(--washroom-subtitle)]">
-                          {userReviewCount} User {userReviewCount === 1 ? "Review" : "Reviews"}
+                          {userReviewCount} User{" "}
+                          {userReviewCount === 1 ? "Review" : "Reviews"}
                         </p>
                       </>
                     ) : (
                       <>
-                        <div className="text-2xl font-bold text-[var(--washroom-title)]">N/A</div>
+                        <div className="text-2xl font-bold text-[var(--washroom-title)]">
+                          N/A
+                        </div>
                         <p className="text-xs text-[var(--washroom-subtitle)]">
-                          {userReviewCount} User {userReviewCount === 1 ? "Review" : "Reviews"}
+                          {userReviewCount} User{" "}
+                          {userReviewCount === 1 ? "Review" : "Reviews"}
                         </p>
                       </>
                     )}
@@ -963,7 +1106,9 @@ const renderAssignedUsers = (assignedCleaners) => {
                   <div className="flex-shrink-0">
                     <div
                       className="w-12 h-12 rounded-full flex items-center justify-center"
-                      style={{ background: "var(--washroom-status-active-text)" }}
+                      style={{
+                        background: "var(--washroom-status-active-text)",
+                      }}
                     >
                       <Shield className="w-6 h-6 text-white" />
                     </div>
@@ -972,42 +1117,55 @@ const renderAssignedUsers = (assignedCleaners) => {
                     {cleanerReviewStats?.average_score ? (
                       <>
                         <div className="flex items-center gap-2 mb-1">
-                          {renderStars(parseFloat(cleanerReviewStats.average_score))}
+                          {renderStars(
+                            parseFloat(cleanerReviewStats.average_score),
+                          )}
                         </div>
                         <div className="text-2xl font-bold text-[var(--washroom-title)]">
-                          {parseFloat(cleanerReviewStats.average_score).toFixed(1)}/10
+                          {parseFloat(cleanerReviewStats.average_score).toFixed(
+                            1,
+                          )}
+                          /10
                         </div>
                         <p className="text-xs text-[var(--washroom-subtitle)]">
-                          {cleanerReviewCount} Cleaner {cleanerReviewCount === 1 ? "Review" : "Reviews"}
+                          {cleanerReviewCount} Cleaner{" "}
+                          {cleanerReviewCount === 1 ? "Review" : "Reviews"}
                         </p>
                       </>
                     ) : (
                       <>
-                        <div className="text-2xl font-bold text-[var(--washroom-title)]">N/A</div>
+                        <div className="text-2xl font-bold text-[var(--washroom-title)]">
+                          N/A
+                        </div>
                         <p className="text-xs text-[var(--washroom-subtitle)]">
-                          {cleanerReviewCount} Cleaner {cleanerReviewCount === 1 ? "Review" : "Reviews"}
+                          {cleanerReviewCount} Cleaner{" "}
+                          {cleanerReviewCount === 1 ? "Review" : "Reviews"}
                         </p>
                       </>
                     )}
                   </div>
                 </div>
-
               </div>
             </div>
-
           </div>
         </div>
 
         {/* Reviews Section with Tabs */}
-       <div className="bg-[var(--washroom-surface)] border border-[var(--washroom-border)] shadow-[var(--washroom-shadow)] rounded-lg">
-          <div className="border-b" style={{ borderColor: "var(--washroom-border)" }}>
+        <div className="bg-[var(--washroom-surface)] border border-[var(--washroom-border)] shadow-[var(--washroom-shadow)] rounded-lg">
+          <div
+            className="border-b"
+            style={{ borderColor: "var(--washroom-border)" }}
+          >
             <div className="flex">
               <button
                 onClick={() => setActiveTab("user")}
                 className="flex-1 px-6 py-4 text-center font-medium transition-colors"
                 style={
                   activeTab === "user"
-                    ? { color: "var(--washroom-score-text)", borderBottom: "2px solid var(--washroom-score-text)" }
+                    ? {
+                        color: "var(--washroom-score-text)",
+                        borderBottom: "2px solid var(--washroom-score-text)",
+                      }
                     : { color: "var(--washroom-subtitle)" }
                 }
               >
@@ -1018,7 +1176,10 @@ const renderAssignedUsers = (assignedCleaners) => {
                 className="flex-1 px-6 py-4 text-center font-medium transition-colors"
                 style={
                   activeTab === "cleaner"
-                    ? { color: "var(--washroom-score-text)", borderBottom: "2px solid var(--washroom-score-text)" }
+                    ? {
+                        color: "var(--washroom-score-text)",
+                        borderBottom: "2px solid var(--washroom-score-text)",
+                      }
                     : { color: "var(--washroom-subtitle)" }
                 }
               >
@@ -1035,14 +1196,23 @@ const renderAssignedUsers = (assignedCleaners) => {
                   location.ReviewData.map((review) => (
                     <div
                       key={review.id}
-                      onClick={() => router.push(`/user-activity/${review.id}?companyId=${finalCompanyId}`)}
+                      onClick={() =>
+                        router.push(
+                          `/user-activity/${review.id}?companyId=${finalCompanyId}`,
+                        )
+                      }
                       className="p-6 cursor-pointer transition-colors hover:bg-[var(--washroom-table-row-hover)]"
-                      style={{ borderBottom: "1px solid var(--washroom-border)" }}
+                      style={{
+                        borderBottom: "1px solid var(--washroom-border)",
+                      }}
                     >
                       <div className="flex items-start space-x-4">
                         <div
                           className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
-                          style={{ background: "linear-gradient(135deg, var(--washroom-primary), var(--washroom-primary-hover))" }}
+                          style={{
+                            background:
+                              "linear-gradient(135deg, var(--washroom-primary), var(--washroom-primary-hover))",
+                          }}
                         >
                           <User className="w-5 h-5 text-[var(--washroom-primary-text)]" />
                         </div>
@@ -1052,18 +1222,25 @@ const renderAssignedUsers = (assignedCleaners) => {
                               <span className="text-sm font-medium text-[var(--washroom-title)] truncate">
                                 {review.name}
                               </span>
-                              <div className="flex items-center">{renderStars(review.rating)}</div>
+                              <div className="flex items-center">
+                                {renderStars(review.rating)}
+                              </div>
                             </div>
                             <span className="text-sm text-[var(--washroom-subtitle)] whitespace-nowrap">
                               {formatDate(review.created_at)}
                             </span>
                           </div>
-                          <p className="text-sm text-[var(--washroom-text)] mb-4">{review.description}</p>
+                          <p className="text-sm text-[var(--washroom-text)] mb-4">
+                            {review.description}
+                          </p>
                           {review.images && review.images.length > 0 && (
                             <div className="space-y-3">
                               <div className="flex items-center text-sm text-[var(--washroom-subtitle)]">
                                 <Camera className="w-4 h-4 mr-1" />
-                                {review.images.length} {review.images.length === 1 ? "photo" : "photos"}
+                                {review.images.length}{" "}
+                                {review.images.length === 1
+                                  ? "photo"
+                                  : "photos"}
                               </div>
                               <div className="flex space-x-2 overflow-x-auto">
                                 {review.images.map((url, imgIndex) => (
@@ -1072,7 +1249,8 @@ const renderAssignedUsers = (assignedCleaners) => {
                                     className="relative w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 cursor-pointer transition-opacity hover:opacity-90"
                                     style={{
                                       background: "var(--washroom-input-bg)",
-                                      border: "1px solid var(--washroom-border)",
+                                      border:
+                                        "1px solid var(--washroom-border)",
                                     }}
                                     onClick={(e) => {
                                       e.stopPropagation();
@@ -1083,8 +1261,16 @@ const renderAssignedUsers = (assignedCleaners) => {
                                       src={url}
                                       alt={`Review photo ${imgIndex + 1}`}
                                       className="w-full h-full object-cover"
-                                      onLoad={() => handleImageLoad(`${review.id}-${imgIndex}`)}
-                                      onError={() => handleImageError(`${review.id}-${imgIndex}`)}
+                                      onLoad={() =>
+                                        handleImageLoad(
+                                          `${review.id}-${imgIndex}`,
+                                        )
+                                      }
+                                      onError={() =>
+                                        handleImageError(
+                                          `${review.id}-${imgIndex}`,
+                                        )
+                                      }
                                     />
                                   </div>
                                 ))}
@@ -1096,10 +1282,20 @@ const renderAssignedUsers = (assignedCleaners) => {
                     </div>
                   ))
                 ) : (
-                  <div className="p-12 text-center" style={{ background: "var(--washroom-surface)" }}>
-                    <MessageSquare className="w-12 h-12 mx-auto mb-4" style={{ color: "var(--washroom-subtitle)" }} />
-                    <h3 className="text-lg font-medium text-[var(--washroom-title)] mb-2">No user reviews yet</h3>
-                    <p className="text-sm text-[var(--washroom-subtitle)]">Be the first to share your experience with this washroom.</p>
+                  <div
+                    className="p-12 text-center"
+                    style={{ background: "var(--washroom-surface)" }}
+                  >
+                    <MessageSquare
+                      className="w-12 h-12 mx-auto mb-4"
+                      style={{ color: "var(--washroom-subtitle)" }}
+                    />
+                    <h3 className="text-lg font-medium text-[var(--washroom-title)] mb-2">
+                      No user reviews yet
+                    </h3>
+                    <p className="text-sm text-[var(--washroom-subtitle)]">
+                      Be the first to share your experience with this washroom.
+                    </p>
                   </div>
                 )}
               </>
@@ -1112,9 +1308,15 @@ const renderAssignedUsers = (assignedCleaners) => {
                   cleanerReviews.map((review) => (
                     <div
                       key={review.id}
-                      onClick={() => router.push(`/cleaners/${review.id}?companyId=${finalCompanyId}`)}
+                      onClick={() =>
+                        router.push(
+                          `/cleaners/${review.id}?companyId=${finalCompanyId}`,
+                        )
+                      }
                       className="p-6 cursor-pointer transition-colors hover:bg-[var(--washroom-table-row-hover)]"
-                      style={{ borderBottom: "1px solid var(--washroom-border)" }}
+                      style={{
+                        borderBottom: "1px solid var(--washroom-border)",
+                      }}
                     >
                       <div className="space-y-4">
                         {/* 1. Header (Name, Status, Score, Date) */}
@@ -1122,29 +1324,39 @@ const renderAssignedUsers = (assignedCleaners) => {
                           <div className="flex items-start space-x-3 min-w-0">
                             <div
                               className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
-                              style={{ background: "linear-gradient(135deg, var(--washroom-status-active-bg), var(--washroom-status-dot-active))" }}
+                              style={{
+                                background:
+                                  "linear-gradient(135deg, var(--washroom-status-active-bg), var(--washroom-status-dot-active))",
+                              }}
                             >
                               <Shield className="w-5 h-5 text-white" />
                             </div>
                             <div className="min-w-0">
                               <div className="flex flex-wrap items-center gap-2 mb-1">
                                 <span className="text-sm font-semibold text-[var(--washroom-title)] truncate">
-                                  {review.cleaner_user?.name || "Unknown Cleaner"}
+                                  {review.cleaner_user?.name ||
+                                    "Unknown Cleaner"}
                                 </span>
                                 <span
                                   className="px-2 py-0.5 rounded-full text-xs font-medium border"
                                   style={
                                     review.status === "completed"
                                       ? {
-                                        background: "var(--washroom-status-active-bg)",
-                                        color: "var(--washroom-status-active-text)",
-                                        borderColor: "var(--washroom-status-active-border)",
-                                      }
+                                          background:
+                                            "var(--washroom-status-active-bg)",
+                                          color:
+                                            "var(--washroom-status-active-text)",
+                                          borderColor:
+                                            "var(--washroom-status-active-border)",
+                                        }
                                       : {
-                                        background: "var(--washroom-status-inactive-bg)",
-                                        color: "var(--washroom-status-inactive-text)",
-                                        borderColor: "var(--washroom-status-inactive-border)",
-                                      }
+                                          background:
+                                            "var(--washroom-status-inactive-bg)",
+                                          color:
+                                            "var(--washroom-status-inactive-text)",
+                                          borderColor:
+                                            "var(--washroom-status-inactive-border)",
+                                        }
                                   }
                                 >
                                   {review.status}
@@ -1186,27 +1398,36 @@ const renderAssignedUsers = (assignedCleaners) => {
 
                         {/* 2. Flex Container to Split Left (Comments/Photos) and Right (Tasks) */}
                         <div className="flex flex-col md:flex-row gap-4 md:gap-6 mt-2">
-                          
                           {/* Left Column: Comments & Photos */}
                           <div className="flex-1 space-y-4">
-                            {(review.initial_comment || review.final_comment) && (
+                            {(review.initial_comment ||
+                              review.final_comment) && (
                               <div className="space-y-2 text-sm">
                                 {review.initial_comment && (
                                   <div>
-                                    <span className="font-medium text-[var(--washroom-title)]">Initial: </span>
-                                    <span className="text-[var(--washroom-text)]">{review.initial_comment}</span>
+                                    <span className="font-medium text-[var(--washroom-title)]">
+                                      Initial:{" "}
+                                    </span>
+                                    <span className="text-[var(--washroom-text)]">
+                                      {review.initial_comment}
+                                    </span>
                                   </div>
                                 )}
                                 {review.final_comment && (
                                   <div>
-                                    <span className="font-medium text-[var(--washroom-title)]">Final: </span>
-                                    <span className="text-[var(--washroom-text)]">{review.final_comment}</span>
+                                    <span className="font-medium text-[var(--washroom-title)]">
+                                      Final:{" "}
+                                    </span>
+                                    <span className="text-[var(--washroom-text)]">
+                                      {review.final_comment}
+                                    </span>
                                   </div>
                                 )}
                               </div>
                             )}
 
-                            {(review.before_photo?.length > 0 || review.after_photo?.length > 0) && (
+                            {(review.before_photo?.length > 0 ||
+                              review.after_photo?.length > 0) && (
                               <div className="space-y-2">
                                 <div className="flex items-center text-sm text-[var(--washroom-subtitle)]">
                                   <Camera className="w-4 h-4 mr-1" />
@@ -1218,17 +1439,28 @@ const renderAssignedUsers = (assignedCleaners) => {
                                       <div
                                         className="w-20 h-20 rounded-lg overflow-hidden cursor-pointer transition-opacity hover:opacity-90"
                                         style={{
-                                          background: "var(--washroom-input-bg)",
-                                          border: "2px solid var(--washroom-status-inactive-border)",
+                                          background:
+                                            "var(--washroom-input-bg)",
+                                          border:
+                                            "2px solid var(--washroom-status-inactive-border)",
                                         }}
                                         onClick={(e) => {
                                           e.stopPropagation();
-                                          window.open(review.before_photo[0], "_blank");
+                                          window.open(
+                                            review.before_photo[0],
+                                            "_blank",
+                                          );
                                         }}
                                       >
-                                        <img src={review.before_photo[0]} alt="Before cleaning" className="w-full h-full object-cover" />
+                                        <img
+                                          src={review.before_photo[0]}
+                                          alt="Before cleaning"
+                                          className="w-full h-full object-cover"
+                                        />
                                       </div>
-                                      <span className="text-xs text-[var(--washroom-subtitle)]">Before</span>
+                                      <span className="text-xs text-[var(--washroom-subtitle)]">
+                                        Before
+                                      </span>
                                     </div>
                                   )}
                                   {review.after_photo?.length > 0 && (
@@ -1236,17 +1468,28 @@ const renderAssignedUsers = (assignedCleaners) => {
                                       <div
                                         className="w-20 h-20 rounded-lg overflow-hidden cursor-pointer transition-opacity hover:opacity-90"
                                         style={{
-                                          background: "var(--washroom-input-bg)",
-                                          border: "2px solid var(--washroom-status-active-border)",
+                                          background:
+                                            "var(--washroom-input-bg)",
+                                          border:
+                                            "2px solid var(--washroom-status-active-border)",
                                         }}
                                         onClick={(e) => {
                                           e.stopPropagation();
-                                          window.open(review.after_photo[0], "_blank");
+                                          window.open(
+                                            review.after_photo[0],
+                                            "_blank",
+                                          );
                                         }}
                                       >
-                                        <img src={review.after_photo[0]} alt="After cleaning" className="w-full h-full object-cover" />
+                                        <img
+                                          src={review.after_photo[0]}
+                                          alt="After cleaning"
+                                          className="w-full h-full object-cover"
+                                        />
                                       </div>
-                                      <span className="text-xs text-[var(--washroom-subtitle)]">After</span>
+                                      <span className="text-xs text-[var(--washroom-subtitle)]">
+                                        After
+                                      </span>
                                     </div>
                                   )}
                                 </div>
@@ -1259,7 +1502,9 @@ const renderAssignedUsers = (assignedCleaners) => {
                             <div className="w-full md:w-5/12 lg:w-1/3 xl:w-2/5">
                               <div
                                 className="rounded-lg p-3 h-full"
-                                style={{ background: "var(--washroom-input-bg)" }}
+                                style={{
+                                  background: "var(--washroom-input-bg)",
+                                }}
                               >
                                 <div className="flex items-center gap-2 mb-2">
                                   <CheckCircle className="w-4 h-4 text-[var(--washroom-status-active-text)]" />
@@ -1308,10 +1553,20 @@ const renderAssignedUsers = (assignedCleaners) => {
                     </div>
                   ))
                 ) : (
-                  <div className="p-12 text-center" style={{ background: "var(--washroom-surface)" }}>
-                    <Shield className="w-12 h-12 mx-auto mb-4" style={{ color: "var(--washroom-subtitle)" }} />
-                    <h3 className="text-lg font-medium text-[var(--washroom-title)] mb-2">No cleaner reviews yet</h3>
-                    <p className="text-sm text-[var(--washroom-subtitle)]">Cleaner reviews will appear here once available.</p>
+                  <div
+                    className="p-12 text-center"
+                    style={{ background: "var(--washroom-surface)" }}
+                  >
+                    <Shield
+                      className="w-12 h-12 mx-auto mb-4"
+                      style={{ color: "var(--washroom-subtitle)" }}
+                    />
+                    <h3 className="text-lg font-medium text-[var(--washroom-title)] mb-2">
+                      No cleaner reviews yet
+                    </h3>
+                    <p className="text-sm text-[var(--washroom-subtitle)]">
+                      Cleaner reviews will appear here once available.
+                    </p>
                   </div>
                 )}
               </>
@@ -1329,14 +1584,20 @@ const renderAssignedUsers = (assignedCleaners) => {
                 <AlertTriangle className="h-5 w-5 sm:h-6 sm:w-6 text-red-600" />
               </div>
               <div className="min-w-0 flex-1">
-                <h3 className="text-base sm:text-lg font-semibold text-slate-800 mb-1">Delete Location</h3>
-                <p className="text-slate-600 text-xs sm:text-sm">This action cannot be undone</p>
+                <h3 className="text-base sm:text-lg font-semibold text-slate-800 mb-1">
+                  Delete Location
+                </h3>
+                <p className="text-slate-600 text-xs sm:text-sm">
+                  This action cannot be undone
+                </p>
               </div>
             </div>
             <div className="mb-5 sm:mb-6">
               <p className="text-sm sm:text-base text-slate-700">
-                Are you sure you want to delete &quot;<strong className="font-semibold">{location?.name}</strong>&quot;? 
-                This will permanently remove the location and all associated data.
+                Are you sure you want to delete &quot;
+                <strong className="font-semibold">{location?.name}</strong>
+                &quot;? This will permanently remove the location and all
+                associated data.
               </p>
             </div>
             <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 sm:justify-end">
@@ -1352,7 +1613,9 @@ const renderAssignedUsers = (assignedCleaners) => {
                 disabled={deleting}
                 className="w-full sm:w-auto px-4 py-2 sm:py-2.5 text-sm sm:text-base bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors duration-150 flex items-center justify-center gap-2 disabled:bg-red-400 disabled:cursor-not-allowed font-medium"
               >
-                {deleting && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
+                {deleting && (
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                )}
                 {deleting ? "Deleting..." : "Delete Location"}
               </button>
             </div>
@@ -1366,7 +1629,10 @@ const renderAssignedUsers = (assignedCleaners) => {
           className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4"
           onClick={() => setSelectedImageIndex(null)}
         >
-          <div className="relative max-w-4xl w-full max-h-full" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="relative max-w-4xl w-full max-h-full"
+            onClick={(e) => e.stopPropagation()}
+          >
             <img
               src={location.images[selectedImageIndex]}
               alt={`Location image ${selectedImageIndex + 1}`}
@@ -1400,7 +1666,9 @@ const renderAssignedUsers = (assignedCleaners) => {
                 {selectedImageIndex + 1} of {location.images.length}
               </p>
             </div>
-            <div className="sr-only">Press left/right arrow keys to navigate</div>
+            <div className="sr-only">
+              Press left/right arrow keys to navigate
+            </div>
           </div>
         </div>
       )}
