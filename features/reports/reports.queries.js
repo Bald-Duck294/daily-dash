@@ -17,7 +17,13 @@ export const reportKeys = {
   // Filter/Dropdown Data
   zones: (companyId) => [...reportKeys.all, "zones", companyId],
   locations: (companyId, typeId) => [...reportKeys.all, "locations", companyId, typeId],
-  cleaners: (companyId, locationId) => [...reportKeys.all, "cleaners", companyId, locationId],
+  cleaners: (companyId, locationId, typeId) => [
+    ...reportKeys.all,
+    "cleaners",
+    companyId,
+    locationId || "all",
+    typeId || "all",
+  ],
 };
 
 /* =====================================================
@@ -99,15 +105,15 @@ export const useGetLocationsForReport = (companyId, typeId) => {
 };
 
 // 6. Get Cleaners For Report (Axios Version)
-export const useGetCleanersForReport = (companyId, locationId) => {
+export const useGetCleanersForReport = (companyId, locationId, typeId) => {
   return useQuery({
-    queryKey: reportKeys.cleaners(companyId, locationId),
+    queryKey: reportKeys.cleaners(companyId, locationId, typeId),
     queryFn: async () => {
-      const response = await ReportsApi.getCleanersForReport(companyId, locationId);
+      const response = await ReportsApi.getCleanersForReport(companyId, locationId, typeId);
       if (!response.success) throw new Error(response.error || "Failed to fetch cleaners");
       return response.data;
     },
-    enabled: !!companyId && !!locationId,
+    enabled: !!companyId && companyId !== "null",
     staleTime: 10 * 60 * 1000,
   });
 };

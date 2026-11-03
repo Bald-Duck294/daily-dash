@@ -178,9 +178,12 @@ export const ReportsApi = {
 
   getLocationsForReport: async (company_id, type_id) => {
     try {
-      const response = await axiosInstance.get(
-        `/reports/locations?company_id=${company_id}&type_id=${type_id}`,
-      );
+      let url = `/reports/locations?company_id=${company_id}`;
+      if (type_id && type_id !== "undefined" && type_id !== "all") {
+        url += `&type_id=${type_id}`;
+      }
+
+      const response = await axiosInstance.get(url);
 
       return {
         success: true,
@@ -196,11 +199,17 @@ export const ReportsApi = {
     }
   },
 
-  getCleanersForReport: async (company_id, location_id) => {
+  getCleanersForReport: async (company_id, location_id, type_id) => {
     try {
-      const response = await axiosInstance.get(
-        `/reports/cleaners?company_id=${company_id}&location_id=${location_id}`,
-      );
+      let url = `/reports/cleaners?company_id=${company_id}`;
+      if (location_id && location_id !== "undefined" && location_id !== "all") {
+        url += `&location_id=${location_id}`;
+      }
+      if (type_id && type_id !== "undefined" && type_id !== "all") {
+        url += `&type_id=${type_id}`;
+      }
+
+      const response = await axiosInstance.get(url);
       return {
         success: true,
         data: response.data.data || [],

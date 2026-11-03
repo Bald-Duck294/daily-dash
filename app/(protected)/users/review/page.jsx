@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useCompanyId } from "@/providers/CompanyProvider";
 import { useUserReviews } from "@/features/users/review/reviews.queries";
+import { useDropdownLocations } from "@/features/dropdownList/dropdownlist.query";
 import { getReasonsList } from "@/features/users/review/reviewReasons";
 import {
   MessageSquare,
@@ -23,6 +24,7 @@ import {
   AlertCircle,
   CheckCircle2,
   ChevronRight,
+  ChevronDown,
   Sparkles,
   SlidersHorizontal,
   X,
@@ -99,7 +101,16 @@ export default function UserReviewsPage() {
   const [toDate, setToDate] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [ratingFilter, setRatingFilter] = useState("all"); // 'all' | 'high' | 'mid' | 'low'
+  const [selectedWashroom, setSelectedWashroom] = useState("all"); // 'all' | locationId
   const [limit, setLimit] = useState(100);
+
+  // Fetch washroom locations for the company
+  const { data: locationsResponse = [], isLoading: isLoadingLocations } = useDropdownLocations(companyId);
+  const locations = useMemo(() => {
+    if (Array.isArray(locationsResponse)) return locationsResponse;
+    if (Array.isArray(locationsResponse?.data)) return locationsResponse.data;
+    return [];
+  }, [locationsResponse]);
 
   // Derive date query parameters for API
   const dateParams = useMemo(() => {
@@ -131,6 +142,7 @@ export default function UserReviewsPage() {
   // Fetch reviews using TanStack Query
   const { data, isLoading, isError, error, refetch, isFetching } = useUserReviews({
     company_id: companyId,
+    location_id: selectedWashroom !== "all" ? selectedWashroom : undefined,
     limit,
     ...dateParams,
   });
@@ -142,7 +154,13 @@ export default function UserReviewsPage() {
     if (!Array.isArray(rawReviews)) return [];
 
     return rawReviews.filter((review) => {
-      // 1. Rating filter
+      // 1. Washroom filter
+      if (selectedWashroom !== "all") {
+        const revLocId = review.location_id || review.location?.id;
+        if (String(revLocId) !== String(selectedWashroom)) return false;
+      }
+
+      // 2. Rating filter
       if (ratingFilter === "high" && review.rating < 8) return false;
       if (ratingFilter === "mid" && (review.rating < 5 || review.rating >= 8)) return false;
       if (ratingFilter === "low" && review.rating >= 5) return false;
@@ -194,6 +212,7 @@ export default function UserReviewsPage() {
     setToDate("");
     setSearchQuery("");
     setRatingFilter("all");
+    setSelectedWashroom("all");
     toast.success("Filters reset to default");
   };
 
@@ -285,7 +304,7 @@ export default function UserReviewsPage() {
                 </button>
               </div>
 
-              {(dateFilterType !== "all" || ratingFilter !== "all" || searchQuery || fromDate || toDate) && (
+              {(dateFilterType !== "all" || ratingFilter !== "all" || selectedWashroom !== "all" || searchQuery || fromDate || toDate) && (
                 <button
                   onClick={handleResetFilters}
                   className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-[var(--surface)] hover:bg-[var(--muted)] border border-[var(--border)] text-[var(--muted-foreground)] hover:text-foreground transition shadow-sm"
@@ -384,6 +403,31 @@ export default function UserReviewsPage() {
                 )}
               </div>
 
+              {/* Washroom Location Dropdown Filter */}
+              <div className="relative flex items-center min-w-[200px] sm:min-w-[260px]">
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-primary">
+                  <MapPin size={15} />
+                </div>
+                <select
+                  value={selectedWashroom}
+                  onChange={(e) => setSelectedWashroom(e.target.value)}
+                  className="w-full pl-9 pr-9 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-foreground text-xs sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer transition appearance-none shadow-2xs"
+                  aria-label="Filter by Washroom"
+                >
+                  <option value="all">
+                    All Washrooms {locations.length > 0 ? `(${locations.length})` : ""}
+                  </option>
+                  {locations.map((loc) => (
+                    <option key={loc.id} value={loc.id}>
+                      {loc.name}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--muted-foreground)]">
+                  <ChevronDown size={14} />
+                </div>
+              </div>
+
               {/* Date Filter Tabs (Today, Week, Month, Custom) */}
               <div className="flex flex-wrap items-center gap-1.5 p-1 rounded-xl bg-[var(--background)] border border-[var(--border)]">
                 {[
@@ -433,6 +477,24 @@ export default function UserReviewsPage() {
                     {pill.label}
                   </button>
                 ))}
+
+                {/* Active Washroom Filter Chip */}
+                {selectedWashroom !== "all" && (
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-primary/10 border border-primary/20 text-primary animate-in fade-in">
+                    <MapPin size={12} />
+                    <span className="truncate max-w-[200px]">
+                      {locations.find((l) => String(l.id) === String(selectedWashroom))?.name || `Washroom #${selectedWashroom}`}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedWashroom("all")}
+                      className="p-0.5 hover:bg-primary/20 rounded-full transition cursor-pointer"
+                      title="Clear washroom filter"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Custom Date Range Picker (shown when 'custom' is active) */}

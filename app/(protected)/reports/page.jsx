@@ -1179,9 +1179,9 @@ export default function ReportsPage() {
   const { data: locations = [], isFetching: loadingLocations } =
     useGetLocationsForReport(companyId, selectedZone);
 
-  // Reacts instantly when `selectedLocation` changes
+  // Reacts instantly when `selectedLocation` or `selectedZone` changes
   const { data: cleaners = [], isFetching: loadingCleaners } =
-    useGetCleanersForReport(companyId, selectedLocation);
+    useGetCleanersForReport(companyId, selectedLocation, selectedZone);
 
   /* =====================================================
      EVENT HANDLERS (Replaces useEffect state watching)
@@ -1358,6 +1358,7 @@ export default function ReportsPage() {
         ...(selectedCleaner && { cleaner_id: selectedCleaner }),
         ...(statusFilter !== "all" && { status_filter: statusFilter }),
         ...(selectedLocation && { location_id: selectedLocation }),
+        ...(selectedZone && { type_id: selectedZone }),
       };
     }
 

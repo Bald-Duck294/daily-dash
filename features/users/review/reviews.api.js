@@ -5,6 +5,7 @@ import axios from "@/shared/api/axios.instance.js"; // or wherever your axios in
 export const fetchUserReviews = async ({
   toilet_id,
   company_id,
+  location_id,
   status,
   date,
   from_date,
@@ -15,6 +16,7 @@ export const fetchUserReviews = async ({
     params: {
       toilet_id,
       company_id,
+      location_id,
       status,
       date,
       from_date,
