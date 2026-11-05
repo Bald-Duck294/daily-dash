@@ -1924,7 +1924,7 @@ const SearchableCompanySelect = ({
         type="button"
         disabled={disabled}
         onClick={() => setIsOpen((prev) => !prev)}
-        className="flex h-10 w-full items-center justify-between rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+        className="flex h-10 w-full items-center justify-between rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] transition-colors disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
         style={{
           background: "var(--report-input-bg)",
           color: "var(--report-input-text)",
@@ -1933,7 +1933,7 @@ const SearchableCompanySelect = ({
       >
         <span
           className={`truncate text-left flex-1 ${
-            !selectedCompany ? "text-[var(--muted-foreground)]" : ""
+            !selectedCompany ? "text-[var(--muted-foreground)]" : "font-medium"
           }`}
         >
           {selectedCompany ? selectedCompany.name : placeholder}
@@ -1947,7 +1947,7 @@ const SearchableCompanySelect = ({
                 e.stopPropagation();
                 onChange("");
               }}
-              className="p-0.5 rounded-full hover:bg-[var(--muted)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors"
+              className="p-0.5 rounded-full hover:bg-[var(--muted)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors cursor-pointer"
               title="Clear company selection"
             >
               <X size={14} />
@@ -1973,7 +1973,7 @@ const SearchableCompanySelect = ({
         >
           {/* Search Bar inside Dropdown */}
           <div
-            className="p-2 border-b"
+            className="p-2.5 border-b"
             style={{
               borderColor: "var(--border)",
               background: "var(--muted)",
@@ -1990,8 +1990,8 @@ const SearchableCompanySelect = ({
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search company..."
-                className="w-full pl-8 pr-7 py-1.5 text-xs rounded-md border outline-none transition-all"
+                placeholder="Search company name..."
+                className="w-full pl-8 pr-7 py-2 text-xs rounded-md border outline-none transition-all focus:ring-1 focus:ring-[var(--primary)]"
                 style={{
                   background: "var(--report-input-bg)",
                   color: "var(--report-input-text)",
@@ -1999,7 +1999,14 @@ const SearchableCompanySelect = ({
                 }}
                 onClick={(e) => e.stopPropagation()}
                 onKeyDown={(e) => {
-                  if (e.key === "Escape") setIsOpen(false);
+                  if (e.key === "Escape") {
+                    setIsOpen(false);
+                  } else if (e.key === "Enter" && filteredCompanies.length > 0) {
+                    e.preventDefault();
+                    onChange(String(filteredCompanies[0].id));
+                    setIsOpen(false);
+                    setSearchTerm("");
+                  }
                 }}
               />
               {searchTerm && (
@@ -2010,8 +2017,7 @@ const SearchableCompanySelect = ({
                     setSearchTerm("");
                     searchInputRef.current?.focus();
                   }}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-[var(--muted)]"
-                  style={{ color: "var(--muted-foreground)" }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-[var(--muted)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] cursor-pointer"
                   title="Clear search"
                 >
                   <X size={12} />
@@ -2020,14 +2026,43 @@ const SearchableCompanySelect = ({
             </div>
           </div>
 
+          {/* Companies Count Header */}
+          <div
+            className="px-3 py-1.5 text-[11px] font-medium flex justify-between items-center border-b"
+            style={{
+              borderColor: "var(--border)",
+              color: "var(--muted-foreground)",
+            }}
+          >
+            <span>Companies</span>
+            <span>{filteredCompanies.length} available</span>
+          </div>
+
           {/* Company List */}
           <div className="max-h-60 overflow-y-auto p-1 custom-scroll">
+            {value && !searchTerm && (
+              <button
+                type="button"
+                onClick={() => {
+                  onChange("");
+                  setIsOpen(false);
+                  setSearchTerm("");
+                }}
+                className="relative flex w-full cursor-pointer select-none items-center justify-between rounded-md px-2.5 py-1.5 mb-1 text-xs italic text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)] transition-colors border-b border-dashed"
+                style={{ borderColor: "var(--border)" }}
+              >
+                <span>Clear Selection (All Companies)</span>
+                <X size={12} />
+              </button>
+            )}
+
             {filteredCompanies.length === 0 ? (
               <div
-                className="py-4 text-center text-xs"
+                className="py-6 px-3 text-center text-xs space-y-1"
                 style={{ color: "var(--muted-foreground)" }}
               >
-                No companies found
+                <Building2 size={20} className="mx-auto mb-1 opacity-40" />
+                <p>No companies found matching &ldquo;{searchTerm}&rdquo;</p>
               </div>
             ) : (
               filteredCompanies.map((company) => {
