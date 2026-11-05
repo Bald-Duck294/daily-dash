@@ -677,7 +677,7 @@
 //             onClick={() => onOpenAt(img.index)}
 //             className="relative w-10 h-10 rounded border overflow-hidden"
 //           >
-//             <img src={img.url} className="w-full h-full object-cover" />
+//             <img src={img.url} alt="Review preview" className="w-full h-full object-cover" />
 //           </button>
 //         ))}
 //       </div>
@@ -1050,7 +1050,7 @@
 
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import toast, { Toaster } from "react-hot-toast";
 import { useRequirePermission } from "@/shared/hooks/useRequirePermission";
@@ -1058,6 +1058,7 @@ import { usePermissions } from "@/shared/hooks/usePermission";
 import "../../../app/globals.css";
 
 // ✅ Import the TanStack Query hooks
+import { useQueryClient } from "@tanstack/react-query";
 import { useCompanies } from "@/features/companies/queries/companies.queries.js";
 import {
   useAllCleanerReviews,
@@ -1084,6 +1085,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Maximize2,
+  RefreshCw,
+  Check,
+  ChevronDown,
 } from "lucide-react";
 import { MODULES } from "@/shared/constants/permissions.js";
 import {
@@ -1093,7 +1097,6 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import { useMemo } from "react";
 
 const getScoreColor = (score) => {
   if (score >= 8) return "text-green-600";
@@ -1869,6 +1872,204 @@ const ExplainabilityModal = ({ details, onClose }) => {
   );
 };
 
+/* ================= SEARCHABLE COMPANY SELECT ================= */
+const SearchableCompanySelect = ({
+  companies = [],
+  value,
+  onChange,
+  disabled = false,
+  placeholder = "Select company",
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const dropdownRef = useRef(null);
+  const searchInputRef = useRef(null);
+
+  // Close when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Auto focus input when opened
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 50);
+    } else {
+      setSearchTerm("");
+    }
+  }, [isOpen]);
+
+  const selectedCompany = useMemo(() => {
+    return companies.find((c) => String(c.id) === String(value));
+  }, [companies, value]);
+
+  const filteredCompanies = useMemo(() => {
+    if (!searchTerm.trim()) return companies;
+    const q = searchTerm.toLowerCase();
+    return companies.filter((c) => c.name?.toLowerCase().includes(q));
+  }, [companies, searchTerm]);
+
+  return (
+    <div className="relative w-full" ref={dropdownRef}>
+      {/* Trigger Button */}
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => setIsOpen((prev) => !prev)}
+        className="flex h-10 w-full items-center justify-between rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+        style={{
+          background: "var(--report-input-bg)",
+          color: "var(--report-input-text)",
+          borderColor: "var(--report-input-border)",
+        }}
+      >
+        <span
+          className={`truncate text-left flex-1 ${
+            !selectedCompany ? "text-[var(--muted-foreground)]" : ""
+          }`}
+        >
+          {selectedCompany ? selectedCompany.name : placeholder}
+        </span>
+        <div className="flex items-center gap-1.5 ml-2 shrink-0">
+          {selectedCompany && !disabled && (
+            <span
+              role="button"
+              tabIndex={0}
+              onClick={(e) => {
+                e.stopPropagation();
+                onChange("");
+              }}
+              className="p-0.5 rounded-full hover:bg-[var(--muted)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors"
+              title="Clear company selection"
+            >
+              <X size={14} />
+            </span>
+          )}
+          <ChevronDown
+            className={`h-4 w-4 opacity-60 transition-transform duration-200 ${
+              isOpen ? "rotate-180" : ""
+            }`}
+          />
+        </div>
+      </button>
+
+      {/* Dropdown Menu */}
+      {isOpen && (
+        <div
+          className="absolute z-50 mt-1 w-full rounded-lg border shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-100"
+          style={{
+            background: "var(--surface)",
+            borderColor: "var(--border)",
+            minWidth: "100%",
+          }}
+        >
+          {/* Search Bar inside Dropdown */}
+          <div
+            className="p-2 border-b"
+            style={{
+              borderColor: "var(--border)",
+              background: "var(--muted)",
+            }}
+          >
+            <div className="relative">
+              <Search
+                size={14}
+                className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none"
+                style={{ color: "var(--muted-foreground)" }}
+              />
+              <input
+                ref={searchInputRef}
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search company..."
+                className="w-full pl-8 pr-7 py-1.5 text-xs rounded-md border outline-none transition-all"
+                style={{
+                  background: "var(--report-input-bg)",
+                  color: "var(--report-input-text)",
+                  borderColor: "var(--report-input-border)",
+                }}
+                onClick={(e) => e.stopPropagation()}
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") setIsOpen(false);
+                }}
+              />
+              {searchTerm && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSearchTerm("");
+                    searchInputRef.current?.focus();
+                  }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-[var(--muted)]"
+                  style={{ color: "var(--muted-foreground)" }}
+                  title="Clear search"
+                >
+                  <X size={12} />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Company List */}
+          <div className="max-h-60 overflow-y-auto p-1 custom-scroll">
+            {filteredCompanies.length === 0 ? (
+              <div
+                className="py-4 text-center text-xs"
+                style={{ color: "var(--muted-foreground)" }}
+              >
+                No companies found
+              </div>
+            ) : (
+              filteredCompanies.map((company) => {
+                const isSelected = String(company.id) === String(value);
+                return (
+                  <button
+                    key={company.id}
+                    type="button"
+                    onClick={() => {
+                      onChange(String(company.id));
+                      setIsOpen(false);
+                      setSearchTerm("");
+                    }}
+                    className="relative flex w-full cursor-pointer select-none items-center justify-between rounded-md px-2.5 py-2 text-sm text-left transition-colors"
+                    style={{
+                      background: isSelected ? "var(--primary)" : "transparent",
+                      color: isSelected
+                        ? "var(--primary-foreground)"
+                        : "var(--foreground)",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isSelected)
+                        e.currentTarget.style.background = "var(--muted)";
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isSelected)
+                        e.currentTarget.style.background = "transparent";
+                    }}
+                  >
+                    <span className="truncate">{company.name}</span>
+                    {isSelected && <Check className="h-4 w-4 shrink-0 ml-2" />}
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 /* ================= MAIN COMPONENT ================= */
 export default function ScoreManagement() {
   useRequirePermission({
@@ -1889,6 +2090,7 @@ export default function ScoreManagement() {
   const [selectedPhotos, setSelectedPhotos] = useState(null);
 
   /* ================= State ================= */
+  const queryClient = useQueryClient();
   const [companyFilter, setCompanyFilter] = useState("");
   const [dateFilter, setDateFilter] = useState(
     new Date().toISOString().split("T")[0],
@@ -1901,10 +2103,10 @@ export default function ScoreManagement() {
 
   /* ================= API Queries ================= */
 
-  // 1. Fetch Companies
+  // 1. Fetch Companies (fetch up to 500 so all companies are searchable)
   const { data: companiesResponse, isLoading: loadingCompanies } = useCompanies(
     1,
-    100,
+    500,
   );
   const companies = Array.isArray(companiesResponse?.data)
     ? companiesResponse.data
@@ -1913,10 +2115,32 @@ export default function ScoreManagement() {
       : [];
 
   // 2. Fetch Reviews via TanStack Query
-  const { data: rawReviews, isLoading: loadingReviews } = useAllCleanerReviews(
+  const {
+    data: rawReviews,
+    isLoading: loadingReviews,
+    isFetching: fetchingReviews,
+    refetch: refetchReviews,
+  } = useAllCleanerReviews(
     { date: dateFilter },
     companyFilter,
   );
+
+  // Invalidate cache and refetch when date changes
+  const handleDateChange = (newDate) => {
+    setDateFilter(newDate);
+    queryClient.invalidateQueries({ queryKey: ["cleaner-reviews", "all"] });
+  };
+
+  // Manual refresh reviews
+  const handleRefreshReviews = async () => {
+    try {
+      await queryClient.invalidateQueries({ queryKey: ["cleaner-reviews", "all"] });
+      await refetchReviews();
+      toast.success("Reviews refreshed");
+    } catch {
+      toast.error("Failed to refresh reviews");
+    }
+  };
 
   /* ================= Filter Logic ================= */
   const filteredReviews = useMemo(() => {
@@ -2000,7 +2224,7 @@ export default function ScoreManagement() {
             onClick={() => onOpenAt(img.index)}
             className="relative w-10 h-10 rounded border overflow-hidden"
           >
-            <img src={img.url} className="w-full h-full object-cover" />
+            <img src={img.url} alt="Review preview" className="w-full h-full object-cover" />
           </button>
         ))}
       </div>
@@ -2054,75 +2278,63 @@ export default function ScoreManagement() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Company */}
               <div>
-                {/* Injecting CSS directly into the component */}
-                <style>{`
-    .custom-scroll {
-      max-height: 300px;
-      overflow-y: auto;
-    }
-    .custom-scroll::-webkit-scrollbar {
-      width: 6px;
-    }
-    .custom-scroll::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    .custom-scroll::-webkit-scrollbar-thumb {
-      background-color: #cbd5e1;
-      border-radius: 10px;
-    }
-    .custom-scroll::-webkit-scrollbar-thumb:hover {
-      background-color: #94a3b8;
-    }
-  `}</style>
-
                 <label
-                  className="text-xs font-medium mb-1 flex gap-1"
+                  className="text-xs font-medium mb-1 flex items-center gap-1"
                   style={{ color: "var(--muted-foreground)" }}
                 >
                   <Building2 size={14} /> Company
                 </label>
 
-                <Select value={companyFilter} onValueChange={setCompanyFilter}>
-                  <SelectTrigger disabled={loadingCompanies}>
-                    <SelectValue
-                      placeholder={
-                        loadingCompanies
-                          ? "Loading companies..."
-                          : "Select company"
-                      }
-                    />
-                  </SelectTrigger>
-
-                  {/* Apply the custom class defined in the style block above */}
-                  <SelectContent className="custom-scroll">
-                    {companies.map((company) => (
-                      <SelectItem key={company.id} value={company.id}>
-                        {company.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <SearchableCompanySelect
+                  companies={companies}
+                  value={companyFilter}
+                  onChange={setCompanyFilter}
+                  disabled={loadingCompanies}
+                  placeholder={
+                    loadingCompanies
+                      ? "Loading companies..."
+                      : "Select company"
+                  }
+                />
               </div>
 
               {/* Date */}
               <div>
-                <label
-                  className="text-xs font-medium mb-1 block"
-                  style={{ color: "var(--muted-foreground)" }}
-                >
-                  Date
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label
+                    className="text-xs font-medium flex items-center gap-1"
+                    style={{ color: "var(--muted-foreground)" }}
+                  >
+                    <Calendar size={14} /> Date
+                  </label>
+                  {companyFilter && (
+                    <button
+                      type="button"
+                      onClick={handleRefreshReviews}
+                      disabled={fetchingReviews}
+                      className="text-xs flex items-center gap-1 transition-colors hover:opacity-80 disabled:opacity-50 cursor-pointer"
+                      style={{ color: "var(--primary)" }}
+                      title="Refresh reviews for this date"
+                    >
+                      <RefreshCw
+                        size={12}
+                        className={fetchingReviews ? "animate-spin" : ""}
+                      />
+                      <span>{fetchingReviews ? "Refreshing..." : "Refresh"}</span>
+                    </button>
+                  )}
+                </div>
 
                 <div className="relative">
                   <Calendar
                     size={16}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 cursor-pointer"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 cursor-pointer pointer-events-none"
                     style={{ color: "var(--muted-foreground)" }}
                   />
                   <input
                     type="date"
                     value={dateFilter}
-                    onChange={(e) => setDateFilter(e.target.value)}
+                    onChange={(e) => handleDateChange(e.target.value)}
                     className="w-full pl-10 pr-3 py-2 rounded-lg border cursor-pointer"
                     style={{
                       background: "var(--report-input-bg)",
@@ -2202,7 +2414,7 @@ export default function ScoreManagement() {
               borderColor: "var(--border)",
             }}
           >
-            {loadingReviews && (
+            {(loadingReviews || fetchingReviews) && (
               <div className="absolute inset-0 bg-white/50 backdrop-blur-sm z-10 flex items-center justify-center">
                 <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
               </div>
@@ -2229,7 +2441,7 @@ export default function ScoreManagement() {
                 </thead>
 
                 <tbody>
-                  {!loadingReviews && filteredReviews.length === 0 ? (
+                  {!loadingReviews && !fetchingReviews && filteredReviews.length === 0 ? (
                     <tr>
                       <td colSpan={8}>
                         <EmptyState message="No reviews found for the selected filters" />
@@ -2354,13 +2566,13 @@ export default function ScoreManagement() {
 
         {/* Mobile Cards */}
         <div className="space-y-4 md:hidden mt-6 relative min-h-[200px]">
-          {loadingReviews && (
+          {(loadingReviews || fetchingReviews) && (
             <div className="absolute inset-0 bg-white/50 backdrop-blur-sm z-10 flex items-center justify-center">
               <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
             </div>
           )}
 
-          {!loadingReviews && filteredReviews.length === 0 ? (
+          {!loadingReviews && !fetchingReviews && filteredReviews.length === 0 ? (
             <EmptyState message="No reviews available" />
           ) : (
             filteredReviews.map((review) => (

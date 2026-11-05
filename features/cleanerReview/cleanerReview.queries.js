@@ -6,7 +6,7 @@ import { CleanerReviewApi } from "@/features/cleanerReview/cleanerReview.api"; /
 // ==========================================
 
 // 1. Get All Cleaner Reviews (with filters)
-export const useAllCleanerReviews = (params = {}, companyId) => {
+export const useAllCleanerReviews = (params = {}, companyId, options = {}) => {
   return useQuery({
     queryKey: ["cleaner-reviews", "all", params, companyId],
     queryFn: async () => {
@@ -16,7 +16,11 @@ export const useAllCleanerReviews = (params = {}, companyId) => {
     },
     // Only run if companyId is provided (matching your UI component logic)
     enabled: !!companyId && companyId !== "null", 
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    staleTime: 0, // Always fetch fresh data so changing dates or returning fetches new reviews
+    gcTime: 0, // Avoid caching old review data across date switches
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    ...options,
   });
 };
 
