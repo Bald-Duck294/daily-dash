@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import toast, { Toaster } from "react-hot-toast";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowUp } from "lucide-react";
+import { ArrowUp, Trash2, Archive, AlertTriangle, X } from "lucide-react";
 
 import Loader from "@/components/ui/Loader";
 import { useCompanyId } from "@/providers/CompanyProvider";
@@ -35,6 +35,7 @@ export default function CompaniesPage() {
   const [sortField, setSortField] = useState("created_at");
   const [sortOrder, setSortOrder] = useState("desc");
   const [companyToDelete, setCompanyToDelete] = useState(null);
+  const [deleteMode, setDeleteMode] = useState("soft");
   const [companyToReset, setCompanyToReset] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
@@ -164,19 +165,27 @@ export default function CompaniesPage() {
   };
 
   /* ---------------- HANDLERS: DELETE ---------------- */
-  const handleDelete = (id) => setCompanyToDelete(id);
+  const handleDelete = (id) => {
+    setCompanyToDelete(id);
+    setDeleteMode("soft");
+  };
 
-  const confirmDelete = async () => {
+  const confirmDelete = async (mode = "soft") => {
     if (!companyToDelete) return;
+    const targetId = companyToDelete;
     setCompanyToDelete(null);
     setIsDeleting(true);
     try {
-      await deleteCompany.mutateAsync(companyToDelete);
+      await deleteCompany.mutateAsync({ id: targetId, mode });
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["companies"] }),
         queryClient.invalidateQueries({ queryKey: ["companies", "count"] }),
       ]);
-      toast.success("Your company has been deleted.");
+      toast.success(
+        mode === "hard"
+          ? "Company permanently deleted."
+          : "Company soft-deleted (archived) successfully."
+      );
     } catch (error) {
       const msg = error?.message || error?.response?.data?.message;
       toast.error(msg && msg.length < 100 ? msg : "Something went wrong, please try again later.");
@@ -522,76 +531,173 @@ export default function CompaniesPage() {
         </div>
       </div>
 
-      {/* ========== DELETE CONFIRMATION DIALOG ========== */}
-      {companyToDelete && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-all duration-300"
-          onClick={() => setCompanyToDelete(null)}
-        >
+      {/* ========== DELETE CONFIRMATION DIALOG (SOFT vs HARD DELETE) ========== */}
+      {companyToDelete && (() => {
+        const targetCompany = companies.find((c) => String(c.id) === String(companyToDelete)) || null;
+        const companyName = targetCompany?.name || "this company";
+
+        return (
           <div
-            className="w-full max-w-md bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-800 overflow-hidden transform transition-all"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-all duration-300"
+            onClick={() => setCompanyToDelete(null)}
           >
-            {/* Header */}
-            <div className="px-6 py-5 border-b border-gray-100 dark:border-gray-800 flex items-start gap-4">
-              <div className="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30">
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-red-600 dark:text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-                  <line x1="10" y1="11" x2="10" y2="17" />
-                  <line x1="14" y1="11" x2="14" y2="17" />
-                </svg>
-              </div>
-              <div className="mt-0.5">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white leading-tight">
-                  Delete Company
-                </h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  This action cannot be undone.
-                </p>
-              </div>
-            </div>
-
-            {/* Body */}
-            <div className="px-6 py-5">
-              <p className="text-sm text-gray-700 dark:text-gray-300 mb-5 leading-relaxed">
-                Are you sure you want to permanently delete this company? This will remove all associated data from the system.
-              </p>
-              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 rounded-lg p-4">
-                <div className="flex items-center gap-2 text-red-800 dark:text-red-400 font-semibold text-sm mb-2.5">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-                    <line x1="12" y1="9" x2="12" y2="13" />
-                    <line x1="12" y1="17" x2="12.01" y2="17" />
-                  </svg>
-                  All of the following will be permanently lost:
+            <div
+              className="w-full max-w-lg bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 overflow-hidden transform transition-all"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="px-6 py-5 border-b border-gray-100 dark:border-gray-800 flex items-start justify-between">
+                <div className="flex items-start gap-3.5">
+                  <div
+                    className={`flex-shrink-0 flex items-center justify-center w-11 h-11 rounded-xl transition-colors ${
+                      deleteMode === "hard"
+                        ? "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"
+                        : "bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400"
+                    }`}
+                  >
+                    {deleteMode === "hard" ? (
+                      <Trash2 className="w-5 h-5" />
+                    ) : (
+                      <Archive className="w-5 h-5" />
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white leading-tight">
+                      Delete &ldquo;{companyName}&rdquo;
+                    </h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Choose how you want to delete this company:
+                    </p>
+                  </div>
                 </div>
-                <ul className="list-disc pl-5 text-sm text-red-700 dark:text-red-300 space-y-1.5 marker:text-red-400">
-                  <li>All users and admin accounts</li>
-                  <li>Locations, assignments &amp; schedules</li>
-                  <li>Reviews, scores &amp; activity logs</li>
-                  <li>All sessions and authentication data</li>
-                </ul>
+                <button
+                  type="button"
+                  onClick={() => setCompanyToDelete(null)}
+                  className="p-1 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                  title="Close"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
-            </div>
 
-            {/* Footer */}
-            <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 flex items-center justify-end gap-3">
-              <button
-                onClick={() => setCompanyToDelete(null)}
-                className="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmDelete}
-                className="px-4 py-2 rounded-lg text-sm font-medium text-white bg-red-600 hover:bg-red-700 shadow-sm transition-colors"
-              >
-                Yes, Delete Company
-              </button>
+              {/* Body: Two Options */}
+              <div className="p-6 space-y-3.5">
+                {/* Option 1: Soft Delete (Archive) */}
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setDeleteMode("soft")}
+                  className={`relative flex items-start gap-3.5 p-4 rounded-xl border-2 transition-all cursor-pointer ${
+                    deleteMode === "soft"
+                      ? "border-amber-500 bg-amber-50/70 dark:bg-amber-950/20 shadow-sm ring-2 ring-amber-500/20"
+                      : "border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 bg-transparent"
+                  }`}
+                >
+                  <div className="mt-0.5">
+                    <input
+                      type="radio"
+                      name="deleteMode"
+                      value="soft"
+                      checked={deleteMode === "soft"}
+                      onChange={() => setDeleteMode("soft")}
+                      className="w-4 h-4 text-amber-600 focus:ring-amber-500 cursor-pointer"
+                    />
+                  </div>
+                  <div className="flex-1 text-sm">
+                    <div className="flex items-center gap-2 font-semibold text-gray-900 dark:text-white">
+                      <span>Soft Delete (Archive)</span>
+                      <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-300">
+                        Recommended
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-600 dark:text-gray-300 mt-1 leading-relaxed">
+                      Deactivates and hides the company from active lists and reports.
+                      <strong className="text-amber-900 dark:text-amber-200"> All historical reviews, scores, cleaner assignments, and logs remain safely preserved</strong> in the database.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Option 2: Hard Delete (Permanent) */}
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setDeleteMode("hard")}
+                  className={`relative flex items-start gap-3.5 p-4 rounded-xl border-2 transition-all cursor-pointer ${
+                    deleteMode === "hard"
+                      ? "border-red-500 bg-red-50/70 dark:bg-red-950/20 shadow-sm ring-2 ring-red-500/20"
+                      : "border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 bg-transparent"
+                  }`}
+                >
+                  <div className="mt-0.5">
+                    <input
+                      type="radio"
+                      name="deleteMode"
+                      value="hard"
+                      checked={deleteMode === "hard"}
+                      onChange={() => setDeleteMode("hard")}
+                      className="w-4 h-4 text-red-600 focus:ring-red-500 cursor-pointer"
+                    />
+                  </div>
+                  <div className="flex-1 text-sm">
+                    <div className="flex items-center gap-2 font-semibold text-red-600 dark:text-red-400">
+                      <span>Hard Delete (Permanent)</span>
+                      <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-300">
+                        Irreversible
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-600 dark:text-gray-300 mt-1 leading-relaxed">
+                      <strong>Permanently destroys</strong> the company and wipes all its washrooms, cleaner assignments, users, reviews, and score history.
+                    </p>
+                    {deleteMode === "hard" && (
+                      <div className="mt-2.5 p-2.5 rounded-lg bg-red-100/80 dark:bg-red-900/30 text-[11px] text-red-800 dark:text-red-300 flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4 shrink-0 text-red-600 dark:text-red-400" />
+                        <span>Warning: This action cannot be undone. All data will be wiped permanently.</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50/80 dark:bg-gray-800/40 flex items-center justify-between">
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  Mode: <strong className="capitalize text-gray-800 dark:text-gray-200">{deleteMode} Delete</strong>
+                </span>
+                <div className="flex items-center gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setCompanyToDelete(null)}
+                    className="px-4 py-2 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => confirmDelete(deleteMode)}
+                    className={`px-4 py-2 rounded-xl text-sm font-semibold text-white shadow-sm transition-all cursor-pointer flex items-center gap-1.5 ${
+                      deleteMode === "hard"
+                        ? "bg-red-600 hover:bg-red-700 active:scale-95"
+                        : "bg-amber-600 hover:bg-amber-700 active:scale-95"
+                    }`}
+                  >
+                    {deleteMode === "hard" ? (
+                      <>
+                        <Trash2 className="w-4 h-4" />
+                        <span>Permanently Hard Delete</span>
+                      </>
+                    ) : (
+                      <>
+                        <Archive className="w-4 h-4" />
+                        <span>Soft Delete (Archive)</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* ========== RESET WORKSPACE CONFIRMATION DIALOG ========== */}
       {companyToReset && (

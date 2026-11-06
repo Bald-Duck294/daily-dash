@@ -26,6 +26,7 @@ import toast, { Toaster } from "react-hot-toast";
 import { useRequirePermission } from "@/shared/hooks/useRequirePermission";
 import { MODULES } from "@/shared/constants/permissions";
 import { useCleanerReviewById } from "@/features/cleaners/cleaners.queries";
+import { useCompanyId } from "@/providers/CompanyProvider";
 
 /* ================= helpers ================= */
 
@@ -365,7 +366,20 @@ export default function ReviewDetails() {
 
   const { id } = useParams();
   const router = useRouter();
+  const { companyId } = useCompanyId();
   const [selectedImageIndex, setSelectedImageIndex] = useState(null);
+
+  const handleBack = () => {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back();
+    } else {
+      const search =
+        typeof window !== "undefined" ? window.location.search : "";
+      router.push(
+        `/cleaners${search || (companyId ? `?companyId=${companyId}` : "")}`
+      );
+    }
+  };
 
   /* ================= TanStack Query ================= */
 
@@ -485,7 +499,7 @@ export default function ReviewDetails() {
             </button>
 
             <button
-              onClick={() => router.push("/cleaners")}
+              onClick={handleBack}
               className="px-4 py-2 rounded-lg text-sm font-medium transition"
               style={{
                 background: "var(--cleaner-input-bg)",
@@ -551,7 +565,7 @@ export default function ReviewDetails() {
 
           {/* Action */}
           <button
-            onClick={() => router.push("/cleaners")}
+            onClick={handleBack}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition"
             style={{
               background: "var(--cleaner-input-bg)",
@@ -624,7 +638,7 @@ export default function ReviewDetails() {
           >
             {/* Back button */}
             <button
-              onClick={() => router.back()}
+              onClick={handleBack}
               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition mb-2"
               style={{
                 background: "var(--cleaner-input-bg)",

@@ -82,13 +82,15 @@ export function useUpdateCompany() {
   });
 }
 
-// 6. Delete Company
+// 6. Delete Company (supports { id, mode } or id)
 export function useDeleteCompany() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (id) => {
-      const response = await CompanyApi.deleteCompany(id);
+    mutationFn: async (args) => {
+      const id = typeof args === "object" && args !== null ? args.id : args;
+      const mode = typeof args === "object" && args !== null && args.mode ? args.mode : "soft";
+      const response = await CompanyApi.deleteCompany(id, mode);
       if (!response.success) throw new Error(response.error || "Failed to delete company");
       return response.data;
     },

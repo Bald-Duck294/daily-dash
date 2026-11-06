@@ -52,6 +52,32 @@ const getLocalDateString = () => {
   return localDate.toISOString().split("T")[0];
 };
 
+const STORAGE_KEY = "cleaner_activity_filters";
+
+const getSavedFilters = () => {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+};
+
+const saveFilters = (filters) => {
+  if (typeof window === "undefined") return;
+  try {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(filters));
+  } catch {}
+};
+
+const clearSavedFilters = () => {
+  if (typeof window === "undefined") return;
+  try {
+    sessionStorage.removeItem(STORAGE_KEY);
+  } catch {}
+};
+
 /* ---------------- page ---------------- */
 
 export default function StandardCleanerActivityList() {
@@ -60,16 +86,19 @@ export default function StandardCleanerActivityList() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { companyId } = useCompanyId();
+  const isInitialMount = useRef(true);
 
-  // Basic Filters
-  const [filter, setFilter] = useState(searchParams.get("status") || "all");
-  const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || "");
-  const [datePreset, setDatePreset] = useState(searchParams.get("datePreset") || "today");
-  const [startDate, setStartDate] = useState(searchParams.get("startDate") || getLocalDateString());
-  const [endDate, setEndDate] = useState(searchParams.get("endDate") || getLocalDateString());
-  const [selectedCleanerId, setSelectedCleanerId] = useState(searchParams.get("cleanerId") || "all");
-  const [page, setPage] = useState(Number(searchParams.get("page")) || 1);
-  const [limit, setLimit] = useState(Number(searchParams.get("limit")) || 15);
+  const savedFilters = useMemo(() => getSavedFilters(), []);
+
+  // Basic Filters: Priority to URL params, fallback to session storage, fallback to defaults
+  const [filter, setFilter] = useState(() => searchParams.get("status") || savedFilters?.status || "all");
+  const [searchQuery, setSearchQuery] = useState(() => searchParams.get("search") || savedFilters?.search || "");
+  const [datePreset, setDatePreset] = useState(() => searchParams.get("datePreset") || savedFilters?.datePreset || "today");
+  const [startDate, setStartDate] = useState(() => searchParams.get("startDate") || savedFilters?.startDate || getLocalDateString());
+  const [endDate, setEndDate] = useState(() => searchParams.get("endDate") || savedFilters?.endDate || getLocalDateString());
+  const [selectedCleanerId, setSelectedCleanerId] = useState(() => searchParams.get("cleanerId") || savedFilters?.cleanerId || "all");
+  const [page, setPage] = useState(() => Number(searchParams.get("page")) || Number(savedFilters?.page) || 1);
+  const [limit, setLimit] = useState(() => Number(searchParams.get("limit")) || Number(savedFilters?.limit) || 15);
 
   // SLA and Permissions
   const { hasPermission, userPermissions } = usePermissions();
@@ -203,8 +232,12 @@ export default function StandardCleanerActivityList() {
 
   /* ---------------- ui helpers ---------------- */
   const handleReset = () => {
+    clearSavedFilters();
     setFilter("all");
-    setDatePreset("all");
+    setDatePreset("today");
+    const todayStr = getLocalDateString();
+    setStartDate(todayStr);
+    setEndDate(todayStr);
     setSearchQuery("");
     setSelectedCleanerId("all");
     setPage(1);
@@ -218,6 +251,9 @@ export default function StandardCleanerActivityList() {
   useEffect(() => {
     const params = new URLSearchParams();
 
+    if (companyId) {
+      params.set("companyId", companyId);
+    }
     params.set("status", filter);
     params.set("cleanerId", selectedCleanerId);
     params.set("datePreset", datePreset);
@@ -230,20 +266,34 @@ export default function StandardCleanerActivityList() {
       params.set("search", searchQuery);
     }
 
+    // Persist current filters in session storage
+    saveFilters({
+      status: filter,
+      cleanerId: selectedCleanerId,
+      datePreset,
+      startDate,
+      endDate,
+      page,
+      limit,
+      search: searchQuery,
+    });
+
     const newQueryString = `?${params.toString()}`;
 
     if (window.location.search !== newQueryString) {
       router.replace(newQueryString, { scroll: false });
     }
-  }, [filter, selectedCleanerId, datePreset, startDate, endDate, page, limit, searchQuery, router]);
+  }, [filter, selectedCleanerId, datePreset, startDate, endDate, page, limit, searchQuery, companyId, router]);
 
   useEffect(() => {
+    if (datePreset === "custom") return; // Keep user's custom dates
+
     const todayStr = getLocalDateString();
     const todayObj = new Date();
 
     if (datePreset === "today") {
-      setStartDate((prev) => prev !== todayStr ? todayStr : prev);
-      setEndDate((prev) => prev !== todayStr ? todayStr : prev);
+      setStartDate((prev) => (prev !== todayStr ? todayStr : prev));
+      setEndDate((prev) => (prev !== todayStr ? todayStr : prev));
     } else if (datePreset === "this_month") {
       const firstDay = new Date(todayObj.getFullYear(), todayObj.getMonth(), 1);
       const lastDay = new Date(todayObj.getFullYear(), todayObj.getMonth() + 1, 0);
@@ -252,17 +302,22 @@ export default function StandardCleanerActivityList() {
       const newStart = formatLocal(firstDay);
       const newEnd = formatLocal(lastDay);
 
-      setStartDate((prev) => prev !== newStart ? newStart : prev);
-      setEndDate((prev) => prev !== newEnd ? newEnd : prev);
+      setStartDate((prev) => (prev !== newStart ? newStart : prev));
+      setEndDate((prev) => (prev !== newEnd ? newEnd : prev));
     } else if (datePreset === "all") {
-      setStartDate((prev) => prev !== "" ? "" : prev);
-      setEndDate((prev) => prev !== "" ? "" : prev);
+      setStartDate((prev) => (prev !== "" ? "" : prev));
+      setEndDate((prev) => (prev !== "" ? "" : prev));
     }
   }, [datePreset]);
 
+  // Reset page to 1 only when filters change after initial mount
   useEffect(() => {
-    setPage((prevPage) => (prevPage !== 1 ? 1 : prevPage));
-  }, [filter, datePreset, startDate, endDate, selectedCleanerId]);
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+    setPage(1);
+  }, [filter, datePreset, startDate, endDate, selectedCleanerId, searchQuery]);
 
   /* ---------------- render ---------------- */
   return (
@@ -709,9 +764,12 @@ export default function StandardCleanerActivityList() {
                       {/* ACTION */}
                       <div className="mt-auto flex gap-2">
                         <button
-                          onClick={() =>
-                            router.push(`/cleaners/${r.id}?companyId=${companyId}`)
-                          }
+                          onClick={() => {
+                            const currentQuery =
+                              window.location.search ||
+                              (companyId ? `?companyId=${companyId}` : "");
+                            router.push(`/cleaners/${r.id}${currentQuery}`);
+                          }}
                           className="flex-1 py-1.5 rounded-md text-xs font-medium transition cursor-pointer"
                           style={{
                             background: "var(--cleaner-primary-bg)",

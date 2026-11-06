@@ -26,35 +26,74 @@ import { useSlaCleanerActivities } from "../slaCleanerActivity.queries";
 import SlaCleanerActivityCard from "./SlaCleanerActivityCard";
 import { getLocalDateString } from "../utils/slaActivityUtils";
 
+const STORAGE_KEY = "cleaner_activity_filters";
+
+const getSavedFilters = () => {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+};
+
+const saveFilters = (filters) => {
+  if (typeof window === "undefined") return;
+  try {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(filters));
+  } catch (err) {
+    console.error("Failed to save filters to sessionStorage", err);
+  }
+};
+
+const clearSavedFilters = () => {
+  if (typeof window === "undefined") return;
+  try {
+    sessionStorage.removeItem(STORAGE_KEY);
+  } catch (err) {
+    console.error("Failed to clear filters from sessionStorage", err);
+  }
+};
+
 export default function SlaCleanerActivityList() {
   useRequirePermission(MODULES.CLEANER_REVIEWS);
 
   const router = useRouter();
   const searchParams = useSearchParams();
   const { companyId } = useCompanyId();
+  const isInitialMount = useRef(true);
 
-  // Filters State
-  const [filter, setFilter] = useState(searchParams.get("status") || "all");
+  const saved = useMemo(() => getSavedFilters() || {}, []);
+
+  // Filters State (prioritizes searchParams, falls back to sessionStorage, then defaults)
+  const [filter, setFilter] = useState(
+    () => searchParams.get("status") || saved.filter || "all"
+  );
   const [slaStatus, setSlaStatus] = useState(
-    searchParams.get("sla_status") || "all",
+    () => searchParams.get("sla_status") || saved.slaStatus || "all"
   );
   const [searchQuery, setSearchQuery] = useState(
-    searchParams.get("search") || "",
+    () => searchParams.get("search") || saved.searchQuery || ""
   );
   const [datePreset, setDatePreset] = useState(
-    searchParams.get("datePreset") || "today",
+    () => searchParams.get("datePreset") || saved.datePreset || "today"
   );
   const [startDate, setStartDate] = useState(
-    searchParams.get("startDate") || getLocalDateString(),
+    () => searchParams.get("startDate") || saved.startDate || getLocalDateString()
   );
   const [endDate, setEndDate] = useState(
-    searchParams.get("endDate") || getLocalDateString(),
+    () => searchParams.get("endDate") || saved.endDate || getLocalDateString()
   );
   const [selectedCleanerId, setSelectedCleanerId] = useState(
-    searchParams.get("cleanerId") || "all",
+    () => searchParams.get("cleanerId") || saved.selectedCleanerId || "all"
   );
-  const [page, setPage] = useState(Number(searchParams.get("page")) || 1);
-  const [limit, setLimit] = useState(Number(searchParams.get("limit")) || 15);
+  const [page, setPage] = useState(
+    () => Number(searchParams.get("page")) || (saved.page ? Number(saved.page) : 1)
+  );
+  const [limit, setLimit] = useState(
+    () => Number(searchParams.get("limit")) || (saved.limit ? Number(saved.limit) : 15)
+  );
 
   // Dropdown States
   const [isCleanerDropdownOpen, setIsCleanerDropdownOpen] = useState(false);
@@ -234,7 +273,7 @@ export default function SlaCleanerActivityList() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Update URL parameters
+  // Update URL parameters & sessionStorage
   useEffect(() => {
     const params = new URLSearchParams();
     params.set("status", filter);
@@ -249,6 +288,18 @@ export default function SlaCleanerActivityList() {
     if (searchQuery) {
       params.set("search", searchQuery);
     }
+
+    saveFilters({
+      filter,
+      slaStatus,
+      selectedCleanerId,
+      datePreset,
+      startDate,
+      endDate,
+      page,
+      limit,
+      searchQuery,
+    });
 
     const newQueryString = `?${params.toString()}`;
     if (window.location.search !== newQueryString) {
@@ -269,6 +320,7 @@ export default function SlaCleanerActivityList() {
 
   // Handle Preset Date changes
   useEffect(() => {
+    if (datePreset === "custom") return;
     const todayStr = getLocalDateString();
     const todayObj = new Date();
 
@@ -298,8 +350,12 @@ export default function SlaCleanerActivityList() {
     }
   }, [datePreset]);
 
-  // Reset pagination on filter change
+  // Reset pagination on filter change (skip initial mount to preserve navigated page)
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
     setPage((prev) => (prev !== 1 ? 1 : prev));
   }, [
     filter,
@@ -312,11 +368,14 @@ export default function SlaCleanerActivityList() {
   ]);
 
   const handleReset = () => {
+    clearSavedFilters();
     setFilter("all");
     setSlaStatus("all");
     setDatePreset("all");
     setSearchQuery("");
     setSelectedCleanerId("all");
+    setStartDate("");
+    setEndDate("");
     setPage(1);
     toast.success("Filters reset");
   };
@@ -779,11 +838,12 @@ export default function SlaCleanerActivityList() {
                     companyId={companyId}
                     canManageReviews={canManageReviews}
                     isSlaEnabled={isSlaEnabled}
-                    onNavigateDetail={(id) =>
-                      router.push(
-                        `/slaCleanerActivity/${id}?companyId=${companyId}`,
-                      )
-                    }
+                    onNavigateDetail={(id) => {
+                      const currentQuery =
+                        window.location.search ||
+                        (companyId ? `?companyId=${companyId}` : "");
+                      router.push(`/slaCleanerActivity/${id}${currentQuery}`);
+                    }}
                   />
                 ))}
 

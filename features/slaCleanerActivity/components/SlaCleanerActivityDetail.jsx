@@ -38,6 +38,18 @@ export default function SlaCleanerActivityDetail({ activityId, companyId }) {
   const [selectedAttemptIndex, setSelectedAttemptIndex] = useState(0);
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(null);
 
+  const handleBack = () => {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back();
+    } else {
+      const search =
+        typeof window !== "undefined" ? window.location.search : "";
+      router.push(
+        `/cleaners${search || (companyId ? `?companyId=${companyId}` : "")}`
+      );
+    }
+  };
+
   // TanStack Query
   const { data: activity, isLoading, isError, error } = useSlaCleanerActivityById(activityId);
 
@@ -88,7 +100,7 @@ export default function SlaCleanerActivityDetail({ activityId, companyId }) {
             The requested SLA cleaning activity could not be found or may have been removed.
           </p>
           <button
-            onClick={() => router.push(companyId ? `/cleaners?companyId=${companyId}` : "/cleaners")}
+            onClick={handleBack}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold bg-primary text-primary-foreground hover:opacity-90 transition cursor-pointer"
           >
             <ArrowLeft size={14} />
@@ -138,7 +150,7 @@ export default function SlaCleanerActivityDetail({ activityId, companyId }) {
           >
             {/* Back button */}
             <button
-              onClick={() => router.push(companyId ? `/cleaners?companyId=${companyId}` : "/cleaners")}
+              onClick={handleBack}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition mb-3 cursor-pointer border bg-muted/40 hover:bg-muted"
             >
               <ArrowLeft size={13} />

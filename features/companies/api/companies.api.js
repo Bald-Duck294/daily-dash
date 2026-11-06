@@ -141,10 +141,10 @@ export const CompanyApi = {
     }
   },
 
-  // DELETE (mutation)
-  deleteCompany: async (id) => {
+  // DELETE (mutation: supports mode = "soft" | "hard")
+  deleteCompany: async (id, mode = "soft") => {
     try {
-      const response = await axiosInstance.delete(`/companies/${id}`);
+      const response = await axiosInstance.delete(`/companies/${id}?mode=${mode}`);
       return { success: true, data: response.data };
     } catch (error) {
       return {
