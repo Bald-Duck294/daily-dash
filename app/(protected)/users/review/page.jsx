@@ -23,6 +23,7 @@ import {
   Filter,
   AlertCircle,
   CheckCircle2,
+  ChevronLeft,
   ChevronRight,
   ChevronDown,
   Sparkles,
@@ -96,13 +97,15 @@ export default function UserReviewsPage() {
 
   // State management
   const [viewMode, setViewMode] = useState("card"); // 'card' | 'list'
-  const [dateFilterType, setDateFilterType] = useState("all"); // 'all' | 'today' | 'week' | 'month' | 'custom'
+  const [dateFilterType, setDateFilterType] = useState("today"); // By default show only today's reviews
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [ratingFilter, setRatingFilter] = useState("all"); // 'all' | 'high' | 'mid' | 'low'
   const [selectedWashroom, setSelectedWashroom] = useState("all"); // 'all' | locationId
-  const [limit, setLimit] = useState(100);
+  const [issuesOnly, setIssuesOnly] = useState(false);
+  const [page, setPage] = useState(1);
+  const limit = 50;
 
   // Fetch washroom locations for the company
   const { data: locationsResponse = [], isLoading: isLoadingLocations } = useDropdownLocations(companyId);
@@ -115,7 +118,7 @@ export default function UserReviewsPage() {
   // Derive date query parameters for API
   const dateParams = useMemo(() => {
     const now = new Date();
-    const toDateStr = now.toISOString().split("T")[0];
+    const toDateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
     if (dateFilterType === "today") {
       return { date: toDateStr };
@@ -123,12 +126,14 @@ export default function UserReviewsPage() {
     if (dateFilterType === "week") {
       const past = new Date();
       past.setDate(now.getDate() - 7);
-      return { from_date: past.toISOString().split("T")[0], to_date: toDateStr };
+      const pastStr = `${past.getFullYear()}-${String(past.getMonth() + 1).padStart(2, "0")}-${String(past.getDate()).padStart(2, "0")}`;
+      return { from_date: pastStr, to_date: toDateStr };
     }
     if (dateFilterType === "month") {
       const past = new Date();
       past.setDate(now.getDate() - 30);
-      return { from_date: past.toISOString().split("T")[0], to_date: toDateStr };
+      const pastStr = `${past.getFullYear()}-${String(past.getMonth() + 1).padStart(2, "0")}-${String(past.getDate()).padStart(2, "0")}`;
+      return { from_date: pastStr, to_date: toDateStr };
     }
     if (dateFilterType === "custom") {
       const params = {};
@@ -139,81 +144,64 @@ export default function UserReviewsPage() {
     return {};
   }, [dateFilterType, fromDate, toDate]);
 
+  const ratingParams = useMemo(() => {
+    if (ratingFilter === "high") return { min_rating: 8, max_rating: 10 };
+    if (ratingFilter === "mid") return { min_rating: 5, max_rating: 7.99 };
+    if (ratingFilter === "low") return { min_rating: 0, max_rating: 4.99 };
+    return {};
+  }, [ratingFilter]);
+
   // Fetch reviews using TanStack Query
   const { data, isLoading, isError, error, refetch, isFetching } = useUserReviews({
     company_id: companyId,
     location_id: selectedWashroom !== "all" ? selectedWashroom : undefined,
     limit,
+    page,
+    search: searchQuery.trim() || undefined,
+    issues_only: issuesOnly ? "true" : undefined,
+    ...ratingParams,
     ...dateParams,
   });
 
-  const { reviews: rawReviews, count } = data || { reviews: [], count: 0 };
+  const rawReviews = data?.reviews || [];
+  const pagination = data?.pagination || {
+    total: data?.count ?? rawReviews.length,
+    page: 1,
+    limit: 50,
+    totalPages: 1,
+  };
+  const stats = data?.stats || {
+    total: pagination.total,
+    today: 0,
+    avgRating: 0,
+    issuesCount: 0,
+  };
 
-  // Filter and search reviews locally for immediate responsiveness
-  const filteredReviews = useMemo(() => {
-    if (!Array.isArray(rawReviews)) return [];
+  const filteredReviews = rawReviews;
 
-    return rawReviews.filter((review) => {
-      // 1. Washroom filter
-      if (selectedWashroom !== "all") {
-        const revLocId = review.location_id || review.location?.id;
-        if (String(revLocId) !== String(selectedWashroom)) return false;
-      }
-
-      // 2. Rating filter
-      if (ratingFilter === "high" && review.rating < 8) return false;
-      if (ratingFilter === "mid" && (review.rating < 5 || review.rating >= 8)) return false;
-      if (ratingFilter === "low" && review.rating >= 5) return false;
-
-      // 2. Search query filter
-      if (searchQuery.trim()) {
-        const query = searchQuery.toLowerCase();
-        const nameMatch = cleanString(review.name).toLowerCase().includes(query);
-        const phoneMatch = cleanString(review.phone).toLowerCase().includes(query);
-        const emailMatch = cleanString(review.email).toLowerCase().includes(query);
-        const descMatch = cleanString(review.description).toLowerCase().includes(query);
-        const locMatch = cleanString(review?.location?.name).toLowerCase().includes(query);
-        const tokenMatch = cleanString(review.token_number).toLowerCase().includes(query);
-
-        if (!nameMatch && !phoneMatch && !emailMatch && !descMatch && !locMatch && !tokenMatch) {
-          return false;
-        }
-      }
-
-      return true;
-    });
-  }, [rawReviews, ratingFilter, searchQuery]);
-
-  // Calculate KPIs
+  // Calculate KPIs from backend stats for 100% accuracy across all reviews
   const kpiStats = useMemo(() => {
-    const total = rawReviews.length;
-    const today = new Date().setHours(0, 0, 0, 0);
-
-    const todaysCount = rawReviews.filter((r) => {
-      const rDate = new Date(r.created_at).setHours(0, 0, 0, 0);
-      return rDate === today;
-    }).length;
-
-    const avgRating =
-      total > 0
-        ? (rawReviews.reduce((acc, r) => acc + (r.rating || 0), 0) / total).toFixed(1)
-        : "0.0";
-
-    const issuesCount = rawReviews.filter(
-      (r) => Array.isArray(r.reason_ids) && r.reason_ids.some((id) => id > 0)
-    ).length;
-
-    return { total, todaysCount, avgRating, issuesCount };
-  }, [rawReviews]);
+    return {
+      total: stats?.total ?? 0,
+      todaysCount: stats?.today ?? 0,
+      avgRating:
+        typeof stats?.avgRating === "number"
+          ? stats.avgRating.toFixed(1)
+          : String(stats?.avgRating || "0.0"),
+      issuesCount: stats?.issuesCount ?? 0,
+    };
+  }, [stats]);
 
   const handleResetFilters = () => {
-    setDateFilterType("all");
+    setDateFilterType("today");
     setFromDate("");
     setToDate("");
     setSearchQuery("");
     setRatingFilter("all");
     setSelectedWashroom("all");
-    toast.success("Filters reset to default");
+    setIssuesOnly(false);
+    setPage(1);
+    toast.success("Filters reset to Today");
   };
 
   const handleCardClick = (reviewId) => {
@@ -304,10 +292,10 @@ export default function UserReviewsPage() {
                 </button>
               </div>
 
-              {(dateFilterType !== "all" || ratingFilter !== "all" || selectedWashroom !== "all" || searchQuery || fromDate || toDate) && (
+              {(dateFilterType !== "today" || ratingFilter !== "all" || selectedWashroom !== "all" || searchQuery || issuesOnly || fromDate || toDate) && (
                 <button
                   onClick={handleResetFilters}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-[var(--surface)] hover:bg-[var(--muted)] border border-[var(--border)] text-[var(--muted-foreground)] hover:text-foreground transition shadow-sm"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-[var(--surface)] hover:bg-[var(--muted)] border border-[var(--border)] text-[var(--muted-foreground)] hover:text-foreground transition shadow-sm cursor-pointer"
                   title="Reset all filters"
                 >
                   <RotateCcw size={14} />
@@ -317,12 +305,25 @@ export default function UserReviewsPage() {
             </div>
           </div>
 
-          {/* KPI Summary Cards */}
+          {/* KPI Summary Cards (Clickable to quickly filter) */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Total Reviews */}
-            <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4 sm:p-5 shadow-sm transition hover:border-primary/40">
+            {/* Total Reviews (Click to view all) */}
+            <div
+              onClick={() => {
+                setDateFilterType("all");
+                setIssuesOnly(false);
+                setRatingFilter("all");
+                setPage(1);
+              }}
+              className={`bg-[var(--surface)] border rounded-2xl p-4 sm:p-5 shadow-sm transition-all cursor-pointer hover:border-primary/60 hover:shadow-md select-none group ${
+                dateFilterType === "all" && !issuesOnly && ratingFilter === "all"
+                  ? "ring-2 ring-blue-500 border-blue-500 bg-blue-500/[0.04]"
+                  : "border-[var(--border)]"
+              }`}
+              title="Click to view all lifetime reviews"
+            >
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
+                <span className="text-xs font-semibold uppercase tracking-wider text-[var(--muted-foreground)] group-hover:text-blue-500 transition-colors">
                   Total Reviews
                 </span>
                 <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center">
@@ -330,13 +331,29 @@ export default function UserReviewsPage() {
                 </div>
               </div>
               <p className="text-2xl sm:text-3xl font-black text-foreground">{kpiStats.total}</p>
-              <p className="text-[11px] text-[var(--muted-foreground)] mt-1">Lifetime QR submissions</p>
+              <p className="text-[11px] text-[var(--muted-foreground)] mt-1 flex items-center justify-between">
+                <span>Lifetime QR submissions</span>
+                <span className="text-[10px] font-semibold text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity">Filter →</span>
+              </p>
             </div>
 
-            {/* Today's Reviews */}
-            <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4 sm:p-5 shadow-sm transition hover:border-primary/40">
+            {/* Today's Reviews (Click to view today's reviews) */}
+            <div
+              onClick={() => {
+                setDateFilterType("today");
+                setIssuesOnly(false);
+                setRatingFilter("all");
+                setPage(1);
+              }}
+              className={`bg-[var(--surface)] border rounded-2xl p-4 sm:p-5 shadow-sm transition-all cursor-pointer hover:border-indigo-500/60 hover:shadow-md select-none group ${
+                dateFilterType === "today" && !issuesOnly && ratingFilter === "all"
+                  ? "ring-2 ring-indigo-500 border-indigo-500 bg-indigo-500/[0.04]"
+                  : "border-[var(--border)]"
+              }`}
+              title="Click to view today's reviews"
+            >
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
+                <span className="text-xs font-semibold uppercase tracking-wider text-[var(--muted-foreground)] group-hover:text-indigo-500 transition-colors">
                   Today's Reviews
                 </span>
                 <div className="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-500 flex items-center justify-center">
@@ -344,13 +361,28 @@ export default function UserReviewsPage() {
                 </div>
               </div>
               <p className="text-2xl sm:text-3xl font-black text-primary">{kpiStats.todaysCount}</p>
-              <p className="text-[11px] text-[var(--muted-foreground)] mt-1">Submitted in last 24h</p>
+              <p className="text-[11px] text-[var(--muted-foreground)] mt-1 flex items-center justify-between">
+                <span>Submitted in last 24h</span>
+                <span className="text-[10px] font-semibold text-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity">Filter →</span>
+              </p>
             </div>
 
-            {/* Average Rating */}
-            <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4 sm:p-5 shadow-sm transition hover:border-primary/40">
+            {/* Average Rating (Click to filter great ratings) */}
+            <div
+              onClick={() => {
+                setRatingFilter((prev) => (prev === "high" ? "all" : "high"));
+                setIssuesOnly(false);
+                setPage(1);
+              }}
+              className={`bg-[var(--surface)] border rounded-2xl p-4 sm:p-5 shadow-sm transition-all cursor-pointer hover:border-amber-500/60 hover:shadow-md select-none group ${
+                ratingFilter === "high"
+                  ? "ring-2 ring-amber-500 border-amber-500 bg-amber-500/[0.04]"
+                  : "border-[var(--border)]"
+              }`}
+              title="Click to toggle Great rating (8-10) reviews"
+            >
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
+                <span className="text-xs font-semibold uppercase tracking-wider text-[var(--muted-foreground)] group-hover:text-amber-500 transition-colors">
                   Average Rating
                 </span>
                 <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center">
@@ -361,13 +393,27 @@ export default function UserReviewsPage() {
                 <p className="text-2xl sm:text-3xl font-black text-foreground">{kpiStats.avgRating}</p>
                 <span className="text-xs font-bold text-amber-500">/ 10</span>
               </div>
-              <p className="text-[11px] text-[var(--muted-foreground)] mt-1">Cumulative sentiment score</p>
+              <p className="text-[11px] text-[var(--muted-foreground)] mt-1 flex items-center justify-between">
+                <span>Cumulative sentiment score</span>
+                <span className="text-[10px] font-semibold text-amber-500 opacity-0 group-hover:opacity-100 transition-opacity">Filter →</span>
+              </p>
             </div>
 
-            {/* Reported Issues */}
-            <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4 sm:p-5 shadow-sm transition hover:border-primary/40">
+            {/* Reported Issues (Click to filter reviews with issues) */}
+            <div
+              onClick={() => {
+                setIssuesOnly((prev) => !prev);
+                setPage(1);
+              }}
+              className={`bg-[var(--surface)] border rounded-2xl p-4 sm:p-5 shadow-sm transition-all cursor-pointer hover:border-rose-500/60 hover:shadow-md select-none group ${
+                issuesOnly
+                  ? "ring-2 ring-rose-500 border-rose-500 bg-rose-500/[0.04]"
+                  : "border-[var(--border)]"
+              }`}
+              title="Click to toggle reviews with flagged issues"
+            >
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
+                <span className="text-xs font-semibold uppercase tracking-wider text-[var(--muted-foreground)] group-hover:text-rose-500 transition-colors">
                   Issues Flagged
                 </span>
                 <div className="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-500 flex items-center justify-center">
@@ -375,7 +421,12 @@ export default function UserReviewsPage() {
                 </div>
               </div>
               <p className="text-2xl sm:text-3xl font-black text-rose-500">{kpiStats.issuesCount}</p>
-              <p className="text-[11px] text-[var(--muted-foreground)] mt-1">Reviews with specific issues</p>
+              <p className="text-[11px] text-[var(--muted-foreground)] mt-1 flex items-center justify-between">
+                <span>Reviews with specific issues</span>
+                <span className="text-[10px] font-semibold text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                  {issuesOnly ? "Active ✓" : "Filter →"}
+                </span>
+              </p>
             </div>
           </div>
 
@@ -390,13 +441,19 @@ export default function UserReviewsPage() {
                   type="text"
                   placeholder="Search by reviewer, phone, email, or washroom location..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setPage(1);
+                  }}
                   className="w-full pl-10 pr-9 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-foreground placeholder-[var(--muted-foreground)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition"
                 />
                 {searchQuery && (
                   <button
-                    onClick={() => setSearchQuery("")}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--muted-foreground)] hover:text-foreground"
+                    onClick={() => {
+                      setSearchQuery("");
+                      setPage(1);
+                    }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--muted-foreground)] hover:text-foreground cursor-pointer"
                   >
                     <X size={15} />
                   </button>
@@ -410,7 +467,10 @@ export default function UserReviewsPage() {
                 </div>
                 <select
                   value={selectedWashroom}
-                  onChange={(e) => setSelectedWashroom(e.target.value)}
+                  onChange={(e) => {
+                    setSelectedWashroom(e.target.value);
+                    setPage(1);
+                  }}
                   className="w-full pl-9 pr-9 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-foreground text-xs sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer transition appearance-none shadow-2xs"
                   aria-label="Filter by Washroom"
                 >
@@ -439,8 +499,11 @@ export default function UserReviewsPage() {
                 ].map((tab) => (
                   <button
                     key={tab.id}
-                    onClick={() => setDateFilterType(tab.id)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                    onClick={() => {
+                      setDateFilterType(tab.id);
+                      setPage(1);
+                    }}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
                       dateFilterType === tab.id
                         ? "bg-primary text-primary-foreground shadow-sm"
                         : "text-[var(--muted-foreground)] hover:text-foreground hover:bg-[var(--surface)]"
@@ -467,8 +530,11 @@ export default function UserReviewsPage() {
                 ].map((pill) => (
                   <button
                     key={pill.id}
-                    onClick={() => setRatingFilter(pill.id)}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-medium transition border ${
+                    onClick={() => {
+                      setRatingFilter(pill.id);
+                      setPage(1);
+                    }}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-medium transition border cursor-pointer ${
                       ratingFilter === pill.id
                         ? "bg-primary/10 border-primary text-primary font-bold"
                         : "bg-transparent border-[var(--border)] text-[var(--muted-foreground)] hover:text-foreground"
@@ -477,6 +543,25 @@ export default function UserReviewsPage() {
                     {pill.label}
                   </button>
                 ))}
+
+                {/* Active Issues Flagged Filter Chip */}
+                {issuesOnly && (
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-rose-500/10 border border-rose-500/20 text-rose-500 animate-in fade-in">
+                    <AlertCircle size={12} />
+                    <span>Issues Only</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIssuesOnly(false);
+                        setPage(1);
+                      }}
+                      className="p-0.5 hover:bg-rose-500/20 rounded-full transition cursor-pointer"
+                      title="Clear issues filter"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                )}
 
                 {/* Active Washroom Filter Chip */}
                 {selectedWashroom !== "all" && (
@@ -487,7 +572,10 @@ export default function UserReviewsPage() {
                     </span>
                     <button
                       type="button"
-                      onClick={() => setSelectedWashroom("all")}
+                      onClick={() => {
+                        setSelectedWashroom("all");
+                        setPage(1);
+                      }}
                       className="p-0.5 hover:bg-primary/20 rounded-full transition cursor-pointer"
                       title="Clear washroom filter"
                     >
@@ -559,10 +647,26 @@ export default function UserReviewsPage() {
           {/* Active Filter Summary Bar */}
           <div className="flex items-center justify-between text-xs text-[var(--muted-foreground)] px-1">
             <span>
-              Showing <strong className="text-foreground">{filteredReviews.length}</strong> of{" "}
-              <strong className="text-foreground">{rawReviews.length}</strong> reviews
-              {isFetching && <span className="ml-2 text-primary animate-pulse">(Updating...)</span>}
+              Showing{" "}
+              <strong className="text-foreground">
+                {pagination.total > 0 ? (page - 1) * limit + 1 : 0}
+              </strong>
+              {" - "}
+              <strong className="text-foreground">
+                {Math.min(page * limit, pagination.total)}
+              </strong>{" "}
+              of <strong className="text-foreground">{pagination.total}</strong> reviews
+              {isFetching && (
+                <span className="ml-2 text-primary font-medium animate-pulse">
+                  (Loading...)
+                </span>
+              )}
             </span>
+            {pagination.totalPages > 1 && (
+              <span className="text-[11px] font-medium text-[var(--muted-foreground)]">
+                Page {page} of {pagination.totalPages}
+              </span>
+            )}
           </div>
 
           {/* Content: Card Grid View or List Table View */}
@@ -578,7 +682,7 @@ export default function UserReviewsPage() {
               </p>
               <button
                 onClick={handleResetFilters}
-                className="mt-6 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold text-xs transition shadow-sm hover:opacity-95"
+                className="mt-6 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold text-xs transition shadow-sm hover:opacity-95 cursor-pointer"
               >
                 Reset All Filters
               </button>
@@ -588,11 +692,12 @@ export default function UserReviewsPage() {
                CARD GRID VIEW
                ======================================================== */
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {filteredReviews.map((review) => {
+              {filteredReviews.map((review, idx) => {
                 const reasons = getReasonsList(review.reason_ids);
                 const displayImages = review.images?.slice(0, 3) || [];
                 const reviewerName = cleanString(review.name) || "Anonymous Citizen";
                 const locationName = review?.location?.name || "Washroom Facility";
+                const serialNumber = (page - 1) * limit + idx + 1;
 
                 return (
                   <div
@@ -605,6 +710,12 @@ export default function UserReviewsPage() {
                       <div className="flex justify-between items-start gap-3 mb-3">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
+                            <span
+                              className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20 shrink-0"
+                              title={`Review #${serialNumber}`}
+                            >
+                              #{serialNumber}
+                            </span>
                             <h3 className="font-bold text-base text-foreground truncate group-hover:text-primary transition-colors">
                               {reviewerName}
                             </h3>
@@ -727,6 +838,7 @@ export default function UserReviewsPage() {
                 <table className="w-full text-left text-xs">
                   <thead className="bg-[var(--background)] border-b border-[var(--border)] text-[var(--muted-foreground)] uppercase tracking-wider text-[11px] font-bold">
                     <tr>
+                      <th className="py-3.5 px-3 text-center w-12">#</th>
                       <th className="py-3.5 px-4">Reviewer</th>
                       <th className="py-3.5 px-4">Facility / Location</th>
                       <th className="py-3.5 px-4">Rating</th>
@@ -737,10 +849,11 @@ export default function UserReviewsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[var(--border)]">
-                    {filteredReviews.map((review) => {
+                    {filteredReviews.map((review, idx) => {
                       const reasons = getReasonsList(review.reason_ids);
                       const reviewerName = cleanString(review.name) || "Anonymous Citizen";
                       const locationName = review?.location?.name || "Washroom Facility";
+                      const serialNumber = (page - 1) * limit + idx + 1;
 
                       return (
                         <tr
@@ -748,6 +861,11 @@ export default function UserReviewsPage() {
                           onClick={() => handleCardClick(review.id)}
                           className="hover:bg-[var(--background)] transition-colors cursor-pointer group"
                         >
+                          {/* Serial Number */}
+                          <td className="py-3.5 px-3 text-center font-mono font-bold text-xs text-primary/80">
+                            #{serialNumber}
+                          </td>
+
                           {/* Reviewer */}
                           <td className="py-3.5 px-4">
                             <div className="font-bold text-foreground group-hover:text-primary transition-colors">
@@ -837,7 +955,7 @@ export default function UserReviewsPage() {
 
                           {/* Action */}
                           <td className="py-3.5 px-4 text-right">
-                            <button className="px-3 py-1.5 rounded-lg bg-[var(--background)] hover:bg-primary hover:text-primary-foreground text-foreground font-semibold border border-[var(--border)] transition inline-flex items-center gap-1">
+                            <button className="px-3 py-1.5 rounded-lg bg-[var(--background)] hover:bg-primary hover:text-primary-foreground text-foreground font-semibold border border-[var(--border)] transition inline-flex items-center gap-1 cursor-pointer">
                               <Eye size={12} />
                               <span>View</span>
                             </button>
@@ -847,6 +965,92 @@ export default function UserReviewsPage() {
                     })}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          )}
+
+          {/* Pagination Controls */}
+          {pagination.totalPages > 1 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 bg-[var(--surface)] border border-[var(--border)] rounded-2xl shadow-sm">
+              <div className="text-xs text-[var(--muted-foreground)] font-medium">
+                Showing{" "}
+                <strong className="text-foreground">
+                  {(page - 1) * limit + 1}
+                </strong>{" "}
+                to{" "}
+                <strong className="text-foreground">
+                  {Math.min(page * limit, pagination.total)}
+                </strong>{" "}
+                of <strong className="text-foreground">{pagination.total}</strong> reviews
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => {
+                    setPage((p) => Math.max(1, p - 1));
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
+                  disabled={page <= 1}
+                  className="px-3 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--background)] hover:bg-[var(--muted)] text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-1 cursor-pointer"
+                >
+                  <ChevronLeft size={14} />
+                  <span>Prev</span>
+                </button>
+
+                {/* Page Numbers */}
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
+                    .filter(
+                      (p) =>
+                        p === 1 ||
+                        p === pagination.totalPages ||
+                        Math.abs(p - page) <= 1
+                    )
+                    .reduce((acc, p, i, arr) => {
+                      if (i > 0 && p - arr[i - 1] > 1) {
+                        acc.push(-1); // ellipsis
+                      }
+                      acc.push(p);
+                      return acc;
+                    }, [])
+                    .map((item, idx) =>
+                      item === -1 ? (
+                        <span
+                          key={`ellipsis-${idx}`}
+                          className="px-1 text-xs text-[var(--muted-foreground)]"
+                        >
+                          ...
+                        </span>
+                      ) : (
+                        <button
+                          key={item}
+                          onClick={() => {
+                            setPage(item);
+                            window.scrollTo({ top: 0, behavior: "smooth" });
+                          }}
+                          className={`w-8 h-8 rounded-lg text-xs font-bold transition flex items-center justify-center cursor-pointer ${
+                            page === item
+                              ? "bg-primary text-primary-foreground shadow-sm"
+                              : "border border-[var(--border)] bg-[var(--background)] hover:bg-[var(--muted)] text-[var(--muted-foreground)] hover:text-foreground"
+                          }`}
+                        >
+                          {item}
+                        </button>
+                      )
+                    )}
+                </div>
+
+                <button
+                  onClick={() => {
+                    setPage((p) => Math.min(pagination.totalPages, p + 1));
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
+                  disabled={page >= pagination.totalPages}
+                  className="px-3 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--background)] hover:bg-[var(--muted)] text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-1 cursor-pointer"
+                >
+                  <span>Next</span>
+                  <ChevronRight size={14} />
+                </button>
               </div>
             </div>
           )}

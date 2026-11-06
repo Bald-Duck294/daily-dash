@@ -10,7 +10,15 @@ export const fetchUserReviews = async ({
   date,
   from_date,
   to_date,
+  start_date,
+  end_date,
   limit = 50,
+  page = 1,
+  offset,
+  search,
+  min_rating,
+  max_rating,
+  issues_only,
 } = {}) => {
   const res = await axios.get("/qr-reviews/user-review", {
     params: {
@@ -21,13 +29,33 @@ export const fetchUserReviews = async ({
       date,
       from_date,
       to_date,
+      start_date,
+      end_date,
       limit,
+      page,
+      offset,
+      search,
+      min_rating,
+      max_rating,
+      issues_only,
     },
   });
 
   return {
-    reviews: res.data.data,
-    count: res.data.pagination ? res.data.pagination.total : res.data.data.length,
+    reviews: res.data.data || [],
+    count: res.data.pagination ? res.data.pagination.total : (res.data.data?.length || 0),
+    pagination: res.data.pagination || {
+      total: res.data.data?.length || 0,
+      page: page || 1,
+      limit: limit || 50,
+      totalPages: 1,
+    },
+    stats: res.data.stats || {
+      total: res.data.pagination?.total || res.data.data?.length || 0,
+      today: 0,
+      avgRating: 0,
+      issuesCount: 0,
+    },
   };
 };
 
