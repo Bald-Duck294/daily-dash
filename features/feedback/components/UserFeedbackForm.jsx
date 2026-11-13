@@ -309,11 +309,12 @@ export default function UserFeedbackForm() {
 
   const authUser = useSelector((state) => state?.auth?.user);
 
-  // Parse location and company from URL query or fallback to persisted kiosk storage
+  // Parse location and company from URL query or fallback to persisted kiosk storage (defaults to Moharli Gate Washroom 2249)
   const rawLocationId = searchParams.get("locationId");
   const locMatch = rawLocationId ? rawLocationId.toString().match(/\d+/) : null;
   const savedLocationId = typeof window !== "undefined" ? localStorage.getItem("saafai_kiosk_locationId") : null;
-  const locationId = locMatch ? locMatch[0] : (savedLocationId || "2248");
+  const effectiveSavedLocationId = savedLocationId === "2248" ? "2249" : savedLocationId;
+  const locationId = locMatch ? locMatch[0] : (effectiveSavedLocationId || "2249");
 
   const rawCompanyId = searchParams.get("companyId") || authUser?.company_id;
   const compMatch = rawCompanyId ? rawCompanyId.toString().match(/\d+/) : null;

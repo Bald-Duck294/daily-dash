@@ -517,7 +517,7 @@ export default function TadobaLandscapeFeedback() {
     return matches ? matches : [];
   };
 
-  const [locationIds, setLocationIds] = useState(["2248"]);
+  const [locationIds, setLocationIds] = useState(["2249"]);
   const [companyId, setCompanyId] = useState("95");
 
   useEffect(() => {
@@ -527,20 +527,27 @@ export default function TadobaLandscapeFeedback() {
       const savedComp = localStorage.getItem("saafai_kiosk_companyId");
       const compMatch = rawComp ? rawComp.toString().match(/\d+/) : null;
 
-      let finalLocs = ["2248"];
+      let finalLocs = ["2249"];
       if (queryLocs.length > 0) {
         finalLocs = [...new Set(queryLocs)];
       } else if (savedLocsStr) {
         try {
           const parsed = JSON.parse(savedLocsStr);
-          if (Array.isArray(parsed) && parsed.length > 0) finalLocs = parsed;
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            finalLocs = parsed.map(id => id === "2248" ? "2249" : id);
+          }
         } catch {
           const singleSaved = localStorage.getItem("saafai_kiosk_locationId");
-          if (singleSaved) finalLocs = [singleSaved];
+          if (singleSaved) finalLocs = [singleSaved === "2248" ? "2249" : singleSaved];
         }
       } else {
         const singleSaved = localStorage.getItem("saafai_kiosk_locationId");
-        if (singleSaved) finalLocs = [singleSaved];
+        if (singleSaved) finalLocs = [singleSaved === "2248" ? "2249" : singleSaved];
+      }
+
+      // Ensure 2248 is upgraded to 2249 if no explicit query param was supplied
+      if (queryLocs.length === 0) {
+        finalLocs = finalLocs.map(id => id === "2248" ? "2249" : id);
       }
 
       const finalComp = compMatch ? compMatch[0] : savedComp || "95";
