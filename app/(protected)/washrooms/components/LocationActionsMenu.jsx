@@ -39,6 +39,12 @@ export default function LocationActionsMenu({
   const userRoleId = user?.role_id;
   const canViewSupervisor = userRoleId === 1 || userRoleId === 2;
 
+  const locId = location_id || item?.id;
+  const compId = companyId || item?.company_id;
+  const canOpenFeedbackForm =
+    (String(compId) === "95" || String(item?.company_id) === "95") &&
+    (String(locId) === "2249" || String(item?.id) === "2249");
+
   const handleViewCleaners = (e) => {
     e.preventDefault();
     e.stopPropagation(); // ✅ Stop propagation to parent
@@ -215,22 +221,24 @@ export default function LocationActionsMenu({
         Download QR Code
       </button>
 
-      {/* Feedback Form Link */}
-      <button
-        onMouseDown={handleOpenForm}
-        className="w-full flex items-center gap-2 px-4 py-2 text-left text-sm transition-colors"
-        style={{ color: "var(--washroom-text)" }}
-        onMouseEnter={(e) =>
-          (e.currentTarget.style.background = "var(--washroom-table-row-hover)")
-        }
-        onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-      >
-        <ExternalLink
-          className="h-4 w-4"
-          style={{ color: "var(--washroom-primary)" }}
-        />
-        Feedback Form
-      </button>
+      {/* Feedback Form Link - only for Company 95 & Location 2249 */}
+      {canOpenFeedbackForm && (
+        <button
+          onMouseDown={handleOpenForm}
+          className="w-full flex items-center gap-2 px-4 py-2 text-left text-sm transition-colors"
+          style={{ color: "var(--washroom-text)" }}
+          onMouseEnter={(e) =>
+            (e.currentTarget.style.background = "var(--washroom-table-row-hover)")
+          }
+          onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+        >
+          <ExternalLink
+            className="h-4 w-4"
+            style={{ color: "var(--washroom-primary)" }}
+          />
+          Feedback Form
+        </button>
+      )}
 
       {/* Copy Feedback URL */}
       <button
