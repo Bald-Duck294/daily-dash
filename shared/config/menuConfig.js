@@ -21,7 +21,9 @@ import {
   AlertCircle,
   cog,
   Cog,
-  CameraIcon
+  CameraIcon,
+  Scale,
+  BookOpen
 } from "lucide-react";
 
 /* ---------------- SUPERADMIN (NO COMPANY) ---------------- */
@@ -359,6 +361,11 @@ export function getSuperadminCompanyMenu(companyId, isCompanySlaActive = false) 
           label: "SLA Logs",
           href: `/sla-logs?companyId=${companyId}`,
         },
+        {
+          icon: BookOpen,
+          label: "Penalty Rule Books",
+          href: `/sla-penalty?companyId=${companyId}`,
+        },
       ],
     },
     {
@@ -596,6 +603,11 @@ export function getAdminMenu(companyId, isCompanySlaActive = false) {
           label: "SLA Logs",
           href: `/sla-logs?companyId=${companyId}`,
         },
+        {
+          icon: BookOpen,
+          label: "Penalty Rule Books",
+          href: `/sla-penalty?companyId=${companyId}`,
+        },
       ],
     },
     {
@@ -782,6 +794,13 @@ export const getFullCompanyMenuTemplate = (companyId, isCompanySlaActive = false
         simpleLabel: "SLA Logs",
         requiredPermission: "sla_management.view",
         href: `/sla-logs?companyId=${companyId}`,
+      },
+      {
+        icon: BookOpen,
+        label: "Penalty Rule Books",
+        simpleLabel: "Penalty Rule Books",
+        requiredPermission: "sla_management.view",
+        href: `/sla-penalty?companyId=${companyId}`,
       },
     ],
   },
