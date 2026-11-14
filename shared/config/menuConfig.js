@@ -23,7 +23,7 @@ import {
   Cog,
   CameraIcon,
   Scale,
-  BookOpen
+  BookOpen,
 } from "lucide-react";
 
 /* ---------------- SUPERADMIN (NO COMPANY) ---------------- */
@@ -129,7 +129,7 @@ export function getSuperadminMainMenu() {
       href: "/serviceRequest",
     },
     {
-      icon:CameraIcon ,
+      icon: CameraIcon,
       label: "Photo Gallary",
       href: "/photo",
     },
@@ -192,7 +192,10 @@ export function getSuperadminMainMenu() {
 //   ];
 // }
 
-export function getSuperadminCompanyMenu(companyId, isCompanySlaActive = false) {
+export function getSuperadminCompanyMenu(
+  companyId,
+  isCompanySlaActive = false,
+) {
   return [
     {
       icon: BarChart3,
@@ -392,7 +395,10 @@ export function getSuperadminCompanyMenu(companyId, isCompanySlaActive = false) 
         {
           icon: PlusCircle,
           label: "Feedback Form",
-          href: String(companyId) === "95" ? `/feedback/tadoba?companyId=${companyId}` : `/feedback?companyId=${companyId}`,
+          href:
+            String(companyId) === "95"
+              ? `/feedback/tadoba?companyId=${companyId}`
+              : `/feedback?companyId=${companyId}`,
         },
       ],
     },
@@ -634,7 +640,10 @@ export function getAdminMenu(companyId, isCompanySlaActive = false) {
         {
           icon: PlusCircle,
           label: "Feedback Form",
-          href: String(companyId) === "95" ? `/feedback/tadoba?companyId=${companyId}` : `/feedback?companyId=${companyId}`,
+          href:
+            String(companyId) === "95"
+              ? `/feedback/tadoba?companyId=${companyId}`
+              : `/feedback?companyId=${companyId}`,
         },
       ],
     },
@@ -646,7 +655,10 @@ export function getAdminMenu(companyId, isCompanySlaActive = false) {
   ];
 }
 /* ---------------- FULL TEMPLATE (PERMISSION-BASED ROLES) ---------------- */
-export const getFullCompanyMenuTemplate = (companyId, isCompanySlaActive = false) => [
+export const getFullCompanyMenuTemplate = (
+  companyId,
+  isCompanySlaActive = false,
+) => [
   {
     icon: BarChart3,
     label: "Dashboard",
