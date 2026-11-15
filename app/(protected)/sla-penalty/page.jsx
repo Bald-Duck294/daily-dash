@@ -13,7 +13,11 @@ import {
   HelpCircle,
   FileText,
   Clock,
-  ArrowRight
+  ArrowRight,
+  Receipt,
+  AlertTriangle,
+  Layers,
+  Activity
 } from "lucide-react";
 import { useCompaniesDropdown } from "@/features/dropdownList/dropdownlist.query";
 import { useCompanyId } from "@/providers/CompanyProvider";
@@ -26,7 +30,14 @@ import {
   useSeedDefaultRuleBook,
   useAddRuleToBook,
   useUpdateRule,
-  useDeleteRule
+  useDeleteRule,
+  usePenalties,
+  usePenaltySummary,
+  useViolations,
+  useApprovePenalty,
+  useRejectPenalty,
+  useDisputePenalty,
+  useReversePenalty
 } from "@/features/slaPenalty/slaPenalty.queries";
 import toast, { Toaster } from "react-hot-toast";
 import Loader from "@/components/ui/Loader";
@@ -36,6 +47,13 @@ import RuleCard from "./components/RuleCard";
 import RuleModal from "./components/RuleModal";
 import RulePreviewModal from "./components/RulePreviewModal";
 import PublishModal from "./components/PublishModal";
+
+import PenaltySummaryCards from "./components/ledger/PenaltySummaryCards";
+import PenaltyFilters from "./components/ledger/PenaltyFilters";
+import PenaltyTable from "./components/ledger/PenaltyTable";
+import PenaltyDetailModal from "./components/ledger/PenaltyDetailModal";
+import ApprovalActionModal from "./components/ledger/ApprovalActionModal";
+import ViolationsStream from "./components/ledger/ViolationsStream";
 
 export default function SlaPenaltyPage() {
   const router = useRouter();
@@ -61,7 +79,12 @@ export default function SlaPenaltyPage() {
     router.push(`/sla-penalty?companyId=${newCompanyId}`);
   };
 
-  // Queries for Rule Books
+  // Top-level Navigation View Mode: "LEDGER" | "RULE_BOOKS" | "VIOLATIONS"
+  const [mainView, setMainView] = useState("LEDGER");
+
+  // ==========================================
+  // PHASE 1: RULE BOOKS & CLAUSES QUERIES
+  // ==========================================
   const {
     data: booksResponse,
     isLoading: isLoadingBooks,
@@ -74,7 +97,6 @@ export default function SlaPenaltyPage() {
     refetch: refetchActive
   } = useActiveRuleBook(effectiveCompanyId);
 
-  // Mutations
   const createBookMutation = useCreateRuleBook();
   const publishMutation = usePublishRuleBook();
   const seedMutation = useSeedDefaultRuleBook();
@@ -82,39 +104,145 @@ export default function SlaPenaltyPage() {
   const updateRuleMutation = useUpdateRule();
   const deleteRuleMutation = useDeleteRule();
 
-  // Extract all books & identify draft
   const allBooks = booksResponse?.data || [];
   const draftBookSummary = allBooks.find((b) => b.status === "DRAFT");
 
-  // Tab State: "ACTIVE" or "DRAFT"
-  const [selectedTab, setSelectedTab] = useState("ACTIVE");
+  const [selectedBookTab, setSelectedBookTab] = useState("ACTIVE");
 
-  // If active book doesn't exist but draft exists, default to draft
   useEffect(() => {
     if (!activeBook && draftBookSummary) {
-      setSelectedTab("DRAFT");
-    } else if (activeBook && selectedTab !== "DRAFT") {
-      setSelectedTab("ACTIVE");
+      setSelectedBookTab("DRAFT");
+    } else if (activeBook && selectedBookTab !== "DRAFT") {
+      setSelectedBookTab("ACTIVE");
     }
   }, [activeBook, draftBookSummary]);
 
-  // Fetch full details of draft book if selected
-  const {
-    data: fullDraftBook,
-    isLoading: isLoadingDraftDetails
-  } = useRuleBookById(draftBookSummary?.id, effectiveCompanyId);
-
-  // Currently displayed book
-  const currentBook = selectedTab === "ACTIVE" ? activeBook : (fullDraftBook || draftBookSummary);
+  const { data: fullDraftBook } = useRuleBookById(draftBookSummary?.id, effectiveCompanyId);
+  const currentBook = selectedBookTab === "ACTIVE" ? activeBook : (fullDraftBook || draftBookSummary);
   const isViewingDraft = currentBook?.status === "DRAFT";
 
-  // Modal States
+  // Rule Modals
   const [isRuleModalOpen, setIsRuleModalOpen] = useState(false);
   const [editingRule, setEditingRule] = useState(null);
   const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
   const [previewingRule, setPreviewingRule] = useState(null);
 
-  // Handlers
+  // ==========================================
+  // PHASE 2: PENALTY LEDGER & APPROVALS
+  // ==========================================
+  const [penaltyFilters, setPenaltyFilters] = useState({
+    status: "",
+    scope: "",
+    search: ""
+  });
+
+  const {
+    data: penaltiesResponse,
+    isLoading: isLoadingPenalties,
+    refetch: refetchPenalties
+  } = usePenalties(effectiveCompanyId, {
+    status: penaltyFilters.status || undefined,
+    scope: penaltyFilters.scope || undefined,
+    page: 1,
+    limit: 50
+  });
+
+  const {
+    data: penaltySummary,
+    isLoading: isLoadingSummary,
+    refetch: refetchSummary
+  } = usePenaltySummary(effectiveCompanyId);
+
+  const {
+    data: violationsResponse,
+    isLoading: isLoadingViolations,
+    refetch: refetchViolations
+  } = useViolations(effectiveCompanyId, { limit: 20 });
+
+  const approveMutation = useApprovePenalty();
+  const rejectMutation = useRejectPenalty();
+  const disputeMutation = useDisputePenalty();
+  const reverseMutation = useReversePenalty();
+
+  // Ledger Modals
+  const [selectedPenaltyForDetail, setSelectedPenaltyForDetail] = useState(null);
+  const [actionModalState, setActionModalState] = useState({
+    isOpen: false,
+    penalty: null,
+    actionType: "APPROVE"
+  });
+
+  const handleFilterChange = (key, value) => {
+    setPenaltyFilters((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleResetFilters = () => {
+    setPenaltyFilters({ status: "", scope: "", search: "" });
+  };
+
+  // Filter penalties client-side for search query if provided
+  const rawPenalties = penaltiesResponse?.data || [];
+  const filteredPenalties = rawPenalties.filter((item) => {
+    if (!penaltyFilters.search) return true;
+    const query = penaltyFilters.search.toLowerCase();
+    const penaltyNum = (item.penalty_number || "").toLowerCase();
+    const cleanerName = (item.cleaner?.name || "").toLowerCase();
+    const ruleCode = (item.rule_code || "").toLowerCase();
+    const ruleName = (item.rule?.name || "").toLowerCase();
+    return (
+      penaltyNum.includes(query) ||
+      cleanerName.includes(query) ||
+      ruleCode.includes(query) ||
+      ruleName.includes(query)
+    );
+  });
+
+  // Action modal submit
+  const handleActionSubmit = async (payload) => {
+    const { penalty, actionType } = actionModalState;
+    if (!penalty?.id) return;
+
+    try {
+      if (actionType === "APPROVE") {
+        await approveMutation.mutateAsync({
+          penaltyId: penalty.id,
+          companyId: effectiveCompanyId,
+          data: payload
+        });
+        toast.success(`Penalty ${penalty.penalty_number} approved successfully`);
+      } else if (actionType === "REJECT") {
+        await rejectMutation.mutateAsync({
+          penaltyId: penalty.id,
+          companyId: effectiveCompanyId,
+          data: payload
+        });
+        toast.success(`Penalty ${penalty.penalty_number} rejected / waived`);
+      } else if (actionType === "DISPUTE") {
+        await disputeMutation.mutateAsync({
+          penaltyId: penalty.id,
+          companyId: effectiveCompanyId,
+          data: payload
+        });
+        toast.success(`Penalty ${penalty.penalty_number} flagged for dispute`);
+      } else if (actionType === "REVERSE") {
+        await reverseMutation.mutateAsync({
+          penaltyId: penalty.id,
+          companyId: effectiveCompanyId,
+          data: payload
+        });
+        toast.success(`Penalty ${penalty.penalty_number} reversed successfully`);
+      }
+
+      setActionModalState({ isOpen: false, penalty: null, actionType: "APPROVE" });
+      refetchPenalties();
+      refetchSummary();
+      refetchViolations();
+    } catch (err) {
+      toast.error(err.message || `Failed to process ${actionType.toLowerCase()}`);
+    }
+  };
+
+  // Phase 1 Handlers
   const handleSeedDefault = async () => {
     try {
       const res = await seedMutation.mutateAsync({
@@ -131,13 +259,13 @@ export default function SlaPenaltyPage() {
 
   const handleCreateDraft = async () => {
     try {
-      const res = await createBookMutation.mutateAsync({
+      await createBookMutation.mutateAsync({
         company_id: effectiveCompanyId,
         name: `SLA Penalty Rule Book (Draft)`
       });
       toast.success("New draft rule book version created");
       refetchBooks();
-      setSelectedTab("DRAFT");
+      setSelectedBookTab("DRAFT");
     } catch (err) {
       toast.error(err.message || "Failed to create draft version");
     }
@@ -154,7 +282,7 @@ export default function SlaPenaltyPage() {
       setIsPublishModalOpen(false);
       refetchBooks();
       refetchActive();
-      setSelectedTab("ACTIVE");
+      setSelectedBookTab("ACTIVE");
     } catch (err) {
       toast.error(err.message || "Failed to publish rule book");
     }
@@ -198,7 +326,7 @@ export default function SlaPenaltyPage() {
       await deleteRuleMutation.mutateAsync({
         ruleId,
         companyId: effectiveCompanyId,
-        ruleBookId: currentBook.id
+        ruleBookId: currentBook?.id
       });
       toast.success("Rule clause removed");
       refetchBooks();
@@ -207,9 +335,9 @@ export default function SlaPenaltyPage() {
     }
   };
 
-  const isLoading = isLoadingCompanies || isLoadingBooks || isLoadingActive;
+  const isLoadingInitial = isLoadingCompanies || (isLoadingBooks && isLoadingPenalties);
 
-  if (isLoading) {
+  if (isLoadingInitial) {
     return (
       <div className="flex h-96 items-center justify-center">
         <Loader />
@@ -218,90 +346,216 @@ export default function SlaPenaltyPage() {
   }
 
   const rulesList = currentBook?.rules || [];
+  const violationsList = violationsResponse?.data || [];
 
   return (
-    <div className="space-y-6 pb-12">
-      {/* Header with Organization Switcher & Actions */}
-      <RuleBookHeader
-        companies={companies}
-        selectedCompanyId={effectiveCompanyId}
-        onSelectCompany={handleSelectCompany}
-        isSuperAdmin={isSuperAdmin}
-        currentBook={currentBook}
-        activeBook={activeBook}
-        draftBook={draftBookSummary}
-        selectedTab={selectedTab}
-        onSelectTab={setSelectedTab}
-        onOpenAddModal={() => {
-          setEditingRule(null);
-          setIsRuleModalOpen(true);
-        }}
-        onOpenPublishModal={() => setIsPublishModalOpen(true)}
-        onSeedDefault={handleSeedDefault}
-        onCreateDraft={handleCreateDraft}
-        isSeeding={seedMutation.isLoading}
-      />
-
-      {/* Rules Grid or Empty State */}
-      {rulesList.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {rulesList.map((rule) => (
-            <RuleCard
-              key={rule.id}
-              rule={rule}
-              isDraft={isViewingDraft}
-              onEdit={(r) => {
-                setEditingRule(r);
-                setIsRuleModalOpen(true);
-              }}
-              onDelete={handleDeleteRule}
-              onSimulate={(r) => setPreviewingRule(r)}
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-12 text-center shadow-sm">
-          <div className="w-16 h-16 mx-auto rounded-2xl bg-cyan-50 dark:bg-cyan-950/40 text-cyan-600 dark:text-cyan-400 flex items-center justify-center mb-4">
-            <Scale className="w-8 h-8" />
+    <div className="space-y-6 pb-16">
+      {/* Top Banner Navigation & View Tabs */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm">
+        <div>
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-sm">
+              <Scale className="w-5 h-5" />
+            </div>
+            <h1 className="text-xl font-bold text-slate-900 dark:text-white">
+              SLA Penalty Management
+            </h1>
           </div>
-          <h3 className="text-base font-bold text-slate-900 dark:text-white mb-1">
-            No Penalty Rule Clauses Found
-          </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto mb-5">
-            {isViewingDraft
-              ? "This draft rule book has no clauses configured yet. Add your first rule or seed standard defaults."
-              : "No published rule book is active for this organization. Seed the standard baseline rules to begin."}
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            Automated contractual compliance, financial deduction ledger, and approval workflow.
           </p>
+        </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-3">
-            <button
-              onClick={handleSeedDefault}
-              disabled={seedMutation.isLoading}
-              className="inline-flex items-center gap-2 text-xs font-bold text-white bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 px-4 py-2.5 rounded-xl shadow-sm transition-all"
-            >
-              <Sparkles className="w-4 h-4" />
-              {seedMutation.isLoading ? "Seeding..." : "Seed Default Baseline Rules"}
-            </button>
-
-            {isViewingDraft && (
-              <button
-                onClick={() => {
-                  setEditingRule(null);
-                  setIsRuleModalOpen(true);
-                }}
-                className="inline-flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 px-4 py-2.5 rounded-xl transition-all"
-              >
-                <Plus className="w-4 h-4" />
-                Add Custom Rule Clause
-              </button>
+        {/* View Switcher Tabs */}
+        <div className="flex items-center p-1 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60">
+          <button
+            onClick={() => setMainView("LEDGER")}
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+              mainView === "LEDGER"
+                ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+            }`}
+          >
+            <Receipt className="w-3.5 h-3.5" />
+            Penalty Ledger
+            {penaltySummary?.pending_count > 0 && (
+              <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-amber-500 text-white">
+                {penaltySummary.pending_count}
+              </span>
             )}
-          </div>
+          </button>
+
+          <button
+            onClick={() => setMainView("RULE_BOOKS")}
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+              mainView === "RULE_BOOKS"
+                ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+            }`}
+          >
+            <BookOpen className="w-3.5 h-3.5" />
+            Rule Books & Clauses
+          </button>
+
+          <button
+            onClick={() => setMainView("VIOLATIONS")}
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+              mainView === "VIOLATIONS"
+                ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+            }`}
+          >
+            <Activity className="w-3.5 h-3.5" />
+            Live Violations
+          </button>
+        </div>
+      </div>
+
+      {/* ======================================================== */}
+      {/* VIEW 1: PENALTY LEDGER & APPROVAL QUEUE (PHASE 2)        */}
+      {/* ======================================================== */}
+      {mainView === "LEDGER" && (
+        <div className="space-y-6">
+          {/* KPI Summary Cards */}
+          <PenaltySummaryCards
+            summary={penaltySummary}
+            isLoading={isLoadingSummary}
+          />
+
+          {/* Filters Bar */}
+          <PenaltyFilters
+            filters={penaltyFilters}
+            onFilterChange={handleFilterChange}
+            onReset={handleResetFilters}
+          />
+
+          {/* Penalties Table / Responsive Cards */}
+          <PenaltyTable
+            penalties={filteredPenalties}
+            isLoading={isLoadingPenalties}
+            onViewDetails={(item) => setSelectedPenaltyForDetail(item)}
+            onOpenActionModal={(penalty, actionType) =>
+              setActionModalState({ isOpen: true, penalty, actionType })
+            }
+          />
         </div>
       )}
 
-      {/* SLA Penalty Architecture Guidance */}
-      <div className="bg-gradient-to-br from-slate-50 to-blue-50/40 dark:from-slate-900 dark:to-blue-950/20 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5">
-        <div className="flex items-start gap-3">
+      {/* ======================================================== */}
+      {/* VIEW 2: RULE BOOKS & CLAUSES (PHASE 1)                   */}
+      {/* ======================================================== */}
+      {mainView === "RULE_BOOKS" && (
+        <div className="space-y-6">
+          <RuleBookHeader
+            companies={companies}
+            selectedCompanyId={effectiveCompanyId}
+            onSelectCompany={handleSelectCompany}
+            isSuperAdmin={isSuperAdmin}
+            currentBook={currentBook}
+            activeBook={activeBook}
+            draftBook={draftBookSummary}
+            selectedTab={selectedBookTab}
+            onSelectTab={setSelectedBookTab}
+            onOpenAddModal={() => {
+              setEditingRule(null);
+              setIsRuleModalOpen(true);
+            }}
+            onOpenPublishModal={() => setIsPublishModalOpen(true)}
+            onSeedDefault={handleSeedDefault}
+            onCreateDraft={handleCreateDraft}
+            isSeeding={seedMutation.isLoading}
+          />
+
+          {rulesList.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {rulesList.map((rule) => (
+                <RuleCard
+                  key={rule.id}
+                  rule={rule}
+                  isDraft={isViewingDraft}
+                  onEdit={(r) => {
+                    setEditingRule(r);
+                    setIsRuleModalOpen(true);
+                  }}
+                  onDelete={handleDeleteRule}
+                  onSimulate={(r) => setPreviewingRule(r)}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-12 text-center shadow-sm">
+              <div className="w-16 h-16 mx-auto rounded-2xl bg-cyan-50 dark:bg-cyan-950/40 text-cyan-600 dark:text-cyan-400 flex items-center justify-center mb-4">
+                <Scale className="w-8 h-8" />
+              </div>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white mb-1">
+                No Penalty Rule Clauses Found
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto mb-5">
+                {isViewingDraft
+                  ? "This draft rule book has no clauses configured yet. Add your first rule or seed standard defaults."
+                  : "No published rule book is active for this organization. Seed the standard baseline rules to begin."}
+              </p>
+
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                <button
+                  onClick={handleSeedDefault}
+                  disabled={seedMutation.isLoading}
+                  className="inline-flex items-center gap-2 text-xs font-bold text-white bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 px-4 py-2.5 rounded-xl shadow-sm transition-all"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  {seedMutation.isLoading ? "Seeding..." : "Seed Default Baseline Rules"}
+                </button>
+
+                {isViewingDraft && (
+                  <button
+                    onClick={() => {
+                      setEditingRule(null);
+                      setIsRuleModalOpen(true);
+                    }}
+                    className="inline-flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 px-4 py-2.5 rounded-xl transition-all"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add Custom Rule Clause
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* VIEW 3: LIVE VIOLATIONS STREAM (PHASE 2)                 */}
+      {/* ======================================================== */}
+      {mainView === "VIOLATIONS" && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                Detected SLA Infractions Stream
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Real-time compliance log of breaches identified by automated inspection audits.
+              </p>
+            </div>
+            <button
+              onClick={() => refetchViolations()}
+              className="text-xs font-medium px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors"
+            >
+              Refresh
+            </button>
+          </div>
+
+          <ViolationsStream
+            violations={violationsList}
+            isLoading={isLoadingViolations}
+          />
+        </div>
+      )}
+
+      {/* SLA Penalty Architectural Guidance */}
+      <div className="bg-gradient-to-br from-slate-50 to-blue-50/40 dark:from-slate-900 dark:to-blue-950/20 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6">
+        <div className="flex items-start gap-3.5">
           <HelpCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
           <div className="space-y-2 text-xs text-slate-600 dark:text-slate-400">
             <h4 className="font-bold text-slate-900 dark:text-white text-sm">
@@ -316,15 +570,15 @@ export default function SlaPenaltyPage() {
               </li>
               <li>
                 <strong className="text-slate-800 dark:text-slate-200">
-                  Deterministic Condition AST:
+                  Defensible Calculation Snapshots:
                 </strong>{" "}
-                Conditions are evaluated deterministically using structured JSON abstract syntax trees. Dynamic JavaScript `eval()` is strictly prohibited.
+                Every assessed penalty preserves a frozen mathematical JSON snapshot of the formula, rate cards, caps, and input review metrics for audit proof.
               </li>
               <li>
                 <strong className="text-slate-800 dark:text-slate-200">
-                  Scope Isolation (Task-Wise vs. Day-Wise):
+                  Append-Only Audit Trail:
                 </strong>{" "}
-                Task-wise penalties apply per individual cleaning review submission. Day-wise penalties evaluate cumulative performance over the whole business day.
+                All status transitions (creation, approval, dispute, rejection, reversal) are strictly recorded with user attribution and reason notes.
               </li>
               <li>
                 <strong className="text-slate-800 dark:text-slate-200">
@@ -337,7 +591,7 @@ export default function SlaPenaltyPage() {
         </div>
       </div>
 
-      {/* Modals */}
+      {/* Phase 1 Modals */}
       <RuleModal
         isOpen={isRuleModalOpen}
         onClose={() => {
@@ -364,6 +618,31 @@ export default function SlaPenaltyPage() {
         isPublishing={publishMutation.isLoading}
       />
 
+      {/* Phase 2 Modals */}
+      <PenaltyDetailModal
+        penalty={selectedPenaltyForDetail}
+        onClose={() => setSelectedPenaltyForDetail(null)}
+        onOpenActionModal={(penalty, actionType) =>
+          setActionModalState({ isOpen: true, penalty, actionType })
+        }
+      />
+
+      <ApprovalActionModal
+        isOpen={actionModalState.isOpen}
+        penalty={actionModalState.penalty}
+        actionType={actionModalState.actionType}
+        onClose={() =>
+          setActionModalState({ isOpen: false, penalty: null, actionType: "APPROVE" })
+        }
+        onSubmit={handleActionSubmit}
+        isSubmitting={
+          approveMutation.isLoading ||
+          rejectMutation.isLoading ||
+          disputeMutation.isLoading ||
+          reverseMutation.isLoading
+        }
+      />
+
       <Toaster
         position="top-right"
         toastOptions={{
@@ -371,11 +650,10 @@ export default function SlaPenaltyPage() {
           style: {
             fontSize: "13px",
             fontWeight: "500",
-            borderRadius: "10px"
+            borderRadius: "12px"
           }
         }}
       />
     </div>
   );
 }
-

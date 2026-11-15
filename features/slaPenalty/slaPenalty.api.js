@@ -225,6 +225,213 @@ export const SlaPenaltyApi = {
         error: error.response?.data?.message || error.message || "Simulation failed"
       };
     }
+  },
+
+  // ==========================================
+  // PHASE 2: PENALTY LEDGER & APPROVAL QUEUE
+  // ==========================================
+
+  /**
+   * Fetch penalties ledger with filters
+   */
+  getPenalties: async (companyId, params = {}) => {
+    try {
+      const queryParams = new URLSearchParams();
+      if (companyId) queryParams.append("company_id", companyId);
+      if (params.status) queryParams.append("status", params.status);
+      if (params.cleaner_id) queryParams.append("cleaner_id", params.cleaner_id);
+      if (params.location_id) queryParams.append("location_id", params.location_id);
+      if (params.scope) queryParams.append("scope", params.scope);
+      if (params.start_date) queryParams.append("start_date", params.start_date);
+      if (params.end_date) queryParams.append("end_date", params.end_date);
+      if (params.page) queryParams.append("page", params.page);
+      if (params.limit) queryParams.append("limit", params.limit);
+
+      const response = await axiosInstance.get(`/sla-penalty/penalties?${queryParams.toString()}`);
+      return {
+        success: true,
+        data: response.data?.data || [],
+        pagination: response.data?.pagination || {}
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message || "Failed to fetch penalties"
+      };
+    }
+  },
+
+  /**
+   * Fetch aggregate KPI metrics summary
+   */
+  getPenaltySummary: async (companyId, params = {}) => {
+    try {
+      const queryParams = new URLSearchParams();
+      if (companyId) queryParams.append("company_id", companyId);
+      if (params.start_date) queryParams.append("start_date", params.start_date);
+      if (params.end_date) queryParams.append("end_date", params.end_date);
+
+      const response = await axiosInstance.get(`/sla-penalty/penalties/summary?${queryParams.toString()}`);
+      return {
+        success: true,
+        data: response.data?.data || null
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message || "Failed to fetch summary"
+      };
+    }
+  },
+
+  /**
+   * Fetch penalty by ID with full audit log and violations
+   */
+  getPenaltyById: async (penaltyId, companyId) => {
+    try {
+      const response = await axiosInstance.get(`/sla-penalty/penalties/${penaltyId}?company_id=${companyId}`);
+      return {
+        success: true,
+        data: response.data?.data || null
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message || "Failed to fetch penalty details"
+      };
+    }
+  },
+
+  /**
+   * Approve a penalty
+   */
+  approvePenalty: async (penaltyId, companyId, data = {}) => {
+    try {
+      const response = await axiosInstance.post(`/sla-penalty/penalties/${penaltyId}/approve`, {
+        company_id: companyId,
+        ...data
+      });
+      return {
+        success: true,
+        data: response.data?.data,
+        message: response.data?.message
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message || "Failed to approve penalty"
+      };
+    }
+  },
+
+  /**
+   * Reject / waive a penalty
+   */
+  rejectPenalty: async (penaltyId, companyId, data = {}) => {
+    try {
+      const response = await axiosInstance.post(`/sla-penalty/penalties/${penaltyId}/reject`, {
+        company_id: companyId,
+        ...data
+      });
+      return {
+        success: true,
+        data: response.data?.data,
+        message: response.data?.message
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message || "Failed to reject penalty"
+      };
+    }
+  },
+
+  /**
+   * Dispute a penalty
+   */
+  disputePenalty: async (penaltyId, companyId, data = {}) => {
+    try {
+      const response = await axiosInstance.post(`/sla-penalty/penalties/${penaltyId}/dispute`, {
+        company_id: companyId,
+        ...data
+      });
+      return {
+        success: true,
+        data: response.data?.data,
+        message: response.data?.message
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message || "Failed to dispute penalty"
+      };
+    }
+  },
+
+  /**
+   * Reverse an approved penalty
+   */
+  reversePenalty: async (penaltyId, companyId, data = {}) => {
+    try {
+      const response = await axiosInstance.post(`/sla-penalty/penalties/${penaltyId}/reverse`, {
+        company_id: companyId,
+        ...data
+      });
+      return {
+        success: true,
+        data: response.data?.data,
+        message: response.data?.message
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message || "Failed to reverse penalty"
+      };
+    }
+  },
+
+  /**
+   * Fetch violations list
+   */
+  getViolations: async (companyId, params = {}) => {
+    try {
+      const queryParams = new URLSearchParams();
+      if (companyId) queryParams.append("company_id", companyId);
+      if (params.cleaner_id) queryParams.append("cleaner_id", params.cleaner_id);
+      if (params.location_id) queryParams.append("location_id", params.location_id);
+      if (params.page) queryParams.append("page", params.page);
+      if (params.limit) queryParams.append("limit", params.limit);
+
+      const response = await axiosInstance.get(`/sla-penalty/violations?${queryParams.toString()}`);
+      return {
+        success: true,
+        data: response.data?.data || [],
+        pagination: response.data?.pagination || {}
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message || "Failed to fetch violations"
+      };
+    }
+  },
+
+  /**
+   * Evaluate review manually (testing / recalculation)
+   */
+  evaluateReview: async (reviewId, companyId) => {
+    try {
+      const response = await axiosInstance.post(`/sla-penalty/evaluate/${reviewId}`, { company_id: companyId });
+      return {
+        success: true,
+        data: response.data?.data
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message || "Evaluation failed"
+      };
+    }
   }
 };
 

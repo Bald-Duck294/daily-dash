@@ -216,3 +216,172 @@ export function usePreviewRule() {
   });
 }
 
+// ==========================================
+// PHASE 2: PENALTY LEDGER QUERIES & MUTATIONS
+// ==========================================
+
+/**
+ * 12. Get Penalties Ledger
+ */
+export const usePenalties = (companyId, params = {}) => {
+  return useQuery({
+    queryKey: ["slaPenalties", companyId, params],
+    queryFn: async () => {
+      const response = await SlaPenaltyApi.getPenalties(companyId, params);
+      if (!response.success) throw new Error(response.error);
+      return response;
+    },
+    enabled: !!companyId && companyId !== "null" && companyId !== undefined,
+    staleTime: 15 * 1000,
+    keepPreviousData: true
+  });
+};
+
+/**
+ * 13. Get Penalty Aggregate Summary KPIs
+ */
+export const usePenaltySummary = (companyId, params = {}) => {
+  return useQuery({
+    queryKey: ["slaPenaltySummary", companyId, params],
+    queryFn: async () => {
+      const response = await SlaPenaltyApi.getPenaltySummary(companyId, params);
+      if (!response.success) throw new Error(response.error);
+      return response.data;
+    },
+    enabled: !!companyId && companyId !== "null" && companyId !== undefined,
+    staleTime: 30 * 1000
+  });
+};
+
+/**
+ * 14. Get Single Penalty By ID with logs
+ */
+export const usePenaltyById = (penaltyId, companyId) => {
+  return useQuery({
+    queryKey: ["slaPenalty", penaltyId, companyId],
+    queryFn: async () => {
+      const response = await SlaPenaltyApi.getPenaltyById(penaltyId, companyId);
+      if (!response.success) throw new Error(response.error);
+      return response.data;
+    },
+    enabled: !!penaltyId && !!companyId,
+    staleTime: 15 * 1000
+  });
+};
+
+/**
+ * 15. Get SLA Violations List
+ */
+export const useViolations = (companyId, params = {}) => {
+  return useQuery({
+    queryKey: ["slaViolations", companyId, params],
+    queryFn: async () => {
+      const response = await SlaPenaltyApi.getViolations(companyId, params);
+      if (!response.success) throw new Error(response.error);
+      return response;
+    },
+    enabled: !!companyId && companyId !== "null" && companyId !== undefined,
+    staleTime: 20 * 1000
+  });
+};
+
+/**
+ * 16. Approve Penalty
+ */
+export function useApprovePenalty() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ penaltyId, companyId, data }) => {
+      const response = await SlaPenaltyApi.approvePenalty(penaltyId, companyId, data);
+      if (!response.success) throw new Error(response.error);
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries(["slaPenalties", variables.companyId]);
+      queryClient.invalidateQueries(["slaPenaltySummary", variables.companyId]);
+      queryClient.invalidateQueries(["slaPenalty", variables.penaltyId, variables.companyId]);
+    }
+  });
+}
+
+/**
+ * 17. Reject Penalty
+ */
+export function useRejectPenalty() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ penaltyId, companyId, data }) => {
+      const response = await SlaPenaltyApi.rejectPenalty(penaltyId, companyId, data);
+      if (!response.success) throw new Error(response.error);
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries(["slaPenalties", variables.companyId]);
+      queryClient.invalidateQueries(["slaPenaltySummary", variables.companyId]);
+      queryClient.invalidateQueries(["slaPenalty", variables.penaltyId, variables.companyId]);
+    }
+  });
+}
+
+/**
+ * 18. Dispute Penalty
+ */
+export function useDisputePenalty() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ penaltyId, companyId, data }) => {
+      const response = await SlaPenaltyApi.disputePenalty(penaltyId, companyId, data);
+      if (!response.success) throw new Error(response.error);
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries(["slaPenalties", variables.companyId]);
+      queryClient.invalidateQueries(["slaPenaltySummary", variables.companyId]);
+      queryClient.invalidateQueries(["slaPenalty", variables.penaltyId, variables.companyId]);
+    }
+  });
+}
+
+/**
+ * 19. Reverse Penalty
+ */
+export function useReversePenalty() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ penaltyId, companyId, data }) => {
+      const response = await SlaPenaltyApi.reversePenalty(penaltyId, companyId, data);
+      if (!response.success) throw new Error(response.error);
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries(["slaPenalties", variables.companyId]);
+      queryClient.invalidateQueries(["slaPenaltySummary", variables.companyId]);
+      queryClient.invalidateQueries(["slaPenalty", variables.penaltyId, variables.companyId]);
+    }
+  });
+}
+
+/**
+ * 20. Manually trigger Review Evaluation
+ */
+export function useEvaluateReview() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ reviewId, companyId }) => {
+      const response = await SlaPenaltyApi.evaluateReview(reviewId, companyId);
+      if (!response.success) throw new Error(response.error);
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries(["slaPenalties", variables.companyId]);
+      queryClient.invalidateQueries(["slaPenaltySummary", variables.companyId]);
+      queryClient.invalidateQueries(["slaViolations", variables.companyId]);
+    }
+  });
+}
+
