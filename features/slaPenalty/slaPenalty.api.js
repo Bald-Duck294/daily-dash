@@ -432,6 +432,73 @@ export const SlaPenaltyApi = {
         error: error.response?.data?.message || error.message || "Evaluation failed"
       };
     }
+  },
+
+  // ==========================================
+  // SUPER ADMIN FEATURE TOGGLE (configurations)
+  // ==========================================
+
+  /**
+   * Super Admin only: Get all companies with their sla_rules configuration status
+   */
+  getAllCompaniesSlaRulesStatus: async () => {
+    try {
+      const response = await axiosInstance.get("/sla-penalty/company-status");
+      return {
+        success: true,
+        data: response.data?.data || [],
+        total: response.data?.total || 0,
+        active_count: response.data?.active_count || 0,
+        inactive_count: response.data?.inactive_count || 0
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message || "Failed to fetch companies status"
+      };
+    }
+  },
+
+  /**
+   * Get specific company sla_rules configuration status
+   */
+  getCompanySlaRulesStatus: async (companyId) => {
+    try {
+      if (!companyId) return { success: false, data: { is_active: false } };
+      const response = await axiosInstance.get(`/sla-penalty/company-status/${companyId}`);
+      return {
+        success: true,
+        data: response.data?.data || { is_active: false }
+      };
+    } catch (error) {
+      return {
+        success: false,
+        data: { is_active: false },
+        error: error.response?.data?.message || error.message || "Failed to fetch company status"
+      };
+    }
+  },
+
+  /**
+   * Super Admin only: Toggle sla_rules status for a company in configurations table
+   */
+  toggleCompanySlaRules: async (companyId, isActive) => {
+    try {
+      const response = await axiosInstance.post("/sla-penalty/toggle-status", {
+        company_id: companyId,
+        is_active: isActive
+      });
+      return {
+        success: true,
+        data: response.data?.data,
+        message: response.data?.message
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message || "Failed to toggle SLA rules status"
+      };
+    }
   }
 };
 

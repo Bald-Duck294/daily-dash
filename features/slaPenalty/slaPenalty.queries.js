@@ -385,3 +385,58 @@ export function useEvaluateReview() {
   });
 }
 
+// ==========================================
+// SUPER ADMIN FEATURE TOGGLE (configurations)
+// ==========================================
+
+/**
+ * 21. Query all companies status for Super Admin (role_id 1)
+ */
+export const useAllCompaniesSlaRulesStatus = (enabled = true) => {
+  return useQuery({
+    queryKey: ["slaRulesAllCompanies"],
+    queryFn: async () => {
+      const response = await SlaPenaltyApi.getAllCompaniesSlaRulesStatus();
+      if (!response.success) throw new Error(response.error);
+      return response;
+    },
+    enabled: Boolean(enabled),
+    staleTime: 10 * 1000
+  });
+};
+
+/**
+ * 22. Query specific company sla_rules status
+ */
+export const useCompanySlaRulesStatus = (companyId, enabled = true) => {
+  return useQuery({
+    queryKey: ["slaRulesCompanyStatus", companyId],
+    queryFn: async () => {
+      if (!companyId) return { is_active: false };
+      const response = await SlaPenaltyApi.getCompanySlaRulesStatus(companyId);
+      return response.data || { is_active: false };
+    },
+    enabled: Boolean(enabled && companyId),
+    staleTime: 30 * 1000
+  });
+};
+
+/**
+ * 23. Mutation to toggle company sla_rules status
+ */
+export function useToggleCompanySlaRules() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ companyId, isActive }) => {
+      const response = await SlaPenaltyApi.toggleCompanySlaRules(companyId, isActive);
+      if (!response.success) throw new Error(response.error);
+      return response;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries(["slaRulesAllCompanies"]);
+      queryClient.invalidateQueries(["slaRulesCompanyStatus", variables.companyId]);
+    }
+  });
+}
+

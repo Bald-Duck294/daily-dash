@@ -165,10 +165,10 @@ export default function SlaManagementPage() {
           </div>
           <div>
             <h1 className="text-xl font-bold text-slate-900 dark:text-white">
-              SLA & Threshold Management
+              Threshold & Escalation Management
             </h1>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              {selectedCompany?.name ? `${selectedCompany.name} SLA standards and washroom thresholds.` : "Organization SLA standards and washroom thresholds."}
+              {selectedCompany?.name ? `${selectedCompany.name} hygiene thresholds, retry rules, and supervisory escalations.` : "Organization hygiene thresholds, retry rules, and supervisory escalations."}
             </p>
           </div>
         </div>
@@ -210,10 +210,10 @@ export default function SlaManagementPage() {
             </div>
             <div>
               <h1 className="text-xl font-bold text-slate-900 dark:text-white">
-                SLA & Threshold Management
+                Threshold & Escalation Management
               </h1>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Configure organization-level SLA standards and customize individual washroom thresholds.
+                Configure hygiene score thresholds, automated inspection retries, and multi-tier supervisory escalations.
               </p>
             </div>
           </div>

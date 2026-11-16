@@ -69,8 +69,13 @@ export function getSuperadminMainMenu() {
     },
     {
       icon: ShieldCheck,
-      label: "SLA Management",
+      label: "Threshold & Escalation",
       href: "/sla-management",
+    },
+    {
+      icon: Scale,
+      label: "SLA Feature Management",
+      href: "/sla-rules-management",
     },
     {
       icon: ShieldCheck,
@@ -350,26 +355,28 @@ export function getSuperadminCompanyMenu(
     },
     {
       icon: ShieldCheck,
-      label: "SLA Management",
+      label: "Threshold & Escalation",
       hasDropdown: true,
       key: "sla-management",
       children: [
         {
           icon: Cog,
-          label: "SLA Configuration",
+          label: "Threshold Configuration",
           href: `/sla-management?companyId=${companyId}`,
         },
         {
           icon: List,
-          label: "SLA Logs",
+          label: "Escalation Logs",
           href: `/sla-logs?companyId=${companyId}`,
         },
-        {
-          icon: BookOpen,
-          label: "Penalty Rule Books",
-          href: `/sla-penalty?companyId=${companyId}`,
-        },
       ],
+    },
+    {
+      icon: Scale,
+      label: "SLA Management",
+      key: "sla-rules",
+      href: `/sla-penalty?companyId=${companyId}`,
+      hasDropdown: false,
     },
     {
       icon: UserCheck,
@@ -595,26 +602,28 @@ export function getAdminMenu(companyId, isCompanySlaActive = false) {
     },
     {
       icon: ShieldCheck,
-      label: "SLA Management",
+      label: "Threshold & Escalation",
       hasDropdown: true,
       key: "sla-management",
       children: [
         {
           icon: Cog,
-          label: "SLA Configuration",
+          label: "Threshold Configuration",
           href: `/sla-management?companyId=${companyId}`,
         },
         {
           icon: List,
-          label: "SLA Logs",
+          label: "Escalation Logs",
           href: `/sla-logs?companyId=${companyId}`,
         },
-        {
-          icon: BookOpen,
-          label: "Penalty Rule Books",
-          href: `/sla-penalty?companyId=${companyId}`,
-        },
       ],
+    },
+    {
+      icon: Scale,
+      label: "SLA Management",
+      key: "sla-rules",
+      href: `/sla-penalty?companyId=${companyId}`,
+      hasDropdown: false,
     },
     {
       icon: UserCheck,
@@ -787,34 +796,36 @@ export const getFullCompanyMenuTemplate = (
   },
   {
     icon: ShieldCheck,
-    label: "SLA Management",
-    simpleLabel: "SLA Management",
+    label: "Threshold & Escalation",
+    simpleLabel: "Threshold & Escalation",
     requiredPermission: "sla_management.view",
     key: "sla-management",
     hasDropdown: true,
     children: [
       {
         icon: Cog,
-        label: "SLA Configuration",
-        simpleLabel: "SLA Configuration",
+        label: "Threshold Configuration",
+        simpleLabel: "Threshold Configuration",
         requiredPermission: "sla_management.view",
         href: `/sla-management?companyId=${companyId}`,
       },
       {
         icon: List,
-        label: "SLA Logs",
-        simpleLabel: "SLA Logs",
+        label: "Escalation Logs",
+        simpleLabel: "Escalation Logs",
         requiredPermission: "sla_management.view",
         href: `/sla-logs?companyId=${companyId}`,
       },
-      {
-        icon: BookOpen,
-        label: "Penalty Rule Books",
-        simpleLabel: "Penalty Rule Books",
-        requiredPermission: "sla_management.view",
-        href: `/sla-penalty?companyId=${companyId}`,
-      },
     ],
+  },
+  {
+    icon: Scale,
+    label: "SLA Management",
+    simpleLabel: "SLA Management",
+    requiredPermission: "sla_management.view",
+    key: "sla-rules",
+    href: `/sla-penalty?companyId=${companyId}`,
+    hasDropdown: false,
   },
   {
     icon: UserCheck,

@@ -110,3 +110,4 @@ export default function PenaltySummaryCards({ summary, isLoading = false }) {
     </div>
   );
 }
+

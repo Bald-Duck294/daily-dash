@@ -17,7 +17,9 @@ import {
   Receipt,
   AlertTriangle,
   Layers,
-  Activity
+  Activity,
+  Lock,
+  ArrowLeft
 } from "lucide-react";
 import { useCompaniesDropdown } from "@/features/dropdownList/dropdownlist.query";
 import { useCompanyId } from "@/providers/CompanyProvider";
@@ -37,7 +39,8 @@ import {
   useApprovePenalty,
   useRejectPenalty,
   useDisputePenalty,
-  useReversePenalty
+  useReversePenalty,
+  useCompanySlaRulesStatus
 } from "@/features/slaPenalty/slaPenalty.queries";
 import toast, { Toaster } from "react-hot-toast";
 import Loader from "@/components/ui/Loader";
@@ -78,6 +81,13 @@ export default function SlaPenaltyPage() {
   const handleSelectCompany = (newCompanyId) => {
     router.push(`/sla-penalty?companyId=${newCompanyId}`);
   };
+
+  // Contractual SLA Rules feature status for effective organization (configurations table: sla_rules)
+  const {
+    data: slaRulesStatus,
+    isLoading: isLoadingSlaRulesStatus
+  } = useCompanySlaRulesStatus(effectiveCompanyId, Boolean(effectiveCompanyId));
+  const isSlaRulesActive = Boolean(slaRulesStatus?.is_active);
 
   // Top-level Navigation View Mode: "LEDGER" | "RULE_BOOKS" | "VIOLATIONS"
   const [mainView, setMainView] = useState("LEDGER");
@@ -341,6 +351,32 @@ export default function SlaPenaltyPage() {
     return (
       <div className="flex h-96 items-center justify-center">
         <Loader />
+      </div>
+    );
+  }
+
+  // Enforce Super Admin Feature Control Guard:
+  // If user is not super admin and the company does NOT have sla_rules enabled, block view!
+  if (!isSuperAdmin && !isLoadingSlaRulesStatus && !isSlaRulesActive) {
+    return (
+      <div className="space-y-6 pb-12">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-10 border border-slate-200/80 dark:border-slate-800 text-center max-w-xl mx-auto shadow-sm my-16">
+          <div className="w-16 h-16 bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 rounded-2xl flex items-center justify-center mx-auto mb-5 border border-amber-200/60 dark:border-amber-800/40">
+            <Lock className="w-8 h-8" />
+          </div>
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+            SLA Management Inactive
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto leading-relaxed mb-6">
+            The contractual SLA Management module is currently not enabled for your organization in the system configuration. Please contact your system administrator to activate this feature.
+          </p>
+          <button
+            onClick={() => router.back()}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" /> Go Back
+          </button>
+        </div>
       </div>
     );
   }

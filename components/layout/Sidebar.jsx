@@ -34,6 +34,7 @@ import {
 import { filterMenuByPermissions } from "@/shared/utils/menuFilter";
 import { useCompanyId } from "@/providers/CompanyProvider";
 import { useCompanySlaConfig } from "@/features/companies/queries/sla.queries";
+import { useCompanySlaRulesStatus } from "@/features/slaPenalty/slaPenalty.queries";
 
 const Sidebar = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -51,12 +52,19 @@ const Sidebar = () => {
 
   const { companyId, hasCompanyContext } = useCompanyId();
 
-  // Query parent company master SLA status
+  // Query parent company master SLA status (Threshold & Escalation)
   const { data: companySlaData } = useCompanySlaConfig(
     companyId,
     Boolean(companyId)
   );
   const isCompanySlaActive = Boolean(companySlaData?.enabled);
+
+  // Query contractual SLA Rules status (configurations table, key: "sla_rules")
+  const { data: slaRulesData } = useCompanySlaRulesStatus(
+    companyId,
+    Boolean(companyId)
+  );
+  const isSlaRulesActive = Boolean(slaRulesData?.is_active);
 
   // Memoize menu items to prevent infinite loop
   const menuItems = useMemo(() => {
@@ -71,6 +79,10 @@ const Sidebar = () => {
       if (!isCompanySlaActive) {
         items = items.filter((item) => item.key !== "sla-management");
       }
+      // If Super Admin has not enabled sla_rules for this company, hide SLA Management
+      if (!isSlaRulesActive) {
+        items = items.filter((item) => item.key !== "sla-rules");
+      }
       return items;
     }
     if (hasCompanyContext && user?.role?.permissions) {
@@ -80,10 +92,16 @@ const Sidebar = () => {
           (item) => item.key !== "locationTypes",
         );
       }
-      // If company SLA is not active, strip SLA Management from menuTemplate
+      // If company SLA is not active, strip Threshold & Escalation from menuTemplate
       if (!isCompanySlaActive) {
         menuTemplate = menuTemplate.filter(
           (item) => item.key !== "sla-management"
+        );
+      }
+      // If contractual SLA Rules is not active, strip SLA Management from menuTemplate
+      if (!isSlaRulesActive) {
+        menuTemplate = menuTemplate.filter(
+          (item) => item.key !== "sla-rules"
         );
       }
       const filteredMenu = filterMenuByPermissions(
