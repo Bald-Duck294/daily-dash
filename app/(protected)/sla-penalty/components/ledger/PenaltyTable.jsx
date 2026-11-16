@@ -130,8 +130,9 @@ export default function PenaltyTable({
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-sm">
             {penalties.map((item) => {
               const statusBadge = getStatusBadge(item.status);
-              const cleanerName = item.cleaner?.name || `Cleaner #${item.cleaner_id}`;
-              const cleanerAvatar = item.cleaner?.avatar_url;
+              const cleanerUser = item.cleaner_user || item.cleaner;
+              const cleanerName = cleanerUser?.name || `Cleaner #${item.cleaner_user_id || item.cleaner_id || ""}`;
+              const cleanerAvatar = cleanerUser?.avatar_url;
               const locationName = item.location?.name || "Facility";
               const effectiveAmount = item.approved_amount ?? item.calculated_amount;
 
@@ -240,7 +241,7 @@ export default function PenaltyTable({
                         <Eye className="w-4 h-4" />
                       </button>
 
-                      {item.status === "PENDING_APPROVAL" && (
+                      {(item.status === "PENDING" || item.status === "PENDING_APPROVAL") && (
                         <>
                           <button
                             onClick={() => onOpenActionModal(item, "APPROVE")}
@@ -259,7 +260,7 @@ export default function PenaltyTable({
                         </>
                       )}
 
-                      {(item.status === "PENDING_APPROVAL" || item.status === "APPROVED") && (
+                      {(item.status === "PENDING" || item.status === "PENDING_APPROVAL" || item.status === "APPROVED") && (
                         <button
                           onClick={() => onOpenActionModal(item, "DISPUTE")}
                           className="p-1.5 rounded-lg text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-colors"
@@ -281,7 +282,8 @@ export default function PenaltyTable({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:hidden">
         {penalties.map((item) => {
           const statusBadge = getStatusBadge(item.status);
-          const cleanerName = item.cleaner?.name || `Cleaner #${item.cleaner_id}`;
+          const cleanerUser = item.cleaner_user || item.cleaner;
+          const cleanerName = cleanerUser?.name || `Cleaner #${item.cleaner_user_id || item.cleaner_id || ""}`;
           const effectiveAmount = item.approved_amount ?? item.calculated_amount;
 
           return (
@@ -339,13 +341,21 @@ export default function PenaltyTable({
                     Details
                   </button>
 
-                  {item.status === "PENDING_APPROVAL" && (
-                    <button
-                      onClick={() => onOpenActionModal(item, "APPROVE")}
-                      className="px-2.5 py-1.5 rounded-xl text-xs font-medium bg-emerald-600 hover:bg-emerald-700 text-white transition-colors"
-                    >
-                      Approve
-                    </button>
+                  {(item.status === "PENDING" || item.status === "PENDING_APPROVAL") && (
+                    <>
+                      <button
+                        onClick={() => onOpenActionModal(item, "APPROVE")}
+                        className="px-2.5 py-1.5 rounded-xl text-xs font-medium bg-emerald-600 hover:bg-emerald-700 text-white transition-colors"
+                      >
+                        Approve
+                      </button>
+                      <button
+                        onClick={() => onOpenActionModal(item, "REJECT")}
+                        className="px-2.5 py-1.5 rounded-xl text-xs font-medium text-rose-600 hover:text-rose-700 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 transition-colors"
+                      >
+                        Reject
+                      </button>
+                    </>
                   )}
                 </div>
               </div>

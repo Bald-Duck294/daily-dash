@@ -19,14 +19,26 @@ export default function ApprovalActionModal({
   onSubmit,
   isSubmitting = false
 }) {
-  if (!isOpen || !penalty) return null;
-
-  const [amount, setAmount] = useState(
-    penalty.calculated_amount !== undefined ? String(penalty.calculated_amount) : "0"
-  );
+  const [amount, setAmount] = useState("0");
   const [reason, setReason] = useState("");
   const [notes, setNotes] = useState("");
   const [comments, setComments] = useState("");
+
+  React.useEffect(() => {
+    if (isOpen && penalty) {
+      setAmount(
+        penalty.calculated_amount !== undefined ? String(penalty.calculated_amount) : "0"
+      );
+      setReason("");
+      setNotes("");
+      setComments("");
+    }
+  }, [isOpen, penalty, actionType]);
+
+  if (!isOpen || !penalty) return null;
+
+  const cleanerUser = penalty.cleaner_user || penalty.cleaner;
+  const cleanerName = cleanerUser?.name || `Cleaner #${penalty.cleaner_user_id || penalty.cleaner_id || ""}`;
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -143,7 +155,7 @@ export default function ApprovalActionModal({
               <div>
                 <span className="text-slate-400">Cleaner: </span>
                 <span className="font-semibold text-slate-800 dark:text-slate-200">
-                  {penalty.cleaner?.name || `Cleaner #${penalty.cleaner_id}`}
+                  {cleanerName}
                 </span>
               </div>
               <div>

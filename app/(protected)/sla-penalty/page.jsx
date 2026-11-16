@@ -19,7 +19,8 @@ import {
   Layers,
   Activity,
   Lock,
-  ArrowLeft
+  ArrowLeft,
+  RefreshCw
 } from "lucide-react";
 import { useCompaniesDropdown } from "@/features/dropdownList/dropdownlist.query";
 import { useCompanyId } from "@/providers/CompanyProvider";
@@ -40,7 +41,8 @@ import {
   useRejectPenalty,
   useDisputePenalty,
   useReversePenalty,
-  useCompanySlaRulesStatus
+  useCompanySlaRulesStatus,
+  useTriggerPenaltyCron
 } from "@/features/slaPenalty/slaPenalty.queries";
 import toast, { Toaster } from "react-hot-toast";
 import Loader from "@/components/ui/Loader";
@@ -178,6 +180,23 @@ export default function SlaPenaltyPage() {
   const rejectMutation = useRejectPenalty();
   const disputeMutation = useDisputePenalty();
   const reverseMutation = useReversePenalty();
+  const triggerCronMutation = useTriggerPenaltyCron();
+
+  const handleRunPenaltyCron = async () => {
+    try {
+      const result = await triggerCronMutation.mutateAsync({
+        companyId: effectiveCompanyId
+      });
+      toast.success(
+        `Penalty Cron executed! Scanned ${result?.reviewsScanned || 0} reviews, created ${result?.penaltiesCreated || 0} penalties.`
+      );
+      refetchPenalties();
+      refetchSummary();
+      refetchViolations();
+    } catch (err) {
+      toast.error(err.message || "Failed to execute penalty cron");
+    }
+  };
 
   // Ledger Modals
   const [selectedPenaltyForDetail, setSelectedPenaltyForDetail] = useState(null);
@@ -435,8 +454,20 @@ export default function SlaPenaltyPage() {
           </div>
         </div>
 
-        {/* View Switcher Tabs */}
-        <div className="flex items-center p-1 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60">
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* Run Penalty Cron Sync Button */}
+          <button
+            onClick={handleRunPenaltyCron}
+            disabled={triggerCronMutation.isLoading}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 transition-all cursor-pointer shadow-sm disabled:opacity-50"
+            title="Scan unevaluated reviews and run the SLA penalty cron cycle now"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${triggerCronMutation.isLoading ? "animate-spin" : ""}`} />
+            <span>{triggerCronMutation.isLoading ? "Evaluating..." : "Run SLA Cron"}</span>
+          </button>
+
+          {/* View Switcher Tabs */}
+          <div className="flex items-center p-1 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60">
           <button
             onClick={() => setMainView("LEDGER")}
             className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
@@ -479,6 +510,7 @@ export default function SlaPenaltyPage() {
           </button>
         </div>
       </div>
+    </div>
 
       {/* ======================================================== */}
       {/* VIEW 1: PENALTY LEDGER & APPROVAL QUEUE (PHASE 2)        */}

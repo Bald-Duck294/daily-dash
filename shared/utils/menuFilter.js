@@ -6,19 +6,28 @@
  * @param {Array} userPermissions - User's permission array
  * @returns {Array} - Filtered menu items
  */
-export const filterMenuByPermissions = (menuTemplate, userPermissions) => {
+export const filterMenuByPermissions = (menuTemplate, userPermissions = []) => {
   const filtered = [];
+  const perms = Array.isArray(userPermissions) ? userPermissions : [];
+
+  const hasPermission = (required) => {
+    if (!required) return true;
+    if (Array.isArray(required)) {
+      return required.some((p) => perms.includes(p));
+    }
+    return perms.includes(required);
+  };
 
   for (const item of menuTemplate) {
-    // ✅ STEP 1: Check if user has parent permission (always .view)
-    if (!userPermissions.includes(item.requiredPermission)) {
+    // ✅ STEP 1: Check if user has parent permission
+    if (!hasPermission(item.requiredPermission)) {
       continue; // Skip this menu entirely
     }
 
     // ✅ STEP 2: If has children, filter them
     if (item.children && item.children.length > 0) {
       const accessibleChildren = item.children.filter((child) =>
-        userPermissions.includes(child.requiredPermission)
+        hasPermission(child.requiredPermission)
       );
 
       // No accessible children → skip menu
@@ -51,6 +60,7 @@ export const filterMenuByPermissions = (menuTemplate, userPermissions) => {
       filtered.push({
         icon: item.icon,
         label: item.simpleLabel || item.label,
+        key: item.key,
         href: item.href,
         hasDropdown: false,
       });

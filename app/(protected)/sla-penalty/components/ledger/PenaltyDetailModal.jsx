@@ -11,6 +11,7 @@ import {
   Clock,
   CheckCircle2,
   AlertTriangle,
+  AlertCircle,
   FileText,
   ChevronDown,
   ChevronUp,
@@ -43,6 +44,7 @@ export default function PenaltyDetailModal({
 
   const getStatusBadge = (status) => {
     switch (status) {
+      case "PENDING":
       case "PENDING_APPROVAL":
         return { label: "Pending Approval", className: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20" };
       case "APPROVED":
@@ -59,10 +61,11 @@ export default function PenaltyDetailModal({
   };
 
   const statusBadge = getStatusBadge(penalty.status);
-  const cleanerName = penalty.cleaner?.name || `Cleaner #${penalty.cleaner_id}`;
+  const cleanerUser = penalty.cleaner_user || penalty.cleaner;
+  const cleanerName = cleanerUser?.name || `Cleaner #${penalty.cleaner_user_id || penalty.cleaner_id || ""}`;
   const effectiveAmount = penalty.approved_amount ?? penalty.calculated_amount;
   const snapshot = penalty.calculation_snapshot || {};
-  const logs = penalty.penalty_logs || [];
+  const logs = penalty.logs || penalty.penalty_logs || [];
   const review = penalty.violation?.review;
   const reviewImages = review?.images || [];
 
@@ -140,8 +143,8 @@ export default function PenaltyDetailModal({
               </span>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 font-bold overflow-hidden">
-                  {penalty.cleaner?.avatar_url ? (
-                    <img src={penalty.cleaner.avatar_url} alt={cleanerName} className="w-full h-full object-cover" />
+                  {cleanerUser?.avatar_url ? (
+                    <img src={cleanerUser.avatar_url} alt={cleanerName} className="w-full h-full object-cover" />
                   ) : (
                     <User className="w-5 h-5" />
                   )}
@@ -151,7 +154,7 @@ export default function PenaltyDetailModal({
                     {cleanerName}
                   </h4>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    {penalty.cleaner?.phone || "No phone recorded"}
+                    {cleanerUser?.phone || "No phone recorded"}
                   </p>
                 </div>
               </div>
@@ -304,27 +307,34 @@ export default function PenaltyDetailModal({
               <p className="text-xs text-slate-400 italic">No historical logs recorded.</p>
             ) : (
               <div className="relative pl-6 space-y-4 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200 dark:before:bg-slate-700">
-                {logs.map((log) => (
-                  <div key={log.id} className="relative">
-                    <div className="absolute -left-6 top-1 w-3 h-3 rounded-full bg-blue-500 ring-4 ring-white dark:ring-slate-900" />
-                    <div className="text-xs font-medium text-slate-900 dark:text-white flex items-center gap-2">
-                      <span className="font-semibold">{log.action}</span>
-                      {log.from_status && log.to_status && (
-                        <span className="text-slate-400 font-mono text-[10px]">
-                          ({log.from_status} → {log.to_status})
-                        </span>
+                {logs.map((log) => {
+                  const fromStatus = log.previous_status || log.from_status;
+                  const toStatus = log.new_status || log.to_status;
+                  const actorName = log.actor_user?.name || log.actor?.name || "System Automated";
+                  const commentText = log.comment || log.comments;
+
+                  return (
+                    <div key={log.id} className="relative">
+                      <div className="absolute -left-6 top-1 w-3 h-3 rounded-full bg-blue-500 ring-4 ring-white dark:ring-slate-900" />
+                      <div className="text-xs font-medium text-slate-900 dark:text-white flex items-center gap-2">
+                        <span className="font-semibold">{log.action}</span>
+                        {fromStatus && toStatus && (
+                          <span className="text-slate-400 font-mono text-[10px]">
+                            ({fromStatus} → {toStatus})
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[11px] text-slate-400">
+                        {formatDate(log.created_at)} · {actorName}
+                      </div>
+                      {commentText && (
+                        <p className="mt-1 text-xs text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200/60 dark:border-slate-700/60">
+                          {commentText}
+                        </p>
                       )}
                     </div>
-                    <div className="text-[11px] text-slate-400">
-                      {formatDate(log.created_at)} · {log.actor?.name || "System Automated"}
-                    </div>
-                    {log.comments && (
-                      <p className="mt-1 text-xs text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200/60 dark:border-slate-700/60">
-                        {log.comments}
-                      </p>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -340,7 +350,7 @@ export default function PenaltyDetailModal({
           </button>
 
           <div className="flex items-center gap-2">
-            {penalty.status === "PENDING_APPROVAL" && (
+            {(penalty.status === "PENDING" || penalty.status === "PENDING_APPROVAL") && (
               <>
                 <button
                   onClick={() => {
@@ -363,7 +373,7 @@ export default function PenaltyDetailModal({
               </>
             )}
 
-            {(penalty.status === "PENDING_APPROVAL" || penalty.status === "APPROVED") && (
+            {(penalty.status === "PENDING" || penalty.status === "PENDING_APPROVAL" || penalty.status === "APPROVED") && (
               <button
                 onClick={() => {
                   onClose();

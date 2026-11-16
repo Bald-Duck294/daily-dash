@@ -500,6 +500,28 @@ export const SlaPenaltyApi = {
         error: error.response?.data?.message || error.message || "Failed to toggle SLA rules status"
       };
     }
+  },
+
+  /**
+   * Manually trigger the SLA Penalty Cron evaluation cycle for testing / sync
+   */
+  triggerPenaltyCron: async (companyId, options = {}) => {
+    try {
+      const response = await axiosInstance.post("/sla-penalty/cron/trigger", {
+        company_id: companyId,
+        ...options
+      });
+      return {
+        success: true,
+        data: response.data?.data,
+        message: response.data?.message
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message || "Failed to trigger penalty cron"
+      };
+    }
   }
 };
 

@@ -72,7 +72,14 @@ const Sidebar = () => {
       return getSuperadminMainMenu();
     }
     if (user?.role_id === 1 && hasCompanyContext) {
-      return getSuperadminCompanyMenu(companyId, isCompanySlaActive);
+      let items = getSuperadminCompanyMenu(companyId, isCompanySlaActive);
+      if (!isCompanySlaActive) {
+        items = items.filter((item) => item.key !== "sla-management");
+      }
+      if (!isSlaRulesActive) {
+        items = items.filter((item) => item.key !== "sla-rules");
+      }
+      return items;
     }
     if (user?.role_id === 2 && hasCompanyContext) {
       let items = getAdminMenu(companyId, isCompanySlaActive);
@@ -121,7 +128,7 @@ const Sidebar = () => {
       return filteredMenu;
     }
     return [];
-  }, [user?.role_id, user?.role?.permissions, hasCompanyContext, companyId, isCompanySlaActive]);
+  }, [user?.role_id, user?.role?.permissions, hasCompanyContext, companyId, isCompanySlaActive, isSlaRulesActive]);
 
   const getRoleText = (roleId) => {
     switch (roleId) {

@@ -440,3 +440,24 @@ export function useToggleCompanySlaRules() {
   });
 }
 
+/**
+ * 24. Mutation to trigger SLA penalty cron evaluation cycle
+ */
+export function useTriggerPenaltyCron() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ companyId, options = {} }) => {
+      const response = await SlaPenaltyApi.triggerPenaltyCron(companyId, options);
+      if (!response.success) throw new Error(response.error);
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries(["slaPenalties", variables.companyId]);
+      queryClient.invalidateQueries(["slaPenaltySummary", variables.companyId]);
+      queryClient.invalidateQueries(["slaViolations", variables.companyId]);
+    }
+  });
+}
+
+
