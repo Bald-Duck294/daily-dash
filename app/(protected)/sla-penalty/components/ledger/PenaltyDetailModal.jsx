@@ -100,6 +100,37 @@ export default function PenaltyDetailModal({
 
         {/* Content Body */}
         <div className="p-6 space-y-6 max-h-[calc(85vh-160px)] overflow-y-auto">
+          {/* Status Transparency Banner for Cleaner & Supervisor */}
+          <div className={`p-4 rounded-2xl border text-xs leading-relaxed flex items-start gap-3 ${
+            penalty.status === "APPROVED"
+              ? "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200"
+              : penalty.status === "REVERSED"
+              ? "bg-cyan-50 dark:bg-cyan-950/30 border-cyan-200 dark:border-cyan-800 text-cyan-900 dark:text-cyan-200"
+              : penalty.status === "DISPUTED"
+              ? "bg-indigo-50 dark:bg-indigo-950/30 border-indigo-200 dark:border-indigo-800 text-indigo-900 dark:text-indigo-200"
+              : penalty.status === "REJECTED"
+              ? "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200"
+              : "bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200"
+          }`}>
+            <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <div className="font-bold text-sm">
+                {penalty.status === "APPROVED" && "Status: Approved & Confirmed"}
+                {penalty.status === "REVERSED" && "Status: Automatically Waived & Reversed"}
+                {penalty.status === "DISPUTED" && "Status: Under Dispute Inquiry"}
+                {penalty.status === "REJECTED" && "Status: Waived / Dismissed by Management"}
+                {(penalty.status === "PENDING" || penalty.status === "PENDING_APPROVAL") && "Status: Awaiting Supervisor Review"}
+              </div>
+              <p>
+                {penalty.status === "APPROVED" && `This deduction of ₹${Number(effectiveAmount).toFixed(2)} has been confirmed by management and processed into financial records.`}
+                {penalty.status === "REVERSED" && (penalty.reversal_reason || "This penalty was automatically waived because the cleaner re-cleaned the facility and passed the inspection threshold (Score ≥ 7.0).")}
+                {penalty.status === "DISPUTED" && (penalty.dispute_reason ? `Dispute reason: "${penalty.dispute_reason}". Currently under investigation.` : "A dispute inquiry has been submitted and is currently being investigated.")}
+                {penalty.status === "REJECTED" && (penalty.rejection_reason ? `Waived by supervisor: "${penalty.rejection_reason}".` : "This penalty deduction was waived under management discretion.")}
+                {(penalty.status === "PENDING" || penalty.status === "PENDING_APPROVAL") && "This penalty is currently pending supervisor review. Note: If the cleaner conducts a re-cleaning and achieves a passing score (≥ 7.0), this penalty will be automatically waived."}
+              </p>
+            </div>
+          </div>
+
           {/* Top Info Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Cleaner & Location Card */}

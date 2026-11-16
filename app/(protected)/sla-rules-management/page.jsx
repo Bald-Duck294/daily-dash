@@ -436,3 +436,4 @@ export default function SlaRulesManagementPage() {
     </div>
   );
 }
+

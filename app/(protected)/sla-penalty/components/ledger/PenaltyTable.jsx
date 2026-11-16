@@ -21,38 +21,47 @@ export default function PenaltyTable({
   penalties = [],
   isLoading = false,
   onViewDetails,
-  onOpenActionModal
+  onOpenActionModal,
+  onSelectCleaner,
+  selectedCleanerId
 }) {
   const getStatusBadge = (status) => {
     switch (status) {
+      case "PENDING":
       case "PENDING_APPROVAL":
         return {
           label: "Pending Approval",
+          sublabel: "Awaiting supervisor sign-off",
           className: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30"
         };
       case "APPROVED":
         return {
           label: "Approved",
+          sublabel: "Confirmed & deducted",
           className: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30"
         };
       case "DISPUTED":
         return {
           label: "Disputed",
+          sublabel: "Inquiry in progress",
           className: "bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-500/30"
         };
       case "REJECTED":
         return {
           label: "Rejected / Waived",
+          sublabel: "Dismissed by supervisor",
           className: "bg-slate-500/10 text-slate-700 dark:text-slate-400 border-slate-500/30"
         };
       case "REVERSED":
         return {
           label: "Reversed",
+          sublabel: "Waived by passing re-clean",
           className: "bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 border-cyan-500/30"
         };
       default:
         return {
           label: status,
+          sublabel: "",
           className: "bg-slate-500/10 text-slate-700 dark:text-slate-400 border-slate-500/30"
         };
     }
@@ -142,7 +151,11 @@ export default function PenaltyTable({
                   {/* Cleaner & Location */}
                   <td className="py-4 px-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 font-medium text-xs overflow-hidden border border-slate-200 dark:border-slate-700">
+                      <div
+                        onClick={() => onSelectCleaner && onSelectCleaner(item.cleaner_user || item.cleaner || { id: item.cleaner_user_id || item.cleaner_id, name: cleanerName })}
+                        className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 font-medium text-xs overflow-hidden border border-slate-200 dark:border-slate-700 cursor-pointer hover:ring-2 hover:ring-blue-500 transition-all shrink-0"
+                        title={`Click to filter all penalties for ${cleanerName}`}
+                      >
                         {cleanerAvatar ? (
                           <img
                             src={cleanerAvatar}
@@ -154,9 +167,17 @@ export default function PenaltyTable({
                         )}
                       </div>
                       <div>
-                        <div className="font-medium text-slate-900 dark:text-white">
-                          {cleanerName}
-                        </div>
+                        <button
+                          type="button"
+                          onClick={() => onSelectCleaner && onSelectCleaner(item.cleaner_user || item.cleaner || { id: item.cleaner_user_id || item.cleaner_id, name: cleanerName })}
+                          className="font-medium text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 text-left transition-colors cursor-pointer group flex items-center gap-1"
+                          title={`Click to filter all penalties for ${cleanerName}`}
+                        >
+                          <span>{cleanerName}</span>
+                          <span className="text-[10px] px-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                            Filter
+                          </span>
+                        </button>
                         <div className="text-xs text-slate-400 flex items-center gap-1">
                           <MapPin className="w-3 h-3 text-slate-400" />
                           <span className="truncate max-w-[150px]">{locationName}</span>
@@ -187,13 +208,20 @@ export default function PenaltyTable({
                     )}
                   </td>
 
-                  {/* Status */}
+                  {/* Status with Sublabel for Transparency */}
                   <td className="py-4 px-4">
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${statusBadge.className}`}
-                    >
-                      {statusBadge.label}
-                    </span>
+                    <div>
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${statusBadge.className}`}
+                      >
+                        {statusBadge.label}
+                      </span>
+                      {statusBadge.sublabel && (
+                        <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 font-medium">
+                          {statusBadge.sublabel}
+                        </div>
+                      )}
+                    </div>
                   </td>
 
                   {/* Date */}
@@ -276,9 +304,22 @@ export default function PenaltyTable({
                 <h4 className="font-medium text-slate-900 dark:text-white text-sm">
                   {item.rule?.name || item.rule_code}
                 </h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  Cleaner: {cleanerName} · {item.location?.name || "Facility"}
-                </p>
+                <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  <span>Cleaner:</span>
+                  <button
+                    type="button"
+                    onClick={() => onSelectCleaner && onSelectCleaner(item.cleaner_user || item.cleaner || { id: item.cleaner_user_id || item.cleaner_id, name: cleanerName })}
+                    className="font-semibold text-blue-600 dark:text-blue-400 underline decoration-blue-500/40 hover:text-blue-700"
+                  >
+                    {cleanerName}
+                  </button>
+                  <span>· {item.location?.name || "Facility"}</span>
+                </div>
+                {statusBadge.sublabel && (
+                  <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-1">
+                    Status: {statusBadge.sublabel}
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">

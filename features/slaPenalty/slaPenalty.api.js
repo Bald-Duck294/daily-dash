@@ -268,6 +268,7 @@ export const SlaPenaltyApi = {
     try {
       const queryParams = new URLSearchParams();
       if (companyId) queryParams.append("company_id", companyId);
+      if (params.cleaner_id) queryParams.append("cleaner_id", params.cleaner_id);
       if (params.start_date) queryParams.append("start_date", params.start_date);
       if (params.end_date) queryParams.append("end_date", params.end_date);
 

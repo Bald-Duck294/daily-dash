@@ -143,7 +143,9 @@ export default function SlaPenaltyPage() {
   const [penaltyFilters, setPenaltyFilters] = useState({
     status: "",
     scope: "",
-    search: ""
+    search: "",
+    cleaner_id: "",
+    cleaner_name: ""
   });
 
   const {
@@ -153,6 +155,7 @@ export default function SlaPenaltyPage() {
   } = usePenalties(effectiveCompanyId, {
     status: penaltyFilters.status || undefined,
     scope: penaltyFilters.scope || undefined,
+    cleaner_id: penaltyFilters.cleaner_id || undefined,
     page: 1,
     limit: 50
   });
@@ -161,7 +164,9 @@ export default function SlaPenaltyPage() {
     data: penaltySummary,
     isLoading: isLoadingSummary,
     refetch: refetchSummary
-  } = usePenaltySummary(effectiveCompanyId);
+  } = usePenaltySummary(effectiveCompanyId, {
+    cleaner_id: penaltyFilters.cleaner_id || undefined
+  });
 
   const {
     data: violationsResponse,
@@ -183,11 +188,30 @@ export default function SlaPenaltyPage() {
   });
 
   const handleFilterChange = (key, value) => {
-    setPenaltyFilters((prev) => ({ ...prev, [key]: value }));
+    setPenaltyFilters((prev) => {
+      const next = { ...prev, [key]: value };
+      if (key === "cleaner_id" && !value) {
+        next.cleaner_name = "";
+      }
+      return next;
+    });
   };
 
   const handleResetFilters = () => {
-    setPenaltyFilters({ status: "", scope: "", search: "" });
+    setPenaltyFilters({ status: "", scope: "", search: "", cleaner_id: "", cleaner_name: "" });
+  };
+
+  const handleSelectCleaner = (cleaner) => {
+    if (!cleaner) return;
+    const cleanerId = String(cleaner.id || cleaner.cleaner_user_id || "");
+    const cleanerName = cleaner.name || `Cleaner #${cleanerId}`;
+    setPenaltyFilters((prev) => {
+      // Toggle if already selected
+      if (prev.cleaner_id === cleanerId) {
+        return { ...prev, cleaner_id: "", cleaner_name: "" };
+      }
+      return { ...prev, cleaner_id: cleanerId, cleaner_name: cleanerName };
+    });
   };
 
   // Filter penalties client-side for search query if provided
@@ -472,6 +496,11 @@ export default function SlaPenaltyPage() {
             filters={penaltyFilters}
             onFilterChange={handleFilterChange}
             onReset={handleResetFilters}
+            cleanerFilterCount={
+              penaltyFilters.cleaner_id
+                ? (penaltiesResponse?.pagination?.total ?? filteredPenalties.length)
+                : null
+            }
           />
 
           {/* Penalties Table / Responsive Cards */}
@@ -482,6 +511,8 @@ export default function SlaPenaltyPage() {
             onOpenActionModal={(penalty, actionType) =>
               setActionModalState({ isOpen: true, penalty, actionType })
             }
+            onSelectCleaner={handleSelectCleaner}
+            selectedCleanerId={penaltyFilters.cleaner_id}
           />
         </div>
       )}
