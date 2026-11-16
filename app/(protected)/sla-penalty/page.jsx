@@ -388,18 +388,27 @@ export default function SlaPenaltyPage() {
     <div className="space-y-6 pb-16">
       {/* Top Banner Navigation & View Tabs */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-sm">
-              <Scale className="w-5 h-5" />
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => router.back()}
+            className="p-2.5 cursor-pointer bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors shadow-sm text-slate-600 dark:text-slate-300 flex items-center justify-center shrink-0"
+            title="Go Back"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div>
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-sm">
+                <Scale className="w-5 h-5" />
+              </div>
+              <h1 className="text-xl font-bold text-slate-900 dark:text-white">
+                SLA Management
+              </h1>
             </div>
-            <h1 className="text-xl font-bold text-slate-900 dark:text-white">
-              SLA Penalty Management
-            </h1>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              Automated contractual compliance, financial deduction ledger, and approval workflow.
+            </p>
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Automated contractual compliance, financial deduction ledger, and approval workflow.
-          </p>
         </div>
 
         {/* View Switcher Tabs */}
