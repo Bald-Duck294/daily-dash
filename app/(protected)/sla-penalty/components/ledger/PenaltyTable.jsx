@@ -30,39 +30,45 @@ export default function PenaltyTable({
       case "PENDING":
       case "PENDING_APPROVAL":
         return {
-          label: "Pending Approval",
-          sublabel: "Awaiting supervisor sign-off",
-          className: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30"
+          label: "PENDING",
+          sublabel: "Awaiting review",
+          dotColor: "bg-amber-500",
+          className: "bg-amber-50 text-amber-700 border border-amber-200/80 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800"
         };
       case "APPROVED":
         return {
-          label: "Approved",
+          label: "APPROVED",
           sublabel: "Confirmed & deducted",
-          className: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30"
+          dotColor: "bg-emerald-500",
+          className: "bg-emerald-50 text-emerald-700 border border-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
         };
       case "DISPUTED":
         return {
-          label: "Disputed",
+          label: "DISPUTED",
           sublabel: "Inquiry in progress",
-          className: "bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-500/30"
+          dotColor: "bg-indigo-500",
+          className: "bg-indigo-50 text-indigo-700 border border-indigo-200/80 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800"
         };
       case "REJECTED":
         return {
-          label: "Rejected / Waived",
+          label: "WAIVED",
           sublabel: "Dismissed by supervisor",
-          className: "bg-slate-500/10 text-slate-700 dark:text-slate-400 border-slate-500/30"
+          dotColor: "bg-slate-400",
+          className: "bg-slate-50 text-slate-700 border border-slate-200/80 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700"
         };
       case "REVERSED":
         return {
-          label: "Reversed",
+          label: "REVERSED",
           sublabel: "Waived by passing re-clean",
-          className: "bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 border-cyan-500/30"
+          dotColor: "bg-cyan-500",
+          className: "bg-cyan-50 text-cyan-700 border border-cyan-200/80 dark:bg-cyan-950/40 dark:text-cyan-300 dark:border-cyan-800"
         };
       default:
         return {
-          label: status,
+          label: String(status || "").toUpperCase(),
           sublabel: "",
-          className: "bg-slate-500/10 text-slate-700 dark:text-slate-400 border-slate-500/30"
+          dotColor: "bg-slate-400",
+          className: "bg-slate-50 text-slate-700 border border-slate-200/80 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700"
         };
     }
   };
@@ -114,21 +120,29 @@ export default function PenaltyTable({
   return (
     <div className="space-y-4">
       {/* Desktop Table */}
-      <div className="hidden lg:block overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm">
+      <div className="hidden lg:block rounded-xl overflow-hidden bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/75 dark:bg-slate-800/40 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-              <th className="py-3.5 px-4">Penalty #</th>
-              <th className="py-3.5 px-4">Cleaner & Facility</th>
-              <th className="py-3.5 px-4">Breach Rule</th>
-              <th className="py-3.5 px-4">Amount</th>
-              <th className="py-3.5 px-4">Status</th>
-              <th className="py-3.5 px-4">Date</th>
-              <th className="py-3.5 px-4 text-right">Actions</th>
+            <tr
+              className="border-b text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400"
+              style={{
+                background: "var(--washroom-table-header-bg)",
+                borderColor: "var(--washroom-table-divider)",
+              }}
+            >
+              <th className="py-2.5 px-3.5 text-blue-600 w-12 text-center">#</th>
+              <th className="py-2.5 px-3.5">Penalty #</th>
+              <th className="py-2.5 px-3.5">Cleaner & Facility</th>
+              <th className="py-2.5 px-3.5">Breach Rule</th>
+              <th className="py-2.5 px-3.5">Amount</th>
+              <th className="py-2.5 px-3.5">Status</th>
+              <th className="py-2.5 px-3.5">Date</th>
+              <th className="py-2.5 px-3.5 text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-sm">
-            {penalties.map((item) => {
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs">
+            {penalties.map((item, idx) => {
+              const indexStr = String(idx + 1).padStart(2, "0");
               const statusBadge = getStatusBadge(item.status);
               const cleanerUser = item.cleaner_user || item.cleaner;
               const cleanerName = cleanerUser?.name || `Cleaner #${item.cleaner_user_id || item.cleaner_id || ""}`;
@@ -139,23 +153,28 @@ export default function PenaltyTable({
               return (
                 <tr
                   key={item.id}
-                  className="hover:bg-slate-50/70 dark:hover:bg-slate-800/30 transition-colors"
+                  className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors"
                 >
+                  {/* Index # */}
+                  <td className="py-2.5 px-3.5 text-center font-bold font-mono text-[11px] text-slate-400">
+                    {indexStr}
+                  </td>
+
                   {/* Penalty # */}
-                  <td className="py-4 px-4 font-mono text-xs font-semibold text-slate-900 dark:text-white">
+                  <td className="py-2.5 px-3.5 font-mono text-xs font-semibold text-slate-900 dark:text-white whitespace-nowrap">
                     <div>{item.penalty_number}</div>
-                    <span className="text-[10px] font-normal text-slate-400">
+                    <span className="text-[10px] font-medium text-slate-400 font-sans">
                       {item.scope === "TASK_WISE" ? "Task-Wise" : "Daily-Wise"}
                     </span>
                   </td>
 
                   {/* Cleaner & Location */}
-                  <td className="py-4 px-4">
-                    <div className="flex items-center gap-3">
+                  <td className="py-2.5 px-3.5">
+                    <div className="flex items-center gap-2.5">
                       <div
-                        onClick={() => onSelectCleaner && onSelectCleaner(item.cleaner_user || item.cleaner || { id: item.cleaner_user_id || item.cleaner_id, name: cleanerName })}
-                        className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 font-medium text-xs overflow-hidden border border-slate-200 dark:border-slate-700 cursor-pointer hover:ring-2 hover:ring-blue-500 transition-all shrink-0"
-                        title={`Click to filter all penalties for ${cleanerName}`}
+                        onClick={() => onSelectCleaner && onSelectCleaner(cleanerUser || { id: item.cleaner_user_id || item.cleaner_id, name: cleanerName })}
+                        className="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 font-medium text-xs overflow-hidden border border-slate-200 dark:border-slate-700 cursor-pointer hover:ring-2 hover:ring-blue-500 transition-all shrink-0"
+                        title={`Filter by ${cleanerName}`}
                       >
                         {cleanerAvatar ? (
                           <img
@@ -164,42 +183,39 @@ export default function PenaltyTable({
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <User className="w-4 h-4" />
+                          <User className="w-3.5 h-3.5" />
                         )}
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <button
                           type="button"
-                          onClick={() => onSelectCleaner && onSelectCleaner(item.cleaner_user || item.cleaner || { id: item.cleaner_user_id || item.cleaner_id, name: cleanerName })}
-                          className="font-medium text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 text-left transition-colors cursor-pointer group flex items-center gap-1"
-                          title={`Click to filter all penalties for ${cleanerName}`}
+                          onClick={() => onSelectCleaner && onSelectCleaner(cleanerUser || { id: item.cleaner_user_id || item.cleaner_id, name: cleanerName })}
+                          className="font-medium text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 text-left transition-colors cursor-pointer truncate max-w-[150px] block"
+                          title={`Filter penalties for ${cleanerName}`}
                         >
-                          <span>{cleanerName}</span>
-                          <span className="text-[10px] px-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                            Filter
-                          </span>
+                          {cleanerName}
                         </button>
-                        <div className="text-xs text-slate-400 flex items-center gap-1">
-                          <MapPin className="w-3 h-3 text-slate-400" />
-                          <span className="truncate max-w-[150px]">{locationName}</span>
+                        <div className="text-[11px] text-slate-400 flex items-center gap-1 truncate max-w-[160px]">
+                          <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
+                          <span className="truncate">{locationName}</span>
                         </div>
                       </div>
                     </div>
                   </td>
 
                   {/* Breach Rule */}
-                  <td className="py-4 px-4">
-                    <div className="font-medium text-slate-900 dark:text-white text-xs">
+                  <td className="py-2.5 px-3.5">
+                    <div className="font-medium text-slate-900 dark:text-white text-xs truncate max-w-[180px]">
                       {item.rule?.name || item.rule_code || "Contract Clause"}
                     </div>
-                    <div className="text-[11px] font-mono text-slate-400 truncate max-w-[200px]">
+                    <div className="text-[10px] font-mono text-slate-400 truncate max-w-[180px]">
                       {item.rule_code}
                     </div>
                   </td>
 
                   {/* Amount */}
-                  <td className="py-4 px-4 font-medium">
-                    <div className="text-slate-900 dark:text-white font-semibold">
+                  <td className="py-2.5 px-3.5 whitespace-nowrap">
+                    <div className="text-slate-900 dark:text-white font-bold text-xs">
                       ₹{Number(effectiveAmount || 0).toFixed(2)}
                     </div>
                     {item.approved_amount !== null && item.approved_amount !== item.calculated_amount && (
@@ -209,64 +225,56 @@ export default function PenaltyTable({
                     )}
                   </td>
 
-                  {/* Status with Sublabel for Transparency */}
-                  <td className="py-4 px-4">
-                    <div>
-                      <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${statusBadge.className}`}
-                      >
-                        {statusBadge.label}
-                      </span>
-                      {statusBadge.sublabel && (
-                        <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 font-medium">
-                          {statusBadge.sublabel}
-                        </div>
-                      )}
-                    </div>
+                  {/* Status with Dot Pill */}
+                  <td className="py-2.5 px-3.5 whitespace-nowrap">
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${statusBadge.className}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${statusBadge.dotColor}`} />
+                      {statusBadge.label}
+                    </span>
                   </td>
 
                   {/* Date */}
-                  <td className="py-4 px-4 text-xs text-slate-500 dark:text-slate-400">
+                  <td className="py-2.5 px-3.5 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
                     {formatDate(item.created_at)}
                   </td>
 
                   {/* Actions */}
-                  <td className="py-4 px-4 text-right">
-                    <div className="flex items-center justify-end gap-1.5">
+                  <td className="py-2.5 px-3.5 text-right whitespace-nowrap">
+                    <div className="flex items-center justify-end gap-1">
                       <button
                         onClick={() => onViewDetails(item)}
-                        className="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                        title="View Audit Details & Evidence"
+                        className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                        title="View Audit Details"
                       >
-                        <Eye className="w-4 h-4" />
+                        <Eye className="w-3.5 h-3.5" />
                       </button>
 
-                      {(item.status === "PENDING" || item.status === "PENDING_APPROVAL") && (
+                      {(item.status === "PENDING" || item.status === "PENDING_APPROVAL" || item.status === "DISPUTED") && (
                         <>
                           <button
                             onClick={() => onOpenActionModal(item, "APPROVE")}
-                            className="p-1.5 rounded-lg text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors"
-                            title="Approve Penalty"
+                            className="p-1.5 rounded-lg text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors cursor-pointer"
+                            title={item.status === "DISPUTED" ? "Resolve Dispute: Uphold / Approve Penalty" : "Approve Penalty"}
                           >
-                            <CheckCircle2 className="w-4 h-4" />
+                            <CheckCircle2 className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => onOpenActionModal(item, "REJECT")}
-                            className="p-1.5 rounded-lg text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
-                            title="Reject / Waive Penalty"
+                            className="p-1.5 rounded-lg text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+                            title={item.status === "DISPUTED" ? "Resolve Dispute: Accept & Waive Penalty" : "Reject / Waive Penalty"}
                           >
-                            <XCircle className="w-4 h-4" />
+                            <XCircle className="w-3.5 h-3.5" />
                           </button>
                         </>
                       )}
 
-                      {(item.status === "PENDING" || item.status === "PENDING_APPROVAL" || item.status === "APPROVED") && (
+                      {(item.status === "PENDING" || item.status === "PENDING_APPROVAL" || item.status === "APPROVED") && item.status !== "DISPUTED" && (
                         <button
                           onClick={() => onOpenActionModal(item, "DISPUTE")}
-                          className="p-1.5 rounded-lg text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-colors"
-                          title="Flag / Dispute"
+                          className="p-1.5 rounded-lg text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-colors cursor-pointer"
+                          title="Flag Dispute"
                         >
-                          <AlertTriangle className="w-4 h-4" />
+                          <AlertTriangle className="w-3.5 h-3.5" />
                         </button>
                       )}
                     </div>

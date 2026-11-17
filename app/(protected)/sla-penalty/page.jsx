@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useSelector } from "react-redux";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
@@ -22,7 +22,7 @@ import {
   ArrowLeft,
   RefreshCw
 } from "lucide-react";
-import { useCompaniesDropdown } from "@/features/dropdownList/dropdownlist.query";
+import { useCompaniesDropdown, useCleanersDropdown } from "@/features/dropdownList/dropdownlist.query";
 import { useCompanyId } from "@/providers/CompanyProvider";
 import {
   useRuleBooks,
@@ -235,6 +235,27 @@ export default function SlaPenaltyPage() {
 
   // Filter penalties client-side for search query if provided
   const rawPenalties = penaltiesResponse?.data || [];
+
+  const { data: cleanersDropdownData } = useCleanersDropdown(effectiveCompanyId);
+  const apiCleaners = Array.isArray(cleanersDropdownData)
+    ? cleanersDropdownData
+    : cleanersDropdownData?.data || [];
+
+  const availableCleaners = useMemo(() => {
+    const cleanerMap = new Map();
+    apiCleaners.forEach((c) => {
+      if (c?.id) cleanerMap.set(String(c.id), c.name || `Cleaner #${c.id}`);
+    });
+    (rawPenalties || []).forEach((p) => {
+      const cId = p.cleaner_user?.id || p.cleaner?.id || p.cleaner_user_id || p.cleaner_id;
+      const cName = p.cleaner_user?.name || p.cleaner?.name || `Cleaner #${cId}`;
+      if (cId && !cleanerMap.has(String(cId))) {
+        cleanerMap.set(String(cId), cName);
+      }
+    });
+    return Array.from(cleanerMap.entries()).map(([id, name]) => ({ id, name }));
+  }, [apiCleaners, rawPenalties]);
+
   const filteredPenalties = rawPenalties.filter((item) => {
     if (!penaltyFilters.search) return true;
     const query = penaltyFilters.search.toLowerCase();
@@ -373,7 +394,9 @@ export default function SlaPenaltyPage() {
     }
   };
 
-  const handleDeleteRule = async (ruleId) => {
+  const handleDeleteRule = async (ruleOrId) => {
+    const ruleId = typeof ruleOrId === "object" ? ruleOrId?.id : ruleOrId;
+    if (!ruleId) return;
     if (!window.confirm("Are you sure you want to delete this rule clause?")) return;
     try {
       await deleteRuleMutation.mutateAsync({
@@ -383,6 +406,7 @@ export default function SlaPenaltyPage() {
       });
       toast.success("Rule clause removed");
       refetchBooks();
+      refetchActive();
     } catch (err) {
       toast.error(err.message || "Failed to delete rule");
     }
@@ -428,95 +452,112 @@ export default function SlaPenaltyPage() {
   const violationsList = violationsResponse?.data || [];
 
   return (
-    <div className="space-y-6 pb-16">
+    <div className="space-y-3 pb-12">
       {/* Top Banner Navigation & View Tabs */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm">
-        <div className="flex items-center gap-3">
+      <div className="rounded-xl px-4 py-2.5 mb-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2.5 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm">
+        <div className="flex items-center gap-2.5">
           <button
             onClick={() => router.back()}
-            className="p-2.5 cursor-pointer bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors shadow-sm text-slate-600 dark:text-slate-300 flex items-center justify-center shrink-0"
+            className="w-8 h-8 rounded-lg flex items-center justify-center bg-slate-50 dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700/80 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-slate-600 dark:text-slate-300 shrink-0 cursor-pointer"
             title="Go Back"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-4 h-4" />
           </button>
-          <div>
-            <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-sm">
-                <Scale className="w-5 h-5" />
-              </div>
-              <h1 className="text-xl font-bold text-slate-900 dark:text-white">
-                SLA Management
-              </h1>
-            </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Automated contractual compliance, financial deduction ledger, and approval workflow.
+
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80">
+            <Scale className="w-4 h-4 text-slate-700 dark:text-slate-200" />
+          </div>
+
+          <div className="min-w-0 leading-tight">
+            <h1 className="text-sm sm:text-base font-bold uppercase tracking-wide text-slate-900 dark:text-white">
+              SLA MANAGEMENT
+            </h1>
+            <p className="text-[10px] sm:text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              Overview of contractual violations, deductions & approvals
             </p>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
-          {/* Run Penalty Cron Sync Button */}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* View Switcher Tabs */}
+          <div className="flex items-center p-0.5 rounded-lg bg-slate-100 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60">
+            <button
+              onClick={() => setMainView("LEDGER")}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold transition-all ${
+                mainView === "LEDGER"
+                  ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+              }`}
+            >
+              <Receipt className="w-3.5 h-3.5" />
+              Penalty Ledger
+              {penaltySummary?.pending_count > 0 && (
+                <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-amber-500 text-white">
+                  {penaltySummary.pending_count}
+                </span>
+              )}
+            </button>
+
+            <button
+              onClick={() => setMainView("RULE_BOOKS")}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold transition-all ${
+                mainView === "RULE_BOOKS"
+                  ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+              }`}
+            >
+              <BookOpen className="w-3.5 h-3.5" />
+              Rule Books & Clauses
+            </button>
+
+            <button
+              onClick={() => setMainView("VIOLATIONS")}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold transition-all ${
+                mainView === "VIOLATIONS"
+                  ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+              }`}
+            >
+              <Activity className="w-3.5 h-3.5" />
+              Live Violations
+            </button>
+          </div>
+
+          {/* Run Penalty Cron Sync Button (Sleek action button matching App Theme) */}
           <button
             onClick={handleRunPenaltyCron}
             disabled={triggerCronMutation.isLoading}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 transition-all cursor-pointer shadow-sm disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider text-white transition-all cursor-pointer shadow-sm disabled:opacity-50"
+            style={{
+              background: "var(--washroom-primary, #ffab2d)",
+            }}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.background =
+                "var(--washroom-primary-hover, #f59e0b)")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.background =
+                "var(--washroom-primary, #ffab2d)")
+            }
             title="Scan unevaluated reviews and run the SLA penalty cron cycle now"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${triggerCronMutation.isLoading ? "animate-spin" : ""}`} />
-            <span>{triggerCronMutation.isLoading ? "Evaluating..." : "Run SLA Cron"}</span>
-          </button>
-
-          {/* View Switcher Tabs */}
-          <div className="flex items-center p-1 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60">
-          <button
-            onClick={() => setMainView("LEDGER")}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-              mainView === "LEDGER"
-                ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-            }`}
-          >
-            <Receipt className="w-3.5 h-3.5" />
-            Penalty Ledger
-            {penaltySummary?.pending_count > 0 && (
-              <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-amber-500 text-white">
-                {penaltySummary.pending_count}
-              </span>
-            )}
-          </button>
-
-          <button
-            onClick={() => setMainView("RULE_BOOKS")}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-              mainView === "RULE_BOOKS"
-                ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-            }`}
-          >
-            <BookOpen className="w-3.5 h-3.5" />
-            Rule Books & Clauses
-          </button>
-
-          <button
-            onClick={() => setMainView("VIOLATIONS")}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-              mainView === "VIOLATIONS"
-                ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-            }`}
-          >
-            <Activity className="w-3.5 h-3.5" />
-            Live Violations
+            <RefreshCw
+              className={`w-3.5 h-3.5 ${
+                triggerCronMutation.isLoading ? "animate-spin" : ""
+              }`}
+            />
+            <span>
+              {triggerCronMutation.isLoading ? "Evaluating..." : "Run SLA Cron"}
+            </span>
           </button>
         </div>
       </div>
-    </div>
 
       {/* ======================================================== */}
       {/* VIEW 1: PENALTY LEDGER & APPROVAL QUEUE (PHASE 2)        */}
       {/* ======================================================== */}
       {mainView === "LEDGER" && (
-        <div className="space-y-6">
+        <div className="space-y-3">
           {/* KPI Summary Cards */}
           <PenaltySummaryCards
             summary={penaltySummary}
@@ -528,6 +569,7 @@ export default function SlaPenaltyPage() {
             filters={penaltyFilters}
             onFilterChange={handleFilterChange}
             onReset={handleResetFilters}
+            cleaners={availableCleaners}
             cleanerFilterCount={
               penaltyFilters.cleaner_id
                 ? (penaltiesResponse?.pagination?.total ?? filteredPenalties.length)

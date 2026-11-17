@@ -79,7 +79,7 @@ export default function ViolationsStream({
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {violations.map((v) => {
         const cleanerUser = v.cleaner_user || v.cleaner;
         const cleanerName = cleanerUser?.name || `Cleaner #${v.cleaner_user_id || v.cleaner_id || ""}`;
@@ -92,24 +92,24 @@ export default function ViolationsStream({
         return (
           <div
             key={v.id}
-            className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-slate-300 dark:hover:border-slate-700 transition-colors"
+            className="px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 hover:border-slate-300 dark:hover:border-slate-700 transition-colors"
           >
-            <div className="flex items-start gap-3">
-              <div className="p-2 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 mt-0.5">
-                <AlertCircle className="w-4 h-4" />
+            <div className="flex items-center gap-2.5">
+              <div className="p-1.5 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 shrink-0">
+                <AlertCircle className="w-3.5 h-3.5" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="font-medium text-slate-900 dark:text-white text-xs">
+                  <span className="font-semibold text-slate-900 dark:text-white text-xs truncate">
                     {ruleCode} {ruleName ? `— ${ruleName}` : ""}
                   </span>
                   <span
-                    className={`px-2 py-0.5 rounded-full text-[10px] font-medium border ${getStatusBadge(rawStatus)}`}
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border shrink-0 ${getStatusBadge(rawStatus)}`}
                   >
                     {displayStatus}
                   </span>
                 </div>
-                <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 flex flex-wrap items-center gap-2">
+                <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 flex flex-wrap items-center gap-2">
                   <span className="flex items-center gap-1">
                     <User className="w-3 h-3 text-slate-400" />
                     {cleanerName}
@@ -131,7 +131,7 @@ export default function ViolationsStream({
               </div>
             </div>
 
-            <div className="text-right text-xs text-slate-400 whitespace-nowrap self-end sm:self-center">
+            <div className="text-right text-[11px] text-slate-400 whitespace-nowrap self-end sm:self-center">
               {formatDate(v.created_at)}
             </div>
           </div>

@@ -9,6 +9,12 @@ const notificationSlice = createSlice({
     fcmToken: null,
   },
   reducers: {
+    setNotifications: (state, action) => {
+      const incoming = Array.isArray(action.payload) ? action.payload : [];
+      state.notifications = incoming;
+      state.unreadCount = incoming.filter((n) => !n.read).length;
+    },
+
     addNotification: (state, action) => {
       const newNotification = {
         id: Date.now(),
@@ -69,6 +75,7 @@ const notificationSlice = createSlice({
 });
 
 export const {
+  setNotifications,
   addNotification,
   markAsRead,
   markAllAsRead,

@@ -16,9 +16,10 @@ const STANDARD_CATEGORIES = [
 const COMMON_FIELDS = [
   { value: "review.score", label: "review.score (Inspection Score 0-10)" },
   { value: "review.attempt_no", label: "review.attempt_no (Submission Attempt #)" },
+  { value: "day_aggregate.total_reviews", label: "day_aggregate.total_reviews (Total Cleanings Completed Today)" },
   { value: "day_aggregate.failed_review_count", label: "day_aggregate.failed_review_count (Daily Failed Reviews)" },
   { value: "day_aggregate.distinct_locations_breached", label: "day_aggregate.distinct_locations_breached (Locations Breached)" },
-  { value: "review.tasks_count", label: "review.tasks_count (Completed Tasks Count)" }
+  { value: "review.tasks_count", label: "review.tasks_count (Completed Tasks Count in Review)" }
 ];
 
 export default function RuleModal({

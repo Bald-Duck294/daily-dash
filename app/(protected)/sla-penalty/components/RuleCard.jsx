@@ -155,24 +155,22 @@ export default function RuleCard({
           Simulate Preview
         </button>
 
-        {isDraft && (
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => onEdit(rule)}
-              className="p-1.5 text-slate-500 hover:text-slate-800 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-              title="Edit Rule"
-            >
-              <Edit2 className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => onDelete(rule.id)}
-              className="p-1.5 text-red-500 hover:text-red-700 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/50 transition-colors"
-              title="Delete Rule"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-          </div>
-        )}
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => onEdit && onEdit(rule)}
+            className="p-1.5 text-slate-500 hover:text-slate-800 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            title="Edit Rule Clause"
+          >
+            <Edit2 className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => onDelete && onDelete(rule.id || rule)}
+            className="p-1.5 text-rose-500 hover:text-rose-700 dark:hover:text-rose-400 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors cursor-pointer"
+            title="Delete Rule Clause"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
       </div>
     </div>
   );

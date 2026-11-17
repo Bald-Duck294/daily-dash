@@ -257,7 +257,13 @@ self.addEventListener("notificationclick", (event) => {
 
   let targetUrl = "/dashboard";
 
-  if (data.type === "review" && data.reviewId) {
+  if (
+    data.type &&
+    (String(data.type).toUpperCase().startsWith("SLA_PENALTY") ||
+      String(data.type).toUpperCase().startsWith("SLA_DISPUTE"))
+  ) {
+    targetUrl = `/sla-penalty${data.company_id ? `?companyId=${data.company_id}` : ""}`;
+  } else if (data.type === "review" && data.reviewId) {
     targetUrl = `/score-management?reviewId=${data.reviewId}&autoOpen=true`;
   } else if (data.type === "task" && data.taskId) {
     targetUrl = `/tasks/${data.taskId}`;

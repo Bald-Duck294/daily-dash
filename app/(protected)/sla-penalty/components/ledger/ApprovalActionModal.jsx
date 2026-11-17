@@ -67,24 +67,30 @@ export default function ApprovalActionModal({
     }
   };
 
+  const isDisputed = penalty?.status === "DISPUTED";
+
   const getActionConfig = () => {
     switch (actionType) {
       case "APPROVE":
         return {
-          title: "Approve SLA Penalty",
-          subtitle: `Confirm financial deduction for ${penalty.penalty_number}`,
+          title: isDisputed ? "Resolve Dispute: Uphold Penalty" : "Approve SLA Penalty",
+          subtitle: isDisputed
+            ? `Confirm financial deduction for ${penalty.penalty_number} after dispute review`
+            : `Confirm financial deduction for ${penalty.penalty_number}`,
           icon: CheckCircle2,
           iconBg: "bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400",
-          submitButton: "Approve & Deduct",
+          submitButton: isDisputed ? "Uphold & Confirm Deduction" : "Approve & Deduct",
           buttonBg: "bg-emerald-600 hover:bg-emerald-700 text-white"
         };
       case "REJECT":
         return {
-          title: "Reject / Waive Penalty",
-          subtitle: `Dismiss financial deduction for ${penalty.penalty_number}`,
+          title: isDisputed ? "Resolve Dispute: Accept & Waive" : "Reject / Waive Penalty",
+          subtitle: isDisputed
+            ? `Accept cleaner's dispute and dismiss deduction for ${penalty.penalty_number}`
+            : `Dismiss financial deduction for ${penalty.penalty_number}`,
           icon: XCircle,
           iconBg: "bg-rose-500/10 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400",
-          submitButton: "Reject Penalty",
+          submitButton: isDisputed ? "Accept Dispute & Waive (₹0.00)" : "Reject Penalty",
           buttonBg: "bg-rose-600 hover:bg-rose-700 text-white"
         };
       case "DISPUTE":
@@ -122,18 +128,18 @@ export default function ApprovalActionModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
-      <div className="relative w-full max-w-lg my-8 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden transition-all">
+      <div className="relative w-full max-w-md my-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden transition-all">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
-          <div className="flex items-center gap-3">
-            <div className={`p-2.5 rounded-xl ${config.iconBg}`}>
-              <Icon className="w-6 h-6" />
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
+          <div className="flex items-center gap-2.5">
+            <div className={`p-2 rounded-lg ${config.iconBg}`}>
+              <Icon className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+              <h2 className="text-base font-bold text-slate-900 dark:text-white">
                 {config.title}
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-[11px] text-slate-400">
                 {config.subtitle}
               </p>
             </div>
@@ -141,17 +147,17 @@ export default function ApprovalActionModal({
 
           <button
             onClick={onClose}
-            className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Form Body */}
         <form onSubmit={handleSubmit}>
-          <div className="p-6 space-y-4">
+          <div className="p-5 space-y-3.5">
             {/* Quick summary strip */}
-            <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/60 flex items-center justify-between text-xs">
+            <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/60 flex items-center justify-between text-xs">
               <div>
                 <span className="text-slate-400">Cleaner: </span>
                 <span className="font-semibold text-slate-800 dark:text-slate-200">
@@ -272,19 +278,19 @@ export default function ApprovalActionModal({
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-end gap-2 p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
+          <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
             <button
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="px-4 py-2 text-sm font-medium rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="px-3.5 py-1.5 text-xs font-semibold rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting || ((actionType === "REJECT" || actionType === "DISPUTE" || actionType === "REVERSE") && !reason.trim())}
-              className={`px-5 py-2 text-sm font-medium rounded-xl shadow-sm disabled:opacity-50 transition-colors ${config.buttonBg}`}
+              className={`px-4 py-1.5 text-xs font-semibold rounded-lg shadow-sm disabled:opacity-50 transition-colors ${config.buttonBg}`}
             >
               {isSubmitting ? "Processing..." : config.submitButton}
             </button>

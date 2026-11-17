@@ -7,24 +7,39 @@ import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import { Bell, X, Check } from "lucide-react";
 import {
+  setNotifications,
   markAsRead,
   markAllAsRead,
   clearAllNotifications,
   clearNotification,
 } from "@/features/notification/notification.slice";
-import { useMarkNotificationAsReadMutation } from "@/features/notification/notification.api";
+import {
+  useMarkNotificationAsReadMutation,
+  useGetNotificationsQuery,
+} from "@/features/notification/notification.api";
 // import { useCompanyId } from "@/providers/CompanyProvider";
 const NotificationBell = () => {
   const dispatch = useDispatch();
   const router = useRouter();
   // const { companyId } = useCompanyId();
 
+  const user = useSelector((state) => state?.auth?.user);
+  const companyId = useSelector((state) => state?.auth?.user?.company_id);
+
   const { notifications, unreadCount } = useSelector(
     (state) => state.notifications,
   );
 
-  // const { companyId } = useSelector(state => state?.auth.user?.company_id);
-  const companyId = useSelector((state) => state?.auth?.user?.company_id);
+  const { data: remoteNotifications } = useGetNotificationsQuery(
+    { userId: user?.id, limit: 50 },
+    { skip: !user?.id, pollingInterval: 15000 }
+  );
+
+  useEffect(() => {
+    if (remoteNotifications && Array.isArray(remoteNotifications)) {
+      dispatch(setNotifications(remoteNotifications));
+    }
+  }, [remoteNotifications, dispatch]);
 
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -63,17 +78,28 @@ const NotificationBell = () => {
 
     //      console.log("data ", notification);
     dispatch(markAsRead(notification.id));
+    if (notification.id) {
+      markAsReadOnBackend(notification.id).catch(() => {});
+    }
 
     setIsOpen(false);
 
     if (notification.data) {
       const { type, reviewId, taskId } = notification.data;
 
-      // Handle Review / SLA Breach / SLA Escalations
+      // Handle SLA Contractual Penalties & Dispute Resolution
       if (
+        type &&
+        (String(type).toUpperCase().startsWith("SLA_PENALTY") ||
+          String(type).toUpperCase().startsWith("SLA_DISPUTE"))
+      ) {
+        const cId = notification.data?.company_id || companyId;
+        const query = cId ? `?companyId=${cId}` : "";
+        router.push(`/sla-penalty${query}`);
+      } else if (
         type === "review" ||
         reviewId ||
-        (type && String(type).startsWith("sla")) ||
+        (type && String(type).toLowerCase().startsWith("sla")) ||
         type === "escalation"
       ) {
         if (reviewId) {

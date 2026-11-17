@@ -172,25 +172,25 @@ export default function RuleBookHeader({
             </button>
           )}
 
-          {isViewingDraft && (
-            <>
-              <button
-                onClick={onOpenAddModal}
-                className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-cyan-600 hover:bg-cyan-700 px-3.5 py-2 rounded-xl shadow-sm transition-all"
-              >
-                <Plus className="w-4 h-4" />
-                Add Penalty Rule
-              </button>
+          {currentBook && (
+            <button
+              onClick={onOpenAddModal}
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-cyan-600 hover:bg-cyan-700 px-3.5 py-2 rounded-xl shadow-sm transition-all cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              Add Penalty Rule
+            </button>
+          )}
 
-              <button
-                onClick={onOpenPublishModal}
-                disabled={!currentBook?.rules?.length}
-                className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 px-4 py-2 rounded-xl shadow-sm transition-all"
-              >
-                <Send className="w-4 h-4" />
-                Publish Version {currentBook.version}
-              </button>
-            </>
+          {isViewingDraft && (
+            <button
+              onClick={onOpenPublishModal}
+              disabled={!currentBook?.rules?.length}
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 px-4 py-2 rounded-xl shadow-sm transition-all cursor-pointer"
+            >
+              <Send className="w-4 h-4" />
+              Publish Version {currentBook.version}
+            </button>
           )}
         </div>
       </div>

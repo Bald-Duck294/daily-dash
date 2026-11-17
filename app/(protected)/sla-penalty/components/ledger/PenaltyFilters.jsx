@@ -7,6 +7,7 @@ export default function PenaltyFilters({
   filters,
   onFilterChange,
   onReset,
+  cleaners = [],
   cleanerFilterCount = null
 }) {
   const statuses = [
@@ -29,93 +30,98 @@ export default function PenaltyFilters({
   );
 
   return (
-    <div className="p-4 mb-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-3">
-      {/* Active Cleaner Filter Highlight Banner */}
-      {filters.cleaner_id && (
-        <div className="flex items-center justify-between p-3 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 text-xs">
-          <div className="flex items-center gap-2 text-blue-900 dark:text-blue-300">
-            <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
-              <User className="w-4 h-4" />
-            </div>
-            <div>
-              <span>
-                Filtered by Cleaner: <strong className="font-semibold">{filters.cleaner_name || `ID #${filters.cleaner_id}`}</strong>
-              </span>
-              {cleanerFilterCount !== null && (
-                <span className="ml-2 font-mono font-bold px-2 py-0.5 rounded-full bg-blue-200 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-[11px]">
-                  {cleanerFilterCount} {cleanerFilterCount === 1 ? "Penalty" : "Penalties"}
-                </span>
-              )}
-            </div>
-          </div>
+    <div className="rounded-xl p-2 mb-3 flex flex-col md:flex-row items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm">
+      {/* Search Input */}
+      <div className="relative flex-1 w-full md:w-auto min-w-[240px]">
+        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+        <input
+          type="text"
+          placeholder="Search by penalty #, cleaner, or rule..."
+          value={filters.search || ""}
+          onChange={(e) => onFilterChange("search", e.target.value)}
+          className="w-full pl-9 pr-3 py-1.5 rounded-lg text-xs outline-none bg-slate-50 dark:bg-slate-800/60 border border-slate-200/90 dark:border-slate-700/80 text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:border-blue-500 transition-colors"
+        />
+      </div>
 
+      {/* Active Cleaner Chip (Inline) */}
+      {filters.cleaner_id && (
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800 shrink-0">
+          <User className="w-3.5 h-3.5" />
+          <span>
+            {filters.cleaner_name || `ID #${filters.cleaner_id}`}
+            {cleanerFilterCount !== null && (
+              <span className="ml-1 opacity-75 font-mono">({cleanerFilterCount})</span>
+            )}
+          </span>
           <button
             onClick={() => onFilterChange("cleaner_id", "")}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition-colors cursor-pointer"
+            className="ml-1 text-blue-500 hover:text-blue-800 dark:hover:text-blue-100 cursor-pointer"
+            title="Remove cleaner filter"
           >
             <X className="w-3.5 h-3.5" />
-            Clear Filter
           </button>
         </div>
       )}
 
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-        {/* Search */}
-        <div className="relative flex-1 min-w-[240px]">
-          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Search by penalty #, cleaner, or rule..."
-            value={filters.search || ""}
-            onChange={(e) => onFilterChange("search", e.target.value)}
-            className="w-full pl-10 pr-4 py-2 text-sm rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors"
-          />
-        </div>
+      {/* Filters Group */}
+      <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end">
+        {/* Cleaner select */}
+        <select
+          value={filters.cleaner_id || ""}
+          onChange={(e) => {
+            const val = e.target.value;
+            const found = cleaners.find((c) => String(c.id) === String(val));
+            onFilterChange("cleaner_id", val);
+            onFilterChange("cleaner_name", found ? found.name : "");
+          }}
+          className="px-2.5 py-1.5 border border-slate-200/90 dark:border-slate-700/80 rounded-lg text-xs font-medium bg-white dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 outline-none cursor-pointer max-w-[180px] truncate"
+          title="Filter by Cleaner"
+        >
+          <option value="">All Cleaners</option>
+          {cleaners.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
 
-        {/* Filters Group */}
-        <div className="flex flex-wrap items-center gap-2.5">
-          {/* Status select */}
-          <div className="flex items-center gap-2">
-            <select
-              value={filters.status || ""}
-              onChange={(e) => onFilterChange("status", e.target.value)}
-              className="px-3 py-2 text-sm rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors cursor-pointer"
-            >
-              {statuses.map((s) => (
-                <option key={s.value} value={s.value}>
-                  {s.label}
-                </option>
-              ))}
-            </select>
-          </div>
+        {/* Status select */}
+        <select
+          value={filters.status || ""}
+          onChange={(e) => onFilterChange("status", e.target.value)}
+          className="px-2.5 py-1.5 border border-slate-200/90 dark:border-slate-700/80 rounded-lg text-xs font-medium bg-white dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 outline-none cursor-pointer"
+        >
+          {statuses.map((s) => (
+            <option key={s.value} value={s.value}>
+              {s.label}
+            </option>
+          ))}
+        </select>
 
-          {/* Scope select */}
-          <div className="flex items-center gap-2">
-            <select
-              value={filters.scope || ""}
-              onChange={(e) => onFilterChange("scope", e.target.value)}
-              className="px-3 py-2 text-sm rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors cursor-pointer"
-            >
-              {scopes.map((sc) => (
-                <option key={sc.value} value={sc.value}>
-                  {sc.label}
-                </option>
-              ))}
-            </select>
-          </div>
+        {/* Scope select */}
+        <select
+          value={filters.scope || ""}
+          onChange={(e) => onFilterChange("scope", e.target.value)}
+          className="px-2.5 py-1.5 border border-slate-200/90 dark:border-slate-700/80 rounded-lg text-xs font-medium bg-white dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 outline-none cursor-pointer"
+        >
+          {scopes.map((sc) => (
+            <option key={sc.value} value={sc.value}>
+              {sc.label}
+            </option>
+          ))}
+        </select>
 
-          {/* Reset button */}
-          {hasActiveFilters && (
-            <button
-              onClick={onReset}
-              className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-xl text-slate-600 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 transition-colors"
-              title="Reset all filters"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              Reset
-            </button>
-          )}
-        </div>
+        {/* Reset button */}
+        {hasActiveFilters && (
+          <button
+            onClick={onReset}
+            className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            title="Reset filters"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            Reset
+          </button>
+        )}
       </div>
     </div>
   );
