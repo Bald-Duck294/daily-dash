@@ -43,3 +43,84 @@ export const getReasonsList = (reasonIds) => {
   if (!Array.isArray(reasonIds) || reasonIds.length === 0) return [];
   return reasonIds.map((id) => getReasonById(id));
 };
+
+/**
+ * Resolves display badges for a citizen review based on reported reasons and rating.
+ * - If user selected specific issues (IDs 1..50), returns those issue badges.
+ * - If user did not select any specific reasons (reason_ids is [0] or empty):
+ *    - rating >= 8: "Clean & Well-Maintained" (Positive green badge)
+ *    - 5 <= rating < 8: "No Reason Selected" (Neutral amber badge)
+ *    - rating < 5: "No Reason Specified" (Warning rose badge)
+ */
+export const getReviewReasonBadges = (reasonIds, rating) => {
+  const numRating = Number(rating || 0);
+
+  let ids = reasonIds;
+  if (typeof ids === "string") {
+    try {
+      ids = JSON.parse(ids);
+    } catch {
+      ids = [];
+    }
+  }
+  if (!Array.isArray(ids)) ids = [];
+
+  // Filter out pseudo-issue (0) to see if actual specific problems were reported
+  const actualIssueIds = ids.filter((id) => Number(id) > 0);
+
+  if (actualIssueIds.length > 0) {
+    return {
+      hasSpecificIssues: true,
+      badges: actualIssueIds.map((id) => getReasonById(id)),
+    };
+  }
+
+  // No specific issues selected by user: display contextual badge based on rating
+  if (numRating >= 8) {
+    return {
+      hasSpecificIssues: false,
+      badges: [
+        {
+          id: 0,
+          text: "No issues reported. Citizen rated facility clean and well-maintained.",
+          shortText: "Clean & Well-Maintained",
+          category: "positive",
+          severity: "positive",
+          iconType: "check",
+        },
+      ],
+    };
+  }
+
+  if (numRating >= 5) {
+    return {
+      hasSpecificIssues: false,
+      badges: [
+        {
+          id: -1,
+          text: "Average rating given without selecting specific issues.",
+          shortText: "No Reason Selected",
+          category: "neutral",
+          severity: "neutral",
+          iconType: "neutral",
+        },
+      ],
+    };
+  }
+
+  // Low rating (< 5) without selecting reasons
+  return {
+    hasSpecificIssues: false,
+    badges: [
+      {
+        id: -2,
+        text: "Low rating given without selecting specific issues.",
+        shortText: "No Reason Specified",
+        category: "unspecified",
+        severity: "unspecified",
+        iconType: "warning",
+      },
+    ],
+  };
+};
+

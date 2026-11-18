@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCompanyId } from "@/providers/CompanyProvider";
 import { useUserReviews } from "@/features/users/review/reviews.queries";
 import { useDropdownLocations } from "@/features/dropdownList/dropdownlist.query";
-import { getReasonsList } from "@/features/users/review/reviewReasons";
+import { getReasonsList, getReviewReasonBadges } from "@/features/users/review/reviewReasons";
 import {
   MessageSquare,
   Star,
@@ -23,6 +23,7 @@ import {
   Filter,
   AlertCircle,
   CheckCircle2,
+  HelpCircle,
   ChevronLeft,
   ChevronRight,
   ChevronDown,
@@ -66,6 +67,11 @@ const getReasonBadgeStyle = (severity) => {
     case "none":
     case "positive":
       return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20";
+    case "neutral":
+      return "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20";
+    case "unspecified":
+    case "warning":
+      return "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20";
     default:
       return "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20";
   }
@@ -188,8 +194,41 @@ export default function UserReviewsPage() {
     });
   }, [rawReviews]);
 
-  // Calculate KPIs from backend stats for 100% accuracy across all reviews
+  // Count how many reviews in the current view have specific issues (reason ID > 0)
+  const issuesInView = useMemo(() => {
+    return filteredReviews.filter((review) => {
+      let ids = review.reason_ids;
+      if (typeof ids === "string") {
+        try {
+          ids = JSON.parse(ids);
+        } catch {
+          ids = [];
+        }
+      }
+      return Array.isArray(ids) && ids.some((id) => Number(id) > 0);
+    }).length;
+  }, [filteredReviews]);
+
+  // Calculate KPIs with accurate scoping for today's and period issues
   const kpiStats = useMemo(() => {
+    // If backend provides scoped periodIssuesCount, use it; otherwise compute from active reviews
+    let periodIssues = stats?.periodIssuesCount;
+    if (periodIssues === undefined || periodIssues === null) {
+      if (dateFilterType === "today") {
+        periodIssues = stats?.todayIssuesCount !== undefined ? stats.todayIssuesCount : issuesInView;
+      } else if (dateFilterType === "all") {
+        periodIssues = stats?.totalIssuesCount ?? stats?.issuesCount ?? 0;
+      } else {
+        periodIssues = filteredReviews.length <= limit ? issuesInView : (stats?.issuesCount ?? 0);
+      }
+    }
+
+    const todayIssues = stats?.todayIssuesCount !== undefined
+      ? stats.todayIssuesCount
+      : (dateFilterType === "today" ? issuesInView : 0);
+
+    const totalIssues = stats?.totalIssuesCount ?? stats?.issuesCount ?? 0;
+
     return {
       total: stats?.total ?? 0,
       todaysCount: stats?.today ?? 0,
@@ -197,9 +236,11 @@ export default function UserReviewsPage() {
         typeof stats?.avgRating === "number"
           ? stats.avgRating.toFixed(1)
           : String(stats?.avgRating || "0.0"),
-      issuesCount: stats?.issuesCount ?? 0,
+      issuesCount: periodIssues,
+      todayIssues: todayIssues,
+      totalIssues: totalIssues,
     };
-  }, [stats]);
+  }, [stats, dateFilterType, issuesInView, filteredReviews.length, limit]);
 
   const handleResetFilters = () => {
     setDateFilterType("today");
@@ -423,15 +464,43 @@ export default function UserReviewsPage() {
             >
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-semibold uppercase tracking-wider text-[var(--muted-foreground)] group-hover:text-rose-500 transition-colors">
-                  Issues Flagged
+                  {dateFilterType === "today"
+                    ? "Today's Issues"
+                    : dateFilterType === "week"
+                    ? "Week's Issues"
+                    : dateFilterType === "month"
+                    ? "Month's Issues"
+                    : dateFilterType === "custom"
+                    ? "Period Issues"
+                    : "Issues Flagged"}
                 </span>
                 <div className="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-500 flex items-center justify-center">
                   <AlertCircle size={16} />
                 </div>
               </div>
-              <p className="text-2xl sm:text-3xl font-black text-rose-500">{kpiStats.issuesCount}</p>
+
+              <div className="flex items-baseline justify-between gap-2">
+                <p className="text-2xl sm:text-3xl font-black text-rose-500">{kpiStats.issuesCount}</p>
+                <div className="text-right">
+                  <span className="text-[11px] font-bold text-[var(--muted-foreground)] block">
+                    Total: <span className="text-foreground">{kpiStats.totalIssues}</span>
+                  </span>
+                  {dateFilterType !== "today" && (
+                    <span className="text-[10px] text-rose-500/80 font-semibold block">
+                      Today: {kpiStats.todayIssues}
+                    </span>
+                  )}
+                </div>
+              </div>
+
               <p className="text-[11px] text-[var(--muted-foreground)] mt-1 flex items-center justify-between">
-                <span>Reviews with specific issues</span>
+                <span>
+                  {dateFilterType === "today"
+                    ? "Issues flagged today"
+                    : dateFilterType === "all"
+                    ? "Lifetime reviews with issues"
+                    : "Issues in selected period"}
+                </span>
                 <span className="text-[10px] font-semibold text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity">
                   {issuesOnly ? "Active ✓" : "Filter →"}
                 </span>
@@ -681,7 +750,7 @@ export default function UserReviewsPage() {
                ======================================================== */
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {filteredReviews.map((review, idx) => {
-                const reasons = getReasonsList(review.reason_ids);
+                const { badges } = getReviewReasonBadges(review.reason_ids, review.rating);
                 const displayImages = review.images?.slice(0, 3) || [];
                 const reviewerName = cleanString(review.name) || "Anonymous Citizen";
                 const locationName = review?.location?.name || "Washroom Facility";
@@ -743,22 +812,28 @@ export default function UserReviewsPage() {
                       </div>
 
                       {/* Selected Reasons / Issues Badges */}
-                      {reasons.length > 0 && (
+                      {badges.length > 0 && (
                         <div className="flex flex-wrap gap-1.5 mb-3">
-                          {reasons.slice(0, 2).map((r) => (
+                          {badges.slice(0, 2).map((r) => (
                             <span
                               key={r.id}
                               className={`text-[10px] font-bold px-2 py-0.5 rounded-md border flex items-center gap-1 ${getReasonBadgeStyle(
                                 r.severity
                               )}`}
                             >
-                              {r.id === 0 ? <CheckCircle2 size={10} /> : <AlertCircle size={10} />}
+                              {r.iconType === "check" || r.id === 0 ? (
+                                <CheckCircle2 size={10} />
+                              ) : r.iconType === "neutral" || r.id === -1 ? (
+                                <HelpCircle size={10} />
+                              ) : (
+                                <AlertCircle size={10} />
+                              )}
                               <span>{r.shortText}</span>
                             </span>
                           ))}
-                          {reasons.length > 2 && (
+                          {badges.length > 2 && (
                             <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-[var(--muted)] text-[var(--muted-foreground)]">
-                              +{reasons.length - 2} more
+                              +{badges.length - 2} more
                             </span>
                           )}
                         </div>
@@ -838,7 +913,7 @@ export default function UserReviewsPage() {
                   </thead>
                   <tbody className="divide-y divide-[var(--border)]">
                     {filteredReviews.map((review, idx) => {
-                      const reasons = getReasonsList(review.reason_ids);
+                      const { badges } = getReviewReasonBadges(review.reason_ids, review.rating);
                       const reviewerName = cleanString(review.name) || "Anonymous Citizen";
                       const locationName = review?.location?.name || "Washroom Facility";
                       const serialNumber = (page - 1) * limit + idx + 1;
@@ -901,22 +976,28 @@ export default function UserReviewsPage() {
 
                           {/* Reported Issues */}
                           <td className="py-3.5 px-4 max-w-xs">
-                            {reasons.length > 0 ? (
+                            {badges.length > 0 ? (
                               <div className="flex flex-wrap gap-1">
-                                {reasons.slice(0, 2).map((r) => (
+                                {badges.slice(0, 2).map((r) => (
                                   <span
                                     key={r.id}
                                     className={`text-[10px] font-bold px-1.5 py-0.5 rounded border flex items-center gap-1 ${getReasonBadgeStyle(
                                       r.severity
                                     )}`}
                                   >
-                                    {r.id === 0 ? <CheckCircle2 size={9} /> : <AlertCircle size={9} />}
+                                    {r.iconType === "check" || r.id === 0 ? (
+                                      <CheckCircle2 size={9} />
+                                    ) : r.iconType === "neutral" || r.id === -1 ? (
+                                      <HelpCircle size={9} />
+                                    ) : (
+                                      <AlertCircle size={9} />
+                                    )}
                                     <span>{r.shortText}</span>
                                   </span>
                                 ))}
-                                {reasons.length > 2 && (
+                                {badges.length > 2 && (
                                   <span className="text-[10px] px-1 py-0.5 rounded bg-[var(--muted)] text-[var(--muted-foreground)]">
-                                    +{reasons.length - 2}
+                                    +{badges.length - 2}
                                   </span>
                                 )}
                               </div>

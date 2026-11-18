@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useCompanyId } from "@/providers/CompanyProvider";
 import { useUserReviewById } from "@/features/users/review/reviews.queries";
-import { getReasonsList } from "@/features/users/review/reviewReasons";
+import { getReasonsList, getReviewReasonBadges } from "@/features/users/review/reviewReasons";
 import {
   ArrowLeft,
   User,
@@ -21,6 +21,7 @@ import {
   AlertCircle,
   AlertTriangle,
   CheckCircle2,
+  HelpCircle,
   ExternalLink,
   Copy,
   Check,
@@ -160,8 +161,9 @@ export default function SingleUserReviewPage() {
       rawReasonIds = [];
     }
   }
-  const reportedReasons = getReasonsList(rawReasonIds);
-  const hasIssues = reportedReasons.length > 0 && !reportedReasons.every((r) => r.id === 0);
+  const { hasSpecificIssues, badges: reasonBadges } = getReviewReasonBadges(rawReasonIds, review.rating);
+  const reportedReasons = hasSpecificIssues ? reasonBadges : [];
+  const hasIssues = hasSpecificIssues;
 
   // Location details and washroom link
   const locationId = review.location_id || review.location?.id;
@@ -597,15 +599,39 @@ export default function SingleUserReviewPage() {
                         );
                       })}
                     </div>
-                  ) : (
+                  ) : Number(review.rating || 0) >= 8 ? (
                     <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-3">
                       <CheckCircle2 className="w-6 h-6 text-emerald-500 shrink-0" />
                       <div>
                         <p className="text-sm font-bold text-emerald-700 dark:text-emerald-300">
-                          Washroom Reported in Good Condition
+                          Clean & Well-Maintained (No Issues Reported)
                         </p>
                         <p className="text-xs text-emerald-600/80 dark:text-emerald-400/80 mt-0.5">
-                          The citizen did not report any hygiene, maintenance, or amenity issues.
+                          The citizen rated the facility highly ({review.rating}/10) and reported no hygiene, maintenance, or amenity issues.
+                        </p>
+                      </div>
+                    </div>
+                  ) : Number(review.rating || 0) >= 5 ? (
+                    <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center gap-3">
+                      <HelpCircle className="w-6 h-6 text-amber-500 shrink-0" />
+                      <div>
+                        <p className="text-sm font-bold text-amber-700 dark:text-amber-300">
+                          No Specific Reason Selected
+                        </p>
+                        <p className="text-xs text-amber-600/80 dark:text-amber-400/80 mt-0.5">
+                          The citizen gave an average score of {review.rating}/10 without tagging specific facility issues.
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center gap-3">
+                      <AlertCircle className="w-6 h-6 text-rose-500 shrink-0" />
+                      <div>
+                        <p className="text-sm font-bold text-rose-700 dark:text-rose-300">
+                          No Reason Specified
+                        </p>
+                        <p className="text-xs text-rose-600/80 dark:text-rose-400/80 mt-0.5">
+                          The citizen gave a low rating of {review.rating}/10 without tagging specific facility issues.
                         </p>
                       </div>
                     </div>
