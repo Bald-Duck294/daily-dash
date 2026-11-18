@@ -417,22 +417,12 @@ export default function UserReviewsPage() {
               </p>
             </div>
 
-            {/* Average Rating (Click to filter great ratings) */}
+            {/* Average Rating (Informational Metric) */}
             <div
-              onClick={() => {
-                setRatingFilter((prev) => (prev === "high" ? "all" : "high"));
-                setIssuesOnly(false);
-                setPage(1);
-              }}
-              className={`bg-[var(--surface)] border rounded-2xl p-4 sm:p-5 shadow-sm transition-all cursor-pointer hover:border-amber-500/60 hover:shadow-md select-none group ${
-                ratingFilter === "high"
-                  ? "ring-2 ring-amber-500 border-amber-500 bg-amber-500/[0.04]"
-                  : "border-[var(--border)]"
-              }`}
-              title="Click to toggle Great rating (8-10) reviews"
+              className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4 sm:p-5 shadow-sm select-none"
             >
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold uppercase tracking-wider text-[var(--muted-foreground)] group-hover:text-amber-500 transition-colors">
+                <span className="text-xs font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
                   Average Rating
                 </span>
                 <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center">
@@ -443,9 +433,8 @@ export default function UserReviewsPage() {
                 <p className="text-2xl sm:text-3xl font-black text-foreground">{kpiStats.avgRating}</p>
                 <span className="text-xs font-bold text-amber-500">/ 10</span>
               </div>
-              <p className="text-[11px] text-[var(--muted-foreground)] mt-1 flex items-center justify-between">
+              <p className="text-[11px] text-[var(--muted-foreground)] mt-1">
                 <span>Cumulative sentiment score</span>
-                <span className="text-[10px] font-semibold text-amber-500 opacity-0 group-hover:opacity-100 transition-opacity">Filter →</span>
               </p>
             </div>
 
