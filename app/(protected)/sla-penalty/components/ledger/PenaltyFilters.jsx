@@ -78,11 +78,15 @@ export default function PenaltyFilters({
           title="Filter by Cleaner"
         >
           <option value="">All Cleaners</option>
-          {cleaners.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
+          {cleaners.map((c) => {
+            const pending = c.pending_amount || c.cleaner_pending_amount;
+            const pendingStr = pending && Number(pending) > 0 ? ` (₹${Number(pending).toFixed(2)} pending)` : "";
+            return (
+              <option key={c.id} value={c.id}>
+                {(c.name || `Cleaner #${c.id}`) + pendingStr}
+              </option>
+            );
+          })}
         </select>
 
         {/* Status select */}

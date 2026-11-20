@@ -15,7 +15,8 @@ import {
   FileText,
   ChevronDown,
   ChevronUp,
-  Image as ImageIcon
+  Image as ImageIcon,
+  ExternalLink
 } from "lucide-react";
 
 export default function PenaltyDetailModal({
@@ -66,8 +67,15 @@ export default function PenaltyDetailModal({
   const effectiveAmount = penalty.approved_amount ?? penalty.calculated_amount;
   const snapshot = penalty.calculation_snapshot || {};
   const logs = penalty.logs || penalty.penalty_logs || [];
-  const review = penalty.violation?.review;
-  const reviewImages = review?.images || [];
+  const review = penalty.review || penalty.violation?.review;
+  const beforePhotos = Array.isArray(review?.before_photo) ? review.before_photo : [];
+  const afterPhotos = Array.isArray(review?.after_photo) ? review.after_photo : [];
+  const reviewImages = [
+    ...beforePhotos,
+    ...afterPhotos,
+    ...(Array.isArray(review?.images) ? review.images : []),
+    ...(Array.isArray(penalty.violation?.evidence_references?.photos) ? penalty.violation.evidence_references.photos : [])
+  ].filter(Boolean);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
@@ -163,6 +171,15 @@ export default function PenaltyDetailModal({
                 <MapPin className="w-4 h-4 text-slate-400" />
                 <span>{penalty.location?.name || "Facility"} {penalty.location?.address ? `(${penalty.location.address})` : ""}</span>
               </div>
+
+              {penalty.cleaner_pending_amount !== undefined && (
+                <div className="text-xs pt-2 border-t border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between">
+                  <span className="text-slate-500 dark:text-slate-400">Total Pending on Cleaner:</span>
+                  <span className="font-bold text-amber-600 dark:text-amber-400">
+                    ₹{Number(penalty.cleaner_pending_amount || 0).toFixed(2)} ({penalty.cleaner_pending_count || 0} pending)
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Financial Overview Card */}
@@ -241,25 +258,53 @@ export default function PenaltyDetailModal({
           </div>
 
           {/* Inspection Evidence (if associated review exists) */}
-          {review && (
+          {review ? (
             <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-800 space-y-3">
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                Inspection Evidence
-              </span>
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div>
+                  <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                    Inspection Evidence & Review #{review.id}
+                  </span>
+                  {review.created_at && (
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      Conducted on {formatDate(review.created_at)}
+                    </div>
+                  )}
+                </div>
+                <a
+                  href={`/cleaners/${review.id}?companyId=${penalty.company_id}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  Open Full Review Inspection ↗
+                </a>
+              </div>
 
-              <div className="flex flex-wrap items-center gap-4 text-xs">
+              <div className="flex flex-wrap items-center gap-4 text-xs pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
                 <div>
                   <span className="text-slate-400">Hygiene Score: </span>
                   <span className="font-bold text-rose-600 dark:text-rose-400">
-                    {Number(review.score || 0).toFixed(1)} / 10
+                    {Number(review.score || penalty.violation?.score || 0).toFixed(1)} / 10
                   </span>
                 </div>
-                <div>
-                  <span className="text-slate-400">Inspection Type: </span>
-                  <span className="font-medium text-slate-700 dark:text-slate-300">
-                    {review.inspection_type || "Routine"}
-                  </span>
-                </div>
+                {review.attempt_no && (
+                  <div>
+                    <span className="text-slate-400">Attempt: </span>
+                    <span className="font-medium text-slate-700 dark:text-slate-300">
+                      #{review.attempt_no} ({review.review_type || "Routine"})
+                    </span>
+                  </div>
+                )}
+                {penalty.violation?.threshold && (
+                  <div>
+                    <span className="text-slate-400">Required Threshold: </span>
+                    <span className="font-medium text-slate-700 dark:text-slate-300">
+                      ≥ {Number(penalty.violation.threshold).toFixed(1)}/10
+                    </span>
+                  </div>
+                )}
                 {review.delay_minutes > 0 && (
                   <div>
                     <span className="text-slate-400">Delay: </span>
@@ -270,12 +315,33 @@ export default function PenaltyDetailModal({
                 )}
               </div>
 
+              {/* Inspection Comments */}
+              {(review.initial_comment || review.final_comment) && (
+                <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-700/60 space-y-1 text-xs">
+                  {review.initial_comment && (
+                    <div>
+                      <span className="font-semibold text-slate-500">Initial Note: </span>
+                      <span className="text-slate-700 dark:text-slate-300">{review.initial_comment}</span>
+                    </div>
+                  )}
+                  {review.final_comment && (
+                    <div>
+                      <span className="font-semibold text-slate-500">Cleaner / Inspector Comment: </span>
+                      <span className="text-slate-700 dark:text-slate-300 italic">"{review.final_comment}"</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Photos */}
               {reviewImages && reviewImages.length > 0 ? (
                 <div>
-                  <div className="text-xs font-medium text-slate-500 mb-2 flex items-center gap-1">
-                    <ImageIcon className="w-3.5 h-3.5" />
-                    Review Photos ({reviewImages.length})
+                  <div className="text-xs font-medium text-slate-500 mb-2 flex items-center justify-between">
+                    <span className="flex items-center gap-1">
+                      <ImageIcon className="w-3.5 h-3.5" />
+                      Review Photos ({reviewImages.length})
+                    </span>
+                    <span className="text-[11px] text-slate-400">Click to open full photo</span>
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                     {reviewImages.map((img, idx) => (
@@ -284,9 +350,12 @@ export default function PenaltyDetailModal({
                         href={img}
                         target="_blank"
                         rel="noreferrer"
-                        className="aspect-square rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 hover:opacity-90 transition-opacity"
+                        className="group relative aspect-square rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 hover:ring-2 hover:ring-blue-500 transition-all"
                       >
-                        <img src={img} alt={`Evidence ${idx + 1}`} className="w-full h-full object-cover" />
+                        <img src={img} alt={`Evidence ${idx + 1}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" />
+                        <div className="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/30 transition-colors flex items-center justify-center">
+                          <ExternalLink className="w-4 h-4 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </div>
                       </a>
                     ))}
                   </div>
@@ -294,6 +363,15 @@ export default function PenaltyDetailModal({
               ) : (
                 <p className="text-xs text-slate-400 italic">No inspection photos attached.</p>
               )}
+            </div>
+          ) : (
+            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-800 space-y-1 text-xs">
+              <span className="font-semibold uppercase tracking-wider text-slate-400 text-[11px]">
+                Shift / Daily Performance Quota
+              </span>
+              <p className="text-slate-600 dark:text-slate-300">
+                This penalty is assessed based on aggregated daily quota performance (e.g. minimum cleanings per day schedule requirement) rather than a single inspection review.
+              </p>
             </div>
           )}
 

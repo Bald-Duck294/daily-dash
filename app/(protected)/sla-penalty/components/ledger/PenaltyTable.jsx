@@ -14,7 +14,8 @@ import {
   Layers,
   Sparkles,
   ShieldAlert,
-  ArrowRight
+  ArrowRight,
+  ExternalLink
 } from "lucide-react";
 
 export default function PenaltyTable({
@@ -199,17 +200,38 @@ export default function PenaltyTable({
                           <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
                           <span className="truncate">{locationName}</span>
                         </div>
+                        {item.cleaner_pending_amount !== undefined && item.cleaner_pending_amount > 0 && (
+                          <div className="mt-0.5">
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20" title={`Total pending penalty amount on ${cleanerName}`}>
+                              Pending: ₹{Number(item.cleaner_pending_amount).toFixed(2)}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </td>
 
-                  {/* Breach Rule */}
+                  {/* Breach Rule & Review */}
                   <td className="py-2.5 px-3.5">
                     <div className="font-medium text-slate-900 dark:text-white text-xs truncate max-w-[180px]">
                       {item.rule?.name || item.rule_code || "Contract Clause"}
                     </div>
-                    <div className="text-[10px] font-mono text-slate-400 truncate max-w-[180px]">
-                      {item.rule_code}
+                    <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                      <span className="text-[10px] font-mono text-slate-400">
+                        {item.rule_code}
+                      </span>
+                      {item.review_id && (
+                        <a
+                          href={`/cleaners/${item.review_id}?companyId=${item.company_id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-0.5 px-1 py-0.2 rounded text-[10px] font-semibold bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/20 transition-colors"
+                          title="Open responsible cleaner review in new tab"
+                        >
+                          <ExternalLink className="w-2.5 h-2.5" />
+                          Review #{item.review_id}
+                        </a>
+                      )}
                     </div>
                   </td>
 
@@ -241,6 +263,17 @@ export default function PenaltyTable({
                   {/* Actions */}
                   <td className="py-2.5 px-3.5 text-right whitespace-nowrap">
                     <div className="flex items-center justify-end gap-1">
+                      {item.review_id && (
+                        <a
+                          href={`/cleaners/${item.review_id}?companyId=${item.company_id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                          title={`Open Cleaner Review #${item.review_id} in new tab`}
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </a>
+                      )}
                       <button
                         onClick={() => onViewDetails(item)}
                         className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"

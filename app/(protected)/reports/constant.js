@@ -101,6 +101,25 @@ export const reportConfigs = {
       },
     ],
   },
+  "Cleaner Penalty Summary Report": {
+    description: "AGGREGATED CONTRACTUAL PENALTY DEDUCTIONS PER CLEANER",
+    fields: [
+      {
+        type: "select",
+        name: "location",
+        label: "Location / Washroom",
+        options: ["All Locations"],
+      },
+      {
+        type: "select",
+        name: "cleaner",
+        label: "Cleaner",
+        options: ["All Cleaners"],
+      },
+      { type: "date-range", label: "Start Date", isStart: true },
+      { type: "date-range", label: "End Date", isEnd: true },
+    ],
+  },
 };
 
 export const reportData = [

@@ -1003,7 +1003,7 @@
 
 "use client";
 
-import React, { useState } from "react"; // Notice: useEffect is gone!
+import React, { useState, useMemo } from "react";
 import {
   FileText,
   Filter,
@@ -1019,6 +1019,7 @@ import {
   Users,
   Activity,
   ArrowRight,
+  Search,
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import { useSelector } from "react-redux";
@@ -1026,10 +1027,12 @@ import { useMutation } from "@tanstack/react-query";
 
 import ReportsApi from "@/features/reports/reports.api";
 import ReportModal from "./components/ReportModal";
+import SearchableReportSelect from "./components/SearchableReportSelect";
 import { useCompanyId } from "@/providers/CompanyProvider";
 import { usePermissions } from "@/shared/hooks/usePermission";
 import { useRequirePermission } from "@/shared/hooks/useRequirePermission";
 import { MODULES } from "@/shared/constants/permissions";
+import { useCompanySlaRulesStatus } from "@/features/slaPenalty/slaPenalty.queries";
 
 // Import your custom TanStack hooks
 import {
@@ -1147,10 +1150,31 @@ export default function ReportsPage() {
 
   const { canView } = usePermissions();
   const canViewReports = canView(MODULES.REPORTS);
+  const canViewSla = canView(MODULES.SLA_MANAGEMENT);
 
   const { companyId } = useCompanyId();
   const user = useSelector((state) => state.auth.user);
   const isPermitted = user?.role_id === 1 || user?.role_id === 2;
+
+  // SLA Feature-gate: Check if SLA is enabled for company or user has SLA permission
+  const { data: slaRulesStatus } = useCompanySlaRulesStatus(
+    companyId,
+    Boolean(companyId)
+  );
+  const isSlaReportVisible = Boolean(slaRulesStatus?.is_active) || canViewSla;
+
+  const availableReportTypes = useMemo(() => {
+    const list = [...REPORT_TYPES];
+    if (isSlaReportVisible) {
+      list.push({
+        value: "cleaner_penalty_summary",
+        label: "Cleaner Penalty Summary Report",
+        description: "Summary of contractual penalty deductions per cleaner",
+        endpoint: "cleaner-penalty-summary",
+      });
+    }
+    return list;
+  }, [isSlaReportVisible]);
 
   const todayDate = getTodayDate();
 
@@ -1205,8 +1229,12 @@ export default function ReportsPage() {
     setSelectedCleaner("");
   };
 
-  const handleLocationChange = (e) => {
-    setSelectedLocation(e.target.value);
+  const handleLocationChange = (valOrEvent) => {
+    const locId =
+      typeof valOrEvent === "object" && valOrEvent?.target
+        ? valOrEvent.target.value
+        : valOrEvent;
+    setSelectedLocation(locId || "");
     // Automatically clear child dropdowns
     setSelectedCleaner("");
   };
@@ -1319,7 +1347,7 @@ export default function ReportsPage() {
     if (!canViewReports) return toast.error("You don't have permission");
     if (!companyId) return toast.error("Company ID is required");
 
-    const selectedReport = REPORT_TYPES.find(
+    const selectedReport = availableReportTypes.find(
       (r) => r.value === selectedReportType,
     );
     let params = {
@@ -1360,12 +1388,20 @@ export default function ReportsPage() {
         ...(selectedLocation && { location_id: selectedLocation }),
         ...(selectedZone && { type_id: selectedZone }),
       };
+    } else if (selectedReportType === "cleaner_penalty_summary") {
+      params = {
+        company_id: companyId,
+        start_date: startDate,
+        end_date: endDate,
+        ...(selectedLocation && { location_id: selectedLocation }),
+        ...(selectedCleaner && { cleaner_id: selectedCleaner }),
+      };
     }
 
     reportMutation.mutate({
-      endpoint: selectedReport.endpoint,
+      endpoint: selectedReport?.endpoint || selectedReportType,
       params,
-      label: selectedReport.label,
+      label: selectedReport?.label || "Report",
     });
   };
 
@@ -1400,7 +1436,7 @@ export default function ReportsPage() {
                   </span>
                 </div>
                 <div className="space-y-1">
-                  {REPORT_TYPES.map((report) => (
+                  {availableReportTypes.map((report) => (
                     <button
                       key={report.value}
                       onClick={() => handleReportTypeChange(report.value)}
@@ -1441,7 +1477,7 @@ export default function ReportsPage() {
                     <h2 className="text-sm font-black uppercase text-[var(--report-title)]">
                       Configure{" "}
                       {
-                        REPORT_TYPES.find((r) => r.value === selectedReportType)
+                        availableReportTypes.find((r) => r.value === selectedReportType)
                           ?.label
                       }
                     </h2>
@@ -1489,6 +1525,7 @@ export default function ReportsPage() {
                     "detailed_cleaning",
                     "washroom_report",
                     "cleaner_report",
+                    "cleaner_penalty_summary",
                   ].includes(selectedReportType) && (
                     <div className="space-y-2">
                       <label className="text-[11px] font-bold uppercase tracking-wide flex items-center gap-2 text-[var(--report-subtitle)]">
@@ -1498,27 +1535,20 @@ export default function ReportsPage() {
                           <Loader2 size={12} className="animate-spin ml-2" />
                         )}
                       </label>
-                      <div className="relative">
-                        <select
-                          value={selectedLocation}
-                          onChange={handleLocationChange}
-                          disabled={loadingLocations}
-                          className="w-full px-4 py-3 text-sm font-medium rounded-xl bg-[var(--report-input-bg)] border border-[var(--report-input-border)] text-[var(--report-input-text)] focus:border-[var(--report-input-focus)] outline-none appearance-none transition-all disabled:opacity-60"
-                        >
-                          <option value="">
-                            {loadingLocations ? "Loading..." : "All Locations"}
-                          </option>
-                          {locations.map((l) => (
-                            <option key={l.id} value={l.id}>
-                              {l.display_name}
-                            </option>
-                          ))}
-                        </select>
-                        <ChevronDown
-                          size={16}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--report-input-placeholder)] pointer-events-none"
-                        />
-                      </div>
+
+                      <SearchableReportSelect
+                        value={selectedLocation}
+                        onChange={handleLocationChange}
+                        options={locations.map((l) => ({
+                          id: l.id,
+                          label: l.display_name || l.name,
+                        }))}
+                        placeholder={loadingLocations ? "Loading..." : "All Locations"}
+                        allOptionLabel="All Locations"
+                        searchPlaceholder="Filter washroom options..."
+                        disabled={loadingLocations}
+                        isLoading={loadingLocations}
+                      />
                     </div>
                   )}
 
@@ -1527,6 +1557,7 @@ export default function ReportsPage() {
                     "daily_task",
                     "cleaner_report",
                     "detailed_cleaning",
+                    "cleaner_penalty_summary",
                   ].includes(selectedReportType) && (
                     <div className="space-y-2">
                       <label className="text-[11px] font-bold uppercase tracking-wide flex items-center gap-2 text-[var(--report-subtitle)]">
@@ -1536,27 +1567,20 @@ export default function ReportsPage() {
                           <Loader2 size={12} className="animate-spin ml-2" />
                         )}
                       </label>
-                      <div className="relative">
-                        <select
-                          value={selectedCleaner}
-                          onChange={(e) => setSelectedCleaner(e.target.value)}
-                          disabled={loadingCleaners}
-                          className="w-full px-4 py-3 text-sm font-medium rounded-xl bg-[var(--report-input-bg)] border border-[var(--report-input-border)] text-[var(--report-input-text)] focus:border-[var(--report-input-focus)] outline-none appearance-none transition-all disabled:opacity-60"
-                        >
-                          <option value="">
-                            {loadingCleaners ? "Loading..." : "All Cleaners"}
-                          </option>
-                          {cleaners.map((c) => (
-                            <option key={c.id} value={c.id}>
-                              {c.name}
-                            </option>
-                          ))}
-                        </select>
-                        <ChevronDown
-                          size={16}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--report-input-placeholder)] pointer-events-none"
-                        />
-                      </div>
+
+                      <SearchableReportSelect
+                        value={selectedCleaner}
+                        onChange={(val) => setSelectedCleaner(val)}
+                        options={cleaners.map((c) => ({
+                          id: c.id,
+                          label: c.name,
+                        }))}
+                        placeholder={loadingCleaners ? "Loading..." : "All Cleaners"}
+                        allOptionLabel="All Cleaners"
+                        searchPlaceholder="Filter cleaner options..."
+                        disabled={loadingCleaners}
+                        isLoading={loadingCleaners}
+                      />
                     </div>
                   )}
 

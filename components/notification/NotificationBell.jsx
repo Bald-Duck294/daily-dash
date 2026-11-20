@@ -7,43 +7,25 @@ import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import { Bell, X, Check } from "lucide-react";
 import {
-  setNotifications,
   markAsRead,
   markAllAsRead,
   clearAllNotifications,
   clearNotification,
 } from "@/features/notification/notification.slice";
-import {
-  useMarkNotificationAsReadMutation,
-  useGetNotificationsQuery,
-} from "@/features/notification/notification.api";
 // import { useCompanyId } from "@/providers/CompanyProvider";
 const NotificationBell = () => {
   const dispatch = useDispatch();
   const router = useRouter();
   // const { companyId } = useCompanyId();
 
-  const user = useSelector((state) => state?.auth?.user);
   const companyId = useSelector((state) => state?.auth?.user?.company_id);
 
   const { notifications, unreadCount } = useSelector(
     (state) => state.notifications,
   );
 
-  const { data: remoteNotifications } = useGetNotificationsQuery(
-    { userId: user?.id, limit: 50 },
-    { skip: !user?.id, pollingInterval: 15000 }
-  );
-
-  useEffect(() => {
-    if (remoteNotifications && Array.isArray(remoteNotifications)) {
-      dispatch(setNotifications(remoteNotifications));
-    }
-  }, [remoteNotifications, dispatch]);
-
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
-  const [markAsReadOnBackend] = useMarkNotificationAsReadMutation();
 
   // ✅ Close dropdown when clicking outside
   useEffect(() => {
@@ -78,9 +60,6 @@ const NotificationBell = () => {
 
     //      console.log("data ", notification);
     dispatch(markAsRead(notification.id));
-    if (notification.id) {
-      markAsReadOnBackend(notification.id).catch(() => {});
-    }
 
     setIsOpen(false);
 

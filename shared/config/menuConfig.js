@@ -23,6 +23,7 @@ import {
   CameraIcon,
   Scale,
   BookOpen,
+  AlertTriangle,
 } from "lucide-react";
 
 /* ---------------- SUPERADMIN (NO COMPANY) ---------------- */
@@ -141,6 +142,24 @@ export function getSuperadminMainMenu() {
       icon: MessageSquare,
       label: "Feedback Form",
       href: "/feedback",
+    },
+    {
+      icon: MessageSquare,
+      label: "Review Management",
+      hasDropdown: true,
+      key: "review-management",
+      children: [
+        {
+          icon: List,
+          label: "Cleaner Activity",
+          href: "/review-management/cleaner-activity",
+        },
+        {
+          icon: MessageSquare,
+          label: "User Reviews",
+          href: "/review-management/user-reviews",
+        },
+      ],
     },
   ];
 }
@@ -374,8 +393,19 @@ export function getSuperadminCompanyMenu(
       icon: Scale,
       label: "SLA Management",
       key: "sla-rules",
-      href: `/sla-penalty?companyId=${companyId}`,
-      hasDropdown: false,
+      hasDropdown: true,
+      children: [
+        {
+          icon: BookOpen,
+          label: "Rule Books & Ledger",
+          href: `/sla-penalty?companyId=${companyId}`,
+        },
+        {
+          icon: AlertTriangle,
+          label: "Disputes",
+          href: `/sla-penalty/disputes?companyId=${companyId}`,
+        },
+      ],
     },
     {
       icon: UserCheck,
@@ -412,6 +442,24 @@ export function getSuperadminCompanyMenu(
       icon: FileText,
       label: "Reports",
       href: `/reports?companyId=${companyId}`,
+    },
+    {
+      icon: MessageSquare,
+      label: "Review Management",
+      hasDropdown: true,
+      key: "review-management-company",
+      children: [
+        {
+          icon: List,
+          label: "Cleaner Activity",
+          href: `/review-management/cleaner-activity?companyId=${companyId}`,
+        },
+        {
+          icon: MessageSquare,
+          label: "User Reviews",
+          href: `/review-management/user-reviews?companyId=${companyId}`,
+        },
+      ],
     },
   ];
 }
@@ -621,8 +669,19 @@ export function getAdminMenu(companyId, isCompanySlaActive = false) {
       icon: Scale,
       label: "SLA Management",
       key: "sla-rules",
-      href: `/sla-penalty?companyId=${companyId}`,
-      hasDropdown: false,
+      hasDropdown: true,
+      children: [
+        {
+          icon: BookOpen,
+          label: "Rule Books & Ledger",
+          href: `/sla-penalty?companyId=${companyId}`,
+        },
+        {
+          icon: AlertTriangle,
+          label: "Disputes",
+          href: `/sla-penalty/disputes?companyId=${companyId}`,
+        },
+      ],
     },
     {
       icon: UserCheck,
@@ -659,6 +718,24 @@ export function getAdminMenu(companyId, isCompanySlaActive = false) {
       icon: FileText,
       label: "Reports",
       href: `/reports?companyId=${companyId}`,
+    },
+    {
+      icon: MessageSquare,
+      label: "Review Management",
+      hasDropdown: true,
+      key: "review-management-company",
+      children: [
+        {
+          icon: List,
+          label: "Cleaner Activity",
+          href: `/review-management/cleaner-activity?companyId=${companyId}`,
+        },
+        {
+          icon: MessageSquare,
+          label: "User Reviews",
+          href: `/review-management/user-reviews?companyId=${companyId}`,
+        },
+      ],
     },
   ];
 }
@@ -823,8 +900,21 @@ export const getFullCompanyMenuTemplate = (
     simpleLabel: "SLA Management",
     requiredPermission: ["sla_management.view", "cleaner_reviews.view", "cleaner_reviews.manage"],
     key: "sla-rules",
-    href: `/sla-penalty?companyId=${companyId}`,
-    hasDropdown: false,
+    hasDropdown: true,
+    children: [
+      {
+        icon: BookOpen,
+        label: "Rule Books & Ledger",
+        simpleLabel: "Rule Books & Ledger",
+        href: `/sla-penalty?companyId=${companyId}`,
+      },
+      {
+        icon: AlertTriangle,
+        label: "Disputes",
+        simpleLabel: "Disputes",
+        href: `/sla-penalty/disputes?companyId=${companyId}`,
+      },
+    ],
   },
   {
     icon: UserCheck,

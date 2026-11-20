@@ -46,17 +46,20 @@ export default function ApprovalActionModal({
     if (actionType === "APPROVE") {
       onSubmit({
         approved_amount: Number(amount) || Number(penalty.calculated_amount),
-        comments: comments.trim() || undefined
+        comments: comments.trim() || undefined,
+        comment: comments.trim() || undefined
       });
     } else if (actionType === "REJECT") {
       if (!reason.trim()) return;
       onSubmit({
-        rejection_reason: reason.trim()
+        rejection_reason: reason.trim(),
+        reason: reason.trim()
       });
     } else if (actionType === "DISPUTE") {
       if (!reason.trim()) return;
       onSubmit({
         reason: reason.trim(),
+        dispute_reason: reason.trim(),
         dispute_notes: notes.trim() || undefined
       });
     } else if (actionType === "REVERSE") {

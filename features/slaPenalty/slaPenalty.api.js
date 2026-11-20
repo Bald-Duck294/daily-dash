@@ -239,6 +239,7 @@ export const SlaPenaltyApi = {
       const queryParams = new URLSearchParams();
       if (companyId) queryParams.append("company_id", companyId);
       if (params.status) queryParams.append("status", params.status);
+      if (params.dispute_filter) queryParams.append("dispute_filter", params.dispute_filter);
       if (params.cleaner_id) queryParams.append("cleaner_id", params.cleaner_id);
       if (params.location_id) queryParams.append("location_id", params.location_id);
       if (params.scope) queryParams.append("scope", params.scope);
@@ -269,6 +270,7 @@ export const SlaPenaltyApi = {
       const queryParams = new URLSearchParams();
       if (companyId) queryParams.append("company_id", companyId);
       if (params.cleaner_id) queryParams.append("cleaner_id", params.cleaner_id);
+      if (params.location_id) queryParams.append("location_id", params.location_id);
       if (params.start_date) queryParams.append("start_date", params.start_date);
       if (params.end_date) queryParams.append("end_date", params.end_date);
 

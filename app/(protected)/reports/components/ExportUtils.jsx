@@ -4333,6 +4333,507 @@ const exportCleanerReportToExcel = (data, metadata) => {
   XLSX.writeFile(wb, fileName);
 };
 
+const exportCleanerPenaltySummaryToExcel = (data, metadata) => {
+  const wb = XLSX.utils.book_new();
+
+  const colors = {
+    title: "1E3A8A",      // Dark Blue
+    headerBg: "F1F5F9",   // Light Gray
+    headerText: "1E293B", // Slate
+    summaryBg: "0F766E",  // Teal
+    summaryText: "FFFFFF",// White
+    tableBg: "2563EB",    // Royal Blue
+    tableText: "FFFFFF",  // White
+    altRowBg: "F8FAFC",   // Crisp Light Slate
+    borderColor: "CBD5E1",// Border Gray
+    totalBg: "E2E8F0",    // Total Row Slate
+  };
+
+  const createCellStyle = (
+    bgColor = "FFFFFF",
+    textColor = "000000",
+    bold = false,
+    align = "left",
+    wrapText = false
+  ) => ({
+    font: { bold, color: { rgb: textColor }, sz: 10 },
+    fill: { fgColor: { rgb: bgColor }, patternType: "solid" },
+    alignment: { horizontal: align, vertical: "center", wrapText },
+    border: {
+      left: { style: "thin", color: { rgb: colors.borderColor } },
+      right: { style: "thin", color: { rgb: colors.borderColor } },
+      top: { style: "thin", color: { rgb: colors.borderColor } },
+      bottom: { style: "thin", color: { rgb: colors.borderColor } },
+    },
+  });
+
+  const createHeaderStyle = (bgColor, textColor = "FFFFFF", bold = true, sz = 11) => ({
+    font: { bold, color: { rgb: textColor }, sz },
+    fill: { fgColor: { rgb: bgColor }, patternType: "solid" },
+    alignment: { horizontal: "center", vertical: "center", wrapText: true },
+    border: {
+      left: { style: "thin", color: { rgb: colors.borderColor } },
+      right: { style: "thin", color: { rgb: colors.borderColor } },
+      top: { style: "thin", color: { rgb: colors.borderColor } },
+      bottom: { style: "thin", color: { rgb: colors.borderColor } },
+    },
+  });
+
+  // Calculate totals first so summary metrics are 100% accurate
+  let sumPenalties = 0;
+  let sumGross = 0;
+  let sumApproved = 0;
+  let sumPending = 0;
+  let sumWaived = 0;
+  let sumDisputes = 0;
+
+  (data || []).forEach((c) => {
+    sumPenalties += Number(c.total_penalties || 0);
+    sumGross += Number(c.gross_amount || 0);
+    sumApproved += Number(c.approved_amount || 0);
+    sumPending += Number(c.pending_amount || 0);
+    sumWaived += Number(c.waived_amount || 0);
+    sumDisputes += Number(c.disputes_count || 0);
+  });
+
+  // ==========================================
+  // SHEET 1: Cleaner Penalty Summary
+  // ==========================================
+  const worksheetData = [];
+  const styleMap = {};
+
+  // 1. Title Banner (Row 1)
+  worksheetData.push(["CLEANER PENALTY SUMMARY REPORT"]);
+  styleMap["A1"] = {
+    font: { bold: true, sz: 16, color: { rgb: "FFFFFF" } },
+    fill: { fgColor: { rgb: colors.title }, patternType: "solid" },
+    alignment: { horizontal: "center", vertical: "center" },
+  };
+
+  worksheetData.push([]); // Blank spacer (Row 2)
+
+  // 2. Metadata Section (Rows 3-4, placed comfortably in Columns B-F)
+  const formattedGenDate = new Date(metadata?.generated_on || Date.now()).toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+
+  worksheetData.push([
+    "",
+    "Organization:",
+    metadata?.organization || "N/A",
+    "",
+    "Generated On:",
+    formattedGenDate,
+  ]);
+  const row3 = worksheetData.length;
+  styleMap[`B${row3}`] = createCellStyle("FFFFFF", colors.headerText, true, "left");
+  styleMap[`C${row3}`] = createCellStyle("FFFFFF", "000000", false, "left");
+  styleMap[`E${row3}`] = createCellStyle("FFFFFF", colors.headerText, true, "left");
+  styleMap[`F${row3}`] = createCellStyle("FFFFFF", "000000", false, "left");
+
+  worksheetData.push([
+    "",
+    "Date Range:",
+    `${metadata?.date_range?.start || "Beginning"} to ${metadata?.date_range?.end || "Now"}`,
+    "",
+    "Report Type:",
+    "Contractual Penalty Deduction Summary",
+  ]);
+  const row4 = worksheetData.length;
+  styleMap[`B${row4}`] = createCellStyle("FFFFFF", colors.headerText, true, "left");
+  styleMap[`C${row4}`] = createCellStyle("FFFFFF", "000000", false, "left");
+  styleMap[`E${row4}`] = createCellStyle("FFFFFF", colors.headerText, true, "left");
+  styleMap[`F${row4}`] = createCellStyle("FFFFFF", "000000", false, "left");
+
+  worksheetData.push([]); // Blank spacer (Row 5)
+
+  // 3. Executive KPI Summary Block (Rows 6-8, horizontal card layout)
+  worksheetData.push(["", "EXECUTIVE SUMMARY METRICS"]);
+  const kpiBannerRow = worksheetData.length;
+  styleMap[`B${kpiBannerRow}`] = {
+    font: { bold: true, sz: 11, color: { rgb: "FFFFFF" } },
+    fill: { fgColor: { rgb: colors.summaryBg }, patternType: "solid" },
+    alignment: { horizontal: "center", vertical: "center" },
+  };
+
+  const kpiHeaders = [
+    "",
+    "Total Cleaners",
+    "Total Penalties",
+    "Gross Imposed (Rs.)",
+    "Approved / Deducted (Rs.)",
+    "Pending Approval (Rs.)",
+    "Waived / Reversed (Rs.)",
+    "Disputes Count",
+  ];
+  worksheetData.push(kpiHeaders);
+  const kpiHeaderRow = worksheetData.length;
+  kpiHeaders.forEach((h, colIdx) => {
+    if (!h) return;
+    const colLetter = String.fromCharCode(65 + colIdx);
+    styleMap[`${colLetter}${kpiHeaderRow}`] = createHeaderStyle(colors.headerBg, colors.headerText, true, 10);
+  });
+
+  const kpiValues = [
+    "",
+    metadata?.total_cleaners || (data || []).length,
+    sumPenalties,
+    sumGross.toFixed(2),
+    sumApproved.toFixed(2),
+    sumPending.toFixed(2),
+    sumWaived.toFixed(2),
+    metadata?.disputes_count || sumDisputes,
+  ];
+  worksheetData.push(kpiValues);
+  const kpiValRow = worksheetData.length;
+  kpiValues.forEach((v, colIdx) => {
+    if (colIdx === 0) return;
+    const colLetter = String.fromCharCode(65 + colIdx);
+    const align = colIdx >= 3 && colIdx <= 6 ? "right" : "center";
+    styleMap[`${colLetter}${kpiValRow}`] = createCellStyle("FFFFFF", "000000", true, align);
+  });
+
+  worksheetData.push([]); // Blank spacer (Row 9)
+
+  // 4. Main Cleaner Summary Table (Row 10+)
+  worksheetData.push(["CLEANER-WISE PENALTY BREAKDOWN"]);
+  const tableBannerRow = worksheetData.length;
+  styleMap[`A${tableBannerRow}`] = {
+    font: { bold: true, sz: 12, color: { rgb: "FFFFFF" } },
+    fill: { fgColor: { rgb: colors.title }, patternType: "solid" },
+    alignment: { horizontal: "left", vertical: "center" },
+  };
+
+  const tableHeaders = [
+    "Sr. No.",
+    "Cleaner Name",
+    "Phone Number",
+    "Assigned Washrooms",
+    "Total Penalties",
+    "Gross Imposed (Rs.)",
+    "Approved / Deducted (Rs.)",
+    "Pending Approval (Rs.)",
+    "Waived / Reversed (Rs.)",
+    "Disputes Count",
+  ];
+
+  worksheetData.push(tableHeaders);
+  const tableHeaderRowNum = worksheetData.length;
+  tableHeaders.forEach((header, colIdx) => {
+    const colLetter = String.fromCharCode(65 + colIdx);
+    styleMap[`${colLetter}${tableHeaderRowNum}`] = createHeaderStyle(colors.tableBg, colors.tableText, true);
+  });
+
+  (data || []).forEach((c, idx) => {
+    const pCount = Number(c.total_penalties || 0);
+    const gAmt = Number(c.gross_amount || 0);
+    const aAmt = Number(c.approved_amount || 0);
+    const pendAmt = Number(c.pending_amount || 0);
+    const wAmt = Number(c.waived_amount || 0);
+    const dCount = Number(c.disputes_count || 0);
+
+    const rowData = [
+      idx + 1,
+      c.cleaner_name || "N/A",
+      c.cleaner_phone || "-",
+      (c.locations || []).join(", ") || "-",
+      pCount,
+      gAmt.toFixed(2),
+      aAmt.toFixed(2),
+      pendAmt.toFixed(2),
+      wAmt.toFixed(2),
+      dCount,
+    ];
+
+    const rNum = worksheetData.length + 1;
+    worksheetData.push(rowData);
+
+    const bgColor = idx % 2 === 0 ? "FFFFFF" : colors.altRowBg;
+    rowData.forEach((val, colIdx) => {
+      const colLetter = String.fromCharCode(65 + colIdx);
+      const isBold = colIdx === 1 || colIdx === 4 || colIdx === 5;
+      const align =
+        colIdx === 0 || colIdx === 2 || colIdx === 4 || colIdx === 9
+          ? "center"
+          : colIdx >= 5 && colIdx <= 8
+          ? "right"
+          : "left";
+      styleMap[`${colLetter}${rNum}`] = createCellStyle(bgColor, "000000", isBold, align, colIdx === 3);
+    });
+  });
+
+  // Total Summary Row
+  if ((data || []).length > 0) {
+    const totalRow = [
+      "TOTAL",
+      "",
+      "",
+      "",
+      sumPenalties,
+      sumGross.toFixed(2),
+      sumApproved.toFixed(2),
+      sumPending.toFixed(2),
+      sumWaived.toFixed(2),
+      sumDisputes,
+    ];
+    const totalRowNum = worksheetData.length + 1;
+    worksheetData.push(totalRow);
+
+    totalRow.forEach((val, colIdx) => {
+      const colLetter = String.fromCharCode(65 + colIdx);
+      const align =
+        colIdx === 0 || colIdx === 4 || colIdx === 9
+          ? "center"
+          : colIdx >= 5 && colIdx <= 8
+          ? "right"
+          : "left";
+      styleMap[`${colLetter}${totalRowNum}`] = createCellStyle(
+        colors.totalBg,
+        "000000",
+        true,
+        align
+      );
+    });
+  }
+
+  const ws = XLSX.utils.aoa_to_sheet(worksheetData);
+
+  // Apply Styles
+  Object.keys(styleMap).forEach((cellRef) => {
+    if (!ws[cellRef]) ws[cellRef] = {};
+    ws[cellRef].s = styleMap[cellRef];
+  });
+
+  // Calculate dynamic auto-fit column widths with ample breathing room
+  const colWidths = [10, 24, 18, 34, 16, 22, 26, 24, 24, 16];
+  worksheetData.forEach((row, rIdx) => {
+    // Skip merged title & section header rows from width calculation
+    if (rIdx === 0 || rIdx === 5 || rIdx === 9) return;
+    if (!Array.isArray(row)) return;
+    row.forEach((val, cIdx) => {
+      if (val === null || val === undefined) return;
+      const strLen = String(val).length;
+      colWidths[cIdx] = Math.max(colWidths[cIdx] || 12, strLen + 4);
+    });
+  });
+  ws["!cols"] = colWidths.map((w) => ({ wch: Math.min(w, 55) }));
+
+  // Set Row Heights
+  ws["!rows"] = [
+    { hpx: 32 }, // Title
+    { hpx: 8 },  // Spacer
+    { hpx: 20 }, // Meta 1
+    { hpx: 20 }, // Meta 2
+    { hpx: 8 },  // Spacer
+    { hpx: 24 }, // KPI Title
+    { hpx: 22 }, // KPI Headers
+    { hpx: 24 }, // KPI Values
+    { hpx: 8 },  // Spacer
+    { hpx: 26 }, // Table Section Header
+    { hpx: 26 }, // Table Header
+  ];
+
+  // Merges
+  const merges = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 9 } },                         // A1:J1 Title
+    { s: { r: kpiBannerRow - 1, c: 1 }, e: { r: kpiBannerRow - 1, c: 7 } }, // B6:H6 KPI Banner
+    { s: { r: tableBannerRow - 1, c: 0 }, e: { r: tableBannerRow - 1, c: 9 } }, // Table Header Banner
+  ];
+  if ((data || []).length > 0) {
+    const totalRowIdx = worksheetData.length - 1;
+    merges.push({ s: { r: totalRowIdx, c: 0 }, e: { r: totalRowIdx, c: 3 } }); // TOTAL merge A..D
+  }
+  ws["!merges"] = merges;
+
+  XLSX.utils.book_append_sheet(wb, ws, "Penalty Summary");
+
+  // ==========================================
+  // SHEET 2: Itemized Violations Breakdown
+  // ==========================================
+  const itemizedRows = [];
+  const itemizedStyles = {};
+
+  // Title Row
+  itemizedRows.push(["ITEMIZED PENALTY VIOLATIONS BREAKDOWN"]);
+  itemizedStyles["A1"] = {
+    font: { bold: true, sz: 15, color: { rgb: "FFFFFF" } },
+    fill: { fgColor: { rgb: colors.title }, patternType: "solid" },
+    alignment: { horizontal: "center", vertical: "center" },
+  };
+
+  itemizedRows.push([]); // Spacer
+
+  const detailHeaders = [
+    "Sr. No.",
+    "Penalty Number",
+    "Violation Date",
+    "Cleaner Name",
+    "Phone Number",
+    "Washroom Location",
+    "Rule Code",
+    "Rule Description",
+    "Hygiene Score",
+    "Status",
+    "Gross Imposed (Rs.)",
+    "Approved Amount (Rs.)",
+    "Review ID",
+  ];
+  const detailHeaderRowNum = itemizedRows.length + 1;
+  itemizedRows.push(detailHeaders);
+  detailHeaders.forEach((header, colIdx) => {
+    const colLetter = String.fromCharCode(65 + colIdx);
+    itemizedStyles[`${colLetter}${detailHeaderRowNum}`] = createHeaderStyle("1E40AF", "FFFFFF", true);
+  });
+
+  let violIdx = 0;
+  (data || []).forEach((c) => {
+    (c.violations_list || []).forEach((v) => {
+      violIdx++;
+      const formattedDate = v.date
+        ? new Date(v.date).toLocaleDateString("en-IN", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          })
+        : "-";
+
+      const rData = [
+        violIdx,
+        v.penalty_number || `PEN-${v.penalty_id}`,
+        formattedDate,
+        c.cleaner_name || "N/A",
+        c.cleaner_phone || "-",
+        v.location_name || "-",
+        v.rule_code || "RULE",
+        v.rule_name || "SLA Deficiency",
+        v.score !== null && v.score !== undefined ? Number(v.score).toFixed(1) : "-",
+        v.status || "PENDING",
+        Number(v.calculated_amount || 0).toFixed(2),
+        Number(v.approved_amount || 0).toFixed(2),
+        v.review_id ? `#${v.review_id}` : "-",
+      ];
+
+      const rNum = itemizedRows.length + 1;
+      itemizedRows.push(rData);
+
+      const bgColor = violIdx % 2 === 0 ? "FFFFFF" : colors.altRowBg;
+      rData.forEach((val, colIdx) => {
+        const colLetter = String.fromCharCode(65 + colIdx);
+        const isBold = colIdx === 1 || colIdx === 9;
+        const align =
+          colIdx === 0 || colIdx === 1 || colIdx === 2 || colIdx === 4 || colIdx === 6 || colIdx === 8 || colIdx === 9 || colIdx === 12
+            ? "center"
+            : colIdx === 10 || colIdx === 11
+            ? "right"
+            : "left";
+        itemizedStyles[`${colLetter}${rNum}`] = createCellStyle(bgColor, "000000", isBold, align);
+      });
+    });
+  });
+
+  const wsDetails = XLSX.utils.aoa_to_sheet(itemizedRows);
+  Object.keys(itemizedStyles).forEach((cellRef) => {
+    if (!wsDetails[cellRef]) wsDetails[cellRef] = {};
+    wsDetails[cellRef].s = itemizedStyles[cellRef];
+  });
+
+  // Calculate dynamic auto-fit column widths for Sheet 2
+  const detailColWidths = [8, 18, 16, 24, 16, 30, 16, 32, 14, 16, 20, 22, 14];
+  itemizedRows.forEach((row, rIdx) => {
+    if (rIdx === 0) return;
+    if (!Array.isArray(row)) return;
+    row.forEach((val, cIdx) => {
+      if (val === null || val === undefined) return;
+      const strLen = String(val).length;
+      detailColWidths[cIdx] = Math.max(detailColWidths[cIdx] || 12, strLen + 4);
+    });
+  });
+  wsDetails["!cols"] = detailColWidths.map((w) => ({ wch: Math.min(w, 60) }));
+
+  wsDetails["!rows"] = [
+    { hpx: 30 }, // Title
+    { hpx: 8 },  // Spacer
+    { hpx: 26 }, // Header
+  ];
+  wsDetails["!merges"] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 12 } }, // Title merge A1:M1
+  ];
+
+  XLSX.utils.book_append_sheet(wb, wsDetails, "Itemized Violations");
+
+  const fileName = `Cleaner_Penalty_Summary_${new Date().toISOString().split("T")[0]}.xlsx`;
+  XLSX.writeFile(wb, fileName);
+};
+
+const exportCleanerPenaltySummaryToPDF = (data, metadata) => {
+  const doc = new jsPDF("l", "mm", "a4");
+  addLogosToHeader(doc);
+
+  doc.setFontSize(16);
+  doc.setFont(undefined, "bold");
+  doc.text("CLEANER PENALTY SUMMARY REPORT", 14, 20);
+
+  doc.setFontSize(9);
+  doc.setFont(undefined, "normal");
+  doc.text(`Organization: ${metadata?.organization || "N/A"}`, 14, 27);
+  doc.text(
+    `Date Range: ${metadata?.date_range?.start || "Beginning"} to ${metadata?.date_range?.end || "Now"}`,
+    14,
+    32
+  );
+  doc.text(
+    `Generated: ${new Date(metadata?.generated_on || Date.now()).toLocaleString("en-IN")}`,
+    14,
+    37
+  );
+
+  const headers = [
+    [
+      "Sr",
+      "Cleaner Name",
+      "Phone",
+      "Washrooms",
+      "Penalties",
+      "Gross (Rs.)",
+      "Waived (Rs.)",
+      "Approved (Rs.)",
+      "Pending (Rs.)",
+      "Disputes"
+    ]
+  ];
+
+  const body = (data || []).map((c, idx) => [
+    idx + 1,
+    c.cleaner_name || "-",
+    c.cleaner_phone || "-",
+    (c.locations || []).slice(0, 2).join(", ") + ((c.locations || []).length > 2 ? ` (+${(c.locations || []).length - 2})` : ""),
+    c.total_penalties || 0,
+    `Rs. ${Number(c.gross_amount || 0).toFixed(2)}`,
+    `Rs. ${Number(c.waived_amount || 0).toFixed(2)}`,
+    `Rs. ${Number(c.approved_amount || 0).toFixed(2)}`,
+    `Rs. ${Number(c.pending_amount || 0).toFixed(2)}`,
+    c.disputes_count || 0
+  ]);
+
+  autoTable(doc, {
+    head: headers,
+    body: body,
+    startY: 42,
+    theme: "striped",
+    headStyles: { fillColor: [41, 128, 185], textColor: 255, fontSize: 8 },
+    bodyStyles: { fontSize: 8 },
+    margin: { left: 14, right: 14 }
+  });
+
+  addLogosToAllPages(doc);
+  doc.save(`Cleaner_Penalty_Summary_${Date.now()}.pdf`);
+};
+
 export const exportToPDF = (
   data,
   metadata,
@@ -4355,6 +4856,8 @@ export const exportToPDF = (
     exportCleanerReportToPDF(data, metadata);
   } else if (reportType === "washroom_hygiene_trend") {
     exportHygieneTrendToPDF(data, metadata);
+  } else if (reportType === "cleaner_penalty_summary") {
+    exportCleanerPenaltySummaryToPDF(data, metadata);
   } else {
     console.error("Unknown report type:", reportType);
   }
@@ -4380,6 +4883,8 @@ export const exportToExcel = (data, metadata, reportType = "zone_wise") => {
     exportCleanerReportToExcel(data, metadata);
   } else if (reportType === "washroom_hygiene_trend") {
     exportHygieneTrendToExcel(data, metadata);
+  } else if (reportType === "cleaner_penalty_summary") {
+    exportCleanerPenaltySummaryToExcel(data, metadata);
   } else {
     console.error("Unknown report type:", reportType);
   }
