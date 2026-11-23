@@ -35,6 +35,7 @@ import { filterMenuByPermissions } from "@/shared/utils/menuFilter";
 import { useCompanyId } from "@/providers/CompanyProvider";
 import { useCompanySlaConfig } from "@/features/companies/queries/sla.queries";
 import { useCompanySlaRulesStatus } from "@/features/slaPenalty/slaPenalty.queries";
+import { useCompanyFeatures } from "@/features/featureManagement/featureManagement.queries";
 
 const Sidebar = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -64,7 +65,20 @@ const Sidebar = () => {
     companyId,
     Boolean(companyId)
   );
-  const isSlaRulesActive = Boolean(slaRulesData?.is_active);
+
+  // Query company feature flags (cleaner_assignment, cleaning_request, sla_rules)
+  const { data: companyFeaturesData } = useCompanyFeatures(
+    companyId,
+    Boolean(companyId)
+  );
+  const isSlaRulesActive = Boolean(
+    companyFeaturesData?.features?.sla_rules ?? slaRulesData?.is_active
+  );
+  const isCleanerAssignmentActive =
+    companyFeaturesData?.features?.cleaner_assignment !== false;
+  const isCleaningRequestActive = Boolean(
+    companyFeaturesData?.features?.cleaning_request
+  );
 
   // Memoize menu items to prevent infinite loop
   const menuItems = useMemo(() => {
@@ -79,6 +93,17 @@ const Sidebar = () => {
       if (!isSlaRulesActive) {
         items = items.filter((item) => item.key !== "sla-rules");
       }
+      if (!isCleanerAssignmentActive) {
+        items = items.filter(
+          (item) => item.key !== "userMapping" && item.key !== "user-mapping"
+        );
+      }
+      if (!isCleaningRequestActive) {
+        items = items.filter((item) => item.key !== "cleaning-tasks");
+      }
+      items = items.filter(
+        (item) => item.key !== "review-management" && item.key !== "review-management-company"
+      );
       return items;
     }
     if (user?.role_id === 2 && hasCompanyContext) {
@@ -90,6 +115,17 @@ const Sidebar = () => {
       if (!isSlaRulesActive) {
         items = items.filter((item) => item.key !== "sla-rules");
       }
+      if (!isCleanerAssignmentActive) {
+        items = items.filter(
+          (item) => item.key !== "userMapping" && item.key !== "user-mapping"
+        );
+      }
+      if (!isCleaningRequestActive) {
+        items = items.filter((item) => item.key !== "cleaning-tasks");
+      }
+      items = items.filter(
+        (item) => item.key !== "review-management" && item.key !== "review-management-company"
+      );
       return items;
     }
     if (hasCompanyContext && user?.role?.permissions) {
@@ -111,6 +147,19 @@ const Sidebar = () => {
           (item) => item.key !== "sla-rules"
         );
       }
+      if (!isCleanerAssignmentActive) {
+        menuTemplate = menuTemplate.filter(
+          (item) => item.key !== "userMapping" && item.key !== "user-mapping"
+        );
+      }
+      if (!isCleaningRequestActive) {
+        menuTemplate = menuTemplate.filter(
+          (item) => item.key !== "cleaning-tasks"
+        );
+      }
+      menuTemplate = menuTemplate.filter(
+        (item) => item.key !== "review-management" && item.key !== "review-management-company"
+      );
       const filteredMenu = filterMenuByPermissions(
         menuTemplate,
         user.role.permissions,
@@ -128,7 +177,16 @@ const Sidebar = () => {
       return filteredMenu;
     }
     return [];
-  }, [user?.role_id, user?.role?.permissions, hasCompanyContext, companyId, isCompanySlaActive, isSlaRulesActive]);
+  }, [
+    user?.role_id,
+    user?.role?.permissions,
+    hasCompanyContext,
+    companyId,
+    isCompanySlaActive,
+    isSlaRulesActive,
+    isCleanerAssignmentActive,
+    isCleaningRequestActive,
+  ]);
 
   const getRoleText = (roleId) => {
     switch (roleId) {

@@ -24,6 +24,8 @@ import {
   Scale,
   BookOpen,
   AlertTriangle,
+  Sliders,
+  ClipboardList,
 } from "lucide-react";
 
 /* ---------------- SUPERADMIN (NO COMPANY) ---------------- */
@@ -76,6 +78,11 @@ export function getSuperadminMainMenu() {
       icon: Scale,
       label: "SLA Feature Management",
       href: "/sla-rules-management",
+    },
+    {
+      icon: Sliders,
+      label: "Feature Management",
+      href: "/feature-management",
     },
     {
       icon: ShieldCheck,
@@ -372,6 +379,12 @@ export function getSuperadminCompanyMenu(
       href: `/cleaners?companyId=${companyId}`,
     },
     {
+      icon: ClipboardList,
+      label: "Cleaning Tasks",
+      key: "cleaning-tasks",
+      href: `/cleaning-tasks?companyId=${companyId}`,
+    },
+    {
       icon: ShieldCheck,
       label: "Threshold & Escalation",
       hasDropdown: true,
@@ -442,24 +455,6 @@ export function getSuperadminCompanyMenu(
       icon: FileText,
       label: "Reports",
       href: `/reports?companyId=${companyId}`,
-    },
-    {
-      icon: MessageSquare,
-      label: "Review Management",
-      hasDropdown: true,
-      key: "review-management-company",
-      children: [
-        {
-          icon: List,
-          label: "Cleaner Activity",
-          href: `/review-management/cleaner-activity?companyId=${companyId}`,
-        },
-        {
-          icon: MessageSquare,
-          label: "User Reviews",
-          href: `/review-management/user-reviews?companyId=${companyId}`,
-        },
-      ],
     },
   ];
 }
@@ -648,6 +643,12 @@ export function getAdminMenu(companyId, isCompanySlaActive = false) {
       href: `/cleaners?companyId=${companyId}`,
     },
     {
+      icon: ClipboardList,
+      label: "Cleaning Tasks",
+      key: "cleaning-tasks",
+      href: `/cleaning-tasks?companyId=${companyId}`,
+    },
+    {
       icon: ShieldCheck,
       label: "Threshold & Escalation",
       hasDropdown: true,
@@ -718,24 +719,6 @@ export function getAdminMenu(companyId, isCompanySlaActive = false) {
       icon: FileText,
       label: "Reports",
       href: `/reports?companyId=${companyId}`,
-    },
-    {
-      icon: MessageSquare,
-      label: "Review Management",
-      hasDropdown: true,
-      key: "review-management-company",
-      children: [
-        {
-          icon: List,
-          label: "Cleaner Activity",
-          href: `/review-management/cleaner-activity?companyId=${companyId}`,
-        },
-        {
-          icon: MessageSquare,
-          label: "User Reviews",
-          href: `/review-management/user-reviews?companyId=${companyId}`,
-        },
-      ],
     },
   ];
 }
@@ -869,6 +852,13 @@ export const getFullCompanyMenuTemplate = (
     simpleLabel: "Cleaner Activity",
     requiredPermission: "cleaner_reviews.view",
     href: `/cleaners?companyId=${companyId}`,
+  },
+  {
+    icon: ClipboardList,
+    label: "Cleaning Tasks",
+    simpleLabel: "Cleaning Tasks",
+    key: "cleaning-tasks",
+    href: `/cleaning-tasks?companyId=${companyId}`,
   },
   {
     icon: ShieldCheck,
