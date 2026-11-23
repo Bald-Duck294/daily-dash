@@ -102,8 +102,40 @@ export default function CleaningTasksPage() {
 
   const handleOpenPhotos = (req) => {
     setSelectedRequest(req);
-    setSelectedPhotos(req.images || []);
+    setSelectedPhotos(req.images || req.photos || []);
     setPhotoModalOpen(true);
+  };
+
+  const formatDateTime = (dateVal) => {
+    if (!dateVal) return { time: "—", date: "—", relative: "" };
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return { time: "—", date: "—", relative: "" };
+
+    const timeStr = d.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+    const dateStr = d.toLocaleDateString([], {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+
+    const now = new Date();
+    const diffMs = now - d;
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    let relative = "";
+    if (diffMins < 1) relative = "Just now";
+    else if (diffMins < 60) relative = `${diffMins}m ago`;
+    else if (diffHours < 24) relative = `${diffHours}h ago`;
+    else if (diffDays === 1) relative = "Yesterday";
+    else if (diffDays < 30) relative = `${diffDays}d ago`;
+
+    return { time: timeStr, date: dateStr, relative };
   };
 
   const getPriorityBadge = (priority) => {
@@ -367,76 +399,102 @@ export default function CleaningTasksPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                {requests.map((req) => (
-                  <tr
-                    key={req.id}
-                    className="hover:bg-slate-50/70 dark:hover:bg-slate-800/30 transition-colors"
-                  >
-                    {/* Ticket & Time */}
-                    <td className="py-3.5 px-4 font-mono font-medium text-slate-900 dark:text-slate-200 whitespace-nowrap">
-                      <div>#{req.id}</div>
-                      <div className="text-[11px] font-sans text-slate-400 font-normal">
-                        {req.created_at
-                          ? new Date(req.created_at).toLocaleString([], {
-                              month: "short",
-                              day: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })
-                          : "—"}
-                      </div>
-                    </td>
+                {requests.map((req) => {
+                  const dateTime = formatDateTime(req.created_at);
+                  const locationObj = req.location || req.locations || {};
+                  const locationName = locationObj.name || locationObj.display_name || "Washroom";
+                  const locationAddress =
+                    locationObj.address ||
+                    locationObj.city ||
+                    locationObj.code ||
+                    "—";
+                  const issuesList =
+                    Array.isArray(req.issues) && req.issues.length > 0
+                      ? req.issues
+                      : req.issue_type
+                      ? req.issue_type.split(",").map((i) => i.trim())
+                      : [];
+                  const photosList =
+                    Array.isArray(req.images) && req.images.length > 0
+                      ? req.images
+                      : Array.isArray(req.photos) && req.photos.length > 0
+                      ? req.photos
+                      : [];
 
-                    {/* Washroom */}
-                    <td className="py-3.5 px-4 max-w-xs">
-                      <div className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 truncate">
-                        <MapPin className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
-                        <span className="truncate">{req.location?.name || "Unknown"}</span>
-                      </div>
-                      <div className="text-[11px] text-slate-400 truncate pl-5">
-                        {req.location?.address || req.location?.code || "—"}
-                      </div>
-                    </td>
-
-                    {/* Reported Issues */}
-                    <td className="py-3.5 px-4 max-w-sm">
-                      <div className="flex flex-wrap gap-1">
-                        {Array.isArray(req.issues) && req.issues.length > 0 ? (
-                          req.issues.map((issue, idx) => (
-                            <span
-                              key={idx}
-                              className="px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 font-medium text-[11px] border border-amber-200/60 dark:border-amber-800/40"
-                            >
-                              {issue}
+                  return (
+                    <tr
+                      key={req.id}
+                      className="hover:bg-slate-50/70 dark:hover:bg-slate-800/30 transition-colors"
+                    >
+                      {/* Ticket & Time Raised */}
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <div className="font-mono font-bold text-slate-900 dark:text-slate-100 text-xs">
+                          #{req.id}
+                        </div>
+                        <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 mt-1">
+                          <Clock className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                          <span>{dateTime.time}</span>
+                          {dateTime.relative && (
+                            <span className="text-[10px] font-normal px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500">
+                              {dateTime.relative}
                             </span>
-                          ))
-                        ) : (
-                          <span className="text-slate-500 italic text-[11px]">
-                            {req.description || "General cleaning"}
-                          </span>
-                        )}
-                      </div>
-                      {req.description && Array.isArray(req.issues) && req.issues.length > 0 && (
-                        <p className="text-[11px] text-slate-500 mt-1 line-clamp-1 italic">
-                          "{req.description}"
-                        </p>
-                      )}
-                    </td>
+                          )}
+                        </div>
+                        <div className="text-[11px] text-slate-400 pl-5">
+                          {dateTime.date}
+                        </div>
+                      </td>
 
-                    {/* Photos proof */}
-                    <td className="py-3.5 px-4 text-center">
-                      {Array.isArray(req.images) && req.images.length > 0 ? (
-                        <button
-                          onClick={() => handleOpenPhotos(req)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 transition text-xs font-medium"
-                        >
-                          <Camera className="w-3.5 h-3.5" />
-                          <span>{req.images.length}</span>
-                        </button>
-                      ) : (
-                        <span className="text-slate-400 text-[11px]">None</span>
-                      )}
-                    </td>
+                      {/* Washroom Location */}
+                      <td className="py-3.5 px-4 max-w-xs">
+                        <div className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 truncate">
+                          <MapPin className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                          <span className="truncate">{locationName}</span>
+                        </div>
+                        <div className="text-[11px] text-slate-400 truncate pl-5">
+                          {locationAddress}
+                        </div>
+                      </td>
+
+                      {/* Reported Issues */}
+                      <td className="py-3.5 px-4 max-w-sm">
+                        <div className="flex flex-wrap gap-1">
+                          {issuesList.length > 0 ? (
+                            issuesList.map((issue, idx) => (
+                              <span
+                                key={idx}
+                                className="px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 font-medium text-[11px] border border-amber-200/60 dark:border-amber-800/40"
+                              >
+                                {issue}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-slate-500 italic text-[11px]">
+                              {req.description || "General cleaning"}
+                            </span>
+                          )}
+                        </div>
+                        {req.description && issuesList.length > 0 && (
+                          <p className="text-[11px] text-slate-500 mt-1 line-clamp-1 italic">
+                            "{req.description}"
+                          </p>
+                        )}
+                      </td>
+
+                      {/* Photos proof */}
+                      <td className="py-3.5 px-4 text-center">
+                        {photosList.length > 0 ? (
+                          <button
+                            onClick={() => handleOpenPhotos(req)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 transition text-xs font-medium"
+                          >
+                            <Camera className="w-3.5 h-3.5" />
+                            <span>{photosList.length}</span>
+                          </button>
+                        ) : (
+                          <span className="text-slate-400 text-[11px]">None</span>
+                        )}
+                      </td>
 
                     {/* Priority */}
                     <td className="py-3.5 px-4 whitespace-nowrap">
@@ -501,7 +559,8 @@ export default function CleaningTasksPage() {
                       </div>
                     </td>
                   </tr>
-                ))}
+                );
+              })}
               </tbody>
             </table>
           )}

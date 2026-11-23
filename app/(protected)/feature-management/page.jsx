@@ -15,6 +15,7 @@ import {
   ClipboardList,
   MessageSquareWarning,
   Scale,
+  Zap,
   ExternalLink,
   RefreshCw,
   Info,
@@ -76,14 +77,16 @@ export default function FeatureManagementPage() {
     let cleanerAssignCount = 0;
     let cleaningReqCount = 0;
     let slaRulesCount = 0;
+    let thresholdAutoCount = 0;
 
     companiesList.forEach((c) => {
       if (c.features?.cleaner_assignment) cleanerAssignCount++;
       if (c.features?.cleaning_request) cleaningReqCount++;
       if (c.features?.sla_rules) slaRulesCount++;
+      if (c.features?.service_req_threshold) thresholdAutoCount++;
     });
 
-    return { cleanerAssignCount, cleaningReqCount, slaRulesCount };
+    return { cleanerAssignCount, cleaningReqCount, slaRulesCount, thresholdAutoCount };
   }, [companiesList]);
 
   // Filtered List
@@ -101,13 +104,14 @@ export default function FeatureManagementPage() {
       if (featureFilter === "CLEANING_REQ_ON") return Boolean(c.features?.cleaning_request);
       if (featureFilter === "CLEANING_REQ_OFF") return !c.features?.cleaning_request;
       if (featureFilter === "ASSIGNMENT_OFF") return !c.features?.cleaner_assignment;
+      if (featureFilter === "THRESHOLD_ON") return Boolean(c.features?.service_req_threshold);
       if (featureFilter === "SLA_ON") return Boolean(c.features?.sla_rules);
 
       return true;
     });
   }, [companiesList, searchQuery, featureFilter]);
 
-  const handleToggle = async (companyId, featureKey, currentState) => {
+  const handleToggle = async (companyId, featureKey, currentState, threshold) => {
     const key = `${companyId}_${featureKey}`;
     setTogglingKey(key);
     try {
@@ -115,6 +119,22 @@ export default function FeatureManagementPage() {
         companyId,
         featureKey,
         isActive: !currentState,
+        threshold,
+      });
+    } finally {
+      setTogglingKey(null);
+    }
+  };
+
+  const handleUpdateThreshold = async (companyId, newThreshold, isActive) => {
+    const key = `${companyId}_service_req_threshold_val`;
+    setTogglingKey(key);
+    try {
+      await toggleMutation.mutateAsync({
+        companyId,
+        featureKey: "service_req_threshold",
+        isActive: isActive !== false,
+        threshold: newThreshold,
       });
     } finally {
       setTogglingKey(null);
@@ -153,7 +173,7 @@ export default function FeatureManagementPage() {
       </div>
 
       {/* KPI Stats Bar */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3.5">
         <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-sm">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Total Companies</span>
@@ -188,6 +208,17 @@ export default function FeatureManagementPage() {
 
         <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-sm">
           <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Auto-Dispatch</span>
+            <Zap className="w-4 h-4 text-amber-500" />
+          </div>
+          <div className="text-2xl font-black text-amber-600 dark:text-amber-400 mt-1">
+            {stats.thresholdAutoCount}
+            <span className="text-xs font-normal text-slate-400 ml-1.5">/ {totalCompanies}</span>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-sm col-span-2 md:col-span-1">
+          <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-slate-500 dark:text-slate-400">SLA Rules Active</span>
             <Scale className="w-4 h-4 text-purple-500" />
           </div>
@@ -216,6 +247,7 @@ export default function FeatureManagementPage() {
             { id: "ALL", label: "All" },
             { id: "CLEANING_REQ_ON", label: "Cleaning Requests ON" },
             { id: "CLEANING_REQ_OFF", label: "Cleaning Requests OFF" },
+            { id: "THRESHOLD_ON", label: "Auto-Dispatch ON" },
             { id: "ASSIGNMENT_OFF", label: "Assignment OFF" },
             { id: "SLA_ON", label: "SLA ON" },
           ].map((tab) => (
@@ -251,10 +283,14 @@ export default function FeatureManagementPage() {
             const cleanerAssignOn = Boolean(comp.features?.cleaner_assignment);
             const cleaningReqOn = Boolean(comp.features?.cleaning_request);
             const slaRulesOn = Boolean(comp.features?.sla_rules);
+            const thresholdOn = Boolean(comp.features?.service_req_threshold);
+            const thresholdVal = Number(comp.features?.service_req_threshold_value) || 3;
 
             const isTogglingCleaner = togglingKey === `${comp.company_id}_cleaner_assignment`;
             const isTogglingCleaningReq = togglingKey === `${comp.company_id}_cleaning_request`;
             const isTogglingSla = togglingKey === `${comp.company_id}_sla_rules`;
+            const isTogglingThreshold = togglingKey === `${comp.company_id}_service_req_threshold`;
+            const isUpdatingThresholdVal = togglingKey === `${comp.company_id}_service_req_threshold_val`;
 
             return (
               <div
@@ -291,7 +327,7 @@ export default function FeatureManagementPage() {
                 </div>
 
                 {/* Feature Toggles Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 pt-4">
                   {/* Feature 1: Cleaner Assignment */}
                   <div
                     className={`rounded-xl p-3.5 border transition-all ${
@@ -446,6 +482,99 @@ export default function FeatureManagementPage() {
                       ) : (
                         <span className="inline-flex items-center gap-1 font-medium text-slate-400">
                           <XCircle className="w-3 h-3" /> Hidden from company
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Feature 4: Auto-Dispatch Threshold */}
+                  <div
+                    className={`rounded-xl p-3.5 border transition-all ${
+                      thresholdOn
+                        ? "bg-amber-50/50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800/40"
+                        : "bg-slate-50/60 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-1.5">
+                          <Zap
+                            className={`w-4 h-4 ${
+                              thresholdOn ? "text-amber-600 dark:text-amber-400" : "text-slate-400"
+                            }`}
+                          />
+                          <span className="text-xs font-bold text-slate-900 dark:text-white">
+                            Auto-Dispatch
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug">
+                          Auto-assign on ≥ {thresholdVal} requests
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleToggle(comp.company_id, "service_req_threshold", thresholdOn, thresholdVal)
+                        }
+                        disabled={isTogglingThreshold}
+                        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                          thresholdOn ? "bg-amber-600" : "bg-slate-300 dark:bg-slate-700"
+                        } ${isTogglingThreshold ? "opacity-50 cursor-wait" : ""}`}
+                      >
+                        <span
+                          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                            thresholdOn ? "translate-x-5" : "translate-x-0"
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    {/* Dynamic Threshold Stepper */}
+                    <div className="mt-3 pt-2.5 border-t border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between">
+                      <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-400">
+                        Trigger at:
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          disabled={thresholdVal <= 1 || isUpdatingThresholdVal}
+                          onClick={() =>
+                            handleUpdateThreshold(
+                              comp.company_id,
+                              Math.max(1, thresholdVal - 1),
+                              thresholdOn
+                            )
+                          }
+                          className="w-5 h-5 rounded flex items-center justify-center bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 text-xs font-bold disabled:opacity-40 transition"
+                        >
+                          -
+                        </button>
+                        <span className="text-xs font-bold font-mono px-1.5 py-0.5 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 min-w-[20px] text-center">
+                          {thresholdVal}
+                        </span>
+                        <button
+                          type="button"
+                          disabled={isUpdatingThresholdVal}
+                          onClick={() =>
+                            handleUpdateThreshold(comp.company_id, thresholdVal + 1, thresholdOn)
+                          }
+                          className="w-5 h-5 rounded flex items-center justify-center bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 text-xs font-bold disabled:opacity-40 transition"
+                        >
+                          +
+                        </button>
+                        <span className="text-[10px] text-slate-400 ml-0.5">reqs</span>
+                      </div>
+                    </div>
+
+                    <div className="mt-2 flex items-center gap-1.5 text-[10px]">
+                      {thresholdOn ? (
+                        <span className="inline-flex items-center gap-1 font-semibold text-amber-700 dark:text-amber-300">
+                          <CheckCircle2 className="w-3 h-3" /> Auto-assign ON
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 font-medium text-slate-400">
+                          <XCircle className="w-3 h-3" /> Disabled
                         </span>
                       )}
                     </div>

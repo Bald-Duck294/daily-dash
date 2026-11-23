@@ -39,8 +39,8 @@ export const useToggleCompanyFeature = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ companyId, featureKey, isActive }) =>
-      FeatureManagementApi.toggleCompanyFeature(companyId, featureKey, isActive),
+    mutationFn: ({ companyId, featureKey, isActive, threshold }) =>
+      FeatureManagementApi.toggleCompanyFeature(companyId, featureKey, isActive, threshold),
     onSuccess: (data, variables) => {
       // Invalidate list & specific company queries
       queryClient.invalidateQueries({ queryKey: FEATURE_MANAGEMENT_KEYS.companies() });
@@ -58,10 +58,14 @@ export const useToggleCompanyFeature = () => {
           ? "Cleaner Assignment"
           : variables.featureKey === "cleaning_request"
           ? "Cleaning Request"
+          : variables.featureKey === "service_req_threshold" || variables.featureKey === "service_req_thredshold"
+          ? "Auto-Dispatch Threshold"
           : "SLA Rules";
 
       toast.success(
-        `${label} successfully ${variables.isActive ? "enabled" : "disabled"}`
+        variables.threshold !== undefined && variables.isActive
+          ? `${label} set to threshold ${variables.threshold} and enabled!`
+          : `${label} successfully ${variables.isActive ? "enabled" : "disabled"}`
       );
     },
     onError: (error) => {

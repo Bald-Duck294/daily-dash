@@ -57,7 +57,15 @@ export const useAssignCleaner = () => {
       CleaningTasksApi.assignCleaner({ request_id, cleaner_id, notes }),
     onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: CLEANING_TASKS_KEYS.all });
-      toast.success(res.message || "Cleaner assigned and notified successfully!");
+      if (res?.cleaner_notification?.tokenCount === 0) {
+        toast(
+          (res.message || "Task assigned") +
+            " (Notice: Selected cleaner has no active device registered for push notifications)",
+          { icon: "⚠️" }
+        );
+      } else {
+        toast.success(res.message || "Cleaner assigned and notified successfully!");
+      }
     },
     onError: (err) => {
       toast.error(err.message || "Failed to assign cleaner");

@@ -127,6 +127,8 @@ export const CleaningTasksApi = {
         success: true,
         data: response.data?.data,
         message: response.data?.message || "Task assigned successfully",
+        cleaner_notification: response.data?.cleaner_notification,
+        citizen_notification: response.data?.citizen_notification,
       };
     } catch (error) {
       throw new Error(

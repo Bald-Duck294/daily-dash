@@ -71,7 +71,7 @@ export default function AssignCleanerModal({ isOpen, onClose, request }) {
                 Allocate Cleaning Task
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Ticket #{request.id} • {request.location?.name || "Washroom"}
+                Ticket #{request.id} • {request.location?.name || request.locations?.name || "Washroom"}
               </p>
             </div>
           </div>
@@ -94,7 +94,7 @@ export default function AssignCleanerModal({ isOpen, onClose, request }) {
             <div className="text-amber-800 dark:text-amber-200 pl-5">
               {Array.isArray(request.issues) && request.issues.length > 0
                 ? request.issues.join(", ")
-                : request.description || "General cleaning required"}
+                : request.issue_type || request.description || "General cleaning required"}
             </div>
           </div>
 
