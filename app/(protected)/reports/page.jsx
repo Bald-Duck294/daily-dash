@@ -1003,7 +1003,7 @@
 
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   FileText,
   Filter,
@@ -1033,6 +1033,7 @@ import { usePermissions } from "@/shared/hooks/usePermission";
 import { useRequirePermission } from "@/shared/hooks/useRequirePermission";
 import { MODULES } from "@/shared/constants/permissions";
 import { useCompanySlaRulesStatus } from "@/features/slaPenalty/slaPenalty.queries";
+import { useCompanyFeatures } from "@/features/featureManagement/featureManagement.queries";
 
 // Import your custom TanStack hooks
 import {
@@ -1162,12 +1163,20 @@ export default function ReportsPage() {
   const user = useSelector((state) => state.auth.user);
   const isPermitted = user?.role_id === 1 || user?.role_id === 2;
 
-  // SLA Feature-gate: Check if SLA is enabled for company or user has SLA permission
+  // SLA Feature-gate: Check if SLA is enabled specifically for this company
   const { data: slaRulesStatus } = useCompanySlaRulesStatus(
     companyId,
     Boolean(companyId)
   );
-  const isSlaReportVisible = Boolean(slaRulesStatus?.is_active) || canViewSla;
+  const { data: companyFeaturesData } = useCompanyFeatures(
+    companyId,
+    Boolean(companyId)
+  );
+  const isSlaActiveForCompany = Boolean(
+    companyFeaturesData?.features?.sla_rules ?? slaRulesStatus?.is_active
+  );
+  // Contractual penalty reports are visible ONLY when SLA module is active for the company AND user has permission
+  const isSlaReportVisible = Boolean(isSlaActiveForCompany && canViewSla);
 
   const availableReportTypes = useMemo(() => {
     const list = [...REPORT_TYPES];
@@ -1192,6 +1201,17 @@ export default function ReportsPage() {
 
   // State Management
   const [selectedReportType, setSelectedReportType] = useState("daily_task");
+
+  // Fallback to daily_task if currently selected report is a penalty report but company has SLA disabled
+  useEffect(() => {
+    if (
+      !isSlaReportVisible &&
+      (selectedReportType === "cleaner_penalty_summary" ||
+        selectedReportType === "washroom_penalty_summary")
+    ) {
+      setSelectedReportType("daily_task");
+    }
+  }, [isSlaReportVisible, selectedReportType]);
   const [selectedZone, setSelectedZone] = useState("");
   const [selectedLocation, setSelectedLocation] = useState("");
   const [selectedCleaner, setSelectedCleaner] = useState("");
