@@ -120,6 +120,25 @@ export const reportConfigs = {
       { type: "date-range", label: "End Date", isEnd: true },
     ],
   },
+  "Washroom Penalty Summary Report": {
+    description: "AGGREGATED CONTRACTUAL PENALTY DEDUCTIONS PER WASHROOM",
+    fields: [
+      {
+        type: "select",
+        name: "location",
+        label: "Location / Washroom",
+        options: ["All Locations"],
+      },
+      {
+        type: "select",
+        name: "cleaner",
+        label: "Cleaner",
+        options: ["All Cleaners"],
+      },
+      { type: "date-range", label: "Start Date", isStart: true },
+      { type: "date-range", label: "End Date", isEnd: true },
+    ],
+  },
 };
 
 export const reportData = [

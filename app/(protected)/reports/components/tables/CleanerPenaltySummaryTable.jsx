@@ -14,16 +14,28 @@ import {
   AlertTriangle,
   ChevronRight,
   ShieldAlert,
-  Search
+  Search,
+  DollarSign,
+  FileText,
+  Calendar,
+  Phone,
+  Mail,
+  Scale
 } from "lucide-react";
 
 export default function CleanerPenaltySummaryTable({ data = [], metadata = {} }) {
-  const [expandedCleanerId, setExpandedCleanerId] = useState(null);
+  const [expandedCleanerId, setExpandedCleanerId] = useState(
+    data?.length === 1 ? data[0]?.cleaner_id : null
+  );
   const [searchFilter, setSearchFilter] = useState("");
   const [sortConfig, setSortConfig] = useState({
     key: "gross_amount",
     direction: "desc",
   });
+
+  const isSingleCleaner =
+    metadata?.is_single_cleaner === true ||
+    (data && data.length === 1 && (metadata?.cleaner_id || metadata?.is_single_cleaner !== false));
 
   const handleSort = (key) => {
     setSortConfig((prev) => {
@@ -105,6 +117,288 @@ export default function CleanerPenaltySummaryTable({ data = [], metadata = {} })
     }
   };
 
+  // =========================================================================
+  // SINGLE CLEANER VIEW
+  // If a single cleaner is selected or data has 1 cleaner in single mode
+  // =========================================================================
+  if (isSingleCleaner && data && data.length > 0) {
+    const singleCleaner = data[0];
+    const violations = singleCleaner.violations_list || [];
+
+    const totalCount = singleCleaner.total_penalties || violations.length;
+    const grossTotal = Number(singleCleaner.gross_amount || 0);
+    const waivedTotal = Number(singleCleaner.waived_amount || 0);
+    const approvedTotal = Number(singleCleaner.approved_amount || 0);
+    const pendingTotal = Number(singleCleaner.pending_amount || 0);
+
+    return (
+      <div className="space-y-6">
+        {/* Cleaner Profile Header */}
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center font-bold text-white text-xl shadow-md overflow-hidden shrink-0">
+                {singleCleaner.cleaner_avatar ? (
+                  <img
+                    src={singleCleaner.cleaner_avatar}
+                    alt={singleCleaner.cleaner_name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  (singleCleaner.cleaner_name || "C").charAt(0).toUpperCase()
+                )}
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-xl font-bold text-slate-900">
+                    {singleCleaner.cleaner_name}
+                  </h2>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200/60">
+                    Cleaner #{singleCleaner.cleaner_id}
+                  </span>
+                </div>
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 mt-1">
+                  {singleCleaner.cleaner_phone && (
+                    <span className="flex items-center gap-1">
+                      <Phone className="w-3 h-3 text-slate-400" />
+                      {singleCleaner.cleaner_phone}
+                    </span>
+                  )}
+                  {singleCleaner.cleaner_email && singleCleaner.cleaner_email !== "-" && (
+                    <span className="flex items-center gap-1">
+                      <Mail className="w-3 h-3 text-slate-400" />
+                      {singleCleaner.cleaner_email}
+                    </span>
+                  )}
+                  <span className="flex items-center gap-1">
+                    <Calendar className="w-3 h-3 text-slate-400" />
+                    Period: {metadata?.date_range?.start || "Beginning"} to {metadata?.date_range?.end || "Now"}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Assigned Washrooms list */}
+            {singleCleaner.locations && singleCleaner.locations.length > 0 && (
+              <div className="sm:text-right space-y-1">
+                <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                  Assigned Washrooms
+                </span>
+                <div className="flex flex-wrap sm:justify-end gap-1 max-w-md">
+                  {singleCleaner.locations.map((loc, lIdx) => (
+                    <span
+                      key={lIdx}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200"
+                    >
+                      <MapPin className="w-2.5 h-2.5 text-indigo-500" />
+                      {loc}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Top KPI Metric Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
+          {/* Total Penalties / Gross */}
+          <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-sm">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+              Total Penalties Imposed
+            </span>
+            <div className="text-2xl font-black text-slate-900 mt-1">
+              ₹{grossTotal.toFixed(2)}
+            </div>
+            <span className="text-xs text-slate-400 font-medium">
+              {totalCount} total infraction(s)
+            </span>
+          </div>
+
+          {/* Waived / Overturned */}
+          <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-sm">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+              Waived / Forgiven
+            </span>
+            <div className="text-2xl font-black text-slate-600 mt-1">
+              ₹{waivedTotal.toFixed(2)}
+            </div>
+            <span className="text-xs text-slate-400 font-medium">
+              Disputed & reversed
+            </span>
+          </div>
+
+          {/* Pending Review */}
+          <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-sm">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-amber-700">
+              Pending Approval
+            </span>
+            <div className="text-2xl font-black text-amber-600 mt-1">
+              ₹{pendingTotal.toFixed(2)}
+            </div>
+            <span className="text-xs text-amber-600/80 font-medium">
+              Awaiting supervisor review
+            </span>
+          </div>
+
+          {/* Approved / Deductible */}
+          <div className="p-4 rounded-2xl bg-emerald-50/50 border border-emerald-200/80 shadow-sm">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 flex items-center gap-1">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+              Approved Deductible
+            </span>
+            <div className="text-2xl font-black text-emerald-800 mt-1">
+              ₹{approvedTotal.toFixed(2)}
+            </div>
+            <span className="text-xs text-emerald-600 font-semibold">
+              Ready for payroll deduction
+            </span>
+          </div>
+        </div>
+
+        {/* Itemized Penalties Table */}
+        <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
+          <div className="px-5 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <ShieldAlert className="w-4 h-4 text-indigo-600" />
+              <h3 className="text-sm font-bold text-slate-900">
+                Itemized Violation Records ({violations.length})
+              </h3>
+            </div>
+            <span className="text-xs text-slate-400">
+              Showing all recorded SLA breaches
+            </span>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-100/70 border-b border-slate-200 text-[10px] font-bold uppercase tracking-wider text-slate-600">
+                <tr>
+                  <th className="px-4 py-3 w-10 text-center">Sr.</th>
+                  <th className="px-4 py-3">Penalty #</th>
+                  <th className="px-4 py-3">Date</th>
+                  <th className="px-4 py-3">Facility / Washroom</th>
+                  <th className="px-4 py-3">Breached Rule</th>
+                  <th className="px-4 py-3">Amount</th>
+                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3">Dispute Reason</th>
+                  <th className="px-4 py-3 text-right">Review</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-slate-700">
+                {violations.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} className="py-12 text-center text-slate-400 text-xs">
+                      No penalty records recorded for this cleaner in the selected timeframe.
+                    </td>
+                  </tr>
+                ) : (
+                  violations.map((v, vIdx) => (
+                    <tr key={v.penalty_id || vIdx} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="px-4 py-3 text-center font-mono font-semibold text-slate-400">
+                        {vIdx + 1}
+                      </td>
+                      <td className="px-4 py-3 font-mono font-bold text-slate-900">
+                        {v.penalty_number}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-slate-500">
+                        {formatDate(v.date)}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap font-medium text-slate-800">
+                        {v.location_name}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="font-semibold text-slate-900">{v.rule_code}</div>
+                        {v.score !== null && (
+                          <span className="text-[10px] text-rose-600 font-bold">
+                            Score: {Number(v.score).toFixed(1)}/10
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap font-bold text-slate-900">
+                        ₹{Number(v.calculated_amount || 0).toFixed(2)}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+                            v.status === "APPROVED"
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                              : v.status === "REJECTED" || v.status === "REVERSED"
+                              ? "bg-slate-100 text-slate-600 border-slate-200"
+                              : "bg-amber-50 text-amber-700 border-amber-200"
+                          }`}
+                        >
+                          {v.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 max-w-xs truncate italic text-slate-600">
+                        {v.dispute_reason ? `"${v.dispute_reason}"` : "-"}
+                      </td>
+                      <td className="px-4 py-3 text-right whitespace-nowrap">
+                        {v.review_id ? (
+                          <a
+                            href={`/cleaners/${v.review_id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 font-semibold text-[10px]"
+                          >
+                            Review #{v.review_id}
+                            <ExternalLink className="w-2.5 h-2.5" />
+                          </a>
+                        ) : (
+                          <span className="text-slate-400">Daily Quota</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* BOTTOM SUMMARY & DEDUCTIBLE RECONCILIATION BAR */}
+          <div className="p-4 sm:p-5 bg-gradient-to-r from-slate-50 via-indigo-50/20 to-emerald-50/30 border-t-2 border-slate-200">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Scale className="w-4 h-4 text-indigo-600" />
+                  <span className="text-xs font-bold text-slate-900 uppercase tracking-wide">
+                    Penalty Reconciliation & Payroll Summary
+                  </span>
+                </div>
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-600">
+                  <span>Gross Imposed: <strong className="text-slate-800 font-mono">₹{grossTotal.toFixed(2)}</strong></span>
+                  <span>•</span>
+                  <span>Waived / Reversed: <strong className="text-slate-600 font-mono">₹{waivedTotal.toFixed(2)}</strong></span>
+                  <span>•</span>
+                  <span>Pending Review: <strong className="text-amber-700 font-mono">₹{pendingTotal.toFixed(2)}</strong></span>
+                </div>
+              </div>
+
+              {/* Prominent Approved Deductible Card */}
+              <div className="inline-flex items-center gap-3 px-4 py-2.5 rounded-xl bg-emerald-600 text-white shadow-md">
+                <div>
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-100">
+                    Approved Deductible for Payroll
+                  </div>
+                  <div className="text-xl font-black font-mono">
+                    ₹{approvedTotal.toFixed(2)}
+                  </div>
+                </div>
+                <div className="p-2 rounded-lg bg-emerald-700/60 text-white">
+                  <CheckCircle2 className="w-5 h-5" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // =========================================================================
+  // MULTI-CLEANER SUMMARY TABLE VIEW
+  // =========================================================================
   return (
     <div className="space-y-5">
       {/* KPI Summary Cards */}
@@ -246,6 +540,8 @@ export default function CleanerPenaltySummaryTable({ data = [], metadata = {} })
               ) : (
                 sortedData.map((cleaner, idx) => {
                   const isExpanded = expandedCleanerId === cleaner.cleaner_id;
+                  const violations = cleaner.violations_list || [];
+
                   return (
                     <React.Fragment key={cleaner.cleaner_id || idx}>
                       <tr
@@ -370,12 +666,12 @@ export default function CleanerPenaltySummaryTable({ data = [], metadata = {} })
                       {isExpanded && (
                         <tr>
                           <td colSpan={10} className="px-4 py-3 bg-slate-50/70 border-y border-slate-200">
-                            <div className="space-y-2">
+                            <div className="space-y-3">
                               <div className="flex items-center justify-between">
                                 <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
                                   <ShieldAlert className="w-3.5 h-3.5 text-blue-600" />
                                   Violation History for {cleaner.cleaner_name} (
-                                  {(cleaner.violations_list || []).length} records)
+                                  {violations.length} records)
                                 </span>
                                 <span className="text-[11px] text-slate-500">
                                   Click any review to inspect photos
@@ -397,7 +693,7 @@ export default function CleanerPenaltySummaryTable({ data = [], metadata = {} })
                                     </tr>
                                   </thead>
                                   <tbody className="divide-y divide-slate-100 text-slate-700">
-                                    {(cleaner.violations_list || []).map((v, vIdx) => (
+                                    {violations.map((v, vIdx) => (
                                       <tr key={v.penalty_id || vIdx} className="hover:bg-slate-50">
                                         <td className="px-3 py-2 font-mono font-bold text-slate-900">
                                           {v.penalty_number}
@@ -454,6 +750,22 @@ export default function CleanerPenaltySummaryTable({ data = [], metadata = {} })
                                     ))}
                                   </tbody>
                                 </table>
+
+                                {/* AT BOTTOM: RECONCILIATION & APPROVED DEDUCTIBLE BAR */}
+                                <div className="p-3 bg-gradient-to-r from-slate-50 to-emerald-50/30 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                                  <div className="flex flex-wrap items-center gap-x-3 text-xs text-slate-600">
+                                    <span>Gross: <strong className="text-slate-900 font-mono">₹{Number(cleaner.gross_amount || 0).toFixed(2)}</strong></span>
+                                    <span>•</span>
+                                    <span>Waived: <strong className="text-slate-600 font-mono">₹{Number(cleaner.waived_amount || 0).toFixed(2)}</strong></span>
+                                    <span>•</span>
+                                    <span>Pending: <strong className="text-amber-700 font-mono">₹{Number(cleaner.pending_amount || 0).toFixed(2)}</strong></span>
+                                  </div>
+
+                                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-600 text-white font-semibold text-xs shadow-xs self-start sm:self-auto">
+                                    <CheckCircle2 className="w-4 h-4 text-emerald-200" />
+                                    <span>Approved Deductible: ₹{Number(cleaner.approved_amount || 0).toFixed(2)}</span>
+                                  </div>
+                                </div>
                               </div>
                             </div>
                           </td>

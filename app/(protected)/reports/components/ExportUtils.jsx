@@ -4834,6 +4834,161 @@ const exportCleanerPenaltySummaryToPDF = (data, metadata) => {
   doc.save(`Cleaner_Penalty_Summary_${Date.now()}.pdf`);
 };
 
+const exportWashroomPenaltySummaryToPDF = (data, metadata) => {
+  const doc = new jsPDF("l", "mm", "a4");
+  addLogosToHeader(doc);
+
+  doc.setFontSize(16);
+  doc.setFont(undefined, "bold");
+  doc.text("WASHROOM PENALTY SUMMARY REPORT", 14, 20);
+
+  doc.setFontSize(9);
+  doc.setFont(undefined, "normal");
+  doc.text(`Organization: ${metadata?.organization || "N/A"}`, 14, 27);
+  doc.text(
+    `Date Range: ${metadata?.date_range?.start || "Beginning"} to ${metadata?.date_range?.end || "Now"}`,
+    14,
+    32
+  );
+  doc.text(
+    `Generated: ${new Date(metadata?.generated_on || Date.now()).toLocaleString("en-IN")}`,
+    14,
+    37
+  );
+
+  const headers = [
+    [
+      "Sr",
+      "Washroom Location",
+      "Code",
+      "Mapped Cleaners",
+      "Penalties",
+      "Gross (Rs.)",
+      "Waived (Rs.)",
+      "Approved (Rs.)",
+      "Pending (Rs.)",
+      "Disputes"
+    ]
+  ];
+
+  const body = (data || []).map((w, idx) => [
+    idx + 1,
+    w.location_name || "-",
+    w.location_code || "-",
+    (w.cleaners || []).slice(0, 2).join(", ") + ((w.cleaners || []).length > 2 ? ` (+${(w.cleaners || []).length - 2})` : ""),
+    w.total_penalties || 0,
+    `Rs. ${Number(w.gross_amount || 0).toFixed(2)}`,
+    `Rs. ${Number(w.waived_amount || 0).toFixed(2)}`,
+    `Rs. ${Number(w.approved_amount || 0).toFixed(2)}`,
+    `Rs. ${Number(w.pending_amount || 0).toFixed(2)}`,
+    w.disputes_count || 0
+  ]);
+
+  autoTable(doc, {
+    head: headers,
+    body: body,
+    startY: 42,
+    theme: "striped",
+    headStyles: { fillColor: [109, 40, 217], textColor: 255, fontSize: 8 },
+    bodyStyles: { fontSize: 8 },
+    margin: { left: 14, right: 14 }
+  });
+
+  addLogosToAllPages(doc);
+  doc.save(`Washroom_Penalty_Summary_${Date.now()}.pdf`);
+};
+
+const exportWashroomPenaltySummaryToExcel = (data, metadata) => {
+  const wb = XLSX.utils.book_new();
+
+  const summaryHeaders = [
+    "Sr. No.",
+    "Washroom Location",
+    "Code",
+    "Mapped Cleaners",
+    "Total Penalties",
+    "Gross Imposed (Rs.)",
+    "Waived / Reversed (Rs.)",
+    "Approved Deductible (Rs.)",
+    "Pending Review (Rs.)",
+    "Disputed Count"
+  ];
+
+  const summaryRows = [
+    ["WASHROOM PENALTY SUMMARY REPORT"],
+    [`Organization: ${metadata?.organization || "N/A"}`],
+    [`Date Range: ${metadata?.date_range?.start || "Beginning"} to ${metadata?.date_range?.end || "Now"}`],
+    [`Generated: ${new Date().toLocaleString("en-IN")}`],
+    [],
+    summaryHeaders
+  ];
+
+  (data || []).forEach((w, idx) => {
+    summaryRows.push([
+      idx + 1,
+      w.location_name || "-",
+      w.location_code || "-",
+      (w.cleaners || []).join(", "),
+      w.total_penalties || 0,
+      Number(w.gross_amount || 0).toFixed(2),
+      Number(w.waived_amount || 0).toFixed(2),
+      Number(w.approved_amount || 0).toFixed(2),
+      Number(w.pending_amount || 0).toFixed(2),
+      w.disputes_count || 0
+    ]);
+  });
+
+  const wsSummary = XLSX.utils.aoa_to_sheet(summaryRows);
+  XLSX.utils.book_append_sheet(wb, wsSummary, "Washroom Summary");
+
+  // Sheet 2: Itemized Violations
+  const itemizedRows = [
+    ["ITEMIZED WASHROOM SLA PENALTY VIOLATIONS"],
+    [`Organization: ${metadata?.organization || "N/A"}`],
+    [],
+    [
+      "Sr. No.",
+      "Penalty Number",
+      "Date",
+      "Washroom Location",
+      "Cleaner Responsible",
+      "Rule Code",
+      "Rule Description",
+      "Score",
+      "Status",
+      "Gross Imposed (Rs.)",
+      "Approved Amount (Rs.)",
+      "Review ID"
+    ]
+  ];
+
+  let vIdx = 0;
+  (data || []).forEach((w) => {
+    (w.violations_list || []).forEach((v) => {
+      vIdx++;
+      itemizedRows.push([
+        vIdx,
+        v.penalty_number || `PEN-${v.penalty_id}`,
+        v.date ? new Date(v.date).toLocaleDateString("en-IN") : "-",
+        w.location_name || "-",
+        v.cleaner_name || "-",
+        v.rule_code || "RULE",
+        v.rule_name || "SLA Deficiency",
+        v.score !== null ? Number(v.score).toFixed(1) : "-",
+        v.status || "PENDING",
+        Number(v.calculated_amount || 0).toFixed(2),
+        Number(v.approved_amount || 0).toFixed(2),
+        v.review_id ? `#${v.review_id}` : "-"
+      ]);
+    });
+  });
+
+  const wsDetails = XLSX.utils.aoa_to_sheet(itemizedRows);
+  XLSX.utils.book_append_sheet(wb, wsDetails, "Itemized Violations");
+
+  XLSX.writeFile(wb, `Washroom_Penalty_Summary_${new Date().toISOString().split("T")[0]}.xlsx`);
+};
+
 export const exportToPDF = (
   data,
   metadata,
@@ -4858,6 +5013,8 @@ export const exportToPDF = (
     exportHygieneTrendToPDF(data, metadata);
   } else if (reportType === "cleaner_penalty_summary") {
     exportCleanerPenaltySummaryToPDF(data, metadata);
+  } else if (reportType === "washroom_penalty_summary") {
+    exportWashroomPenaltySummaryToPDF(data, metadata);
   } else {
     console.error("Unknown report type:", reportType);
   }
@@ -4885,6 +5042,8 @@ export const exportToExcel = (data, metadata, reportType = "zone_wise") => {
     exportHygieneTrendToExcel(data, metadata);
   } else if (reportType === "cleaner_penalty_summary") {
     exportCleanerPenaltySummaryToExcel(data, metadata);
+  } else if (reportType === "washroom_penalty_summary") {
+    exportWashroomPenaltySummaryToExcel(data, metadata);
   } else {
     console.error("Unknown report type:", reportType);
   }

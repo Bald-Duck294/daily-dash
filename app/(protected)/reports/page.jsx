@@ -1172,6 +1172,12 @@ export default function ReportsPage() {
         description: "Summary of contractual penalty deductions per cleaner",
         endpoint: "cleaner-penalty-summary",
       });
+      list.push({
+        value: "washroom_penalty_summary",
+        label: "Washroom Penalty Summary Report",
+        description: "Summary of contractual penalty deductions per washroom",
+        endpoint: "washroom-penalty-summary",
+      });
     }
     return list;
   }, [isSlaReportVisible]);
@@ -1388,7 +1394,10 @@ export default function ReportsPage() {
         ...(selectedLocation && { location_id: selectedLocation }),
         ...(selectedZone && { type_id: selectedZone }),
       };
-    } else if (selectedReportType === "cleaner_penalty_summary") {
+    } else if (
+      selectedReportType === "cleaner_penalty_summary" ||
+      selectedReportType === "washroom_penalty_summary"
+    ) {
       params = {
         company_id: companyId,
         start_date: startDate,
@@ -1526,6 +1535,7 @@ export default function ReportsPage() {
                     "washroom_report",
                     "cleaner_report",
                     "cleaner_penalty_summary",
+                    "washroom_penalty_summary",
                   ].includes(selectedReportType) && (
                     <div className="space-y-2">
                       <label className="text-[11px] font-bold uppercase tracking-wide flex items-center gap-2 text-[var(--report-subtitle)]">
@@ -1558,6 +1568,7 @@ export default function ReportsPage() {
                     "cleaner_report",
                     "detailed_cleaning",
                     "cleaner_penalty_summary",
+                    "washroom_penalty_summary",
                   ].includes(selectedReportType) && (
                     <div className="space-y-2">
                       <label className="text-[11px] font-bold uppercase tracking-wide flex items-center gap-2 text-[var(--report-subtitle)]">
