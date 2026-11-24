@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useCompanyId } from "@/providers/CompanyProvider";
 import { useSelector } from "react-redux";
+import { ShieldCheck } from "lucide-react";
 // TanStack Query Hooks
 import { useDropdownRoles } from "@/features/dropdownList/dropdownlist.query";
 import { useCompany } from "@/features/companies/queries/companies.queries";
@@ -39,6 +40,19 @@ export default function UserForm({
     // 3. Filter out the Superadmin (id: 1)
     return safeArray.filter((role) => role.id !== 1);
   }, [rolesResponse]);
+
+  // Determine if selected role is an Admin role (has full organization access)
+  const selectedRole = useMemo(() => {
+    return allRoles.find((r) => r.id.toString() === formData.role_id?.toString());
+  }, [allRoles, formData.role_id]);
+
+  const isAdminRole = useMemo(() => {
+    if (!formData.role_id) return false;
+    const roleIdNum = Number(formData.role_id);
+    if (roleIdNum === 1 || roleIdNum === 2) return true;
+    const roleName = selectedRole?.name?.trim().toLowerCase() || "";
+    return roleName === "admin" || roleName === "company admin" || roleName === "super admin";
+  }, [formData.role_id, selectedRole]);
 
   // --- FORM STATE ---
   const [formData, setFormData] = useState({
@@ -91,6 +105,21 @@ export default function UserForm({
     if (name === "phone") {
       const numericValue = value.replace(/\D/g, "");
       setFormData((prev) => ({ ...prev, [name]: numericValue }));
+    } else if (name === "role_id") {
+      const roleIdNum = Number(value);
+      const roleObj = allRoles.find((r) => r.id.toString() === value?.toString());
+      const roleName = roleObj?.name?.trim().toLowerCase() || "";
+      const isAdmin =
+        roleIdNum === 1 ||
+        roleIdNum === 2 ||
+        roleName === "admin" ||
+        roleName === "company admin" ||
+        roleName === "super admin";
+      setFormData((prev) => ({
+        ...prev,
+        role_id: value,
+        location_ids: isAdmin ? [] : prev.location_ids,
+      }));
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
@@ -138,7 +167,7 @@ export default function UserForm({
       email: cleanedEmail,
       company_id: companyId || formData.company_id,
       role_id: formData.role_id ? parseInt(formData.role_id, 10) : null,
-      location_ids: (formData.location_ids || []).map(String),
+      location_ids: isAdminRole ? [] : (formData.location_ids || []).map(String),
     };
 
     if (isEditing && !cleanedPassword) {
@@ -392,47 +421,82 @@ export default function UserForm({
 
       {/* Location Assignment */}
       {canAssignLocation && (
-        <div className="pt-4">
+        <div className="pt-4 transition-all duration-200">
           <label className={labelClass} style={{ color: "var(--user-form-label)" }}>
             Assign Locations (Optional)
           </label>
 
-          <div
-            className="mt-2 p-4 rounded-lg max-h-48 overflow-y-auto space-y-2.5"
-            style={{
-              background: "var(--user-form-muted-bg)",
-              border: "1px solid var(--user-form-border)",
-            }}
-          >
-            {isLoadingLocations ? (
-              <p className="text-sm" style={{ color: "var(--user-form-subtext)" }}>
-                Loading locations...
-              </p>
-            ) : locations.length > 0 ? (
-              locations.map((loc) => (
-                <label
-                  key={loc.id}
-                  className="flex items-center gap-3 cursor-pointer p-2 rounded transition-colors"
+          {isAdminRole ? (
+            /* Informational banner when role is Admin: unrestricted access */
+            <div
+              className="mt-2 p-4 rounded-xl border flex items-start gap-3.5 transition-all animate-in fade-in duration-200"
+              style={{
+                background: "color-mix(in srgb, var(--user-form-accent, #3b82f6) 8%, var(--user-form-muted-bg))",
+                borderColor: "color-mix(in srgb, var(--user-form-accent, #3b82f6) 30%, transparent)",
+              }}
+            >
+              <div
+                className="p-2 rounded-lg shrink-0 mt-0.5"
+                style={{
+                  background: "color-mix(in srgb, var(--user-form-accent, #3b82f6) 18%, transparent)",
+                  color: "var(--user-form-accent, #3b82f6)",
+                }}
+              >
+                <ShieldCheck className="w-5 h-5" />
+              </div>
+              <div className="space-y-1">
+                <h4
+                  className="text-xs font-bold uppercase tracking-wide flex items-center gap-1.5"
                   style={{ color: "var(--user-form-text)" }}
                 >
-                  <input
-                    type="checkbox"
-                    name="location_ids"
-                    value={loc.id.toString()}
-                    checked={(formData.location_ids || []).map(String).includes(loc.id.toString())}
-                    onChange={handleLocationChange}
-                    className="h-4 w-4 rounded cursor-pointer"
-                    style={{ accentColor: "var(--user-form-success)" }}
-                  />
-                  <span className="text-sm font-medium">{loc.name}</span>
-                </label>
-              ))
-            ) : (
-              <p className="text-sm" style={{ color: "var(--user-form-subtext)" }}>
-                No locations available.
-              </p>
-            )}
-          </div>
+                  Full Organization Access
+                </h4>
+                <p
+                  className="text-xs leading-relaxed"
+                  style={{ color: "var(--user-form-subtext)" }}
+                >
+                  Users with the <strong className="font-semibold text-blue-600 dark:text-blue-400">Admin</strong> role have complete, unrestricted access to all locations, washrooms, and operation nodes across the entire organization. Location-specific assignment is not required.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div
+              className="mt-2 p-4 rounded-lg max-h-48 overflow-y-auto space-y-2.5"
+              style={{
+                background: "var(--user-form-muted-bg)",
+                border: "1px solid var(--user-form-border)",
+              }}
+            >
+              {isLoadingLocations ? (
+                <p className="text-sm" style={{ color: "var(--user-form-subtext)" }}>
+                  Loading locations...
+                </p>
+              ) : locations.length > 0 ? (
+                locations.map((loc) => (
+                  <label
+                    key={loc.id}
+                    className="flex items-center gap-3 cursor-pointer p-2 rounded transition-colors"
+                    style={{ color: "var(--user-form-text)" }}
+                  >
+                    <input
+                      type="checkbox"
+                      name="location_ids"
+                      value={loc.id.toString()}
+                      checked={(formData.location_ids || []).map(String).includes(loc.id.toString())}
+                      onChange={handleLocationChange}
+                      className="h-4 w-4 rounded cursor-pointer"
+                      style={{ accentColor: "var(--user-form-success)" }}
+                    />
+                    <span className="text-sm font-medium">{loc.name}</span>
+                  </label>
+                ))
+              ) : (
+                <p className="text-sm" style={{ color: "var(--user-form-subtext)" }}>
+                  No locations available.
+                </p>
+              )}
+            </div>
+          )}
         </div>
       )}
 
