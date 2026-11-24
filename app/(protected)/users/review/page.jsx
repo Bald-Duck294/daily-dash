@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useCompanyId } from "@/providers/CompanyProvider";
 import { useUserReviews } from "@/features/users/review/reviews.queries";
@@ -101,6 +101,7 @@ export default function UserReviewsPage() {
   const router = useRouter();
   const { companyId } = useCompanyId();
 
+  const isTadoba = String(companyId) === "95";
   const MOHARLI_LOCATION_ID = "2249";
 
   // State management
@@ -110,10 +111,18 @@ export default function UserReviewsPage() {
   const [toDate, setToDate] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [ratingFilter, setRatingFilter] = useState("all"); // 'all' | 'high' | 'mid' | 'low'
-  const [selectedWashroom, setSelectedWashroom] = useState(MOHARLI_LOCATION_ID); // Scoped to Moharli Gate Washroom
+  const [selectedWashroom, setSelectedWashroom] = useState(() =>
+    isTadoba ? MOHARLI_LOCATION_ID : ""
+  );
   const [issuesOnly, setIssuesOnly] = useState(false);
   const [page, setPage] = useState(1);
   const limit = 50;
+
+  // Sync selected washroom when companyId changes
+  useEffect(() => {
+    setSelectedWashroom(isTadoba ? MOHARLI_LOCATION_ID : "");
+    setPage(1);
+  }, [isTadoba, companyId]);
 
   // Fetch washroom locations for the company
   const { data: locationsResponse = [], isLoading: isLoadingLocations } = useDropdownLocations(companyId);
@@ -159,10 +168,17 @@ export default function UserReviewsPage() {
     return {};
   }, [ratingFilter]);
 
-  // Fetch reviews using TanStack Query - scoped to Moharli Gate Washroom
+  // Effective location: Hardcoded to Moharli Gate Washroom only for Tadoba (company 95); selectable for other companies
+  const effectiveLocationId = isTadoba
+    ? MOHARLI_LOCATION_ID
+    : selectedWashroom && selectedWashroom !== "all"
+    ? selectedWashroom
+    : undefined;
+
+  // Fetch reviews using TanStack Query
   const { data, isLoading, isError, error, refetch, isFetching } = useUserReviews({
     company_id: companyId,
-    location_id: MOHARLI_LOCATION_ID,
+    location_id: effectiveLocationId,
     limit,
     page,
     search: searchQuery.trim() || undefined,
@@ -185,14 +201,25 @@ export default function UserReviewsPage() {
     issuesCount: 0,
   };
 
-  // Ensure reviews displayed strictly belong to Moharli Gate Washroom (ID: 2249)
+  // Filter reviews: Scoped strictly to Moharli Gate for company 95; otherwise filtered by selectedWashroom if set
   const filteredReviews = useMemo(() => {
+    if (isTadoba) {
+      return rawReviews.filter((review) => {
+        const locId = String(review.location_id || review.toilet_id || review.location?.id || "");
+        const locName = (review.location?.name || "").toLowerCase();
+        return locId === MOHARLI_LOCATION_ID || locName.includes("moharli gate washroom");
+      });
+    }
+
+    if (!selectedWashroom || selectedWashroom === "all") {
+      return rawReviews;
+    }
+
     return rawReviews.filter((review) => {
       const locId = String(review.location_id || review.toilet_id || review.location?.id || "");
-      const locName = (review.location?.name || "").toLowerCase();
-      return locId === MOHARLI_LOCATION_ID || locName.includes("moharli gate washroom");
+      return locId === String(selectedWashroom);
     });
-  }, [rawReviews]);
+  }, [rawReviews, isTadoba, selectedWashroom]);
 
   // Count how many reviews in the current view have specific issues (reason ID > 0)
   const issuesInView = useMemo(() => {
@@ -248,7 +275,7 @@ export default function UserReviewsPage() {
     setToDate("");
     setSearchQuery("");
     setRatingFilter("all");
-    setSelectedWashroom(MOHARLI_LOCATION_ID);
+    setSelectedWashroom(isTadoba ? MOHARLI_LOCATION_ID : "");
     setIssuesOnly(false);
     setPage(1);
     toast.success("Filters reset to Today");
@@ -527,21 +554,40 @@ export default function UserReviewsPage() {
                 )}
               </div>
 
-              {/* Washroom Location Dropdown Filter - Scoped to Moharli Gate Washroom */}
+              {/* Washroom Location Dropdown Filter - Hardcoded for Tadoba (95), selectable for other companies */}
               <div className="relative flex items-center min-w-[200px] sm:min-w-[260px]">
                 <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-primary">
                   <MapPin size={15} />
                 </div>
-                <select
-                  value={selectedWashroom}
-                  disabled
-                  className="w-full pl-9 pr-9 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-foreground text-xs sm:text-sm font-semibold cursor-default transition appearance-none shadow-2xs opacity-95"
-                  aria-label="Filter by Washroom"
-                >
-                  <option value={MOHARLI_LOCATION_ID}>
-                    {locations.find((l) => String(l.id) === MOHARLI_LOCATION_ID)?.name || "Moharli Gate Washroom"}
-                  </option>
-                </select>
+                {isTadoba ? (
+                  <select
+                    value={MOHARLI_LOCATION_ID}
+                    disabled
+                    className="w-full pl-9 pr-9 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-foreground text-xs sm:text-sm font-semibold cursor-default transition appearance-none shadow-2xs opacity-95"
+                    aria-label="Filter by Washroom"
+                  >
+                    <option value={MOHARLI_LOCATION_ID}>
+                      {locations.find((l) => String(l.id) === MOHARLI_LOCATION_ID)?.name || "Moharli Gate Washroom"}
+                    </option>
+                  </select>
+                ) : (
+                  <select
+                    value={selectedWashroom}
+                    onChange={(e) => {
+                      setSelectedWashroom(e.target.value);
+                      setPage(1);
+                    }}
+                    className="w-full pl-9 pr-9 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-foreground text-xs sm:text-sm font-semibold cursor-pointer transition appearance-none shadow-2xs focus:border-primary focus:outline-none"
+                    aria-label="Filter by Washroom"
+                  >
+                    <option value="">All Washroom Locations</option>
+                    {locations.map((loc) => (
+                      <option key={loc.id} value={loc.id}>
+                        {loc.name || loc.display_name}
+                      </option>
+                    ))}
+                  </select>
+                )}
                 <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--muted-foreground)]">
                   <ChevronDown size={14} />
                 </div>
@@ -623,12 +669,34 @@ export default function UserReviewsPage() {
                 )}
 
                 {/* Active Washroom Scope Badge */}
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-primary/10 border border-primary/20 text-primary animate-in fade-in">
-                  <MapPin size={12} />
-                  <span className="truncate max-w-[200px]">
-                    {locations.find((l) => String(l.id) === MOHARLI_LOCATION_ID)?.name || "Moharli Gate Washroom"}
-                  </span>
-                </div>
+                {isTadoba ? (
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-primary/10 border border-primary/20 text-primary animate-in fade-in">
+                    <MapPin size={12} />
+                    <span className="truncate max-w-[200px]">
+                      {locations.find((l) => String(l.id) === MOHARLI_LOCATION_ID)?.name || "Moharli Gate Washroom"}
+                    </span>
+                  </div>
+                ) : (
+                  selectedWashroom && (
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-primary/10 border border-primary/20 text-primary animate-in fade-in">
+                      <MapPin size={12} />
+                      <span className="truncate max-w-[200px]">
+                        {locations.find((l) => String(l.id) === String(selectedWashroom))?.name || "Selected Washroom"}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedWashroom("");
+                          setPage(1);
+                        }}
+                        className="p-0.5 hover:bg-primary/20 rounded-full transition cursor-pointer"
+                        title="Clear washroom filter"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  )
+                )}
               </div>
 
               {/* Custom Date Range Picker (shown when 'custom' is active) */}
