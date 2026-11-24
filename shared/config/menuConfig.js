@@ -87,20 +87,8 @@ export function getSuperadminMainMenu() {
     {
       icon: ShieldCheck,
       label: "Role Management",
-      hasDropdown: true,
+      href: "/role-management",
       key: "role-management",
-      children: [
-        {
-          icon: List,
-          label: "Role List",
-          href: "/role-management",
-        },
-        {
-          icon: PlusCircle,
-          label: "Add Role",
-          href: "/role-management/add",
-        },
-      ],
     },
     {
       icon: Users,
@@ -240,74 +228,26 @@ export function getSuperadminCompanyMenu(
     {
       icon: Layers3,
       label: "Location Hierarchy",
-      hasDropdown: true,
       key: "locationTypes",
-      children: [
-        {
-          icon: List,
-          label: "View Hierarchy",
-          href: `/location-types?companyId=${companyId}`,
-        },
-        {
-          icon: FolderPlus,
-          label: "Add Hierarchy",
-          href: `/location-types/add?companyId=${companyId}`,
-        },
-      ],
+      href: `/location-types?companyId=${companyId}`,
     },
     {
       icon: Wrench,
       label: "Washrooms",
-      hasDropdown: true,
       key: "washrooms",
-      children: [
-        {
-          icon: List,
-          label: "Washrooms List",
-          href: `/washrooms?companyId=${companyId}`,
-        },
-        {
-          icon: PlusCircle,
-          label: "Add Washroom",
-          href: `/washrooms/add-location?companyId=${companyId}`,
-        },
-      ],
+      href: `/washrooms?companyId=${companyId}`,
     },
     {
       icon: Users,
       label: "User Management",
-      hasDropdown: true,
       key: "user-management",
-      children: [
-        {
-          icon: List,
-          label: "User List",
-          href: `/users?companyId=${companyId}`,
-        },
-        {
-          icon: UserPlus,
-          label: "Add User",
-          href: `/users/add?companyId=${companyId}`,
-        },
-      ],
+      href: `/users?companyId=${companyId}`,
     },
     {
       icon: UserCog,
       label: "User Mapping",
-      hasDropdown: true,
       key: "userMapping",
-      children: [
-        {
-          icon: List,
-          label: "Mapped List",
-          href: `/userMapping?companyId=${companyId}`,
-        },
-        {
-          icon: ListChecks,
-          label: "Add Mapping",
-          href: `/userMapping/add?companyId=${companyId}`,
-        },
-      ],
+      href: `/userMapping?companyId=${companyId}`,
     },
     // {
     //   icon: ShieldCheck,
@@ -330,20 +270,8 @@ export function getSuperadminCompanyMenu(
     {
       icon: Building2,
       label: "Facility Companies",
-      hasDropdown: true,
       key: "facility-companies",
-      children: [
-        {
-          icon: List,
-          label: "View List",
-          href: `/facility-company?companyId=${companyId}`,
-        },
-        {
-          icon: PlusCircle,
-          label: "Add Facility",
-          href: `/facility-company/add?companyId=${companyId}`,
-        },
-      ],
+      href: `/facility-company?companyId=${companyId}`,
     },
     // {
     //   icon: Building2,
@@ -433,23 +361,8 @@ export function getSuperadminCompanyMenu(
     {
       icon: MessageSquare,
       label: "User Review",
-      hasDropdown: true,
       key: "user-review-menu",
-      children: [
-        {
-          icon: List,
-          label: "Reviews List",
-          href: `/users/review?companyId=${companyId}`,
-        },
-        {
-          icon: PlusCircle,
-          label: "Feedback Form",
-          href:
-            String(companyId) === "95"
-              ? `/feedback/tadoba?companyId=${companyId}`
-              : `/feedback?companyId=${companyId}`,
-        },
-      ],
+      href: `/users/review?companyId=${companyId}`,
     },
     {
       icon: FileText,
@@ -502,74 +415,26 @@ export function getAdminMenu(companyId, isCompanySlaActive = false) {
     {
       icon: Layers3,
       label: "Location Hierarchy",
-      hasDropdown: true,
       key: "locationTypes",
-      children: [
-        {
-          icon: List,
-          label: "View Hierarchy",
-          href: `/location-types?companyId=${companyId}`,
-        },
-        {
-          icon: FolderPlus,
-          label: "Add Hierarchy",
-          href: `/location-types/add?companyId=${companyId}`,
-        },
-      ],
+      href: `/location-types?companyId=${companyId}`,
     },
     {
       icon: Wrench,
       label: "Washrooms",
-      hasDropdown: true,
       key: "washrooms",
-      children: [
-        {
-          icon: List,
-          label: "Washrooms List",
-          href: `/washrooms?companyId=${companyId}`,
-        },
-        {
-          icon: PlusCircle,
-          label: "Add Washroom",
-          href: `/washrooms/add-location?companyId=${companyId}`,
-        },
-      ],
+      href: `/washrooms?companyId=${companyId}`,
     },
     {
       icon: Users,
       label: "User Management",
-      hasDropdown: true,
       key: "user-management",
-      children: [
-        {
-          icon: List,
-          label: "User List",
-          href: `/users?companyId=${companyId}`,
-        },
-        {
-          icon: UserPlus,
-          label: "Add User",
-          href: `/users/add?companyId=${companyId}`,
-        },
-      ],
+      href: `/users?companyId=${companyId}`,
     },
     {
       icon: UserCog,
       label: "User Mapping",
-      hasDropdown: true,
       key: "user-mapping",
-      children: [
-        {
-          icon: List,
-          label: "Mapped List",
-          href: `/userMapping?companyId=${companyId}`,
-        },
-        {
-          icon: ListChecks,
-          label: "Add Mapping",
-          href: `/userMapping/add?companyId=${companyId}`,
-        },
-      ],
+      href: `/userMapping?companyId=${companyId}`,
     },
     // {
     //   icon: ShieldCheck,
@@ -592,20 +457,8 @@ export function getAdminMenu(companyId, isCompanySlaActive = false) {
     {
       icon: Building2,
       label: "Facility Companies",
-      hasDropdown: true,
       key: "facility-companies",
-      children: [
-        {
-          icon: List,
-          label: "View List",
-          href: `/facility-company?companyId=${companyId}`,
-        },
-        {
-          icon: PlusCircle,
-          label: "Add Facility",
-          href: `/facility-company/add?companyId=${companyId}`,
-        },
-      ],
+      href: `/facility-company?companyId=${companyId}`,
     },
 
     // {
@@ -697,23 +550,8 @@ export function getAdminMenu(companyId, isCompanySlaActive = false) {
     {
       icon: MessageSquare,
       label: "User Review",
-      hasDropdown: true,
       key: "company-admin-user-review-menu",
-      children: [
-        {
-          icon: List,
-          label: "Reviews List",
-          href: `/users/review?companyId=${companyId}`,
-        },
-        {
-          icon: PlusCircle,
-          label: "Feedback Form",
-          href:
-            String(companyId) === "95"
-              ? `/feedback/tadoba?companyId=${companyId}`
-              : `/feedback?companyId=${companyId}`,
-        },
-      ],
+      href: `/users/review?companyId=${companyId}`,
     },
     {
       icon: FileText,
@@ -740,62 +578,23 @@ export const getFullCompanyMenuTemplate = (
     simpleLabel: "Location Hierarchy",
     requiredPermission: "location_types.view",
     key: "locationTypes",
-    children: [
-      {
-        icon: List,
-        label: "View Hierarchy",
-        requiredPermission: "location_types.view",
-        href: `/location-types?companyId=${companyId}`,
-      },
-      {
-        icon: FolderPlus,
-        label: "Add Hierarchy",
-        requiredPermission: "location_types.add",
-        href: `/location-types/add?companyId=${companyId}`,
-      },
-    ],
+    href: `/location-types?companyId=${companyId}`,
   },
   {
     icon: Wrench,
-    label: "Washroom Management",
+    label: "Washrooms",
     simpleLabel: "Washrooms",
     requiredPermission: "locations.view",
     key: "washrooms",
-    children: [
-      {
-        icon: List,
-        label: "Washrooms List",
-        requiredPermission: "locations.view",
-        href: `/washrooms?companyId=${companyId}`,
-      },
-      {
-        icon: PlusCircle,
-        label: "Add Washroom",
-        requiredPermission: "locations.add",
-        href: `/washrooms/add-location?companyId=${companyId}`,
-      },
-    ],
+    href: `/washrooms?companyId=${companyId}`,
   },
   {
     icon: Users,
     label: "User Management",
-    simpleLabel: "Users",
+    simpleLabel: "User Management",
     requiredPermission: "users.view",
     key: "user-management",
-    children: [
-      {
-        icon: List,
-        label: "User List",
-        requiredPermission: "users.view",
-        href: `/users?companyId=${companyId}`,
-      },
-      {
-        icon: UserPlus,
-        label: "Add User",
-        requiredPermission: "users.add",
-        href: `/users/add?companyId=${companyId}`,
-      },
-    ],
+    href: `/users?companyId=${companyId}`,
   },
   {
     icon: UserCog,
@@ -803,20 +602,7 @@ export const getFullCompanyMenuTemplate = (
     simpleLabel: "User Mapping",
     requiredPermission: "assignments.view",
     key: "userMapping",
-    children: [
-      {
-        icon: List,
-        label: "Mapped List",
-        requiredPermission: "assignments.view",
-        href: `/userMapping?companyId=${companyId}`,
-      },
-      {
-        icon: PlusCircle,
-        label: "Add Mapping",
-        requiredPermission: "assignments.add",
-        href: `/userMapping/add?companyId=${companyId}`,
-      },
-    ],
+    href: `/userMapping?companyId=${companyId}`,
   },
   {
     icon: Building2,
@@ -824,20 +610,7 @@ export const getFullCompanyMenuTemplate = (
     simpleLabel: "Facility Companies",
     requiredPermission: "facility_companies.view",
     key: "facility-companies",
-    children: [
-      {
-        icon: List,
-        label: "View List",
-        requiredPermission: "facility_companies.view",
-        href: `/facility-company?companyId=${companyId}`,
-      },
-      {
-        icon: PlusCircle,
-        label: "Add Facility",
-        requiredPermission: "facility_companies.add",
-        href: `/facility-company/add?companyId=${companyId}`,
-      },
-    ],
+    href: `/facility-company?companyId=${companyId}`,
   },
   {
     icon: MapPin,
