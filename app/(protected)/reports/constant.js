@@ -144,6 +144,12 @@ export const reportConfigs = {
     fields: [
       {
         type: "select",
+        name: "zone",
+        label: "Zone Selection",
+        options: ["All Zones"],
+      },
+      {
+        type: "select",
         name: "location",
         label: "Location / Washroom",
         options: ["All Locations"],

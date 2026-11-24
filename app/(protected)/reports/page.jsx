@@ -1424,6 +1424,7 @@ export default function ReportsPage() {
         company_id: companyId,
         start_date: startDate,
         end_date: endDate,
+        ...(selectedZone && { type_id: selectedZone }),
         ...(selectedLocation && { location_id: selectedLocation }),
         ...(selectedCleaner && { cleaner_id: selectedCleaner }),
         ...(statusFilter !== "all" && { status: statusFilter }),
@@ -1521,9 +1522,12 @@ export default function ReportsPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 mb-8">
                   {/* Zone */}
-                  {["daily_task", "detailed_cleaning", "zone_wise"].includes(
-                    selectedReportType,
-                  ) &&
+                  {[
+                    "daily_task",
+                    "detailed_cleaning",
+                    "zone_wise",
+                    "attendance_report",
+                  ].includes(selectedReportType) &&
                     isPermitted && (
                       <div className="space-y-2">
                         <label className="text-[11px] font-bold uppercase tracking-wide flex items-center gap-2 text-[var(--report-subtitle)]">
