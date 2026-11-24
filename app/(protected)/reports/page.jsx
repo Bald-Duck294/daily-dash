@@ -1340,11 +1340,19 @@ export default function ReportsPage() {
       } else {
         const defaultReportType =
           response.metadata?.report_type || variables.label;
-        setReportData(response.data);
+        const finalData =
+          selectedReportType === "attendance_report"
+            ? response.matrix || response.data
+            : response.data;
+        setReportData(finalData);
         setReportMetadata({
           ...response.metadata,
           report_type: defaultReportType,
           dynamic_report_name: defaultReportType,
+          date_columns: response.date_columns,
+          matrix: response.matrix,
+          cleaner_summaries: response.cleaner_summaries,
+          daily_records: response.data,
         });
         setShowModal(true);
         toast.success("Report generated successfully!");

@@ -25,6 +25,9 @@ export const ReportsApi = {
         data: response.data.data,
         metadata: response.data.metadata,
         count: response.data.count,
+        date_columns: response.data.date_columns,
+        matrix: response.data.matrix,
+        cleaner_summaries: response.data.cleaner_summaries,
       };
     } catch (error) {
       console.error(`Error fetching ${endpoint} report:`, error);

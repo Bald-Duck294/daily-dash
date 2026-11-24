@@ -5797,233 +5797,215 @@ const exportWashroomPenaltySummaryToExcel = (data, metadata) => {
 };
 
 // =========================================================================
-// EXPORT ATTENDANCE REPORT TO PDF (Supports Single Cleaner & All Cleaners)
+// EXPORT ATTENDANCE REPORT TO PDF (Muster Roll Matrix View with P / A / WO)
 // =========================================================================
 const exportAttendanceReportToPDF = (data, metadata) => {
   const doc = new jsPDF("l", "mm", "a4");
-  const isSingle =
-    metadata?.is_single_cleaner === true ||
-    (data && data.length > 0 && new Set(data.map((r) => r.cleaner_id)).size === 1);
 
   addLogosToHeader(doc);
 
-  const titleText = isSingle
-    ? "SINGLE CLEANER ATTENDANCE REPORT"
-    : "CLEANER ATTENDANCE AUDIT REPORT";
-  const subtitleText = isSingle
-    ? "Itemized Cleaner Shift Attendance, Check-In Times & Activity Compliance"
-    : "Consolidated Workforce Shift Attendance, Check-In Logs & Compliance Audit";
-
   drawIndustrialHeaderTitle(
     doc,
-    titleText,
-    subtitleText,
-    "WORKFORCE ATTENDANCE AUDIT"
+    "CLEANER ATTENDANCE MUSTER ROLL REPORT",
+    "Workforce Shift Attendance Matrix (P: Present, A: Absent, WO: Week Off)",
+    "ATTENDANCE MUSTER ROLL"
   );
+
+  // Determine Date Columns
+  let dateColumns = metadata?.date_columns || [];
+  if (dateColumns.length === 0 && metadata?.date_range?.start && metadata?.date_range?.end) {
+    let curr = new Date(metadata.date_range.start);
+    const endD = new Date(metadata.date_range.end);
+    while (curr <= endD) {
+      const dStr = curr.toISOString().split("T")[0];
+      const dayName = curr.toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" });
+      const dayNum = String(curr.getUTCDate()).padStart(2, "0");
+      dateColumns.push({
+        date: dStr,
+        label: `${dayName}-${dayNum}`,
+        isSunday: curr.getUTCDay() === 0
+      });
+      curr.setUTCDate(curr.getUTCDate() + 1);
+    }
+  }
+
+  // Determine Matrix Rows
+  let matrixRows = metadata?.matrix || [];
+  if (matrixRows.length === 0) {
+    if (data && data.length > 0 && data[0].attendance_map) {
+      matrixRows = data;
+    } else {
+      // Reconstruct from flat records
+      const groups = {};
+      (data || []).forEach((r) => {
+        const cId = r.cleaner_id || r.cleaner_name;
+        if (!groups[cId]) {
+          groups[cId] = {
+            cleaner_id: cId,
+            employee_name: r.cleaner_name || "Unknown",
+            cleaner_phone: r.cleaner_phone || "-",
+            client_range: metadata?.organization || "N/A",
+            site_beat: (r.assigned_locations || []).join(", ") || "Unassigned",
+            days_worked: 0,
+            attendance_map: {}
+          };
+        }
+        const isPresent = r.status?.toLowerCase() === "present" || r.code === "P";
+        const isSunday = new Date(r.date).getUTCDay() === 0;
+        let code = "A";
+        if (isPresent) {
+          code = "P";
+          groups[cId].days_worked += 1;
+        } else if (isSunday) {
+          code = "WO";
+        }
+        groups[cId].attendance_map[r.date] = { code };
+      });
+      matrixRows = Object.values(groups);
+    }
+  }
 
   // Industrial Metadata Card (NO code, NO address)
   doc.setFillColor(248, 250, 252);
   doc.setDrawColor(203, 213, 225);
   doc.setLineWidth(0.4);
-  doc.roundedRect(14, 25, 269, 18, 1.5, 1.5, "FD");
+  doc.roundedRect(14, 25, 269, 14, 1.5, 1.5, "FD");
 
-  if (isSingle) {
-    const singleName = metadata?.cleaner_name || data?.[0]?.cleaner_name || "N/A";
-    const singlePhone = metadata?.cleaner_phone || data?.[0]?.cleaner_phone || "-";
-    const assignedLocs = (metadata?.assigned_locations || data?.[0]?.assigned_locations || []).join(", ") || "-";
+  // Left Column
+  doc.setFontSize(7.5);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(71, 85, 105);
+  doc.text("ORGANIZATION:", 18, 31);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(15, 23, 42);
+  doc.text(metadata?.organization || "N/A", 52, 31);
 
-    // Left Column
-    doc.setFontSize(7.5);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(71, 85, 105);
-    doc.text("CLEANER NAME:", 18, 30.5);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(15, 23, 42);
-    doc.text(singleName, 52, 30.5);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(71, 85, 105);
+  doc.text("TOTAL EMPLOYEES:", 18, 36);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(15, 23, 42);
+  doc.text(`${metadata?.total_cleaners || matrixRows.length} Cleaners`, 52, 36);
 
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(71, 85, 105);
-    doc.text("CONTACT DETAILS:", 18, 35.5);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(15, 23, 42);
-    doc.text(`Phone: ${singlePhone}`, 52, 35.5);
+  // Right Column
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(71, 85, 105);
+  doc.text("AUDIT PERIOD:", 155, 31);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(15, 23, 42);
+  doc.text(`${formatReportDateOnly(metadata?.date_range?.start)} to ${formatReportDateOnly(metadata?.date_range?.end)}`, 185, 31);
 
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(71, 85, 105);
-    doc.text("ORGANIZATION:", 18, 40.5);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(15, 23, 42);
-    doc.text(metadata?.organization || "N/A", 52, 40.5);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(71, 85, 105);
+  doc.text("GENERATED ON:", 155, 36);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(15, 23, 42);
+  doc.text(formatViolDate(metadata?.generated_on || Date.now()), 185, 36);
 
-    // Right Column
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(71, 85, 105);
-    doc.text("ASSIGNED TO:", 155, 30.5);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(15, 23, 42);
-    doc.text(assignedLocs.length > 70 ? assignedLocs.substring(0, 67) + "..." : assignedLocs, 185, 30.5);
-
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(71, 85, 105);
-    doc.text("AUDIT PERIOD:", 155, 35.5);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(15, 23, 42);
-    doc.text(`${formatReportDateOnly(metadata?.date_range?.start)} to ${formatReportDateOnly(metadata?.date_range?.end)}`, 185, 35.5);
-
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(71, 85, 105);
-    doc.text("GENERATED ON:", 155, 40.5);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(15, 23, 42);
-    doc.text(formatViolDate(metadata?.generated_on || Date.now()), 185, 40.5);
-  } else {
-    // Left Column
-    doc.setFontSize(7.5);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(71, 85, 105);
-    doc.text("ORGANIZATION:", 18, 31);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(15, 23, 42);
-    doc.text(metadata?.organization || "N/A", 52, 31);
-
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(71, 85, 105);
-    doc.text("TOTAL WORKFORCE:", 18, 36.5);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(15, 23, 42);
-    doc.text(`${metadata?.total_cleaners || 0} Cleaners registered`, 52, 36.5);
-
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(71, 85, 105);
-    doc.text("REPORT SCOPE:", 18, 41);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(15, 23, 42);
-    doc.text("Consolidated Facility & Cleaner Attendance Ledger", 52, 41);
-
-    // Right Column
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(71, 85, 105);
-    doc.text("AUDIT PERIOD:", 155, 31);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(15, 23, 42);
-    doc.text(`${formatReportDateOnly(metadata?.date_range?.start)} to ${formatReportDateOnly(metadata?.date_range?.end)}`, 185, 31);
-
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(71, 85, 105);
-    doc.text("GENERATED ON:", 155, 36.5);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(15, 23, 42);
-    doc.text(formatViolDate(metadata?.generated_on || Date.now()), 185, 36.5);
-
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(71, 85, 105);
-    doc.text("TOTAL SCHEDULED:", 155, 41);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(15, 23, 42);
-    doc.text(`${metadata?.total_man_days || data?.length || 0} Man-Days`, 185, 41);
-  }
-
-  // Top KPI Summary Cards (5 cards across width: 269mm / 5 = ~51mm each)
+  // Top KPI Summary Cards (5 cards)
   const cardW = 51;
-  const cardH = 15;
+  const cardH = 14;
   const gap = 3.5;
-  const cardY = 46;
+  const cardY = 42;
 
-  const totalShifts = metadata?.total_man_days ?? data?.length ?? 0;
-  const presentCount = metadata?.total_present ?? (data || []).filter((r) => r.status?.toLowerCase() === "present").length;
-  const absentCount = metadata?.total_absent ?? (data || []).filter((r) => r.status?.toLowerCase() === "absent").length;
-  const totalLogs = metadata?.total_cleaning_logs ?? (data || []).reduce((acc, r) => acc + (Number(r.cleaning_logs) || 0), 0);
+  const totalShifts = metadata?.total_man_days ?? (matrixRows.length * dateColumns.length);
+  const presentCount = metadata?.total_present ?? matrixRows.reduce((acc, r) => acc + (r.days_worked || 0), 0);
+  const absentCount = metadata?.total_absent ?? matrixRows.reduce((acc, r) => acc + (dateColumns.length - (r.days_worked || 0)), 0);
   const rateStr = metadata?.overall_attendance_rate || (totalShifts > 0 ? `${((presentCount / totalShifts) * 100).toFixed(1)}%` : "0.0%");
 
-  drawPdfKpiCard(doc, 14, cardY, cardW, cardH, "Total Shifts", String(totalShifts), "Scheduled man-days", [248, 250, 252], [226, 232, 240], [71, 85, 105], [15, 23, 42]);
-  drawPdfKpiCard(doc, 14 + (cardW + gap), cardY, cardW, cardH, "Present Shifts", String(presentCount), "Logged on duty", [236, 253, 245], [110, 231, 183], [4, 120, 87], [4, 120, 87]);
-  drawPdfKpiCard(doc, 14 + (cardW + gap) * 2, cardY, cardW, cardH, "Absent Shifts", String(absentCount), "No activity recorded", [255, 241, 242], [254, 205, 211], [190, 18, 60], [190, 18, 60]);
-  drawPdfKpiCard(doc, 14 + (cardW + gap) * 3, cardY, cardW, cardH, "Cleanings Done", String(totalLogs), "Total completed logs", [239, 246, 255], [191, 219, 254], [29, 78, 216], [29, 78, 216]);
-  drawPdfKpiCard(doc, 14 + (cardW + gap) * 4, cardY, cardW, cardH, "Attendance Rate", rateStr, "Compliance score", [238, 242, 255], [199, 210, 254], [67, 56, 202], [67, 56, 202]);
+  drawPdfKpiCard(doc, 14, cardY, cardW, cardH, "Employees", String(matrixRows.length), "Active in roster", [248, 250, 252], [226, 232, 240], [71, 85, 105], [15, 23, 42]);
+  drawPdfKpiCard(doc, 14 + (cardW + gap), cardY, cardW, cardH, "Days Worked (P)", String(presentCount), "Total logged shifts", [236, 253, 245], [110, 231, 183], [4, 120, 87], [4, 120, 87]);
+  drawPdfKpiCard(doc, 14 + (cardW + gap) * 2, cardY, cardW, cardH, "Days Absent (A)", String(absentCount), "Missed shifts", [255, 241, 242], [254, 205, 211], [190, 18, 60], [190, 18, 60]);
+  drawPdfKpiCard(doc, 14 + (cardW + gap) * 3, cardY, cardW, cardH, "Total Days", String(dateColumns.length), "Calendar window", [239, 246, 255], [191, 219, 254], [29, 78, 216], [29, 78, 216]);
+  drawPdfKpiCard(doc, 14 + (cardW + gap) * 4, cardY, cardW, cardH, "Compliance Rate", rateStr, "Present vs Total", [238, 242, 255], [199, 210, 254], [67, 56, 202], [67, 56, 202]);
 
   // Section Title
-  doc.setFontSize(9.5);
+  doc.setFontSize(9);
   doc.setFont(undefined, "bold");
   doc.setTextColor(30, 41, 59);
-  doc.text(`Daily Shift Attendance Records (${data?.length || 0} entries)`, 14, 67);
+  doc.text(`Workforce Attendance Muster Roll (${matrixRows.length} Employees, ${dateColumns.length} Days)`, 14, 60);
 
-  const headers = [
+  // Table Headers
+  const tableHeaders = [
     [
-      "Sr",
-      "Date",
-      "Cleaner Name",
-      "Check-In Time",
-      "Last Active",
-      "Assigned Facilities",
-      "Cleanings",
-      "Attendance Status"
+      "Sr No",
+      "Employee Name",
+      "Client/Range",
+      "Site/Beat",
+      "Days Worked",
+      ...dateColumns.map((col) => col.label)
     ]
   ];
 
-  const formatShortTime = (timeVal) => {
-    if (!timeVal) return "-";
-    try {
-      const d = new Date(timeVal);
-      if (isNaN(d.getTime())) return String(timeVal);
-      return d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true });
-    } catch {
-      return String(timeVal);
-    }
-  };
-
-  const body = (data || []).map((r, idx) => {
-    const isPresent = r.status?.toLowerCase() === "present";
-    const locs = (r.assigned_locations || []).slice(0, 2).join(", ") + ((r.assigned_locations || []).length > 2 ? ` (+${(r.assigned_locations || []).length - 2})` : "");
+  // Table Body
+  const tableBody = matrixRows.map((row, idx) => {
+    const dayCells = dateColumns.map((col) => {
+      const cellData = row.attendance_map?.[col.date];
+      return cellData?.code || (col.isSunday ? "WO" : "A");
+    });
 
     return [
       idx + 1,
-      formatReportDateOnly(r.date),
-      r.cleaner_name || "-",
-      isPresent ? formatShortTime(r.check_in_time) : "-",
-      isPresent ? formatShortTime(r.last_active_time) : "-",
-      locs || "Unassigned",
-      isPresent ? `${r.cleaning_logs || 1} logs` : "0",
-      isPresent ? "PRESENT" : "ABSENT"
+      row.employee_name || "-",
+      row.client_range || "-",
+      row.site_beat || "Unassigned",
+      row.days_worked || 0,
+      ...dayCells
     ];
   });
 
+  // Calculate dynamic day column width
+  const fixedColsWidth = 10 + 38 + 28 + 48 + 14; // 138mm
+  const remainingWidth = 269 - fixedColsWidth;
+  const dayColWidth = Math.max(remainingWidth / Math.max(dateColumns.length, 1), 6);
+
+  const columnStyles = {
+    0: { cellWidth: 10, halign: "center" },
+    1: { cellWidth: 38, fontStyle: "bold" },
+    2: { cellWidth: 28 },
+    3: { cellWidth: 48 },
+    4: { cellWidth: 14, halign: "center", fontStyle: "bold" }
+  };
+
+  dateColumns.forEach((_, cIdx) => {
+    columnStyles[5 + cIdx] = { cellWidth: dayColWidth, halign: "center" };
+  });
+
   autoTable(doc, {
-    head: headers,
-    body: body,
-    startY: 70,
+    head: tableHeaders,
+    body: tableBody,
+    startY: 63,
     theme: "grid",
     headStyles: {
-      fillColor: [15, 23, 42],
-      textColor: 255,
+      fillColor: [223, 126, 119], // Terracotta/coral header matching user screenshot
+      textColor: [15, 23, 42],     // Bold black text
       fontStyle: "bold",
-      fontSize: 7.5,
-      halign: "left"
+      fontSize: 6.5,
+      halign: "center",
+      lineColor: [100, 116, 139],
+      lineWidth: 0.2
     },
     bodyStyles: {
-      fontSize: 7,
-      cellPadding: 2,
-      textColor: [30, 41, 59]
+      fontSize: 6.5,
+      cellPadding: 1.8,
+      textColor: [30, 41, 59],
+      lineColor: [203, 213, 225],
+      lineWidth: 0.2
     },
-    columnStyles: {
-      0: { cellWidth: 10, halign: "center" },
-      1: { cellWidth: 26 },
-      2: { cellWidth: 48, fontStyle: "bold" },
-      3: { cellWidth: 28 },
-      4: { cellWidth: 28 },
-      5: { cellWidth: 75 },
-      6: { cellWidth: 24, halign: "center" },
-      7: { cellWidth: 30, halign: "center" }
-    },
+    columnStyles: columnStyles,
     margin: { left: 14, right: 14 },
     didParseCell: (hookData) => {
-      if (hookData.section === "body" && hookData.column.index === 7) {
+      // Color-code day cells (column index >= 5)
+      if (hookData.section === "body" && hookData.column.index >= 5) {
         const val = String(hookData.cell.raw || "");
-        if (val === "PRESENT") {
-          hookData.cell.styles.textColor = [5, 150, 105];
+        if (val === "P") {
+          hookData.cell.styles.textColor = [21, 128, 61]; // emerald-700
           hookData.cell.styles.fontStyle = "bold";
-        } else if (val === "ABSENT") {
-          hookData.cell.styles.textColor = [225, 29, 72];
+        } else if (val === "A") {
+          hookData.cell.styles.textColor = [225, 29, 72];  // rose-600
           hookData.cell.styles.fontStyle = "bold";
+        } else if (val === "WO") {
+          hookData.cell.styles.textColor = [100, 116, 139]; // slate-500
         }
       }
     }
@@ -6032,168 +6014,155 @@ const exportAttendanceReportToPDF = (data, metadata) => {
   // Bottom Summary Box
   const finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY : 150;
   let y = finalY + 4;
-  if (y + 20 > doc.internal.pageSize.height - 12) {
+  if (y + 18 > doc.internal.pageSize.height - 12) {
     doc.addPage();
     y = 16;
   }
 
   const boxWidth = doc.internal.pageSize.width - 28;
-  const boxHeight = 16;
+  const boxHeight = 15;
 
   doc.setFillColor(248, 250, 252);
   doc.setDrawColor(203, 213, 225);
   doc.setLineWidth(0.4);
   doc.roundedRect(14, y, boxWidth, boxHeight, 2, 2, "FD");
 
-  doc.setFontSize(8);
+  doc.setFontSize(7.5);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(15, 23, 42);
-  doc.text("WORKFORCE ATTENDANCE & SHIFT COMPLIANCE RECONCILIATION", 18, y + 5.5);
+  doc.text("ATTENDANCE MUSTER ROLL RECONCILIATION & AUDIT SUMMARY", 18, y + 5);
 
   doc.setFontSize(7);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(71, 85, 105);
   doc.text(
-    `Total Scheduled Shifts: ${totalShifts}    |    Present on Duty: ${presentCount}    |    Absenteeism: ${absentCount}    |    Cleanings Executed: ${totalLogs}`,
+    `Total Scheduled Man-Days: ${totalShifts}    |    Days Worked (P): ${presentCount}    |    Days Absent (A): ${absentCount}    |    Active Workforce: ${matrixRows.length}`,
     18,
-    y + 11
+    y + 10.5
   );
 
   // Green Attendance Badge
   const badgeWidth = 65;
-  const badgeHeight = 12;
+  const badgeHeight = 11;
   const badgeX = 14 + boxWidth - badgeWidth - 2;
   const badgeY = y + 2;
 
   doc.setFillColor(16, 185, 129);
   doc.roundedRect(badgeX, badgeY, badgeWidth, badgeHeight, 1.5, 1.5, "F");
 
-  doc.setFontSize(6.5);
+  doc.setFontSize(6);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(236, 253, 245);
-  doc.text("COMPLIANCE RATE", badgeX + badgeWidth / 2, badgeY + 4.5, { align: "center" });
+  doc.text("COMPLIANCE RATE", badgeX + badgeWidth / 2, badgeY + 4, { align: "center" });
 
-  doc.setFontSize(10);
+  doc.setFontSize(9.5);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(255, 255, 255);
-  doc.text(rateStr, badgeX + badgeWidth / 2, badgeY + 9.5, { align: "center" });
+  doc.text(rateStr, badgeX + badgeWidth / 2, badgeY + 9, { align: "center" });
 
   addLogosToAllPages(doc);
-  doc.save(`Attendance_Report_${Date.now()}.pdf`);
+  doc.save(`Attendance_Muster_Roll_${Date.now()}.pdf`);
 };
 
 // =========================================================================
-// EXPORT ATTENDANCE REPORT TO EXCEL
+// EXPORT ATTENDANCE REPORT TO EXCEL (Muster Roll Matrix Sheet)
 // =========================================================================
 const exportAttendanceReportToExcel = (data, metadata) => {
   const wb = XLSX.utils.book_new();
 
-  // Sheet 1: Daily Attendance Ledger
-  const ledgerHeaders = [
-    "Sr. No.",
-    "Date",
-    "Cleaner Name",
-    "Phone",
-    "Assigned Facilities",
-    "Check-In Time",
-    "Last Active Time",
-    "Cleanings Completed",
-    "Status"
+  // Determine Date Columns
+  let dateColumns = metadata?.date_columns || [];
+  if (dateColumns.length === 0 && metadata?.date_range?.start && metadata?.date_range?.end) {
+    let curr = new Date(metadata.date_range.start);
+    const endD = new Date(metadata.date_range.end);
+    while (curr <= endD) {
+      const dStr = curr.toISOString().split("T")[0];
+      const dayName = curr.toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" });
+      const dayNum = String(curr.getUTCDate()).padStart(2, "0");
+      dateColumns.push({
+        date: dStr,
+        label: `${dayName}-${dayNum}`,
+        isSunday: curr.getUTCDay() === 0
+      });
+      curr.setUTCDate(curr.getUTCDate() + 1);
+    }
+  }
+
+  // Determine Matrix Rows
+  let matrixRows = metadata?.matrix || [];
+  if (matrixRows.length === 0) {
+    if (data && data.length > 0 && data[0].attendance_map) {
+      matrixRows = data;
+    } else {
+      const groups = {};
+      (data || []).forEach((r) => {
+        const cId = r.cleaner_id || r.cleaner_name;
+        if (!groups[cId]) {
+          groups[cId] = {
+            cleaner_id: cId,
+            employee_name: r.cleaner_name || "Unknown",
+            cleaner_phone: r.cleaner_phone || "-",
+            client_range: metadata?.organization || "N/A",
+            site_beat: (r.assigned_locations || []).join(", ") || "Unassigned",
+            days_worked: 0,
+            attendance_map: {}
+          };
+        }
+        const isPresent = r.status?.toLowerCase() === "present" || r.code === "P";
+        const isSunday = new Date(r.date).getUTCDay() === 0;
+        let code = "A";
+        if (isPresent) {
+          code = "P";
+          groups[cId].days_worked += 1;
+        } else if (isSunday) {
+          code = "WO";
+        }
+        groups[cId].attendance_map[r.date] = { code };
+      });
+      matrixRows = Object.values(groups);
+    }
+  }
+
+  // Sheet 1: Attendance Muster Roll Matrix
+  const musterHeaders = [
+    "Sr No",
+    "Employee Name",
+    "Client/Range",
+    "Site/Beat",
+    "Days Worked",
+    ...dateColumns.map((col) => col.label)
   ];
 
-  const ledgerRows = [
-    ["CLEANER ATTENDANCE AUDIT REPORT"],
+  const musterRows = [
+    ["CLEANER ATTENDANCE MUSTER ROLL REPORT"],
     [`Organization: ${metadata?.organization || "N/A"}`],
     [`Audit Period: ${metadata?.date_range?.start || "Beginning"} to ${metadata?.date_range?.end || "Now"}`],
     [`Overall Attendance Rate: ${metadata?.overall_attendance_rate || "N/A"}`],
     [`Generated: ${new Date().toLocaleString("en-IN")}`],
     [],
-    ledgerHeaders
+    musterHeaders
   ];
 
-  (data || []).forEach((r, idx) => {
-    ledgerRows.push([
+  matrixRows.forEach((row, idx) => {
+    const dayCells = dateColumns.map((col) => {
+      const cellData = row.attendance_map?.[col.date];
+      return cellData?.code || (col.isSunday ? "WO" : "A");
+    });
+
+    musterRows.push([
       idx + 1,
-      r.date || "-",
-      r.cleaner_name || "-",
-      r.cleaner_phone || "-",
-      (r.assigned_locations || []).join(", "),
-      r.check_in_time ? new Date(r.check_in_time).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true }) : "-",
-      r.last_active_time ? new Date(r.last_active_time).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true }) : "-",
-      r.cleaning_logs || 0,
-      r.status || "Absent"
+      row.employee_name || "-",
+      row.client_range || "-",
+      row.site_beat || "Unassigned",
+      row.days_worked || 0,
+      ...dayCells
     ]);
   });
 
-  const wsLedger = XLSX.utils.aoa_to_sheet(ledgerRows);
-  XLSX.utils.book_append_sheet(wb, wsLedger, "Daily Attendance Ledger");
+  const wsMuster = XLSX.utils.aoa_to_sheet(musterRows);
+  XLSX.utils.book_append_sheet(wb, wsMuster, "Attendance Muster Roll");
 
-  // Sheet 2: Cleaner Compliance Summary
-  const summaryHeaders = [
-    "Sr. No.",
-    "Cleaner Name",
-    "Phone",
-    "Assigned Facilities",
-    "Days Present",
-    "Days Absent",
-    "Total Working Days",
-    "Attendance Rate",
-    "Total Cleanings",
-    "Avg Cleanings / Day"
-  ];
-
-  const summaryRows = [
-    ["CLEANER COMPLIANCE & ATTENDANCE SUMMARY"],
-    [`Organization: ${metadata?.organization || "N/A"}`],
-    [],
-    summaryHeaders
-  ];
-
-  // Group by cleaner
-  const groups = {};
-  (data || []).forEach((r) => {
-    const cId = r.cleaner_id || r.cleaner_name;
-    if (!groups[cId]) {
-      groups[cId] = {
-        name: r.cleaner_name,
-        phone: r.cleaner_phone,
-        locations: r.assigned_locations || [],
-        present: 0,
-        absent: 0,
-        totalDays: 0,
-        logs: 0
-      };
-    }
-    groups[cId].totalDays += 1;
-    if (r.status?.toLowerCase() === "present") {
-      groups[cId].present += 1;
-      groups[cId].logs += Number(r.cleaning_logs || 0);
-    } else {
-      groups[cId].absent += 1;
-    }
-  });
-
-  Object.values(groups).forEach((c, idx) => {
-    const rate = c.totalDays > 0 ? ((c.present / c.totalDays) * 100).toFixed(1) : "0.0";
-    const avg = c.present > 0 ? (c.logs / c.present).toFixed(1) : "0.0";
-    summaryRows.push([
-      idx + 1,
-      c.name || "-",
-      c.phone || "-",
-      c.locations.join(", "),
-      c.present,
-      c.absent,
-      c.totalDays,
-      `${rate}%`,
-      c.logs,
-      avg
-    ]);
-  });
-
-  const wsSummary = XLSX.utils.aoa_to_sheet(summaryRows);
-  XLSX.utils.book_append_sheet(wb, wsSummary, "Cleaner Summaries");
-
-  XLSX.writeFile(wb, `Cleaner_Attendance_Report_${new Date().toISOString().split("T")[0]}.xlsx`);
+  XLSX.writeFile(wb, `Attendance_Muster_Roll_${new Date().toISOString().split("T")[0]}.xlsx`);
 };
 
 export const exportToPDF = (
