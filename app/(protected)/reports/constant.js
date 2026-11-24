@@ -139,6 +139,31 @@ export const reportConfigs = {
       { type: "date-range", label: "End Date", isEnd: true },
     ],
   },
+  "Attendance Report": {
+    description: "DAILY CLEANER DUTY RECORDS, CHECK-IN TIMES, AND SHIFT COMPLIANCE",
+    fields: [
+      {
+        type: "select",
+        name: "location",
+        label: "Location / Washroom",
+        options: ["All Locations"],
+      },
+      {
+        type: "select",
+        name: "cleaner",
+        label: "Cleaner",
+        options: ["All Cleaners"],
+      },
+      { type: "date-range", label: "Start Date", isStart: true },
+      { type: "date-range", label: "End Date", isEnd: true },
+      {
+        type: "select",
+        name: "status",
+        label: "Attendance Status",
+        options: ["All Status", "Present", "Absent"],
+      },
+    ],
+  },
 };
 
 export const reportData = [

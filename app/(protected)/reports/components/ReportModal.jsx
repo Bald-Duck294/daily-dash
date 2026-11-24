@@ -12,6 +12,7 @@ import WashroomHygieneTrendTable from "./tables/WashroomHygieneTrendTable";
 import CleanerReportTable from "./tables/CleanerReportTable";
 import CleanerPenaltySummaryTable from "./tables/CleanerPenaltySummaryTable";
 import WashroomPenaltySummaryTable from "./tables/WashroomPenaltySummaryTable";
+import AttendanceReportTable from "./tables/AttendanceReportTable";
 import { exportToPDF, exportToExcel } from "./ExportUtils";
 import DetailedCleaningReportTableVirtualized from "./tables/DetailedCleaningReportTableVirtualized";
 
@@ -113,6 +114,8 @@ export default function ReportModal({ reportType, data, metadata, onClose }) {
         return <CleanerPenaltySummaryTable data={data} metadata={metadata} />;
       case "washroom_penalty_summary":
         return <WashroomPenaltySummaryTable data={data} metadata={metadata} />;
+      case "attendance_report":
+        return <AttendanceReportTable data={data} metadata={metadata} />;
       default:
         return <div className="text-center py-8 text-slate-500">Unknown report type</div>;
     }

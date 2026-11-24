@@ -5796,6 +5796,406 @@ const exportWashroomPenaltySummaryToExcel = (data, metadata) => {
   XLSX.writeFile(wb, `Washroom_Penalty_Summary_${new Date().toISOString().split("T")[0]}.xlsx`);
 };
 
+// =========================================================================
+// EXPORT ATTENDANCE REPORT TO PDF (Supports Single Cleaner & All Cleaners)
+// =========================================================================
+const exportAttendanceReportToPDF = (data, metadata) => {
+  const doc = new jsPDF("l", "mm", "a4");
+  const isSingle =
+    metadata?.is_single_cleaner === true ||
+    (data && data.length > 0 && new Set(data.map((r) => r.cleaner_id)).size === 1);
+
+  addLogosToHeader(doc);
+
+  const titleText = isSingle
+    ? "SINGLE CLEANER ATTENDANCE REPORT"
+    : "CLEANER ATTENDANCE AUDIT REPORT";
+  const subtitleText = isSingle
+    ? "Itemized Cleaner Shift Attendance, Check-In Times & Activity Compliance"
+    : "Consolidated Workforce Shift Attendance, Check-In Logs & Compliance Audit";
+
+  drawIndustrialHeaderTitle(
+    doc,
+    titleText,
+    subtitleText,
+    "WORKFORCE ATTENDANCE AUDIT"
+  );
+
+  // Industrial Metadata Card (NO code, NO address)
+  doc.setFillColor(248, 250, 252);
+  doc.setDrawColor(203, 213, 225);
+  doc.setLineWidth(0.4);
+  doc.roundedRect(14, 25, 269, 18, 1.5, 1.5, "FD");
+
+  if (isSingle) {
+    const singleName = metadata?.cleaner_name || data?.[0]?.cleaner_name || "N/A";
+    const singlePhone = metadata?.cleaner_phone || data?.[0]?.cleaner_phone || "-";
+    const assignedLocs = (metadata?.assigned_locations || data?.[0]?.assigned_locations || []).join(", ") || "-";
+
+    // Left Column
+    doc.setFontSize(7.5);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(71, 85, 105);
+    doc.text("CLEANER NAME:", 18, 30.5);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(15, 23, 42);
+    doc.text(singleName, 52, 30.5);
+
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(71, 85, 105);
+    doc.text("CONTACT DETAILS:", 18, 35.5);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(15, 23, 42);
+    doc.text(`Phone: ${singlePhone}`, 52, 35.5);
+
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(71, 85, 105);
+    doc.text("ORGANIZATION:", 18, 40.5);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(15, 23, 42);
+    doc.text(metadata?.organization || "N/A", 52, 40.5);
+
+    // Right Column
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(71, 85, 105);
+    doc.text("ASSIGNED TO:", 155, 30.5);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(15, 23, 42);
+    doc.text(assignedLocs.length > 70 ? assignedLocs.substring(0, 67) + "..." : assignedLocs, 185, 30.5);
+
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(71, 85, 105);
+    doc.text("AUDIT PERIOD:", 155, 35.5);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(15, 23, 42);
+    doc.text(`${formatReportDateOnly(metadata?.date_range?.start)} to ${formatReportDateOnly(metadata?.date_range?.end)}`, 185, 35.5);
+
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(71, 85, 105);
+    doc.text("GENERATED ON:", 155, 40.5);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(15, 23, 42);
+    doc.text(formatViolDate(metadata?.generated_on || Date.now()), 185, 40.5);
+  } else {
+    // Left Column
+    doc.setFontSize(7.5);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(71, 85, 105);
+    doc.text("ORGANIZATION:", 18, 31);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(15, 23, 42);
+    doc.text(metadata?.organization || "N/A", 52, 31);
+
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(71, 85, 105);
+    doc.text("TOTAL WORKFORCE:", 18, 36.5);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(15, 23, 42);
+    doc.text(`${metadata?.total_cleaners || 0} Cleaners registered`, 52, 36.5);
+
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(71, 85, 105);
+    doc.text("REPORT SCOPE:", 18, 41);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(15, 23, 42);
+    doc.text("Consolidated Facility & Cleaner Attendance Ledger", 52, 41);
+
+    // Right Column
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(71, 85, 105);
+    doc.text("AUDIT PERIOD:", 155, 31);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(15, 23, 42);
+    doc.text(`${formatReportDateOnly(metadata?.date_range?.start)} to ${formatReportDateOnly(metadata?.date_range?.end)}`, 185, 31);
+
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(71, 85, 105);
+    doc.text("GENERATED ON:", 155, 36.5);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(15, 23, 42);
+    doc.text(formatViolDate(metadata?.generated_on || Date.now()), 185, 36.5);
+
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(71, 85, 105);
+    doc.text("TOTAL SCHEDULED:", 155, 41);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(15, 23, 42);
+    doc.text(`${metadata?.total_man_days || data?.length || 0} Man-Days`, 185, 41);
+  }
+
+  // Top KPI Summary Cards (5 cards across width: 269mm / 5 = ~51mm each)
+  const cardW = 51;
+  const cardH = 15;
+  const gap = 3.5;
+  const cardY = 46;
+
+  const totalShifts = metadata?.total_man_days ?? data?.length ?? 0;
+  const presentCount = metadata?.total_present ?? (data || []).filter((r) => r.status?.toLowerCase() === "present").length;
+  const absentCount = metadata?.total_absent ?? (data || []).filter((r) => r.status?.toLowerCase() === "absent").length;
+  const totalLogs = metadata?.total_cleaning_logs ?? (data || []).reduce((acc, r) => acc + (Number(r.cleaning_logs) || 0), 0);
+  const rateStr = metadata?.overall_attendance_rate || (totalShifts > 0 ? `${((presentCount / totalShifts) * 100).toFixed(1)}%` : "0.0%");
+
+  drawPdfKpiCard(doc, 14, cardY, cardW, cardH, "Total Shifts", String(totalShifts), "Scheduled man-days", [248, 250, 252], [226, 232, 240], [71, 85, 105], [15, 23, 42]);
+  drawPdfKpiCard(doc, 14 + (cardW + gap), cardY, cardW, cardH, "Present Shifts", String(presentCount), "Logged on duty", [236, 253, 245], [110, 231, 183], [4, 120, 87], [4, 120, 87]);
+  drawPdfKpiCard(doc, 14 + (cardW + gap) * 2, cardY, cardW, cardH, "Absent Shifts", String(absentCount), "No activity recorded", [255, 241, 242], [254, 205, 211], [190, 18, 60], [190, 18, 60]);
+  drawPdfKpiCard(doc, 14 + (cardW + gap) * 3, cardY, cardW, cardH, "Cleanings Done", String(totalLogs), "Total completed logs", [239, 246, 255], [191, 219, 254], [29, 78, 216], [29, 78, 216]);
+  drawPdfKpiCard(doc, 14 + (cardW + gap) * 4, cardY, cardW, cardH, "Attendance Rate", rateStr, "Compliance score", [238, 242, 255], [199, 210, 254], [67, 56, 202], [67, 56, 202]);
+
+  // Section Title
+  doc.setFontSize(9.5);
+  doc.setFont(undefined, "bold");
+  doc.setTextColor(30, 41, 59);
+  doc.text(`Daily Shift Attendance Records (${data?.length || 0} entries)`, 14, 67);
+
+  const headers = [
+    [
+      "Sr",
+      "Date",
+      "Cleaner Name",
+      "Check-In Time",
+      "Last Active",
+      "Assigned Facilities",
+      "Cleanings",
+      "Attendance Status"
+    ]
+  ];
+
+  const formatShortTime = (timeVal) => {
+    if (!timeVal) return "-";
+    try {
+      const d = new Date(timeVal);
+      if (isNaN(d.getTime())) return String(timeVal);
+      return d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true });
+    } catch {
+      return String(timeVal);
+    }
+  };
+
+  const body = (data || []).map((r, idx) => {
+    const isPresent = r.status?.toLowerCase() === "present";
+    const locs = (r.assigned_locations || []).slice(0, 2).join(", ") + ((r.assigned_locations || []).length > 2 ? ` (+${(r.assigned_locations || []).length - 2})` : "");
+
+    return [
+      idx + 1,
+      formatReportDateOnly(r.date),
+      r.cleaner_name || "-",
+      isPresent ? formatShortTime(r.check_in_time) : "-",
+      isPresent ? formatShortTime(r.last_active_time) : "-",
+      locs || "Unassigned",
+      isPresent ? `${r.cleaning_logs || 1} logs` : "0",
+      isPresent ? "PRESENT" : "ABSENT"
+    ];
+  });
+
+  autoTable(doc, {
+    head: headers,
+    body: body,
+    startY: 70,
+    theme: "grid",
+    headStyles: {
+      fillColor: [15, 23, 42],
+      textColor: 255,
+      fontStyle: "bold",
+      fontSize: 7.5,
+      halign: "left"
+    },
+    bodyStyles: {
+      fontSize: 7,
+      cellPadding: 2,
+      textColor: [30, 41, 59]
+    },
+    columnStyles: {
+      0: { cellWidth: 10, halign: "center" },
+      1: { cellWidth: 26 },
+      2: { cellWidth: 48, fontStyle: "bold" },
+      3: { cellWidth: 28 },
+      4: { cellWidth: 28 },
+      5: { cellWidth: 75 },
+      6: { cellWidth: 24, halign: "center" },
+      7: { cellWidth: 30, halign: "center" }
+    },
+    margin: { left: 14, right: 14 },
+    didParseCell: (hookData) => {
+      if (hookData.section === "body" && hookData.column.index === 7) {
+        const val = String(hookData.cell.raw || "");
+        if (val === "PRESENT") {
+          hookData.cell.styles.textColor = [5, 150, 105];
+          hookData.cell.styles.fontStyle = "bold";
+        } else if (val === "ABSENT") {
+          hookData.cell.styles.textColor = [225, 29, 72];
+          hookData.cell.styles.fontStyle = "bold";
+        }
+      }
+    }
+  });
+
+  // Bottom Summary Box
+  const finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY : 150;
+  let y = finalY + 4;
+  if (y + 20 > doc.internal.pageSize.height - 12) {
+    doc.addPage();
+    y = 16;
+  }
+
+  const boxWidth = doc.internal.pageSize.width - 28;
+  const boxHeight = 16;
+
+  doc.setFillColor(248, 250, 252);
+  doc.setDrawColor(203, 213, 225);
+  doc.setLineWidth(0.4);
+  doc.roundedRect(14, y, boxWidth, boxHeight, 2, 2, "FD");
+
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(15, 23, 42);
+  doc.text("WORKFORCE ATTENDANCE & SHIFT COMPLIANCE RECONCILIATION", 18, y + 5.5);
+
+  doc.setFontSize(7);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(71, 85, 105);
+  doc.text(
+    `Total Scheduled Shifts: ${totalShifts}    |    Present on Duty: ${presentCount}    |    Absenteeism: ${absentCount}    |    Cleanings Executed: ${totalLogs}`,
+    18,
+    y + 11
+  );
+
+  // Green Attendance Badge
+  const badgeWidth = 65;
+  const badgeHeight = 12;
+  const badgeX = 14 + boxWidth - badgeWidth - 2;
+  const badgeY = y + 2;
+
+  doc.setFillColor(16, 185, 129);
+  doc.roundedRect(badgeX, badgeY, badgeWidth, badgeHeight, 1.5, 1.5, "F");
+
+  doc.setFontSize(6.5);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(236, 253, 245);
+  doc.text("COMPLIANCE RATE", badgeX + badgeWidth / 2, badgeY + 4.5, { align: "center" });
+
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(255, 255, 255);
+  doc.text(rateStr, badgeX + badgeWidth / 2, badgeY + 9.5, { align: "center" });
+
+  addLogosToAllPages(doc);
+  doc.save(`Attendance_Report_${Date.now()}.pdf`);
+};
+
+// =========================================================================
+// EXPORT ATTENDANCE REPORT TO EXCEL
+// =========================================================================
+const exportAttendanceReportToExcel = (data, metadata) => {
+  const wb = XLSX.utils.book_new();
+
+  // Sheet 1: Daily Attendance Ledger
+  const ledgerHeaders = [
+    "Sr. No.",
+    "Date",
+    "Cleaner Name",
+    "Phone",
+    "Assigned Facilities",
+    "Check-In Time",
+    "Last Active Time",
+    "Cleanings Completed",
+    "Status"
+  ];
+
+  const ledgerRows = [
+    ["CLEANER ATTENDANCE AUDIT REPORT"],
+    [`Organization: ${metadata?.organization || "N/A"}`],
+    [`Audit Period: ${metadata?.date_range?.start || "Beginning"} to ${metadata?.date_range?.end || "Now"}`],
+    [`Overall Attendance Rate: ${metadata?.overall_attendance_rate || "N/A"}`],
+    [`Generated: ${new Date().toLocaleString("en-IN")}`],
+    [],
+    ledgerHeaders
+  ];
+
+  (data || []).forEach((r, idx) => {
+    ledgerRows.push([
+      idx + 1,
+      r.date || "-",
+      r.cleaner_name || "-",
+      r.cleaner_phone || "-",
+      (r.assigned_locations || []).join(", "),
+      r.check_in_time ? new Date(r.check_in_time).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true }) : "-",
+      r.last_active_time ? new Date(r.last_active_time).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true }) : "-",
+      r.cleaning_logs || 0,
+      r.status || "Absent"
+    ]);
+  });
+
+  const wsLedger = XLSX.utils.aoa_to_sheet(ledgerRows);
+  XLSX.utils.book_append_sheet(wb, wsLedger, "Daily Attendance Ledger");
+
+  // Sheet 2: Cleaner Compliance Summary
+  const summaryHeaders = [
+    "Sr. No.",
+    "Cleaner Name",
+    "Phone",
+    "Assigned Facilities",
+    "Days Present",
+    "Days Absent",
+    "Total Working Days",
+    "Attendance Rate",
+    "Total Cleanings",
+    "Avg Cleanings / Day"
+  ];
+
+  const summaryRows = [
+    ["CLEANER COMPLIANCE & ATTENDANCE SUMMARY"],
+    [`Organization: ${metadata?.organization || "N/A"}`],
+    [],
+    summaryHeaders
+  ];
+
+  // Group by cleaner
+  const groups = {};
+  (data || []).forEach((r) => {
+    const cId = r.cleaner_id || r.cleaner_name;
+    if (!groups[cId]) {
+      groups[cId] = {
+        name: r.cleaner_name,
+        phone: r.cleaner_phone,
+        locations: r.assigned_locations || [],
+        present: 0,
+        absent: 0,
+        totalDays: 0,
+        logs: 0
+      };
+    }
+    groups[cId].totalDays += 1;
+    if (r.status?.toLowerCase() === "present") {
+      groups[cId].present += 1;
+      groups[cId].logs += Number(r.cleaning_logs || 0);
+    } else {
+      groups[cId].absent += 1;
+    }
+  });
+
+  Object.values(groups).forEach((c, idx) => {
+    const rate = c.totalDays > 0 ? ((c.present / c.totalDays) * 100).toFixed(1) : "0.0";
+    const avg = c.present > 0 ? (c.logs / c.present).toFixed(1) : "0.0";
+    summaryRows.push([
+      idx + 1,
+      c.name || "-",
+      c.phone || "-",
+      c.locations.join(", "),
+      c.present,
+      c.absent,
+      c.totalDays,
+      `${rate}%`,
+      c.logs,
+      avg
+    ]);
+  });
+
+  const wsSummary = XLSX.utils.aoa_to_sheet(summaryRows);
+  XLSX.utils.book_append_sheet(wb, wsSummary, "Cleaner Summaries");
+
+  XLSX.writeFile(wb, `Cleaner_Attendance_Report_${new Date().toISOString().split("T")[0]}.xlsx`);
+};
+
 export const exportToPDF = (
   data,
   metadata,
@@ -5822,6 +6222,8 @@ export const exportToPDF = (
     exportCleanerPenaltySummaryToPDF(data, metadata);
   } else if (reportType === "washroom_penalty_summary") {
     exportWashroomPenaltySummaryToPDF(data, metadata);
+  } else if (reportType === "attendance_report") {
+    exportAttendanceReportToPDF(data, metadata);
   } else {
     console.error("Unknown report type:", reportType);
   }
@@ -5851,6 +6253,8 @@ export const exportToExcel = (data, metadata, reportType = "zone_wise") => {
     exportCleanerPenaltySummaryToExcel(data, metadata);
   } else if (reportType === "washroom_penalty_summary") {
     exportWashroomPenaltySummaryToExcel(data, metadata);
+  } else if (reportType === "attendance_report") {
+    exportAttendanceReportToExcel(data, metadata);
   } else {
     console.error("Unknown report type:", reportType);
   }

@@ -1072,6 +1072,12 @@ const REPORT_TYPES = [
     description: "View daily hygiene scores across all washrooms",
     endpoint: "washroom-daily-scores",
   },
+  {
+    value: "attendance_report",
+    label: "Attendance Report",
+    description: "Daily cleaner duty records, check-in times, and shift compliance",
+    endpoint: "attendance-report",
+  },
 ];
 
 const getTodayDate = () => {
@@ -1405,6 +1411,15 @@ export default function ReportsPage() {
         ...(selectedLocation && { location_id: selectedLocation }),
         ...(selectedCleaner && { cleaner_id: selectedCleaner }),
       };
+    } else if (selectedReportType === "attendance_report") {
+      params = {
+        company_id: companyId,
+        start_date: startDate,
+        end_date: endDate,
+        ...(selectedLocation && { location_id: selectedLocation }),
+        ...(selectedCleaner && { cleaner_id: selectedCleaner }),
+        ...(statusFilter !== "all" && { status: statusFilter }),
+      };
     }
 
     reportMutation.mutate({
@@ -1536,6 +1551,7 @@ export default function ReportsPage() {
                     "cleaner_report",
                     "cleaner_penalty_summary",
                     "washroom_penalty_summary",
+                    "attendance_report",
                   ].includes(selectedReportType) && (
                     <div className="space-y-2">
                       <label className="text-[11px] font-bold uppercase tracking-wide flex items-center gap-2 text-[var(--report-subtitle)]">
@@ -1569,6 +1585,7 @@ export default function ReportsPage() {
                     "detailed_cleaning",
                     "cleaner_penalty_summary",
                     "washroom_penalty_summary",
+                    "attendance_report",
                   ].includes(selectedReportType) && (
                     <div className="space-y-2">
                       <label className="text-[11px] font-bold uppercase tracking-wide flex items-center gap-2 text-[var(--report-subtitle)]">
@@ -1601,6 +1618,7 @@ export default function ReportsPage() {
                     "washroom_report",
                     "cleaner_report",
                     "detailed_cleaning",
+                    "attendance_report",
                   ].includes(selectedReportType) && (
                     <div className="space-y-2">
                       <label className="text-[11px] font-bold uppercase tracking-wide flex items-center gap-2 text-[var(--report-subtitle)]">
@@ -1613,9 +1631,19 @@ export default function ReportsPage() {
                           onChange={(e) => setStatusFilter(e.target.value)}
                           className="w-full px-4 py-3 text-sm font-medium rounded-xl bg-[var(--report-input-bg)] border border-[var(--report-input-border)] text-[var(--report-input-text)] focus:border-[var(--report-input-focus)] outline-none appearance-none transition-all"
                         >
-                          <option value="all">All Status</option>
-                          <option value="completed">Completed</option>
-                          <option value="ongoing">Ongoing</option>
+                          {selectedReportType === "attendance_report" ? (
+                            <>
+                              <option value="all">All Status</option>
+                              <option value="Present">Present</option>
+                              <option value="Absent">Absent</option>
+                            </>
+                          ) : (
+                            <>
+                              <option value="all">All Status</option>
+                              <option value="completed">Completed</option>
+                              <option value="ongoing">Ongoing</option>
+                            </>
+                          )}
                         </select>
                         <ChevronDown
                           size={16}
