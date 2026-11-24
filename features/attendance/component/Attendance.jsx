@@ -3,20 +3,46 @@ import React, { useMemo, useState } from 'react';
 
 const getDatesInRange = (startDateStr, endDateStr) => {
   const dates = [];
-  let currentDate = new Date(startDateStr);
-  const endDate = new Date(endDateStr);
-  while (currentDate <= endDate) {
-    dates.push(currentDate.toISOString().split("T")[0]);
-    currentDate.setDate(currentDate.getDate() + 1);
+  if (!startDateStr || !endDateStr) return dates;
+
+  let startStr = startDateStr;
+  let endStr = endDateStr;
+  if (startStr > endStr) {
+    [startStr, endStr] = [endStr, startStr];
+  }
+
+  const [sYear, sMonth, sDay] = startStr.split("-").map(Number);
+  const [eYear, eMonth, eDay] = endStr.split("-").map(Number);
+
+  // Latest date first: iterate backwards from end date down to start date
+  let current = new Date(Date.UTC(eYear, eMonth - 1, eDay));
+  const start = new Date(Date.UTC(sYear, sMonth - 1, sDay));
+
+  while (current >= start) {
+    dates.push(current.toISOString().split("T")[0]);
+    current.setUTCDate(current.getUTCDate() - 1);
   }
   return dates;
 };
 
 const formatDateHeader = (dateStr) => {
+  if (!dateStr) return { day: "", month: "" };
+  const [year, month, day] = dateStr.split("-").map(Number);
+  const d = new Date(Date.UTC(year, month - 1, day));
+  const dayStr = String(day).padStart(2, '0');
+  const monthStr = d.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' }).toUpperCase();
+  return { day: dayStr, month: monthStr };
+};
+
+const formatBadgeDate = (dateStr) => {
+  if (!dateStr) return "";
+  const parts = dateStr.split("-");
+  if (parts.length === 3) {
+    const [y, m, d] = parts;
+    return `${d.padStart(2, "0")}/${m.padStart(2, "0")}/${y}`;
+  }
   const d = new Date(dateStr);
-  const day = d.getDate().toString().padStart(2, '0');
-  const month = d.toLocaleString('en-US', { month: 'short' }).toUpperCase();
-  return { day, month };
+  return isNaN(d.getTime()) ? dateStr : d.toLocaleDateString("en-GB");
 };
 
 export default function Attendance({ 
@@ -123,7 +149,9 @@ export default function Attendance({
       <div className="bg-slate-50 dark:bg-[#1F2937] border-b border-slate-200 dark:border-slate-700 px-4 py-3 flex items-center justify-between transition-colors duration-200">
         <h2 className="text-sm font-bold text-slate-800 dark:text-white tracking-wide">Attendance Matrix</h2>
         <span className="text-xs font-mono bg-white dark:bg-[#0B1120] text-slate-600 dark:text-slate-400 px-3 py-1 rounded-md border border-slate-200 dark:border-slate-700 transition-colors duration-200">
-          {new Date(startDate).toLocaleDateString('en-GB')} to {new Date(endDate).toLocaleDateString('en-GB')}
+          {startDate === endDate
+            ? formatBadgeDate(endDate || startDate)
+            : `${formatBadgeDate(endDate)} to ${formatBadgeDate(startDate)}`}
         </span>
       </div>
 

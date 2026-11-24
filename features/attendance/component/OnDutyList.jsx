@@ -1,9 +1,18 @@
 // features/attendance/component/OnDutyList.jsx
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 export default function OnDutyList({ records = [], pagination, onPageChange }) {
     // 🟢 NEW: State for the Multi-Location Modal
     const [locationModal, setLocationModal] = useState({ isOpen: false, name: "", locations: [] });
+
+    const sortedRecords = useMemo(() => {
+        return [...records].sort((a, b) => {
+            const dateA = a.date || "";
+            const dateB = b.date || "";
+            if (dateA !== dateB) return dateB.localeCompare(dateA);
+            return (b.check_in_time || "").localeCompare(a.check_in_time || "");
+        });
+    }, [records]);
 
     const format12Hour = (dateString) => {
         if (!dateString) return 'N/A';
@@ -36,7 +45,7 @@ export default function OnDutyList({ records = [], pagination, onPageChange }) {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-200 dark:divide-slate-800 bg-white dark:bg-[#0B1120]">
-                            {records.map((record, index) => {
+                            {sortedRecords.map((record, index) => {
                                 // Determine locations array (default to single location if array missing)
                                 const locations = record.assigned_locations || [record.location || 'Unassigned'];
 
