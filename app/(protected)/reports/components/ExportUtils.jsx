@@ -4770,34 +4770,370 @@ const exportCleanerPenaltySummaryToExcel = (data, metadata) => {
   XLSX.writeFile(wb, fileName);
 };
 
+// =========================================================================
+// HELPER: Format violation date for PDF
+// =========================================================================
+const formatViolDate = (dateVal) => {
+  if (!dateVal) return "-";
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return String(dateVal);
+    return d.toLocaleString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+  } catch {
+    return String(dateVal);
+  }
+};
+
+// =========================================================================
+// HELPER: Draw styled KPI card in jsPDF
+// =========================================================================
+const drawPdfKpiCard = (doc, x, y, width, height, title, value, subtext, bgColor, borderColor, titleColor, valColor) => {
+  doc.setFillColor(...bgColor);
+  doc.setDrawColor(...borderColor);
+  doc.setLineWidth(0.3);
+  doc.roundedRect(x, y, width, height, 2, 2, "FD");
+
+  doc.setFontSize(7);
+  doc.setFont(undefined, "bold");
+  doc.setTextColor(...titleColor);
+  doc.text(title.toUpperCase(), x + 3.5, y + 4.5);
+
+  doc.setFontSize(11);
+  doc.setFont(undefined, "bold");
+  doc.setTextColor(...valColor);
+  doc.text(value, x + 3.5, y + 10);
+
+  if (subtext) {
+    doc.setFontSize(6.5);
+    doc.setFont(undefined, "normal");
+    doc.setTextColor(100, 116, 139);
+    doc.text(subtext, x + 3.5, y + 14);
+  }
+};
+
+// =========================================================================
+// HELPER: Draw bottom reconciliation & payroll deductible banner in jsPDF
+// =========================================================================
+const drawPdfBottomSummary = (doc, finalY, gross, waived, pending, approved, title, approvedLabel) => {
+  const pageWidth = doc.internal.pageSize.width;
+  let y = finalY + 4;
+  if (y + 22 > doc.internal.pageSize.height - 12) {
+    doc.addPage();
+    y = 16;
+  }
+
+  const boxWidth = pageWidth - 28;
+  const boxHeight = 17;
+
+  // Background & border
+  doc.setFillColor(236, 253, 245); // emerald-50
+  doc.setDrawColor(16, 185, 129);  // emerald-500
+  doc.setLineWidth(0.5);
+  doc.roundedRect(14, y, boxWidth, boxHeight, 2.5, 2.5, "FD");
+
+  // Left side: Title & breakdown
+  doc.setFontSize(8);
+  doc.setFont(undefined, "bold");
+  doc.setTextColor(15, 23, 42); // slate-900
+  doc.text(title.toUpperCase(), 18, y + 5.5);
+
+  doc.setFontSize(7.5);
+  doc.setFont(undefined, "normal");
+  doc.setTextColor(71, 85, 105); // slate-600
+  doc.text(
+    `Gross Imposed: Rs. ${Number(gross || 0).toFixed(2)}    |    Waived / Reversed: Rs. ${Number(waived || 0).toFixed(2)}    |    Pending Review: Rs. ${Number(pending || 0).toFixed(2)}`,
+    18,
+    y + 11.5
+  );
+
+  // Right side: Green confirmation badge
+  const badgeWidth = 74;
+  const badgeHeight = 13;
+  const badgeX = 14 + boxWidth - badgeWidth - 2;
+  const badgeY = y + 2;
+
+  doc.setFillColor(5, 150, 105); // emerald-600
+  doc.roundedRect(badgeX, badgeY, badgeWidth, badgeHeight, 2, 2, "F");
+
+  doc.setFontSize(6.5);
+  doc.setFont(undefined, "bold");
+  doc.setTextColor(209, 250, 229); // emerald-100
+  doc.text(approvedLabel.toUpperCase(), badgeX + badgeWidth / 2, badgeY + 4.5, { align: "center" });
+
+  doc.setFontSize(10.5);
+  doc.setFont(undefined, "bold");
+  doc.setTextColor(255, 255, 255);
+  doc.text(`Rs. ${Number(approved || 0).toFixed(2)}`, badgeX + badgeWidth / 2, badgeY + 10.5, { align: "center" });
+};
+
+// =========================================================================
+// EXPORT CLEANER PENALTY SUMMARY TO PDF (Supports Single Cleaner & All Cleaners)
+// =========================================================================
 const exportCleanerPenaltySummaryToPDF = (data, metadata) => {
   const doc = new jsPDF("l", "mm", "a4");
+  const isSingle =
+    metadata?.is_single_cleaner === true ||
+    (data && data.length === 1 && (metadata?.cleaner_id || metadata?.is_single_cleaner !== false));
+
+  // =========================================================================
+  // CASE A: SINGLE CLEANER PENALTY REPORT PDF
+  // =========================================================================
+  if (isSingle && data && data.length > 0) {
+    const cleaner = data[0];
+    const violations = cleaner.violations_list || [];
+
+    addLogosToHeader(doc);
+
+    // Title & Subtitle
+    doc.setFontSize(16);
+    doc.setFont(undefined, "bold");
+    doc.setTextColor(30, 41, 59);
+    doc.text("SINGLE CLEANER PENALTY REPORT", 14, 18);
+
+    doc.setFontSize(8.5);
+    doc.setFont(undefined, "normal");
+    doc.setTextColor(100, 116, 139);
+    doc.text("Itemized Contractual SLA Violations & Payroll Deduction Reconciliation", 14, 23);
+
+    // Profile & Parameters Box
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(14, 26, 269, 16, 2, 2, "FD");
+
+    doc.setFontSize(8.5);
+    doc.setFont(undefined, "bold");
+    doc.setTextColor(15, 23, 42);
+    doc.text(`Cleaner: ${cleaner.cleaner_name || metadata?.cleaner_name || "N/A"}`, 18, 32);
+
+    doc.setFontSize(7.5);
+    doc.setFont(undefined, "normal");
+    doc.setTextColor(71, 85, 105);
+    doc.text(
+      `Phone: ${cleaner.cleaner_phone || metadata?.cleaner_phone || "-"}    |    Email: ${cleaner.cleaner_email || metadata?.cleaner_email || "-"}    |    Organization: ${metadata?.organization || "N/A"}`,
+      18,
+      37
+    );
+
+    const washroomStr = (cleaner.locations || metadata?.locations || []).join(", ") || "-";
+    doc.text(
+      `Assigned Washrooms: ${washroomStr.length > 90 ? washroomStr.substring(0, 87) + "..." : washroomStr}`,
+      150,
+      32
+    );
+    doc.text(
+      `Period: ${metadata?.date_range?.start || "Beginning"} to ${metadata?.date_range?.end || "Now"}    |    Generated: ${new Date(metadata?.generated_on || Date.now()).toLocaleString("en-IN")}`,
+      150,
+      37
+    );
+
+    // KPI Summary Cards (4 Cards across page width: 269mm / 4 = ~64mm each)
+    const cardY = 46;
+    const cardW = 64.5;
+    const cardH = 16;
+    const gap = 3.5;
+
+    // Card 1: Gross Imposed
+    drawPdfKpiCard(
+      doc,
+      14,
+      cardY,
+      cardW,
+      cardH,
+      "Gross Penalties Imposed",
+      `Rs. ${Number(cleaner.gross_amount || 0).toFixed(2)}`,
+      `${cleaner.total_penalties || violations.length} total infraction(s)`,
+      [248, 250, 252],
+      [226, 232, 240],
+      [71, 85, 105],
+      [15, 23, 42]
+    );
+
+    // Card 2: Waived / Reversed
+    drawPdfKpiCard(
+      doc,
+      14 + cardW + gap,
+      cardY,
+      cardW,
+      cardH,
+      "Waived / Overturned",
+      `Rs. ${Number(cleaner.waived_amount || 0).toFixed(2)}`,
+      "Disputed & forgiven",
+      [248, 250, 252],
+      [226, 232, 240],
+      [71, 85, 105],
+      [71, 85, 105]
+    );
+
+    // Card 3: Pending Approval
+    drawPdfKpiCard(
+      doc,
+      14 + (cardW + gap) * 2,
+      cardY,
+      cardW,
+      cardH,
+      "Pending Review",
+      `Rs. ${Number(cleaner.pending_amount || 0).toFixed(2)}`,
+      "Awaiting supervisor",
+      [254, 243, 199],
+      [252, 211, 77],
+      [180, 83, 9],
+      [180, 83, 9]
+    );
+
+    // Card 4: Approved Deductible
+    drawPdfKpiCard(
+      doc,
+      14 + (cardW + gap) * 3,
+      cardY,
+      cardW,
+      cardH,
+      "Approved Deductible",
+      `Rs. ${Number(cleaner.approved_amount || 0).toFixed(2)}`,
+      "Confirmed for payroll",
+      [236, 253, 245],
+      [110, 231, 183],
+      [4, 120, 87],
+      [4, 120, 87]
+    );
+
+    // Section Title
+    doc.setFontSize(9.5);
+    doc.setFont(undefined, "bold");
+    doc.setTextColor(30, 41, 59);
+    doc.text(`Itemized Violation Records (${violations.length} records)`, 14, 67);
+
+    // Table of itemized violations
+    const tableHeaders = [
+      [
+        "Sr",
+        "Penalty #",
+        "Date",
+        "Facility / Washroom",
+        "Breached Rule & Score",
+        "Amount (Rs.)",
+        "Status",
+        "Dispute Reason",
+        "Review"
+      ]
+    ];
+
+    const tableBody = violations.map((v, idx) => [
+      idx + 1,
+      v.penalty_number || `PEN-${v.penalty_id}`,
+      formatViolDate(v.date),
+      v.location_name || "-",
+      `${v.rule_code || "RULE"}${v.score !== null ? ` (Score: ${Number(v.score).toFixed(1)}/10)` : ""}`,
+      `Rs. ${Number(v.calculated_amount || 0).toFixed(2)}`,
+      v.status || "PENDING",
+      v.dispute_reason ? `"${v.dispute_reason}"` : "-",
+      v.review_id ? `Review #${v.review_id}` : "Daily Quota"
+    ]);
+
+    autoTable(doc, {
+      head: tableHeaders,
+      body: tableBody,
+      startY: 70,
+      theme: "grid",
+      headStyles: {
+        fillColor: [30, 58, 138],
+        textColor: 255,
+        fontStyle: "bold",
+        fontSize: 7.5,
+        halign: "left"
+      },
+      bodyStyles: {
+        fontSize: 7,
+        cellPadding: 2,
+        textColor: [30, 41, 59]
+      },
+      columnStyles: {
+        0: { cellWidth: 10, halign: "center" },
+        1: { cellWidth: 32, fontStyle: "bold" },
+        2: { cellWidth: 32 },
+        3: { cellWidth: 50 },
+        4: { cellWidth: 46 },
+        5: { cellWidth: 24, halign: "right", fontStyle: "bold" },
+        6: { cellWidth: 22, halign: "center" },
+        7: { cellWidth: 33 },
+        8: { cellWidth: 20, halign: "center" }
+      },
+      margin: { left: 14, right: 14 },
+      didParseCell: (data) => {
+        if (data.section === "body" && data.column.index === 6) {
+          const val = String(data.cell.raw || "");
+          if (val === "APPROVED") {
+            data.cell.styles.textColor = [5, 150, 105];
+            data.cell.styles.fontStyle = "bold";
+          } else if (val === "PENDING") {
+            data.cell.styles.textColor = [217, 119, 6];
+            data.cell.styles.fontStyle = "bold";
+          } else if (val === "REVERSED" || val === "REJECTED") {
+            data.cell.styles.textColor = [100, 116, 139];
+          }
+        }
+      }
+    });
+
+    // Draw Reconciliation Banner at bottom
+    const finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY : 150;
+    drawPdfBottomSummary(
+      doc,
+      finalY,
+      cleaner.gross_amount,
+      cleaner.waived_amount,
+      cleaner.pending_amount,
+      cleaner.approved_amount,
+      "Penalty Reconciliation & Payroll Summary",
+      "Approved Deductible for Payroll"
+    );
+
+    addLogosToAllPages(doc);
+    doc.save(`Single_Cleaner_Penalty_Report_${cleaner.cleaner_name?.replace(/\s+/g, "_") || "Cleaner"}_${Date.now()}.pdf`);
+    return;
+  }
+
+  // =========================================================================
+  // CASE B: ALL CLEANERS SUMMARY REPORT PDF
+  // =========================================================================
   addLogosToHeader(doc);
 
   doc.setFontSize(16);
   doc.setFont(undefined, "bold");
-  doc.text("CLEANER PENALTY SUMMARY REPORT", 14, 20);
+  doc.setTextColor(30, 41, 59);
+  doc.text("CLEANER PENALTY SUMMARY REPORT", 14, 18);
 
-  doc.setFontSize(9);
+  doc.setFontSize(8.5);
   doc.setFont(undefined, "normal");
-  doc.text(`Organization: ${metadata?.organization || "N/A"}`, 14, 27);
-  doc.text(
-    `Date Range: ${metadata?.date_range?.start || "Beginning"} to ${metadata?.date_range?.end || "Now"}`,
-    14,
-    32
-  );
-  doc.text(
-    `Generated: ${new Date(metadata?.generated_on || Date.now()).toLocaleString("en-IN")}`,
-    14,
-    37
-  );
+  doc.setTextColor(100, 116, 139);
+  doc.text(`Organization: ${metadata?.organization || "N/A"}    |    Period: ${metadata?.date_range?.start || "Beginning"} to ${metadata?.date_range?.end || "Now"}`, 14, 24);
+  doc.text(`Generated: ${new Date(metadata?.generated_on || Date.now()).toLocaleString("en-IN")}`, 14, 29);
+
+  // Top KPI Summary Cards (5 cards across width: 269mm / 5 = ~51mm each)
+  const cardW = 51;
+  const cardH = 15;
+  const gap = 3.5;
+  const cardY = 33;
+
+  drawPdfKpiCard(doc, 14, cardY, cardW, cardH, "Cleaners Penalized", String(metadata?.total_cleaners ?? data?.length ?? 0), "Total subjects", [248, 250, 252], [226, 232, 240], [71, 85, 105], [15, 23, 42]);
+  drawPdfKpiCard(doc, 14 + (cardW + gap), cardY, cardW, cardH, "Gross Penalties", `Rs. ${Number(metadata?.gross_amount || 0).toFixed(2)}`, "Calculated sum", [254, 243, 199], [252, 211, 77], [180, 83, 9], [180, 83, 9]);
+  drawPdfKpiCard(doc, 14 + (cardW + gap) * 2, cardY, cardW, cardH, "Waived / Forgiven", `Rs. ${Number(metadata?.waived_amount || 0).toFixed(2)}`, "Disputes accepted", [248, 250, 252], [226, 232, 240], [71, 85, 105], [71, 85, 105]);
+  drawPdfKpiCard(doc, 14 + (cardW + gap) * 3, cardY, cardW, cardH, "Confirmed Deductions", `Rs. ${Number(metadata?.approved_amount || 0).toFixed(2)}`, "Ready for payroll", [236, 253, 245], [110, 231, 183], [4, 120, 87], [4, 120, 87]);
+  drawPdfKpiCard(doc, 14 + (cardW + gap) * 4, cardY, cardW, cardH, "Pending Balance", `Rs. ${Number(metadata?.pending_amount || 0).toFixed(2)}`, "Awaiting supervisor", [239, 246, 255], [191, 219, 254], [29, 78, 216], [29, 78, 216]);
 
   const headers = [
     [
       "Sr",
       "Cleaner Name",
       "Phone",
-      "Washrooms",
+      "Assigned Washrooms",
       "Penalties",
       "Gross (Rs.)",
       "Waived (Rs.)",
@@ -4823,38 +5159,285 @@ const exportCleanerPenaltySummaryToPDF = (data, metadata) => {
   autoTable(doc, {
     head: headers,
     body: body,
-    startY: 42,
+    startY: 52,
     theme: "striped",
-    headStyles: { fillColor: [41, 128, 185], textColor: 255, fontSize: 8 },
-    bodyStyles: { fontSize: 8 },
+    headStyles: { fillColor: [30, 58, 138], textColor: 255, fontStyle: "bold", fontSize: 7.5 },
+    bodyStyles: { fontSize: 7, cellPadding: 2.5 },
     margin: { left: 14, right: 14 }
   });
+
+  // Table 2: All Itemized Violations
+  const allViolations = [];
+  (data || []).forEach((c) => {
+    (c.violations_list || []).forEach((v) => {
+      allViolations.push({
+        ...v,
+        cleaner_name: c.cleaner_name,
+        cleaner_phone: c.cleaner_phone
+      });
+    });
+  });
+
+  if (allViolations.length > 0) {
+    let nextY = (doc.lastAutoTable ? doc.lastAutoTable.finalY : 120) + 8;
+    if (nextY + 30 > doc.internal.pageSize.height - 15) {
+      doc.addPage();
+      nextY = 18;
+    }
+
+    doc.setFontSize(10);
+    doc.setFont(undefined, "bold");
+    doc.setTextColor(30, 41, 59);
+    doc.text(`All Itemized SLA Penalty Violations (${allViolations.length} records)`, 14, nextY);
+
+    const violHeaders = [
+      [
+        "Sr",
+        "Penalty #",
+        "Date",
+        "Cleaner Name",
+        "Facility / Washroom",
+        "Breached Rule & Score",
+        "Amount (Rs.)",
+        "Status",
+        "Dispute Reason"
+      ]
+    ];
+
+    const violBody = allViolations.map((v, idx) => [
+      idx + 1,
+      v.penalty_number || `PEN-${v.penalty_id}`,
+      formatViolDate(v.date),
+      v.cleaner_name || "-",
+      v.location_name || "-",
+      `${v.rule_code || "RULE"}${v.score !== null ? ` (${Number(v.score).toFixed(1)}/10)` : ""}`,
+      `Rs. ${Number(v.calculated_amount || 0).toFixed(2)}`,
+      v.status || "PENDING",
+      v.dispute_reason ? `"${v.dispute_reason}"` : "-"
+    ]);
+
+    autoTable(doc, {
+      head: violHeaders,
+      body: violBody,
+      startY: nextY + 3,
+      theme: "grid",
+      headStyles: { fillColor: [51, 65, 85], textColor: 255, fontSize: 7, fontStyle: "bold" },
+      bodyStyles: { fontSize: 6.5, cellPadding: 1.8 },
+      margin: { left: 14, right: 14 }
+    });
+  }
+
+  // Draw Bottom Reconciliation Banner
+  const finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY : 160;
+  drawPdfBottomSummary(
+    doc,
+    finalY,
+    metadata?.gross_amount,
+    metadata?.waived_amount,
+    metadata?.pending_amount,
+    metadata?.approved_amount,
+    "Overall Organization Penalty Reconciliation",
+    "Total Approved Deductible"
+  );
 
   addLogosToAllPages(doc);
   doc.save(`Cleaner_Penalty_Summary_${Date.now()}.pdf`);
 };
 
+// =========================================================================
+// EXPORT WASHROOM PENALTY SUMMARY TO PDF (Supports Single Washroom & All Washrooms)
+// =========================================================================
 const exportWashroomPenaltySummaryToPDF = (data, metadata) => {
   const doc = new jsPDF("l", "mm", "a4");
+  const isSingle =
+    metadata?.is_single_washroom === true ||
+    (data && data.length === 1 && (metadata?.location_id || metadata?.is_single_washroom !== false));
+
+  // =========================================================================
+  // CASE A: SINGLE WASHROOM PENALTY REPORT PDF
+  // =========================================================================
+  if (isSingle && data && data.length > 0) {
+    const loc = data[0];
+    const violations = loc.violations_list || [];
+
+    addLogosToHeader(doc);
+
+    // Title & Subtitle
+    doc.setFontSize(16);
+    doc.setFont(undefined, "bold");
+    doc.setTextColor(30, 41, 59);
+    doc.text("SINGLE WASHROOM PENALTY REPORT", 14, 18);
+
+    doc.setFontSize(8.5);
+    doc.setFont(undefined, "normal");
+    doc.setTextColor(100, 116, 139);
+    doc.text("Itemized Contractual SLA Violations & Facility Penalty Audit", 14, 23);
+
+    // Profile & Parameters Box
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(14, 26, 269, 16, 2, 2, "FD");
+
+    doc.setFontSize(8.5);
+    doc.setFont(undefined, "bold");
+    doc.setTextColor(15, 23, 42);
+    doc.text(`Washroom: ${loc.location_name || metadata?.location_name || "N/A"}`, 18, 32);
+
+    doc.setFontSize(7.5);
+    doc.setFont(undefined, "normal");
+    doc.setTextColor(71, 85, 105);
+    doc.text(
+      `Code: ${loc.location_code || metadata?.location_code || "-"}    |    Address: ${loc.location_address || metadata?.location_address || "-"}    |    Organization: ${metadata?.organization || "N/A"}`,
+      18,
+      37
+    );
+
+    const cleanerStr = (loc.cleaners || metadata?.cleaners || []).join(", ") || "-";
+    doc.text(
+      `Mapped Cleaners: ${cleanerStr.length > 90 ? cleanerStr.substring(0, 87) + "..." : cleanerStr}`,
+      150,
+      32
+    );
+    doc.text(
+      `Period: ${metadata?.date_range?.start || "Beginning"} to ${metadata?.date_range?.end || "Now"}    |    Generated: ${new Date(metadata?.generated_on || Date.now()).toLocaleString("en-IN")}`,
+      150,
+      37
+    );
+
+    // KPI Summary Cards
+    const cardY = 46;
+    const cardW = 64.5;
+    const cardH = 16;
+    const gap = 3.5;
+
+    drawPdfKpiCard(doc, 14, cardY, cardW, cardH, "Gross Penalties Imposed", `Rs. ${Number(loc.gross_amount || 0).toFixed(2)}`, `${loc.total_penalties || violations.length} total infraction(s)`, [248, 250, 252], [226, 232, 240], [71, 85, 105], [15, 23, 42]);
+    drawPdfKpiCard(doc, 14 + cardW + gap, cardY, cardW, cardH, "Waived / Overturned", `Rs. ${Number(loc.waived_amount || 0).toFixed(2)}`, "Disputed & forgiven", [248, 250, 252], [226, 232, 240], [71, 85, 105], [71, 85, 105]);
+    drawPdfKpiCard(doc, 14 + (cardW + gap) * 2, cardY, cardW, cardH, "Pending Review", `Rs. ${Number(loc.pending_amount || 0).toFixed(2)}`, "Awaiting supervisor", [254, 243, 199], [252, 211, 77], [180, 83, 9], [180, 83, 9]);
+    drawPdfKpiCard(doc, 14 + (cardW + gap) * 3, cardY, cardW, cardH, "Approved Deductible", `Rs. ${Number(loc.approved_amount || 0).toFixed(2)}`, "Confirmed deductions", [236, 253, 245], [110, 231, 183], [4, 120, 87], [4, 120, 87]);
+
+    // Section Title
+    doc.setFontSize(9.5);
+    doc.setFont(undefined, "bold");
+    doc.setTextColor(30, 41, 59);
+    doc.text(`Itemized Washroom Penalties (${violations.length} records)`, 14, 67);
+
+    // AutoTable for violations
+    const tableHeaders = [
+      [
+        "Sr",
+        "Penalty #",
+        "Date",
+        "Cleaner Responsible",
+        "Breached Rule & Score",
+        "Amount (Rs.)",
+        "Status",
+        "Dispute Reason",
+        "Review"
+      ]
+    ];
+
+    const tableBody = violations.map((v, idx) => [
+      idx + 1,
+      v.penalty_number || `PEN-${v.penalty_id}`,
+      formatViolDate(v.date),
+      v.cleaner_name || "-",
+      `${v.rule_code || "RULE"}${v.score !== null ? ` (Score: ${Number(v.score).toFixed(1)}/10)` : ""}`,
+      `Rs. ${Number(v.calculated_amount || 0).toFixed(2)}`,
+      v.status || "PENDING",
+      v.dispute_reason ? `"${v.dispute_reason}"` : "-",
+      v.review_id ? `Review #${v.review_id}` : "Daily Quota"
+    ]);
+
+    autoTable(doc, {
+      head: tableHeaders,
+      body: tableBody,
+      startY: 70,
+      theme: "grid",
+      headStyles: {
+        fillColor: [109, 40, 217], // purple-700
+        textColor: 255,
+        fontStyle: "bold",
+        fontSize: 7.5,
+        halign: "left"
+      },
+      bodyStyles: {
+        fontSize: 7,
+        cellPadding: 2,
+        textColor: [30, 41, 59]
+      },
+      columnStyles: {
+        0: { cellWidth: 10, halign: "center" },
+        1: { cellWidth: 32, fontStyle: "bold" },
+        2: { cellWidth: 32 },
+        3: { cellWidth: 50 },
+        4: { cellWidth: 46 },
+        5: { cellWidth: 24, halign: "right", fontStyle: "bold" },
+        6: { cellWidth: 22, halign: "center" },
+        7: { cellWidth: 33 },
+        8: { cellWidth: 20, halign: "center" }
+      },
+      margin: { left: 14, right: 14 },
+      didParseCell: (data) => {
+        if (data.section === "body" && data.column.index === 6) {
+          const val = String(data.cell.raw || "");
+          if (val === "APPROVED") {
+            data.cell.styles.textColor = [5, 150, 105];
+            data.cell.styles.fontStyle = "bold";
+          } else if (val === "PENDING") {
+            data.cell.styles.textColor = [217, 119, 6];
+            data.cell.styles.fontStyle = "bold";
+          } else if (val === "REVERSED" || val === "REJECTED") {
+            data.cell.styles.textColor = [100, 116, 139];
+          }
+        }
+      }
+    });
+
+    const finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY : 150;
+    drawPdfBottomSummary(
+      doc,
+      finalY,
+      loc.gross_amount,
+      loc.waived_amount,
+      loc.pending_amount,
+      loc.approved_amount,
+      "Washroom Penalty Reconciliation & Deductible",
+      "Confirmed Washroom Deductions"
+    );
+
+    addLogosToAllPages(doc);
+    doc.save(`Single_Washroom_Penalty_Report_${loc.location_name?.replace(/\s+/g, "_") || "Washroom"}_${Date.now()}.pdf`);
+    return;
+  }
+
+  // =========================================================================
+  // CASE B: ALL WASHROOMS SUMMARY REPORT PDF
+  // =========================================================================
   addLogosToHeader(doc);
 
   doc.setFontSize(16);
   doc.setFont(undefined, "bold");
-  doc.text("WASHROOM PENALTY SUMMARY REPORT", 14, 20);
+  doc.setTextColor(30, 41, 59);
+  doc.text("WASHROOM PENALTY SUMMARY REPORT", 14, 18);
 
-  doc.setFontSize(9);
+  doc.setFontSize(8.5);
   doc.setFont(undefined, "normal");
-  doc.text(`Organization: ${metadata?.organization || "N/A"}`, 14, 27);
-  doc.text(
-    `Date Range: ${metadata?.date_range?.start || "Beginning"} to ${metadata?.date_range?.end || "Now"}`,
-    14,
-    32
-  );
-  doc.text(
-    `Generated: ${new Date(metadata?.generated_on || Date.now()).toLocaleString("en-IN")}`,
-    14,
-    37
-  );
+  doc.setTextColor(100, 116, 139);
+  doc.text(`Organization: ${metadata?.organization || "N/A"}    |    Period: ${metadata?.date_range?.start || "Beginning"} to ${metadata?.date_range?.end || "Now"}`, 14, 24);
+  doc.text(`Generated: ${new Date(metadata?.generated_on || Date.now()).toLocaleString("en-IN")}`, 14, 29);
+
+  // Top KPI Summary Cards
+  const cardW = 51;
+  const cardH = 15;
+  const gap = 3.5;
+  const cardY = 33;
+
+  drawPdfKpiCard(doc, 14, cardY, cardW, cardH, "Washrooms Penalized", String(metadata?.total_washrooms ?? data?.length ?? 0), "Total facilities", [248, 250, 252], [226, 232, 240], [71, 85, 105], [15, 23, 42]);
+  drawPdfKpiCard(doc, 14 + (cardW + gap), cardY, cardW, cardH, "Gross Penalties", `Rs. ${Number(metadata?.gross_amount || 0).toFixed(2)}`, "Calculated sum", [254, 243, 199], [252, 211, 77], [180, 83, 9], [180, 83, 9]);
+  drawPdfKpiCard(doc, 14 + (cardW + gap) * 2, cardY, cardW, cardH, "Waived / Forgiven", `Rs. ${Number(metadata?.waived_amount || 0).toFixed(2)}`, "Disputes accepted", [248, 250, 252], [226, 232, 240], [71, 85, 105], [71, 85, 105]);
+  drawPdfKpiCard(doc, 14 + (cardW + gap) * 3, cardY, cardW, cardH, "Confirmed Deductions", `Rs. ${Number(metadata?.approved_amount || 0).toFixed(2)}`, "Ready for payroll", [236, 253, 245], [110, 231, 183], [4, 120, 87], [4, 120, 87]);
+  drawPdfKpiCard(doc, 14 + (cardW + gap) * 4, cardY, cardW, cardH, "Pending Balance", `Rs. ${Number(metadata?.pending_amount || 0).toFixed(2)}`, "Awaiting supervisor", [239, 246, 255], [191, 219, 254], [29, 78, 216], [29, 78, 216]);
 
   const headers = [
     [
@@ -4887,12 +5470,84 @@ const exportWashroomPenaltySummaryToPDF = (data, metadata) => {
   autoTable(doc, {
     head: headers,
     body: body,
-    startY: 42,
+    startY: 52,
     theme: "striped",
-    headStyles: { fillColor: [109, 40, 217], textColor: 255, fontSize: 8 },
-    bodyStyles: { fontSize: 8 },
+    headStyles: { fillColor: [109, 40, 217], textColor: 255, fontStyle: "bold", fontSize: 7.5 },
+    bodyStyles: { fontSize: 7, cellPadding: 2.5 },
     margin: { left: 14, right: 14 }
   });
+
+  // Table 2: All Itemized Violations
+  const allViolations = [];
+  (data || []).forEach((w) => {
+    (w.violations_list || []).forEach((v) => {
+      allViolations.push({
+        ...v,
+        location_name: w.location_name
+      });
+    });
+  });
+
+  if (allViolations.length > 0) {
+    let nextY = (doc.lastAutoTable ? doc.lastAutoTable.finalY : 120) + 8;
+    if (nextY + 30 > doc.internal.pageSize.height - 15) {
+      doc.addPage();
+      nextY = 18;
+    }
+
+    doc.setFontSize(10);
+    doc.setFont(undefined, "bold");
+    doc.setTextColor(30, 41, 59);
+    doc.text(`All Itemized Washroom Violations (${allViolations.length} records)`, 14, nextY);
+
+    const violHeaders = [
+      [
+        "Sr",
+        "Penalty #",
+        "Date",
+        "Washroom Location",
+        "Cleaner Responsible",
+        "Breached Rule & Score",
+        "Amount (Rs.)",
+        "Status",
+        "Dispute Reason"
+      ]
+    ];
+
+    const violBody = allViolations.map((v, idx) => [
+      idx + 1,
+      v.penalty_number || `PEN-${v.penalty_id}`,
+      formatViolDate(v.date),
+      v.location_name || "-",
+      v.cleaner_name || "-",
+      `${v.rule_code || "RULE"}${v.score !== null ? ` (${Number(v.score).toFixed(1)}/10)` : ""}`,
+      `Rs. ${Number(v.calculated_amount || 0).toFixed(2)}`,
+      v.status || "PENDING",
+      v.dispute_reason ? `"${v.dispute_reason}"` : "-"
+    ]);
+
+    autoTable(doc, {
+      head: violHeaders,
+      body: violBody,
+      startY: nextY + 3,
+      theme: "grid",
+      headStyles: { fillColor: [51, 65, 85], textColor: 255, fontSize: 7, fontStyle: "bold" },
+      bodyStyles: { fontSize: 6.5, cellPadding: 1.8 },
+      margin: { left: 14, right: 14 }
+    });
+  }
+
+  const finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY : 160;
+  drawPdfBottomSummary(
+    doc,
+    finalY,
+    metadata?.gross_amount,
+    metadata?.waived_amount,
+    metadata?.pending_amount,
+    metadata?.approved_amount,
+    "Overall Washrooms Penalty Reconciliation",
+    "Confirmed Washroom Deductions"
+  );
 
   addLogosToAllPages(doc);
   doc.save(`Washroom_Penalty_Summary_${Date.now()}.pdf`);
