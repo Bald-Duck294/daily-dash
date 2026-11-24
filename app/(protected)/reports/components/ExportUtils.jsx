@@ -4791,6 +4791,56 @@ const formatViolDate = (dateVal) => {
   }
 };
 
+const formatReportDateOnly = (dateVal) => {
+  if (!dateVal) return "-";
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return String(dateVal);
+    return d.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  } catch {
+    return String(dateVal);
+  }
+};
+
+// =========================================================================
+// HELPER: Draw Industrial Report Header with Underlined Title
+// =========================================================================
+const drawIndustrialHeaderTitle = (doc, titleText, subtitleText, docCategory = "INDUSTRIAL SLA AUDIT REPORT") => {
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(16);
+  doc.setTextColor(15, 23, 42); // slate-900
+  doc.text(titleText, 14, 15);
+
+  const titleWidth = doc.getTextWidth(titleText);
+  // Underline the report title
+  doc.setDrawColor(15, 23, 42);
+  doc.setLineWidth(0.7);
+  doc.line(14, 16.8, 14 + titleWidth, 16.8);
+
+  // Subtitle
+  if (subtitleText) {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(100, 116, 139); // slate-500
+    doc.text(subtitleText, 14, 21.5);
+  }
+
+  // Top-right industrial document classification & badge
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7.5);
+  doc.setTextColor(71, 85, 105);
+  doc.text(docCategory.toUpperCase(), 283, 14, { align: "right" });
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(6.5);
+  doc.setTextColor(148, 163, 184);
+  doc.text("CONFIDENTIAL  |  OFFICIAL COMPLIANCE RECORD", 283, 18, { align: "right" });
+};
+
 // =========================================================================
 // HELPER: Draw styled KPI card in jsPDF
 // =========================================================================
@@ -4891,48 +4941,67 @@ const exportCleanerPenaltySummaryToPDF = (data, metadata) => {
 
     addLogosToHeader(doc);
 
-    // Title & Subtitle
-    doc.setFontSize(16);
-    doc.setFont(undefined, "bold");
-    doc.setTextColor(30, 41, 59);
-    doc.text("SINGLE CLEANER PENALTY REPORT", 14, 18);
+    // Title with underline & industrial header format
+    drawIndustrialHeaderTitle(
+      doc,
+      "SINGLE CLEANER PENALTY REPORT",
+      "Itemized Contractual SLA Violations & Payroll Deduction Reconciliation",
+      "CLEANER SLA AUDIT"
+    );
 
-    doc.setFontSize(8.5);
-    doc.setFont(undefined, "normal");
-    doc.setTextColor(100, 116, 139);
-    doc.text("Itemized Contractual SLA Violations & Payroll Deduction Reconciliation", 14, 23);
-
-    // Profile & Parameters Box
+    // Industrial Profile & Parameters Box
     doc.setFillColor(248, 250, 252);
-    doc.setDrawColor(226, 232, 240);
-    doc.setLineWidth(0.3);
-    doc.roundedRect(14, 26, 269, 16, 2, 2, "FD");
+    doc.setDrawColor(203, 213, 225);
+    doc.setLineWidth(0.4);
+    doc.roundedRect(14, 25, 269, 18, 1.5, 1.5, "FD");
 
-    doc.setFontSize(8.5);
-    doc.setFont(undefined, "bold");
-    doc.setTextColor(15, 23, 42);
-    doc.text(`Cleaner: ${cleaner.cleaner_name || metadata?.cleaner_name || "N/A"}`, 18, 32);
-
+    // Left Column: Cleaner Details
     doc.setFontSize(7.5);
-    doc.setFont(undefined, "normal");
+    doc.setFont("helvetica", "bold");
     doc.setTextColor(71, 85, 105);
-    doc.text(
-      `Phone: ${cleaner.cleaner_phone || metadata?.cleaner_phone || "-"}    |    Email: ${cleaner.cleaner_email || metadata?.cleaner_email || "-"}    |    Organization: ${metadata?.organization || "N/A"}`,
-      18,
-      37
-    );
+    doc.text("CLEANER NAME:", 18, 30.5);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(15, 23, 42);
+    doc.text(cleaner.cleaner_name || metadata?.cleaner_name || "N/A", 52, 30.5);
 
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(71, 85, 105);
+    doc.text("CONTACT DETAILS:", 18, 35.5);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(15, 23, 42);
+    const phoneVal = cleaner.cleaner_phone || metadata?.cleaner_phone || "-";
+    const emailVal = cleaner.cleaner_email || metadata?.cleaner_email || "-";
+    doc.text(`Phone: ${phoneVal}   |   Email: ${emailVal}`, 52, 35.5);
+
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(71, 85, 105);
+    doc.text("ORGANIZATION:", 18, 40.5);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(15, 23, 42);
+    doc.text(metadata?.organization || "N/A", 52, 40.5);
+
+    // Right Column: Audit & Assignments
     const washroomStr = (cleaner.locations || metadata?.locations || []).join(", ") || "-";
-    doc.text(
-      `Assigned Washrooms: ${washroomStr.length > 90 ? washroomStr.substring(0, 87) + "..." : washroomStr}`,
-      150,
-      32
-    );
-    doc.text(
-      `Period: ${metadata?.date_range?.start || "Beginning"} to ${metadata?.date_range?.end || "Now"}    |    Generated: ${new Date(metadata?.generated_on || Date.now()).toLocaleString("en-IN")}`,
-      150,
-      37
-    );
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(71, 85, 105);
+    doc.text("ASSIGNED TO:", 155, 30.5);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(15, 23, 42);
+    doc.text(washroomStr.length > 70 ? washroomStr.substring(0, 67) + "..." : washroomStr, 185, 30.5);
+
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(71, 85, 105);
+    doc.text("AUDIT PERIOD:", 155, 35.5);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(15, 23, 42);
+    doc.text(`${formatReportDateOnly(metadata?.date_range?.start)} to ${formatReportDateOnly(metadata?.date_range?.end)}`, 185, 35.5);
+
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(71, 85, 105);
+    doc.text("GENERATED ON:", 155, 40.5);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(15, 23, 42);
+    doc.text(formatViolDate(metadata?.generated_on || Date.now()), 185, 40.5);
 
     // KPI Summary Cards (4 Cards across page width: 269mm / 4 = ~64mm each)
     const cardY = 46;
@@ -5105,22 +5174,56 @@ const exportCleanerPenaltySummaryToPDF = (data, metadata) => {
   // =========================================================================
   addLogosToHeader(doc);
 
-  doc.setFontSize(16);
-  doc.setFont(undefined, "bold");
-  doc.setTextColor(30, 41, 59);
-  doc.text("CLEANER PENALTY SUMMARY REPORT", 14, 18);
+  // Title with underline & industrial header format
+  drawIndustrialHeaderTitle(
+    doc,
+    "CLEANER PENALTY SUMMARY REPORT",
+    "Consolidated Contractor & Cleaner SLA Penalty Audit Ledger",
+    "INDUSTRIAL COMPLIANCE AUDIT"
+  );
 
-  doc.setFontSize(8.5);
-  doc.setFont(undefined, "normal");
-  doc.setTextColor(100, 116, 139);
-  doc.text(`Organization: ${metadata?.organization || "N/A"}    |    Period: ${metadata?.date_range?.start || "Beginning"} to ${metadata?.date_range?.end || "Now"}`, 14, 24);
-  doc.text(`Generated: ${new Date(metadata?.generated_on || Date.now()).toLocaleString("en-IN")}`, 14, 29);
+  // Industrial Metadata Card
+  doc.setFillColor(248, 250, 252);
+  doc.setDrawColor(203, 213, 225);
+  doc.setLineWidth(0.4);
+  doc.roundedRect(14, 25, 269, 14, 1.5, 1.5, "FD");
+
+  // Left Column
+  doc.setFontSize(7.5);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(71, 85, 105);
+  doc.text("ORGANIZATION:", 18, 31);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(15, 23, 42);
+  doc.text(metadata?.organization || "N/A", 52, 31);
+
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(71, 85, 105);
+  doc.text("TOTAL CLEANERS:", 18, 36);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(15, 23, 42);
+  doc.text(String(metadata?.total_cleaners ?? data?.length ?? 0), 52, 36);
+
+  // Right Column
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(71, 85, 105);
+  doc.text("AUDIT PERIOD:", 155, 31);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(15, 23, 42);
+  doc.text(`${formatReportDateOnly(metadata?.date_range?.start)} to ${formatReportDateOnly(metadata?.date_range?.end)}`, 185, 31);
+
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(71, 85, 105);
+  doc.text("GENERATED ON:", 155, 36);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(15, 23, 42);
+  doc.text(formatViolDate(metadata?.generated_on || Date.now()), 185, 36);
 
   // Top KPI Summary Cards (5 cards across width: 269mm / 5 = ~51mm each)
   const cardW = 51;
   const cardH = 15;
   const gap = 3.5;
-  const cardY = 33;
+  const cardY = 42;
 
   drawPdfKpiCard(doc, 14, cardY, cardW, cardH, "Cleaners Penalized", String(metadata?.total_cleaners ?? data?.length ?? 0), "Total subjects", [248, 250, 252], [226, 232, 240], [71, 85, 105], [15, 23, 42]);
   drawPdfKpiCard(doc, 14 + (cardW + gap), cardY, cardW, cardH, "Gross Penalties", `Rs. ${Number(metadata?.gross_amount || 0).toFixed(2)}`, "Calculated sum", [254, 243, 199], [252, 211, 77], [180, 83, 9], [180, 83, 9]);
@@ -5159,7 +5262,7 @@ const exportCleanerPenaltySummaryToPDF = (data, metadata) => {
   autoTable(doc, {
     head: headers,
     body: body,
-    startY: 52,
+    startY: 60,
     theme: "striped",
     headStyles: { fillColor: [30, 58, 138], textColor: 255, fontStyle: "bold", fontSize: 7.5 },
     bodyStyles: { fontSize: 7, cellPadding: 2.5 },
@@ -5262,48 +5365,65 @@ const exportWashroomPenaltySummaryToPDF = (data, metadata) => {
 
     addLogosToHeader(doc);
 
-    // Title & Subtitle
-    doc.setFontSize(16);
-    doc.setFont(undefined, "bold");
-    doc.setTextColor(30, 41, 59);
-    doc.text("SINGLE WASHROOM PENALTY REPORT", 14, 18);
+    // Title with underline & industrial header format
+    drawIndustrialHeaderTitle(
+      doc,
+      "SINGLE WASHROOM PENALTY REPORT",
+      "Itemized Contractual SLA Violations & Facility Penalty Audit",
+      "FACILITY SLA AUDIT"
+    );
 
-    doc.setFontSize(8.5);
-    doc.setFont(undefined, "normal");
-    doc.setTextColor(100, 116, 139);
-    doc.text("Itemized Contractual SLA Violations & Facility Penalty Audit", 14, 23);
-
-    // Profile & Parameters Box
+    // Industrial Profile & Parameters Box (NO CODE, NO ADDRESS)
     doc.setFillColor(248, 250, 252);
-    doc.setDrawColor(226, 232, 240);
-    doc.setLineWidth(0.3);
-    doc.roundedRect(14, 26, 269, 16, 2, 2, "FD");
+    doc.setDrawColor(203, 213, 225);
+    doc.setLineWidth(0.4);
+    doc.roundedRect(14, 25, 269, 18, 1.5, 1.5, "FD");
 
-    doc.setFontSize(8.5);
-    doc.setFont(undefined, "bold");
-    doc.setTextColor(15, 23, 42);
-    doc.text(`Washroom: ${loc.location_name || metadata?.location_name || "N/A"}`, 18, 32);
-
+    // Left Column: Facility Details
     doc.setFontSize(7.5);
-    doc.setFont(undefined, "normal");
+    doc.setFont("helvetica", "bold");
     doc.setTextColor(71, 85, 105);
-    doc.text(
-      `Code: ${loc.location_code || metadata?.location_code || "-"}    |    Address: ${loc.location_address || metadata?.location_address || "-"}    |    Organization: ${metadata?.organization || "N/A"}`,
-      18,
-      37
-    );
+    doc.text("FACILITY / WASHROOM:", 18, 30.5);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(15, 23, 42);
+    doc.text(loc.location_name || metadata?.location_name || "N/A", 60, 30.5);
 
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(71, 85, 105);
+    doc.text("ORGANIZATION:", 18, 35.5);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(15, 23, 42);
+    doc.text(metadata?.organization || "N/A", 60, 35.5);
+
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(71, 85, 105);
+    doc.text("MAPPED CLEANERS:", 18, 40.5);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(15, 23, 42);
     const cleanerStr = (loc.cleaners || metadata?.cleaners || []).join(", ") || "-";
-    doc.text(
-      `Mapped Cleaners: ${cleanerStr.length > 90 ? cleanerStr.substring(0, 87) + "..." : cleanerStr}`,
-      150,
-      32
-    );
-    doc.text(
-      `Period: ${metadata?.date_range?.start || "Beginning"} to ${metadata?.date_range?.end || "Now"}    |    Generated: ${new Date(metadata?.generated_on || Date.now()).toLocaleString("en-IN")}`,
-      150,
-      37
-    );
+    doc.text(cleanerStr.length > 70 ? cleanerStr.substring(0, 67) + "..." : cleanerStr, 60, 40.5);
+
+    // Right Column: Audit Period & Classification
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(71, 85, 105);
+    doc.text("AUDIT PERIOD:", 155, 30.5);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(15, 23, 42);
+    doc.text(`${formatReportDateOnly(metadata?.date_range?.start)} to ${formatReportDateOnly(metadata?.date_range?.end)}`, 185, 30.5);
+
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(71, 85, 105);
+    doc.text("GENERATED ON:", 155, 35.5);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(15, 23, 42);
+    doc.text(formatViolDate(metadata?.generated_on || Date.now()), 185, 35.5);
+
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(71, 85, 105);
+    doc.text("REPORT SCOPE:", 155, 40.5);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(15, 23, 42);
+    doc.text("Single Facility SLA Compliance & Penalty Ledger", 185, 40.5);
 
     // KPI Summary Cards
     const cardY = 46;
@@ -5416,22 +5536,56 @@ const exportWashroomPenaltySummaryToPDF = (data, metadata) => {
   // =========================================================================
   addLogosToHeader(doc);
 
-  doc.setFontSize(16);
-  doc.setFont(undefined, "bold");
-  doc.setTextColor(30, 41, 59);
-  doc.text("WASHROOM PENALTY SUMMARY REPORT", 14, 18);
+  // Title with underline & industrial header format
+  drawIndustrialHeaderTitle(
+    doc,
+    "WASHROOM PENALTY SUMMARY REPORT",
+    "Consolidated Facility SLA Violation & Penalty Audit Ledger",
+    "INDUSTRIAL COMPLIANCE AUDIT"
+  );
 
-  doc.setFontSize(8.5);
-  doc.setFont(undefined, "normal");
-  doc.setTextColor(100, 116, 139);
-  doc.text(`Organization: ${metadata?.organization || "N/A"}    |    Period: ${metadata?.date_range?.start || "Beginning"} to ${metadata?.date_range?.end || "Now"}`, 14, 24);
-  doc.text(`Generated: ${new Date(metadata?.generated_on || Date.now()).toLocaleString("en-IN")}`, 14, 29);
+  // Industrial Metadata Card (NO CODE, NO ADDRESS)
+  doc.setFillColor(248, 250, 252);
+  doc.setDrawColor(203, 213, 225);
+  doc.setLineWidth(0.4);
+  doc.roundedRect(14, 25, 269, 14, 1.5, 1.5, "FD");
+
+  // Left Column
+  doc.setFontSize(7.5);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(71, 85, 105);
+  doc.text("ORGANIZATION:", 18, 31);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(15, 23, 42);
+  doc.text(metadata?.organization || "N/A", 52, 31);
+
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(71, 85, 105);
+  doc.text("TOTAL WASHROOMS:", 18, 36);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(15, 23, 42);
+  doc.text(String(metadata?.total_washrooms ?? data?.length ?? 0), 52, 36);
+
+  // Right Column
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(71, 85, 105);
+  doc.text("AUDIT PERIOD:", 155, 31);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(15, 23, 42);
+  doc.text(`${formatReportDateOnly(metadata?.date_range?.start)} to ${formatReportDateOnly(metadata?.date_range?.end)}`, 185, 31);
+
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(71, 85, 105);
+  doc.text("GENERATED ON:", 155, 36);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(15, 23, 42);
+  doc.text(formatViolDate(metadata?.generated_on || Date.now()), 185, 36);
 
   // Top KPI Summary Cards
   const cardW = 51;
   const cardH = 15;
   const gap = 3.5;
-  const cardY = 33;
+  const cardY = 42;
 
   drawPdfKpiCard(doc, 14, cardY, cardW, cardH, "Washrooms Penalized", String(metadata?.total_washrooms ?? data?.length ?? 0), "Total facilities", [248, 250, 252], [226, 232, 240], [71, 85, 105], [15, 23, 42]);
   drawPdfKpiCard(doc, 14 + (cardW + gap), cardY, cardW, cardH, "Gross Penalties", `Rs. ${Number(metadata?.gross_amount || 0).toFixed(2)}`, "Calculated sum", [254, 243, 199], [252, 211, 77], [180, 83, 9], [180, 83, 9]);
@@ -5439,11 +5593,11 @@ const exportWashroomPenaltySummaryToPDF = (data, metadata) => {
   drawPdfKpiCard(doc, 14 + (cardW + gap) * 3, cardY, cardW, cardH, "Confirmed Deductions", `Rs. ${Number(metadata?.approved_amount || 0).toFixed(2)}`, "Ready for payroll", [236, 253, 245], [110, 231, 183], [4, 120, 87], [4, 120, 87]);
   drawPdfKpiCard(doc, 14 + (cardW + gap) * 4, cardY, cardW, cardH, "Pending Balance", `Rs. ${Number(metadata?.pending_amount || 0).toFixed(2)}`, "Awaiting supervisor", [239, 246, 255], [191, 219, 254], [29, 78, 216], [29, 78, 216]);
 
+  // Headers without "Code"
   const headers = [
     [
       "Sr",
       "Washroom Location",
-      "Code",
       "Mapped Cleaners",
       "Penalties",
       "Gross (Rs.)",
@@ -5454,10 +5608,10 @@ const exportWashroomPenaltySummaryToPDF = (data, metadata) => {
     ]
   ];
 
+  // Body without "Code"
   const body = (data || []).map((w, idx) => [
     idx + 1,
     w.location_name || "-",
-    w.location_code || "-",
     (w.cleaners || []).slice(0, 2).join(", ") + ((w.cleaners || []).length > 2 ? ` (+${(w.cleaners || []).length - 2})` : ""),
     w.total_penalties || 0,
     `Rs. ${Number(w.gross_amount || 0).toFixed(2)}`,
@@ -5470,7 +5624,7 @@ const exportWashroomPenaltySummaryToPDF = (data, metadata) => {
   autoTable(doc, {
     head: headers,
     body: body,
-    startY: 52,
+    startY: 60,
     theme: "striped",
     headStyles: { fillColor: [109, 40, 217], textColor: 255, fontStyle: "bold", fontSize: 7.5 },
     bodyStyles: { fontSize: 7, cellPadding: 2.5 },
@@ -5559,7 +5713,6 @@ const exportWashroomPenaltySummaryToExcel = (data, metadata) => {
   const summaryHeaders = [
     "Sr. No.",
     "Washroom Location",
-    "Code",
     "Mapped Cleaners",
     "Total Penalties",
     "Gross Imposed (Rs.)",
@@ -5582,7 +5735,6 @@ const exportWashroomPenaltySummaryToExcel = (data, metadata) => {
     summaryRows.push([
       idx + 1,
       w.location_name || "-",
-      w.location_code || "-",
       (w.cleaners || []).join(", "),
       w.total_penalties || 0,
       Number(w.gross_amount || 0).toFixed(2),

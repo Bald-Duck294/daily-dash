@@ -143,19 +143,8 @@ export default function WashroomPenaltySummaryTable({ data = [], metadata = {} }
                   <h2 className="text-xl font-bold text-slate-900">
                     {singleLoc.location_name}
                   </h2>
-                  {singleLoc.location_code && singleLoc.location_code !== "-" && (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-indigo-50 text-indigo-700 border border-indigo-200/60">
-                      {singleLoc.location_code}
-                    </span>
-                  )}
                 </div>
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 mt-1">
-                  {singleLoc.location_address && singleLoc.location_address !== "-" && (
-                    <span className="flex items-center gap-1">
-                      <MapPin className="w-3 h-3 text-slate-400" />
-                      {singleLoc.location_address}{singleLoc.location_city ? `, ${singleLoc.location_city}` : ""}
-                    </span>
-                  )}
                   <span className="flex items-center gap-1">
                     <Calendar className="w-3 h-3 text-slate-400" />
                     Period: {metadata?.date_range?.start || "Beginning"} to {metadata?.date_range?.end || "Now"}
