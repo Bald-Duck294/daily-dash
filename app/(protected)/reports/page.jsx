@@ -1079,6 +1079,18 @@ const REPORT_TYPES = [
     description: "Daily cleaner duty records, check-in times, and shift compliance",
     endpoint: "attendance-report",
   },
+  {
+    value: "not_cleaned_washrooms",
+    label: "Not Cleaned Washroom Report",
+    description: "List of washrooms with zero cleaning activity in the selected period",
+    endpoint: "not-cleaned-washrooms",
+  },
+  {
+    value: "sla_threshold_breach",
+    label: "SLA Threshold Breach Report",
+    description: "Inspections scoring below the effective SLA pass threshold",
+    endpoint: "sla-threshold-breach",
+  },
 ];
 
 const getTodayDate = () => {
@@ -1369,7 +1381,7 @@ export default function ReportsPage() {
           ...response.metadata,
           report_type: defaultReportType,
           dynamic_report_name: defaultReportType,
-          date_columns: response.date_columns,
+          date_columns: response.metadata?.date_columns || response.date_columns,
           matrix: response.matrix,
           cleaner_summaries: response.cleaner_summaries,
           daily_records: response.data,
@@ -1448,6 +1460,23 @@ export default function ReportsPage() {
         ...(selectedLocation && { location_id: selectedLocation }),
         ...(selectedCleaner && { cleaner_id: selectedCleaner }),
         ...(statusFilter !== "all" && { status: statusFilter }),
+      };
+    } else if (selectedReportType === "not_cleaned_washrooms") {
+      params = {
+        company_id: companyId,
+        start_date: startDate,
+        end_date: endDate,
+        ...(selectedZone && { type_id: selectedZone }),
+        ...(selectedLocation && { location_id: selectedLocation }),
+      };
+    } else if (selectedReportType === "sla_threshold_breach") {
+      params = {
+        company_id: companyId,
+        start_date: startDate,
+        end_date: endDate,
+        ...(selectedZone && { type_id: selectedZone }),
+        ...(selectedLocation && { location_id: selectedLocation }),
+        ...(selectedCleaner && { cleaner_id: selectedCleaner }),
       };
     }
 
@@ -1547,6 +1576,8 @@ export default function ReportsPage() {
                     "detailed_cleaning",
                     "zone_wise",
                     "attendance_report",
+                    "not_cleaned_washrooms",
+                    "sla_threshold_breach",
                   ].includes(selectedReportType) &&
                     isPermitted && (
                       <div className="space-y-2">
@@ -1584,6 +1615,8 @@ export default function ReportsPage() {
                     "cleaner_penalty_summary",
                     "washroom_penalty_summary",
                     "attendance_report",
+                    "not_cleaned_washrooms",
+                    "sla_threshold_breach",
                   ].includes(selectedReportType) && (
                     <div className="space-y-2">
                       <label className="text-[11px] font-bold uppercase tracking-wide flex items-center gap-2 text-[var(--report-subtitle)]">
@@ -1618,6 +1651,8 @@ export default function ReportsPage() {
                     "cleaner_penalty_summary",
                     "washroom_penalty_summary",
                     "attendance_report",
+                    "not_cleaned_washrooms",
+                    "sla_threshold_breach",
                   ].includes(selectedReportType) && (
                     <div className="space-y-2">
                       <label className="text-[11px] font-bold uppercase tracking-wide flex items-center gap-2 text-[var(--report-subtitle)]">

@@ -37,7 +37,19 @@ export default function AddLocationTypesPage() {
     const lookup = {};
 
     types.forEach((item) => {
-      lookup[item.id] = { ...item, children: [] };
+      const direct =
+        item.nodesCount ??
+        item.locationsCount ??
+        item.locations_count ??
+        item._count?.locations ??
+        0;
+      lookup[item.id] = {
+        ...item,
+        children: [],
+        directNodesCount: direct,
+        nodesCount: direct,
+        totalNodesCount: direct,
+      };
     });
 
     types.forEach((item) => {
@@ -47,6 +59,20 @@ export default function AddLocationTypesPage() {
         tree.push(lookup[item.id]);
       }
     });
+
+    const rollupCounts = (node) => {
+      let sum = node.directNodesCount || 0;
+      if (node.children && node.children.length > 0) {
+        node.children.forEach((child) => {
+          sum += rollupCounts(child);
+        });
+      }
+      node.totalNodesCount = sum;
+      node.nodesCount = sum;
+      return sum;
+    };
+
+    tree.forEach(rollupCounts);
 
     return tree;
   }, [types]);

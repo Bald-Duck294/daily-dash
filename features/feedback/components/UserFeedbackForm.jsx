@@ -331,26 +331,58 @@ export default function UserFeedbackForm() {
     }
   }, [locMatch, compMatch]);
 
-  // PWA Install state
+  // PWA Install state (mobile only, hidden if already installed/standalone)
   const [canInstall, setCanInstall] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
+  const [isInstalled, setIsInstalled] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    if (typeof window === "undefined") return;
+    const ua = navigator.userAgent || "";
+    const iosDevice = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+    const mobileUA =
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+
+    const rafId = window.requestAnimationFrame(() => {
+      setIsIOS(iosDevice);
+      setIsMobile(mobileUA && window.innerWidth < 1024);
+
       const isStandaloneMode =
         window.matchMedia("(display-mode: standalone)").matches ||
         window.navigator.standalone === true;
       setIsStandalone(isStandaloneMode);
 
-      const handleInstallable = () => setCanInstall(true);
-      window.addEventListener("pwa-installable", handleInstallable);
-      if (window.deferredPwaPrompt) setCanInstall(true);
+      if (
+        isStandaloneMode ||
+        localStorage.getItem("saafai_pwa_installed") === "true"
+      ) {
+        setIsInstalled(true);
+      }
 
-      return () => {
-        window.removeEventListener("pwa-installable", handleInstallable);
-      };
-    }
+      if (window.deferredPwaPrompt) setCanInstall(true);
+    });
+
+    const handleInstallable = () => setCanInstall(true);
+    const handleInstalled = () => {
+      setIsInstalled(true);
+      setIsStandalone(true);
+      setCanInstall(false);
+      localStorage.setItem("saafai_pwa_installed", "true");
+    };
+    window.addEventListener("pwa-installable", handleInstallable);
+    window.addEventListener("appinstalled", handleInstalled);
+
+    return () => {
+      window.cancelAnimationFrame(rafId);
+      window.removeEventListener("pwa-installable", handleInstallable);
+      window.removeEventListener("appinstalled", handleInstalled);
+    };
   }, []);
+
+  const shouldShowInstall =
+    isMobile && !isStandalone && !isInstalled && (canInstall || isIOS);
 
   const handleInstallClick = async () => {
     if (typeof window !== "undefined" && window.deferredPwaPrompt) {
@@ -504,12 +536,12 @@ export default function UserFeedbackForm() {
                 </div>
 
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  {/* PWA Install Button (hidden when already installed in standalone mode) */}
-                  {!isStandalone && (
+                  {/* PWA Install Button (Mobile only, hidden on desktop & when already installed) */}
+                  {shouldShowInstall && (
                     <button
                       type="button"
                       onClick={handleInstallClick}
-                      className="flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1 rounded-xl text-xs font-semibold bg-[#284e3a] text-white hover:bg-[#1e3a29] transition-all shadow-xs cursor-pointer flex-shrink-0"
+                      className="md:hidden flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1 rounded-xl text-xs font-semibold bg-[#284e3a] text-white hover:bg-[#1e3a29] transition-all shadow-xs cursor-pointer flex-shrink-0"
                       title="Install as Kiosk App"
                     >
                       <Download size={13} />

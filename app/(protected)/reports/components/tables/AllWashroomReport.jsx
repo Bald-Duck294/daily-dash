@@ -18,7 +18,7 @@ function AllWashroomsTable({ data, metadata }) {
   });
 
   const formatDateTime = (date) => {
-    if (!date) return "N/A";
+    if (!date) return "No Activity";
     return new Date(date).toLocaleString("en-IN", {
       day: "2-digit",
       month: "short",
@@ -33,15 +33,22 @@ function AllWashroomsTable({ data, metadata }) {
     const styles = {
       completed: "bg-green-100 text-green-700",
       ongoing: "bg-yellow-100 text-yellow-700",
+      no_activity: "bg-slate-100 text-slate-600",
       pending: "bg-gray-100 text-gray-700",
     };
+    const label =
+      status === "no_activity"
+        ? "No Activity"
+        : status
+          ? status.charAt(0).toUpperCase() + status.slice(1)
+          : "Pending";
     return (
       <span
         className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${styles[status] || styles.pending}`}
       >
         {status === "completed" && <CheckCircle className="w-3 h-3" />}
         {status === "ongoing" && <Clock className="w-3 h-3" />}
-        {status ? status.charAt(0).toUpperCase() + status.slice(1) : "Pending"}
+        {label}
       </span>
     );
   };

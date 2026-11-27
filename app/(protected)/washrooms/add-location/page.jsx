@@ -153,8 +153,8 @@ export default function AddWashroomForm() {
   const [availableCities, setAvailableCities] = useState([]);
   const [pincodeError, setPincodeError] = useState("");
   const [manualCoords, setManualCoords] = useState({
-    latitude: "21.1458",
-    longitude: "79.0882",
+    latitude: "",
+    longitude: "",
   });
 
   const [form, setForm] = useState({
@@ -163,8 +163,8 @@ export default function AddWashroomForm() {
     type_id: null,
     facility_company_id: null,
     is_public: false,
-    latitude: 21.1458,
-    longitude: 79.0882,
+    latitude: null,
+    longitude: null,
     address: "",
     pincode: "",
     state: "",
@@ -274,6 +274,9 @@ export default function AddWashroomForm() {
 
   const handleCoordinateChange = (field, value) => {
     setManualCoords((prev) => ({ ...prev, [field]: value }));
+    if (value === "" || value === null) {
+      handleChange(field, null);
+    }
   };
 
   const handleApplyCoordinates = () => {

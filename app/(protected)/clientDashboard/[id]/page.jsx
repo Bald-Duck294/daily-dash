@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   MapPin,
@@ -26,6 +26,10 @@ import {
   ShieldCheck,
   RotateCcw,
   AlertTriangle,
+  Clock,
+  MessageSquare,
+  AlertCircle,
+  ListChecks,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Loader from "@/components/ui/Loader";
@@ -44,6 +48,8 @@ import {
   useCleanerPerformance,
   useGetWashroomHygieneHeatmap,
 } from "@/features/Dashboard/Dashboard.queries";
+import { useSlaCleanerActivities } from "@/features/slaCleanerActivity/slaCleanerActivity.queries";
+import { useUserReviews } from "@/features/users/review/reviews.queries";
 
 // --- SKELETON COMPONENTS ---
 const StatSkeleton = () => (
@@ -192,6 +198,79 @@ export default function ClientDashboard() {
     useDashboardActivities(activeCompanyIdForReviews, 500, dateRange);
   const { data: washroomGraphData = [], isLoading: isWashroomLoading } =
     useWashroomScoresSummary(activeCompanyIdForLocations, dateRange);
+
+  // --- Cleaner Activity Data Hook ---
+  const {
+    data: cleanerActivityResponse,
+    isLoading: isCleanerActivityLoading,
+  } = useSlaCleanerActivities(
+    {
+      start_date: dateRange.startDate,
+      end_date: dateRange.endDate,
+      limit: 100,
+      page: 1,
+    },
+    companyId,
+  );
+
+  const cleanerActivitySummary = useMemo(() => {
+    if (cleanerActivityResponse?.summary) {
+      return cleanerActivityResponse.summary;
+    }
+    const list = cleanerActivityResponse?.data || [];
+    const total =
+      cleanerActivityResponse?.pagination?.total_items ?? list.length;
+    const completed = list.filter((a) => a.status === "completed").length;
+    const ongoing = list.filter((a) => a.status !== "completed").length;
+    const passed = list.filter(
+      (a) => a.sla_status === "no_breach" || a.sla_status === "resolved",
+    ).length;
+    const totalRetries = list.reduce(
+      (acc, a) => acc + (a.retries_used || 0),
+      0,
+    );
+    const tasksWithRetries = list.filter(
+      (a) => (a.retries_used || 0) > 0,
+    ).length;
+
+    return {
+      total_tasks: total,
+      completed_tasks: completed,
+      ongoing_tasks: ongoing,
+      threshold_passed: passed,
+      total_retries: totalRetries,
+      tasks_with_retries: tasksWithRetries,
+    };
+  }, [cleanerActivityResponse]);
+
+  // --- User Reviews Data Hook ---
+  const isTadoba = String(companyId) === "95";
+  const { data: userReviewsResponse, isLoading: isUserReviewsLoading } =
+    useUserReviews({
+      company_id: companyId,
+      location_id: isTadoba ? "2249" : undefined,
+      start_date: dateRange.startDate,
+      end_date: dateRange.endDate,
+      limit: 10,
+      page: 1,
+    });
+
+  const userReviewsStats = useMemo(() => {
+    const rawStats = userReviewsResponse?.stats;
+    return {
+      total:
+        rawStats?.total ??
+        userReviewsResponse?.pagination?.total ??
+        userReviewsResponse?.reviews?.length ??
+        0,
+      today: rawStats?.today ?? 0,
+      avgRating: rawStats?.avgRating
+        ? Number(rawStats.avgRating).toFixed(1)
+        : "0.0",
+      todayIssues: rawStats?.todayIssuesCount ?? 0,
+      totalIssues: rawStats?.totalIssuesCount ?? 0,
+    };
+  }, [userReviewsResponse]);
 
   // Cleaner Performance Hook
   let cleanerStartDateStr = dateRange.startDate;
@@ -394,23 +473,31 @@ export default function ClientDashboard() {
   const isSlaEnabled = Boolean(statsData?.isSlaEnabled);
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] dark:bg-slate-950 p-3 sm:p-4 md:p-6 font-sans md:mt-[-10px]">
-      {/* SLA Status Header Badge (Displayed only if company SLA is ON) */}
+    <div className="min-h-screen bg-[#f8fafc] dark:bg-slate-950 p-3 sm:p-4 md:p-6 font-sans">
+      {/* SLA Status Header Badge (Displayed only if company SLA is ON) - Designed cleanly without overlaps */}
       {isSlaEnabled && (
-        <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-cyan-500/10 to-blue-500/10 border border-emerald-500/20 mb-4 shadow-sm">
-          <div className="flex items-center gap-2 text-xs font-bold text-emerald-800 dark:text-emerald-300">
+        <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-blue-500/10 border border-emerald-500/30 mb-5 shadow-sm backdrop-blur-sm">
+          <div className="flex flex-wrap items-center gap-2.5 text-xs font-bold text-emerald-800 dark:text-emerald-300">
             <span className="relative flex h-2.5 w-2.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
             </span>
-            <span>SLA Management Active</span>
-            <span className="text-slate-400 dark:text-slate-600 font-normal">|</span>
-            <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">
-              Pass Threshold: <strong className="text-emerald-700 dark:text-emerald-300">{statsData.slaThreshold || 8.0}/10</strong>
+            <span className="tracking-wide uppercase font-black text-[11px] text-emerald-900 dark:text-emerald-200">
+              SLA Management Active
             </span>
-            <span className="text-slate-400 dark:text-slate-600 font-normal">|</span>
+            <span className="text-slate-300 dark:text-slate-700 font-normal">|</span>
             <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">
-              Max Retries: <strong className="text-cyan-700 dark:text-cyan-300">{statsData.slaMaxRetries || 2}</strong>
+              Pass Threshold:{" "}
+              <strong className="text-emerald-700 dark:text-emerald-300 font-bold">
+                {statsData.slaThreshold || 8.0}/10
+              </strong>
+            </span>
+            <span className="text-slate-300 dark:text-slate-700 font-normal">|</span>
+            <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">
+              Max Retries:{" "}
+              <strong className="text-cyan-700 dark:text-cyan-300 font-bold">
+                {statsData.slaMaxRetries || 2}
+              </strong>
             </span>
           </div>
           <button
@@ -422,10 +509,10 @@ export default function ClientDashboard() {
         </div>
       )}
 
-      {/* 1. TOP STATS ROW */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4 mb-6 md:mt-[-30px]">
+      {/* 1. TOP STATS ROW (Total Repairs removed, 4 cards symmetrical grid) */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6">
         {isCountsLoading ? (
-          Array(5)
+          Array(4)
             .fill(0)
             .map((_, i) => <StatSkeleton key={i} />)
         ) : (
@@ -459,7 +546,7 @@ export default function ClientDashboard() {
                 title="Completed Tasks"
                 value={statsData.completedTasks}
                 icon={CheckCircle2}
-                colorClass="bg-cyan-400"
+                colorClass="bg-cyan-500"
                 trend="up"
                 trendValue="↑ 25%"
                 onClick={() =>
@@ -467,17 +554,6 @@ export default function ClientDashboard() {
                     `/cleaners?companyId=${companyId}&status=completed`,
                   )
                 }
-              />
-            )}
-            {canViewReports && (
-              <StatCard
-                title="Total Repairs"
-                value={statsData.totalRepairs}
-                icon={Wrench}
-                colorClass="bg-amber-500"
-                trend="neutral"
-                trendValue="No change"
-                onClick={() => router.push(`/repairs?companyId=${companyId}`)}
               />
             )}
             {canViewUsers && (
@@ -497,8 +573,298 @@ export default function ClientDashboard() {
         )}
       </div>
 
-      {/* 2. CHARTS ROW */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 items-stretch md:mt-[-15px]">
+      {/* 2. CLEANER ACTIVITY KPI SECTION */}
+      {canViewCleanerReviews && (
+        <div className="mb-6 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-lg bg-orange-500/10 text-orange-600 dark:text-orange-400 flex items-center justify-center">
+                <Activity size={16} />
+              </div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-xs font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wide">
+                  Cleaner Activity
+                </h3>
+                {isSlaEnabled && (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-100 dark:bg-orange-950/40 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-800/60">
+                    SLA + Retry Mode
+                  </span>
+                )}
+              </div>
+            </div>
+            <button
+              onClick={() => router.push(`/cleaners?companyId=${companyId}`)}
+              className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 inline-flex items-center gap-1 transition-colors"
+            >
+              View Activity <ChevronRight size={13} />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
+            {/* Total Tasks (All) */}
+            <div
+              onClick={() => router.push(`/cleaners?companyId=${companyId}`)}
+              className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow cursor-pointer flex flex-col justify-between"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  Total Tasks (All)
+                </span>
+                <div className="w-7 h-7 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                  <ListChecks size={15} />
+                </div>
+              </div>
+              <div className="mt-3">
+                <h4 className="text-2xl font-black text-slate-900 dark:text-white leading-none">
+                  {cleanerActivitySummary.total_tasks}
+                </h4>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 font-medium">
+                  All cleaning tasks
+                </p>
+              </div>
+            </div>
+
+            {/* Completed Tasks */}
+            <div
+              onClick={() =>
+                router.push(`/cleaners?companyId=${companyId}&status=completed`)
+              }
+              className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow cursor-pointer flex flex-col justify-between"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  Completed Tasks
+                </span>
+                <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                  <CheckCircle2 size={15} />
+                </div>
+              </div>
+              <div className="mt-3">
+                <h4 className="text-2xl font-black text-slate-900 dark:text-white leading-none">
+                  {cleanerActivitySummary.completed_tasks}
+                </h4>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 font-medium">
+                  {cleanerActivitySummary.total_tasks > 0
+                    ? `${Math.round(
+                        (cleanerActivitySummary.completed_tasks /
+                          cleanerActivitySummary.total_tasks) *
+                          100,
+                      )}% completion rate`
+                    : "0% completion rate"}
+                </p>
+              </div>
+            </div>
+
+            {/* Ongoing */}
+            <div
+              onClick={() =>
+                router.push(`/cleaners?companyId=${companyId}&status=ongoing`)
+              }
+              className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow cursor-pointer flex flex-col justify-between"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  Ongoing
+                </span>
+                <div className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                  <Clock size={15} />
+                </div>
+              </div>
+              <div className="mt-3">
+                <h4 className="text-2xl font-black text-slate-900 dark:text-white leading-none">
+                  {cleanerActivitySummary.ongoing_tasks}
+                </h4>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 font-medium">
+                  In progress / active
+                </p>
+              </div>
+            </div>
+
+            {/* Threshold Passed */}
+            <div
+              onClick={() =>
+                router.push(
+                  `/cleaners?companyId=${companyId}&sla_status=no_breach`,
+                )
+              }
+              className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow cursor-pointer flex flex-col justify-between"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  Threshold Passed
+                </span>
+                <div className="w-7 h-7 rounded-lg bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center">
+                  <ShieldCheck size={15} />
+                </div>
+              </div>
+              <div className="mt-3">
+                <h4 className="text-2xl font-black text-slate-900 dark:text-white leading-none">
+                  {cleanerActivitySummary.threshold_passed}
+                </h4>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 font-medium">
+                  {cleanerActivitySummary.completed_tasks > 0
+                    ? `${Math.round(
+                        (cleanerActivitySummary.threshold_passed /
+                          cleanerActivitySummary.completed_tasks) *
+                          100,
+                      )}% SLA compliance`
+                    : "Met hygiene target"}
+                </p>
+              </div>
+            </div>
+
+            {/* Total Retries */}
+            <div
+              onClick={() => router.push(`/cleaners?companyId=${companyId}`)}
+              className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow cursor-pointer flex flex-col justify-between"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  Total Retries
+                </span>
+                <div className="w-7 h-7 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+                  <RotateCcw size={15} />
+                </div>
+              </div>
+              <div className="mt-3">
+                <h4 className="text-2xl font-black text-slate-900 dark:text-white leading-none">
+                  {cleanerActivitySummary.total_retries}
+                </h4>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 font-medium">
+                  {cleanerActivitySummary.tasks_with_retries > 0
+                    ? `${cleanerActivitySummary.tasks_with_retries} task${cleanerActivitySummary.tasks_with_retries > 1 ? "s" : ""} retried`
+                    : "No retries needed"}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 3. USER REVIEWS KPI SECTION */}
+      <div className="mb-6 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+              <MessageSquare size={16} />
+            </div>
+            <div>
+              <h3 className="text-xs font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wide">
+                User Reviews
+              </h3>
+            </div>
+          </div>
+          <button
+            onClick={() => router.push(`/users/review?companyId=${companyId}`)}
+            className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 inline-flex items-center gap-1 transition-colors"
+          >
+            View Reviews <ChevronRight size={13} />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+          {/* Total Reviews */}
+          <div
+            onClick={() => router.push(`/users/review?companyId=${companyId}`)}
+            className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow cursor-pointer flex flex-col justify-between"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                Total Reviews
+              </span>
+              <div className="w-7 h-7 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                <MessageSquare size={15} />
+              </div>
+            </div>
+            <div className="mt-3">
+              <h4 className="text-2xl font-black text-slate-900 dark:text-white leading-none">
+                {userReviewsStats.total}
+              </h4>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 font-medium">
+                Lifetime QR submissions
+              </p>
+            </div>
+          </div>
+
+          {/* Today's Reviews */}
+          <div
+            onClick={() => router.push(`/users/review?companyId=${companyId}`)}
+            className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow cursor-pointer flex flex-col justify-between"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                Today's Reviews
+              </span>
+              <div className="w-7 h-7 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                <Calendar size={15} />
+              </div>
+            </div>
+            <div className="mt-3">
+              <h4 className="text-2xl font-black text-slate-900 dark:text-white leading-none">
+                {userReviewsStats.today}
+              </h4>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 font-medium">
+                Submitted in last 24h
+              </p>
+            </div>
+          </div>
+
+          {/* Average Rating */}
+          <div
+            onClick={() => router.push(`/users/review?companyId=${companyId}`)}
+            className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow cursor-pointer flex flex-col justify-between"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                Average Rating
+              </span>
+              <div className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                <Star size={15} />
+              </div>
+            </div>
+            <div className="mt-3">
+              <h4 className="text-2xl font-black text-slate-900 dark:text-white leading-none flex items-baseline gap-1">
+                {userReviewsStats.avgRating}{" "}
+                <span className="text-xs text-slate-400 font-semibold">/ 10</span>
+              </h4>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 font-medium">
+                Cumulative sentiment score
+              </p>
+            </div>
+          </div>
+
+          {/* Today's Issues */}
+          <div
+            onClick={() => router.push(`/users/review?companyId=${companyId}`)}
+            className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow cursor-pointer flex flex-col justify-between"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                Today's Issues
+              </span>
+              <div className="w-7 h-7 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center">
+                <AlertCircle size={15} />
+              </div>
+            </div>
+            <div className="mt-3">
+              <h4 className="text-2xl font-black text-slate-900 dark:text-white leading-none flex items-baseline justify-between">
+                <span>{userReviewsStats.todayIssues}</span>
+                {userReviewsStats.totalIssues > 0 && (
+                  <span className="text-xs text-slate-400 font-normal">
+                    Total: {userReviewsStats.totalIssues}
+                  </span>
+                )}
+              </h4>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 font-medium">
+                Issues flagged today
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 4. CHARTS ROW */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 items-stretch">
         {/* Cleanliness Overview */}
         {canViewLocations && (
           <CardShell className="h-full flex flex-col">

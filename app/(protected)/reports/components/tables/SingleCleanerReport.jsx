@@ -49,8 +49,14 @@ function SingleCleanerReport({ data, metadata }) {
             <h2 className="text-2xl font-bold text-slate-900">
               {metadata.cleaner_name || "Unknown Cleaner"}
             </h2>
-            <div className="text-sm text-slate-600 mt-1">
-              {metadata.cleaner_phone || "N/A"}
+            <div className="text-sm text-slate-600 mt-1 flex items-center gap-1.5">
+              <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+              <span>
+                {metadata.location_name ||
+                  (metadata.assigned_washrooms && metadata.assigned_washrooms.length > 0
+                    ? metadata.assigned_washrooms.map((w) => w.name).join(", ")
+                    : "No washroom assigned")}
+              </span>
             </div>
             <div className="text-xs text-slate-500 mt-1">
               {metadata.date_range?.start} to {metadata.date_range?.end}

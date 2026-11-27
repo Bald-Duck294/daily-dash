@@ -29,6 +29,9 @@ import {
   Coins,
   MessageSquare,
   CheckCircle,
+  CheckCircle2,
+  AlertCircle,
+  HelpCircle,
   ArrowLeft,
   ExternalLink,
 } from "lucide-react";
@@ -47,6 +50,28 @@ import {
 } from "@/features/locations/locations.queries";
 import { useCleanerReviewsByLocationId } from "@/features/cleanerReview/cleanerReview.queries";
 import { useLocationSchema } from "@/features/configurations/configurations.queries";
+import { getReviewReasonBadges } from "@/features/users/review/reviewReasons";
+
+const getReasonBadgeStyle = (severity) => {
+  switch (severity) {
+    case "critical":
+      return "bg-rose-500/10 text-rose-600 border-rose-500/20";
+    case "high":
+      return "bg-orange-500/10 text-orange-600 border-orange-500/20";
+    case "medium":
+      return "bg-amber-500/10 text-amber-600 border-amber-500/20";
+    case "none":
+    case "positive":
+      return "bg-emerald-500/10 text-emerald-600 border-emerald-500/20";
+    case "neutral":
+      return "bg-amber-500/10 text-amber-700 border-amber-500/20";
+    case "unspecified":
+    case "warning":
+      return "bg-rose-500/10 text-rose-600 border-rose-500/20";
+    default:
+      return "bg-slate-500/10 text-slate-600 border-slate-500/20";
+  }
+};
 
 const SingleLocation = () => {
   useRequirePermission(MODULES.LOCATIONS);
@@ -106,6 +131,12 @@ const SingleLocation = () => {
   const reviewData = location?.ReviewData;
 
   const userReviewAverage = useMemo(() => {
+    if (
+      location?.userReviewAverage !== null &&
+      location?.userReviewAverage !== undefined
+    ) {
+      return Number(location.userReviewAverage).toFixed(1);
+    }
     if (!reviewData || reviewData.length === 0) return null;
 
     const totalRating = reviewData.reduce(
@@ -113,9 +144,9 @@ const SingleLocation = () => {
       0,
     );
     return (totalRating / reviewData.length).toFixed(1);
-  }, [reviewData]);
+  }, [location?.userReviewAverage, reviewData]);
 
-  const userReviewCount = reviewData?.length || 0;
+  const userReviewCount = location?.userReviewCount ?? reviewData?.length ?? 0;
   const cleanerReviewCount = cleanerReviews.length || 0;
 
   // --- Keypress Effects ---
@@ -1169,7 +1200,9 @@ const SingleLocation = () => {
                     : { color: "var(--washroom-subtitle)" }
                 }
               >
-                User Reviews ({userReviewCount})
+                {userReviewCount > 0
+                  ? `Latest ${Math.min(10, userReviewCount)} User Reviews`
+                  : "User Reviews (0)"}
               </button>
               <button
                 onClick={() => setActiveTab("cleaner")}
@@ -1183,7 +1216,9 @@ const SingleLocation = () => {
                     : { color: "var(--washroom-subtitle)" }
                 }
               >
-                Cleaner Reviews ({cleanerReviewCount})
+                {cleanerReviewCount > 0
+                  ? `Latest ${Math.min(10, cleanerReviewCount)} Cleaner Activities`
+                  : "Cleaner Activities (0)"}
               </button>
             </div>
           </div>
@@ -1193,94 +1228,132 @@ const SingleLocation = () => {
             {activeTab === "user" && (
               <>
                 {location.ReviewData && location.ReviewData.length > 0 ? (
-                  location.ReviewData.map((review) => (
-                    <div
-                      key={review.id}
-                      onClick={() =>
-                        router.push(
-                          `/user-activity/${review.id}?companyId=${finalCompanyId}`,
-                        )
-                      }
-                      className="p-6 cursor-pointer transition-colors hover:bg-[var(--washroom-table-row-hover)]"
-                      style={{
-                        borderBottom: "1px solid var(--washroom-border)",
-                      }}
-                    >
-                      <div className="flex items-start space-x-4">
-                        <div
-                          className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
-                          style={{
-                            background:
-                              "linear-gradient(135deg, var(--washroom-primary), var(--washroom-primary-hover))",
-                          }}
-                        >
-                          <User className="w-5 h-5 text-[var(--washroom-primary-text)]" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-2 gap-3">
-                            <div className="flex items-center space-x-2 min-w-0">
-                              <span className="text-sm font-medium text-[var(--washroom-title)] truncate">
-                                {review.name}
+                  location.ReviewData.slice(0, 10).map((review, index) => {
+                    const { badges } = getReviewReasonBadges(
+                      review.reason_ids,
+                      review.rating,
+                    );
+                    const reviewerName =
+                      review.name &&
+                      review.name.trim().toLowerCase() !== "anonymous citizen"
+                        ? review.name.trim()
+                        : null;
+
+                    return (
+                      <div
+                        key={review.id}
+                        onClick={() =>
+                          router.push(
+                            `/users/review/${review.id}?companyId=${finalCompanyId}`,
+                          )
+                        }
+                        className="p-6 cursor-pointer transition-colors hover:bg-[var(--washroom-table-row-hover)]"
+                        style={{
+                          borderBottom: "1px solid var(--washroom-border)",
+                        }}
+                      >
+                        <div className="flex items-start justify-between gap-4 mb-3">
+                          <div className="flex items-center flex-wrap gap-2.5">
+                            <span className="inline-flex items-center justify-center px-2.5 py-0.5 rounded-md text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                              #{index + 1}
+                            </span>
+                            {reviewerName && (
+                              <span className="text-sm font-semibold text-[var(--washroom-title)]">
+                                {reviewerName}
                               </span>
-                              <div className="flex items-center">
-                                {renderStars(review.rating)}
-                              </div>
-                            </div>
-                            <span className="text-sm text-[var(--washroom-subtitle)] whitespace-nowrap">
-                              {formatDate(review.created_at)}
+                            )}
+                            <span
+                              className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold border ${
+                                Number(review.rating || 0) >= 8
+                                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                  : Number(review.rating || 0) >= 5
+                                    ? "bg-amber-50 text-amber-700 border-amber-200"
+                                    : "bg-rose-50 text-rose-700 border-rose-200"
+                              }`}
+                            >
+                              <Star className="w-3.5 h-3.5 fill-current" />
+                              <span>{review.rating ?? 0}/10</span>
                             </span>
                           </div>
-                          <p className="text-sm text-[var(--washroom-text)] mb-4">
+                          <span className="text-xs sm:text-sm text-[var(--washroom-subtitle)] whitespace-nowrap flex items-center gap-1.5">
+                            <Calendar className="w-3.5 h-3.5" />
+                            {formatDate(review.created_at)}
+                          </span>
+                        </div>
+
+                        {badges.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 mb-2.5">
+                            {badges.map((r) => (
+                              <span
+                                key={r.id}
+                                className={`text-xs font-semibold px-2.5 py-1 rounded-md border inline-flex items-center gap-1.5 ${getReasonBadgeStyle(
+                                  r.severity,
+                                )}`}
+                              >
+                                {r.iconType === "check" || r.id === 0 ? (
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                ) : r.iconType === "neutral" || r.id === -1 ? (
+                                  <HelpCircle className="w-3.5 h-3.5" />
+                                ) : (
+                                  <AlertCircle className="w-3.5 h-3.5" />
+                                )}
+                                <span>{r.shortText}</span>
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
+                        {review.description && (
+                          <p className="text-sm text-[var(--washroom-text)] mb-3">
                             {review.description}
                           </p>
-                          {review.images && review.images.length > 0 && (
-                            <div className="space-y-3">
-                              <div className="flex items-center text-sm text-[var(--washroom-subtitle)]">
-                                <Camera className="w-4 h-4 mr-1" />
-                                {review.images.length}{" "}
-                                {review.images.length === 1
-                                  ? "photo"
-                                  : "photos"}
-                              </div>
-                              <div className="flex space-x-2 overflow-x-auto">
-                                {review.images.map((url, imgIndex) => (
-                                  <div
-                                    key={imgIndex}
-                                    className="relative w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 cursor-pointer transition-opacity hover:opacity-90"
-                                    style={{
-                                      background: "var(--washroom-input-bg)",
-                                      border:
-                                        "1px solid var(--washroom-border)",
-                                    }}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      window.open(url, "_blank");
-                                    }}
-                                  >
-                                    <img
-                                      src={url}
-                                      alt={`Review photo ${imgIndex + 1}`}
-                                      className="w-full h-full object-cover"
-                                      onLoad={() =>
-                                        handleImageLoad(
-                                          `${review.id}-${imgIndex}`,
-                                        )
-                                      }
-                                      onError={() =>
-                                        handleImageError(
-                                          `${review.id}-${imgIndex}`,
-                                        )
-                                      }
-                                    />
-                                  </div>
-                                ))}
-                              </div>
+                        )}
+
+                        {review.images && review.images.length > 0 && (
+                          <div className="space-y-2 mt-2">
+                            <div className="flex items-center text-xs text-[var(--washroom-subtitle)]">
+                              <Camera className="w-3.5 h-3.5 mr-1" />
+                              {review.images.length}{" "}
+                              {review.images.length === 1 ? "photo" : "photos"}
                             </div>
-                          )}
-                        </div>
+                            <div className="flex space-x-2 overflow-x-auto">
+                              {review.images.map((url, imgIndex) => (
+                                <div
+                                  key={imgIndex}
+                                  className="relative w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 cursor-pointer transition-opacity hover:opacity-90"
+                                  style={{
+                                    background: "var(--washroom-input-bg)",
+                                    border:
+                                      "1px solid var(--washroom-border)",
+                                  }}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    window.open(url, "_blank");
+                                  }}
+                                >
+                                  <img
+                                    src={url}
+                                    alt={`Review photo ${imgIndex + 1}`}
+                                    className="w-full h-full object-cover"
+                                    onLoad={() =>
+                                      handleImageLoad(
+                                        `${review.id}-${imgIndex}`,
+                                      )
+                                    }
+                                    onError={() =>
+                                      handleImageError(
+                                        `${review.id}-${imgIndex}`,
+                                      )
+                                    }
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  ))
+                    );
+                  })
                 ) : (
                   <div
                     className="p-12 text-center"

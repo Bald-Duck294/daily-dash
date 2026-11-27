@@ -109,6 +109,8 @@ export default function UserReviewsPage() {
   const [dateFilterType, setDateFilterType] = useState("today"); // By default show only today's reviews
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+  const [draftFromDate, setDraftFromDate] = useState("");
+  const [draftToDate, setDraftToDate] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [ratingFilter, setRatingFilter] = useState("all"); // 'all' | 'high' | 'mid' | 'low'
   const [selectedWashroom, setSelectedWashroom] = useState(() =>
@@ -273,6 +275,8 @@ export default function UserReviewsPage() {
     setDateFilterType("today");
     setFromDate("");
     setToDate("");
+    setDraftFromDate("");
+    setDraftToDate("");
     setSearchQuery("");
     setRatingFilter("all");
     setSelectedWashroom(isTadoba ? MOHARLI_LOCATION_ID : "");
@@ -708,13 +712,13 @@ export default function UserReviewsPage() {
                     </span>
                     <input
                       type="date"
-                      value={fromDate}
-                      max={toDate || undefined}
+                      value={draftFromDate}
+                      max={draftToDate || undefined}
                       onChange={(e) => {
                         const val = e.target.value;
-                        setFromDate(val);
-                        if (toDate && val > toDate) {
-                          setToDate(val);
+                        setDraftFromDate(val);
+                        if (draftToDate && val > draftToDate) {
+                          setDraftToDate(val);
                         }
                       }}
                       className="px-2.5 py-1 rounded-lg text-xs font-medium bg-[var(--background)] border border-[var(--border)] text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer shadow-xs"
@@ -727,25 +731,41 @@ export default function UserReviewsPage() {
                     </span>
                     <input
                       type="date"
-                      value={toDate}
-                      min={fromDate || undefined}
+                      value={draftToDate}
+                      min={draftFromDate || undefined}
                       onChange={(e) => {
                         const val = e.target.value;
-                        setToDate(val);
-                        if (fromDate && val < fromDate) {
-                          setFromDate(val);
+                        setDraftToDate(val);
+                        if (draftFromDate && val < draftFromDate) {
+                          setDraftFromDate(val);
                         }
                       }}
                       className="px-2.5 py-1 rounded-lg text-xs font-medium bg-[var(--background)] border border-[var(--border)] text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer shadow-xs"
                     />
                   </div>
 
-                  {(fromDate || toDate) && (
+                  <button
+                    type="button"
+                    disabled={!draftFromDate && !draftToDate}
+                    onClick={() => {
+                      setFromDate(draftFromDate);
+                      setToDate(draftToDate);
+                      setPage(1);
+                    }}
+                    className="px-3 py-1 rounded-lg text-xs font-semibold bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer shadow-xs"
+                  >
+                    Apply
+                  </button>
+
+                  {(draftFromDate || draftToDate || fromDate || toDate) && (
                     <button
                       type="button"
                       onClick={() => {
+                        setDraftFromDate("");
+                        setDraftToDate("");
                         setFromDate("");
                         setToDate("");
+                        setPage(1);
                       }}
                       className="p-1 rounded-md text-[var(--muted-foreground)] hover:text-foreground hover:bg-[var(--surface)] transition cursor-pointer"
                       title="Clear custom date range"

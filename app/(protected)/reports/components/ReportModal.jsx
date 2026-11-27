@@ -13,7 +13,9 @@ import CleanerReportTable from "./tables/CleanerReportTable";
 import CleanerPenaltySummaryTable from "./tables/CleanerPenaltySummaryTable";
 import WashroomPenaltySummaryTable from "./tables/WashroomPenaltySummaryTable";
 import AttendanceReportTable from "./tables/AttendanceReportTable";
-import { exportToPDF, exportToExcel } from "./ExportUtils";
+import NotCleanedWashroomsTable from "./tables/NotCleanedWashroomsTable";
+import SlaThresholdBreachTable from "./tables/SlaThresholdBreachTable";
+import { exportToPDF, exportToExcel, printReportPDF } from "./ExportUtils";
 import DetailedCleaningReportTableVirtualized from "./tables/DetailedCleaningReportTableVirtualized";
 
 export default function ReportModal({ reportType, data, metadata, onClose }) {
@@ -35,18 +37,42 @@ export default function ReportModal({ reportType, data, metadata, onClose }) {
   }, []);
 
 
-  const handlePrint = () => window.print();
+  const handlePrint = () => printReportPDF(data, metadata, reportType);
 
   // ✅ Format date range display
   const getDateRangeDisplay = () => {
-    const startDate = metadata?.date_range?.start;
-    const endDate = metadata?.date_range?.end;
+    let startDate = metadata?.date_range?.start;
+    let endDate = metadata?.date_range?.end;
+
+    // Helper to check if date string is invalid or placeholder
+    const isInvalid = (val) => !val || val === "Beginning" || val === "Now" || val === "N/A";
+
+    // If dates are missing or placeholders, fallback to timestamps in data
+    if ((isInvalid(startDate) || isInvalid(endDate)) && Array.isArray(data) && data.length > 0) {
+      const timestamps = data
+        .map((item) => {
+          const t = item.task_start_time || item.created_at || item.start_time || item.date;
+          return t ? new Date(t).getTime() : NaN;
+        })
+        .filter((t) => !isNaN(t));
+
+      if (timestamps.length > 0) {
+        if (isInvalid(startDate)) {
+          startDate = new Date(Math.min(...timestamps)).toISOString().split("T")[0];
+        }
+        if (isInvalid(endDate)) {
+          endDate = new Date(Math.max(...timestamps)).toISOString().split("T")[0];
+        }
+      }
+    }
 
     // Format helper
     const formatDate = (dateStr) => {
-      if (!dateStr || dateStr === "Beginning" || dateStr === "Now") return dateStr;
+      if (!dateStr || dateStr === "Beginning" || dateStr === "Now" || dateStr === "N/A") return null;
       try {
-        return new Date(dateStr).toLocaleDateString('en-IN', {
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return dateStr;
+        return d.toLocaleDateString('en-IN', {
           day: '2-digit',
           month: 'short',
           year: 'numeric'
@@ -56,39 +82,30 @@ export default function ReportModal({ reportType, data, metadata, onClose }) {
       }
     };
 
-    // Case 1: No dates selected
-    if ((!startDate || startDate === "Beginning") && (!endDate || endDate === "Now")) {
-      return "Beginning to Now";
-    }
+    const formattedStart = formatDate(startDate);
+    const formattedEnd = formatDate(endDate);
+    const todayFormatted = new Date().toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
 
-    // Case 2: Only start date
-    if (startDate && startDate !== "Beginning" && (!endDate || endDate === "Now")) {
-      return `${formatDate(startDate)} to ${new Date().toLocaleDateString('en-IN', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric'
-      })}`;
-    }
-
-    // Case 3: Both dates
-    if (startDate && endDate && startDate !== "Beginning" && endDate !== "Now") {
-      const formattedStart = formatDate(startDate);
-      const formattedEnd = formatDate(endDate);
-
-      // Single date check
+    if (formattedStart && formattedEnd) {
       if (formattedStart === formattedEnd) {
         return formattedStart;
       }
-
       return `${formattedStart} to ${formattedEnd}`;
     }
 
-    // Case 4: Only end date (edge case)
-    if ((!startDate || startDate === "Beginning") && endDate && endDate !== "Now") {
-      return `Beginning to ${formatDate(endDate)}`;
+    if (formattedStart) {
+      return formattedStart === todayFormatted ? formattedStart : `${formattedStart} to ${todayFormatted}`;
     }
 
-    return "Date Range Not Specified";
+    if (formattedEnd) {
+      return formattedEnd;
+    }
+
+    return todayFormatted;
   };
 
   // Render appropriate table based on report type
@@ -116,6 +133,10 @@ export default function ReportModal({ reportType, data, metadata, onClose }) {
         return <WashroomPenaltySummaryTable data={data} metadata={metadata} />;
       case "attendance_report":
         return <AttendanceReportTable data={data} metadata={metadata} />;
+      case "not_cleaned_washrooms":
+        return <NotCleanedWashroomsTable data={data} metadata={metadata} />;
+      case "sla_threshold_breach":
+        return <SlaThresholdBreachTable data={data} metadata={metadata} />;
       default:
         return <div className="text-center py-8 text-slate-500">Unknown report type</div>;
     }
@@ -123,7 +144,17 @@ export default function ReportModal({ reportType, data, metadata, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 backdrop-blur-sm">
-      <div className="w-full max-w-7xl h-screen overflow-y-auto py-8 px-4">
+      <div
+        className={`w-full ${
+          [
+            "washroom_hygiene_trend",
+            "attendance_report",
+            "detailed_cleaning",
+          ].includes(reportType)
+            ? "max-w-[96vw] 2xl:max-w-[94vw]"
+            : "max-w-7xl"
+        } h-screen overflow-y-auto py-6 px-3 sm:px-4`}
+      >
         <div className="relative bg-white rounded-2xl shadow-2xl">
           {/* ✅ Enhanced Sticky Header */}
           <div className="bg-gradient-to-r from-white to-slate-50 border-b border-slate-200 px-6 py-4 rounded-t-2xl">

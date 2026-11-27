@@ -71,8 +71,8 @@ const getTaskInfo = (task) => {
     if (task.status === 'ongoing' && durationHours > 36) {
         return {
             status: 'overdue',
-            duration: durationMinutes,
-            durationDisplay: `${Math.floor(durationHours)} hrs`,
+            duration: null,
+            durationDisplay: 'Overdue',
             isOverdue: true
         };
     }

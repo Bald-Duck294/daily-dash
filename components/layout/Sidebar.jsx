@@ -380,7 +380,7 @@ const Sidebar = () => {
 
   // Centralized logout handler
   const { handleLogout, isLoggingOut } = useLogout();
-  const { isStandalone, installApp } = usePwaInstall();
+  const { shouldShowInstall, installApp } = usePwaInstall();
 
   return (
     <>
@@ -598,12 +598,12 @@ const Sidebar = () => {
             </Link>
           </div>
 
-          {/* Install App Button */}
-          {!isStandalone && (
+          {/* Install App Button (Mobile only, hidden on desktop and when already installed) */}
+          {shouldShowInstall && (
             <button
               type="button"
               onClick={installApp}
-              className={`flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-bold border transition-all cursor-pointer ${
+              className={`md:hidden flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-bold border transition-all cursor-pointer ${
                 sidebarOpen ? "px-4" : "px-0"
               }`}
               style={{

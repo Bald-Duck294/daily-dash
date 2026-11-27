@@ -37,11 +37,12 @@ function AllCleanersReport({ data, metadata }) {
           if (nameA > nameB) return 1 * dir;
           return 0;
         }
-        case 'phone': {
-          const phoneA = (a.cleaner_phone || '').toLowerCase();
-          const phoneB = (b.cleaner_phone || '').toLowerCase();
-          if (phoneA < phoneB) return -1 * dir;
-          if (phoneA > phoneB) return 1 * dir;
+        case 'location':
+        case 'location_name': {
+          const locA = (a.location_name || a.assigned_washrooms?.map(w => w.name).join(', ') || '').toLowerCase();
+          const locB = (b.location_name || b.assigned_washrooms?.map(w => w.name).join(', ') || '').toLowerCase();
+          if (locA < locB) return -1 * dir;
+          if (locA > locB) return 1 * dir;
           return 0;
         }
         case 'total_cleanings': {
@@ -111,35 +112,39 @@ function AllCleanersReport({ data, metadata }) {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-2 w-[50%] justify-center">
-        <StatCard title="Total Cleaners" value={metadata.total_cleaners || data.length} />
-        <StatCard title="Completed" value={metadata.total_cleanings_completed || 0} />
-        {/* <StatCard
-          title="Avg Score"
-          value={metadata.avg_ai_score ? parseFloat(metadata.avg_ai_score).toFixed(2) : "N/A"}
-        />
-        <StatCard
-          title="Avg Duration (mins)"
-          value={metadata.avg_cleaning_duration || 0}
-        /> */}
-      </div>
+    <div className="space-y-4">
+      {/* Compact Header Summary Row: KPI Cards + Top Performers */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-stretch">
+        <div className="lg:col-span-2 bg-white rounded-lg border border-slate-200 px-4 py-3 flex flex-col justify-center">
+          <span className="text-xs font-medium text-slate-500">Total Cleaners</span>
+          <span className="text-xl font-bold text-slate-900 mt-0.5">
+            {metadata.total_cleaners || data.length}
+          </span>
+        </div>
 
-      {/* Top Performers */}
-      <div className="bg-white rounded-lg border border-slate-200 p-6">
-        <h3 className="font-semibold text-lg text-slate-900 mb-4">
-          Top Performers (Avg Score)
-        </h3>
-        <ol className="space-y-2">
-          {metadata.top_avg_score?.slice(0, 5).map((cleaner, index) => (
-            <li key={index} className="flex items-center justify-between text-sm">
-              <span className="text-slate-700">
-                {index + 1}. {cleaner.cleaner_name}
+        <div className="lg:col-span-2 bg-white rounded-lg border border-slate-200 px-4 py-3 flex flex-col justify-center">
+          <span className="text-xs font-medium text-slate-500">Completed</span>
+          <span className="text-xl font-bold text-slate-900 mt-0.5">
+            {metadata.total_cleanings_completed || 0}
+          </span>
+        </div>
+
+        <div className="lg:col-span-8 bg-white rounded-lg border border-slate-200 px-4 py-2.5 flex flex-col justify-center">
+          <div className="text-xs font-semibold text-slate-700 mb-1.5">
+            Top Performers (Avg Score)
+          </div>
+          <div className="flex flex-wrap items-center gap-1.5">
+            {metadata.top_avg_score?.slice(0, 5).map((cleaner, index) => (
+              <span
+                key={index}
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-800 border border-emerald-200"
+              >
+                <span className="font-bold text-emerald-600">{index + 1}.</span>
+                <span>{cleaner.cleaner_name}</span>
               </span>
-            </li>
-          ))}
-        </ol>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Cleaners Table */}
@@ -162,15 +167,15 @@ function AllCleanersReport({ data, metadata }) {
                   </button>
                 </th>
 
-                {/* Sortable: Phone */}
+                {/* Sortable: Location */}
                 <th className="px-4 py-3 text-left font-semibold text-slate-700">
                   <button
                     type="button"
-                    onClick={() => handleSort('phone')}
+                    onClick={() => handleSort('location_name')}
                     className="flex items-center gap-1 hover:text-slate-900"
                   >
-                    <span>Phone</span>
-                    <SortIcon columnKey="phone" />
+                    <span>Location</span>
+                    <SortIcon columnKey="location_name" />
                   </button>
                 </th>
 
@@ -266,8 +271,20 @@ function AllCleanersReport({ data, metadata }) {
                     <td className="px-4 py-3 text-slate-600">{index + 1}</td>
                     <td className="px-4 py-3">
                       <div className="font-medium text-slate-900">{cleaner.cleaner_name}</div>
+                      {(cleaner.cleaner_phone || cleaner.phone) && (
+                        <div className="text-xs text-slate-500 mt-0.5">
+                          {cleaner.cleaner_phone || cleaner.phone}
+                        </div>
+                      )}
                     </td>
-                    <td className="px-4 py-3 text-slate-600">{cleaner.cleaner_phone}</td>
+                    <td className="px-4 py-3 text-slate-700 max-w-[200px]">
+                      <div
+                        className="font-medium text-slate-800 line-clamp-2"
+                        title={cleaner.location_name || cleaner.assigned_washrooms?.map((w) => w.name).join(", ")}
+                      >
+                        {cleaner.location_name || cleaner.assigned_washrooms?.map((w) => w.name).join(", ") || "N/A"}
+                      </div>
+                    </td>
                     <td className="px-4 py-3 text-center font-medium text-slate-900">
                       {cleaner.total_cleanings}
                     </td>

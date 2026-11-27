@@ -255,7 +255,7 @@ const Header = ({ pageTitle }) => {
   const params = useParams();
   const searchParams = useSearchParams();
   const { handleLogout, isLoggingOut } = useLogout();
-  const { isStandalone, installApp } = usePwaInstall();
+  const { shouldShowInstall, installApp } = usePwaInstall();
 
   const { user } = useSelector((state) => state.auth);
   const { fcmToken } = useSelector((state) => state.notifications);
@@ -389,12 +389,12 @@ const Header = ({ pageTitle }) => {
           </button>
         </div>
 
-        {/* PWA Install Button */}
-        {!isStandalone && (
+        {/* PWA Install Button (Mobile only, hidden on desktop and when already installed) */}
+        {shouldShowInstall && (
           <button
             type="button"
             onClick={installApp}
-            className="cursor-pointer flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm font-semibold text-cyan-700 bg-cyan-50 hover:bg-cyan-100 border border-cyan-200 dark:bg-cyan-950/40 dark:text-cyan-300 dark:border-cyan-800/60 dark:hover:bg-cyan-900/50 rounded-lg transition-all shadow-xs"
+            className="md:hidden cursor-pointer flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm font-semibold text-cyan-700 bg-cyan-50 hover:bg-cyan-100 border border-cyan-200 dark:bg-cyan-950/40 dark:text-cyan-300 dark:border-cyan-800/60 dark:hover:bg-cyan-900/50 rounded-lg transition-all shadow-xs"
             title="Install SaafAI Dashboard App"
           >
             <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
